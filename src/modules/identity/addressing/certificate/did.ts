@@ -1,1 +1,1 @@
-export { didFromIdentity, didFromCertificate } from "@/modules/identity/certificate/did";
+export * from "@/modules/identity/certificate/did";
