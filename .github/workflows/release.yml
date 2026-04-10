@@ -68,35 +68,29 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # ── Tauri updater signing ──
+          # Generate keypair: cargo tauri signer generate -w ~/.tauri/uor-os.key
+          # Set these secrets in GitHub repo settings:
+          #   TAURI_SIGNING_PRIVATE_KEY      — Contents of the .key file
+          #   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — Password used during generation
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # ── macOS code signing & notarization ──
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # ── Windows code signing ──
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key' }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "UOR OS ${{ github.ref_name }}"
-          releaseBody: |
-            ## UOR OS ${{ github.ref_name }}
-
-            Download the installer for your platform:
-
-            | Platform | File |
-            |----------|------|
-            | Windows | `UOR-OS_x64-setup.exe` |
-            | macOS | `UOR-OS_universal.dmg` |
-            | Linux | `UOR-OS_amd64.AppImage` or `UOR-OS_amd64.deb` |
-
-            ---
-            *Your data stays local. Open source. Lattice-hash sealed.*
+          releaseBody: "Download the installer for your platform below."
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+          # Generate updater JSON artifact (latest.json) for auto-updates
           updaterJsonPreferNsis: true

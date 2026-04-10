@@ -24,7 +24,7 @@ interface OSEntry {
   file: string;
 }
 
-const RELEASE_BASE = "https://github.com/humuhumu33/uor-os/releases/latest/download";
+const RELEASE_BASE = "https://github.com/UOR-Foundation/uor-os/releases/latest/download";
 const VERSION = "2.0.0";
 
 const AppleIcon = ({ size = 20 }: { size?: number }) => (
@@ -36,7 +36,7 @@ const AppleIcon = ({ size = 20 }: { size?: number }) => (
 const OS_DATA: OSEntry[] = [
   { key: "macos", label: "macOS", shortLabel: "Mac", icon: <AppleIcon size={18} />, file: `UOR-OS_${VERSION}_universal.dmg` },
   { key: "windows", label: "Windows", shortLabel: "Windows", icon: <Monitor size={18} />, file: `UOR-OS_${VERSION}_x64-setup.exe` },
-  { key: "linux", label: "Linux", shortLabel: "Linux", icon: <Terminal size={18} />, file: `uor-os_${VERSION}_amd64.AppImage` },
+  { key: "linux", label: "Linux", shortLabel: "Linux", icon: <Terminal size={18} />, file: `UOR-OS_${VERSION}_amd64.AppImage` },
 ];
 
 const INCLUDED_MODULES = [
@@ -50,8 +50,6 @@ const INCLUDED_MODULES = [
   { icon: Brain, label: "Library", desc: "Curated book summaries" },
 ];
 
-const RELEASES_PAGE = "https://github.com/humuhumu33/uor-os/releases/latest";
-
 async function handleDownload(e: React.MouseEvent<HTMLAnchorElement>, file: string, setLoading?: (v: boolean) => void) {
   e.preventDefault();
   const url = `${RELEASE_BASE}/${file}`;
@@ -61,14 +59,12 @@ async function handleDownload(e: React.MouseEvent<HTMLAnchorElement>, file: stri
     if (res.ok) {
       window.location.href = url;
     } else {
-      // Release artifact not found — send to releases page
-      toast.info("Opening releases page", {
-        description: "The direct download wasn't found. Opening the GitHub releases page instead.",
+      toast.error("Release coming soon", {
+        description: "The desktop installer is being prepared. Check back shortly.",
       });
-      window.open(RELEASES_PAGE, "_blank");
     }
   } catch {
-    // Network error or CORS — try direct navigation (GitHub often blocks HEAD)
+    // Network error or CORS — try direct navigation as fallback
     window.location.href = url;
   } finally {
     setLoading?.(false);
