@@ -4,6 +4,7 @@
  * Shows what's included. Gracefully handles missing releases.
  */
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { usePlatform } from "@/modules/platform/desktop/hooks/usePlatform";
 import { useDesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
@@ -49,16 +50,24 @@ const INCLUDED_MODULES = [
   { icon: Brain, label: "Library", desc: "Curated book summaries" },
 ];
 
-async function handleDownload(e: React.MouseEvent<HTMLAnchorElement>, file: string) {
+async function handleDownload(e: React.MouseEvent<HTMLAnchorElement>, file: string, setLoading?: (v: boolean) => void) {
   e.preventDefault();
   const url = `${RELEASE_BASE}/${file}`;
+  setLoading?.(true);
   try {
-    await fetch(url, { method: "HEAD", mode: "no-cors" });
-    window.open(url, "_blank", "noopener");
+    const res = await fetch(url, { method: "HEAD", redirect: "follow" });
+    if (res.ok) {
+      window.location.href = url;
+    } else {
+      toast.error("Release coming soon", {
+        description: "The desktop installer is being prepared. Check back shortly.",
+      });
+    }
   } catch {
-    toast.error("Release coming soon", {
-      description: "The desktop installer is being prepared. Check back shortly.",
-    });
+    // Network error or CORS — try direct navigation as fallback
+    window.location.href = url;
+  } finally {
+    setLoading?.(false);
   }
 }
 
@@ -70,6 +79,7 @@ const fadeUp = {
 export default function DownloadPage() {
   const { platform, isMac } = usePlatform();
   const { theme } = useDesktopTheme();
+  const [downloading, setDownloading] = useState(false);
 
   const isImmersive = theme === "immersive";
   const isLight = theme === "light";
@@ -185,7 +195,7 @@ export default function DownloadPage() {
 
               <a
                 href={`${RELEASE_BASE}/${primary.file}`}
-                onClick={(e) => handleDownload(e, primary.file)}
+                onClick={(e) => handleDownload(e, primary.file, setDownloading)}
                 className="flex items-center justify-center gap-2.5 w-full py-3.5 text-[15px] font-semibold transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
                 style={{
                   borderRadius: isMac ? "9999px" : "10px",
@@ -194,8 +204,17 @@ export default function DownloadPage() {
                   boxShadow: "0 6px 20px -6px hsl(210 100% 50% / 0.35)",
                 }}
               >
-                <Download size={17} />
-                Download for {primary.label}
+                {downloading ? (
+                  <>
+                    <span className="animate-spin inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+                    Preparing…
+                  </>
+                ) : (
+                  <>
+                    <Download size={17} />
+                    Download for {primary.label}
+                  </>
+                )}
               </a>
 
               {/* 3 steps */}
