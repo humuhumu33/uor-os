@@ -21,7 +21,7 @@ const MessengerPage = lazy(() => import("@/modules/intelligence/messenger/pages/
 const LibraryPage = lazy(() => import("@/modules/intelligence/oracle/pages/LibraryPage"));
 const AppStorePage = lazy(() => import("@/modules/platform/app-store/pages/AppStorePage"));
 const ComplianceDashboardPage = lazy(() => import("@/modules/research/canonical-compliance/pages/ComplianceDashboardPage"));
-const DownloadPage = lazy(() => import("@/modules/platform/landing/pages/DownloadPage"));
+// DownloadPage is now an in-OS app, /download redirects to /
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,7 +64,7 @@ const App = () => {
                     <Route path="/library" element={<LibraryPage />} />
                     <Route path="/app-store" element={<AppStorePage />} />
                     <Route path="/compliance" element={<ComplianceDashboardPage />} />
-                    <Route path="/download" element={<DownloadPage />} />
+                    <Route path="/download" element={<Navigate to="/" replace />} />
 
                     {/* Legacy redirects */}
                     <Route path="/os" element={<Navigate to="/" replace />} />

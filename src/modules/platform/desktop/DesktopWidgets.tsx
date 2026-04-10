@@ -413,8 +413,8 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
         {/* Download desktop app CTA — only in browser, not in Tauri */}
         {!("__TAURI__" in window) && (
           <div className="flex items-center gap-3 mt-5" style={{ opacity: clockOpacity, transition: "opacity 300ms ease-out" }}>
-            <a
-              href="/download"
+            <button
+              onClick={() => onOpenApp("download")}
               className="group inline-flex items-center gap-2.5 rounded-full px-6 py-2.5 text-[14px] font-medium tracking-wide transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
               style={{
                 color: isLight ? "hsl(0 0% 100%)" : "hsl(0 0% 100% / 0.90)",
@@ -445,7 +445,7 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
                 </svg>
               )}
               <span>Download</span>
-            </a>
+            </button>
 
             {/* Transfer to Desktop — only when authenticated */}
             {profile && (
