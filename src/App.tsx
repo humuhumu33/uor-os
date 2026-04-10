@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react"; // v1
 import { Toaster } from "@/modules/platform/core/ui/toaster";
 import { Toaster as Sonner } from "@/modules/platform/core/ui/sonner";
 import { TooltipProvider } from "@/modules/platform/core/ui/tooltip";
