@@ -204,8 +204,17 @@ export default function DownloadPage() {
                   boxShadow: "0 6px 20px -6px hsl(210 100% 50% / 0.35)",
                 }}
               >
-                <Download size={17} />
-                Download for {primary.label}
+                {downloading ? (
+                  <>
+                    <span className="animate-spin inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+                    Preparing…
+                  </>
+                ) : (
+                  <>
+                    <Download size={17} />
+                    Download for {primary.label}
+                  </>
+                )}
               </a>
 
               {/* 3 steps */}
