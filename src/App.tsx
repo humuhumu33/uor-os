@@ -21,7 +21,7 @@ const MessengerPage = lazy(() => import("@/modules/intelligence/messenger/pages/
 const LibraryPage = lazy(() => import("@/modules/intelligence/oracle/pages/LibraryPage"));
 const AppStorePage = lazy(() => import("@/modules/platform/app-store/pages/AppStorePage"));
 const ComplianceDashboardPage = lazy(() => import("@/modules/research/canonical-compliance/pages/ComplianceDashboardPage"));
-const DownloadPage = lazy(() => import("@/modules/platform/landing/pages/DownloadPage"));
+const DownloadPage = lazy(() => import("@/modules/platform/landing/pages/DownloadPage")); // kept for redirect
 
 const queryClient = new QueryClient({
   defaultOptions: {
