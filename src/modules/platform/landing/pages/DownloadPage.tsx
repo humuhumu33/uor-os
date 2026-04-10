@@ -24,7 +24,7 @@ interface OSEntry {
   file: string;
 }
 
-const RELEASE_BASE = "https://github.com/UOR-Foundation/uor-os/releases/latest/download";
+const RELEASE_BASE = "https://github.com/humuhumu33/uor-os/releases/latest/download";
 const VERSION = "2.0.0";
 
 const AppleIcon = ({ size = 20 }: { size?: number }) => (
@@ -50,7 +50,7 @@ const INCLUDED_MODULES = [
   { icon: Brain, label: "Library", desc: "Curated book summaries" },
 ];
 
-const RELEASES_PAGE = "https://github.com/UOR-Foundation/uor-os/releases/latest";
+const RELEASES_PAGE = "https://github.com/humuhumu33/uor-os/releases/latest";
 
 async function handleDownload(e: React.MouseEvent<HTMLAnchorElement>, file: string, setLoading?: (v: boolean) => void) {
   e.preventDefault();
