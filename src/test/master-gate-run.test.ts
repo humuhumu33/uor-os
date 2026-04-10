@@ -93,4 +93,3 @@ describe("Master Gate v2", () => {
     expect(md).toContain("Appendix");
   });
 });
-});
