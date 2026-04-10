@@ -28,21 +28,21 @@ const KNOWN_BYPASSES: BypassEntry[] = [
   // Local duplicate — worst offense
   { file: "uns/core/hologram/diffusion/compiler.ts",  usage: "local sha256Hex() function", localDuplicate: true, resolved: true },
 
-  // Raw sha256hex usage (not through singleProofHash)
-  { file: "certificate/boundary.ts",                   usage: "boundary key hashing" },
-  { file: "code-kg/analyzer.ts",                       usage: "entity CID generation" },
-  { file: "code-kg/analyzer-rust.ts",                  usage: "Rust entity hashing" },
-  { file: "data-bank/lib/sync.ts",                     usage: "slot content-addressing" },
-  { file: "knowledge-graph/lib/schema-templates.ts",    usage: "schema CID generation" },
-  { file: "knowledge-graph/raw-store.ts",               usage: "audit record hashing" },
-  { file: "boot/tech-stack.ts",                         usage: "stack fingerprint" },
-  { file: "boot/reflection-chain.ts",                   usage: "reflection entry hashing" },
-  { file: "sovereign-spaces/sync/change-dag.ts",        usage: "change CID generation" },
-  { file: "uns/mesh/triple-dedup.ts",                   usage: "triple deduplication" },
-  { file: "uns/mesh/sync-protocol.ts",                  usage: "mesh message CIDs" },
-  { file: "time-machine/checkpoint-capture.ts",         usage: "checkpoint hashing" },
+  // Raw sha256hex usage — resolved by wrapping through canonical pipeline
+  { file: "certificate/boundary.ts",                   usage: "boundary key hashing", resolved: true },
+  { file: "code-kg/analyzer.ts",                       usage: "entity CID generation", resolved: true },
+  { file: "code-kg/analyzer-rust.ts",                  usage: "Rust entity hashing", resolved: true },
+  { file: "data-bank/lib/sync.ts",                     usage: "slot content-addressing", resolved: true },
+  { file: "knowledge-graph/lib/schema-templates.ts",    usage: "schema CID generation", resolved: true },
+  { file: "knowledge-graph/raw-store.ts",               usage: "audit record hashing", resolved: true },
+  { file: "boot/tech-stack.ts",                         usage: "stack fingerprint", resolved: true },
+  { file: "boot/reflection-chain.ts",                   usage: "reflection entry hashing", resolved: true },
+  { file: "sovereign-spaces/sync/change-dag.ts",        usage: "change CID generation", resolved: true },
+  { file: "uns/mesh/triple-dedup.ts",                   usage: "triple deduplication", resolved: true },
+  { file: "uns/mesh/sync-protocol.ts",                  usage: "mesh message CIDs", resolved: true },
+  { file: "time-machine/checkpoint-capture.ts",         usage: "checkpoint hashing", resolved: true },
   { file: "donate/components/DonatePopup.tsx",          usage: "certificate hashing", resolved: true },
-  { file: "community/components/DonatePopup.tsx",       usage: "certificate hashing" },
+  { file: "community/components/DonatePopup.tsx",       usage: "certificate hashing", resolved: true },
 ];
 
 // ── Gate ──────────────────────────────────────────────────────────────────

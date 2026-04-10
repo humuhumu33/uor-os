@@ -84,7 +84,7 @@ const CONCEPTS: readonly SkosConcept[] = [
     "skos:altLabel": ["Conduit", "Encrypted Channel"],
     "skos:definition": "Encrypted session channel between participants with mutual TLS authentication.",
     "skos:inScheme": "uor:SystemOntology",
-    "skos:related": ["uor:ServiceMesh"],
+    "skos:related": ["uor:ServiceMesh"] as string[],
     "uor:cncfCategory": "Security & Compliance",
     "uor:cncfProject": "SPIFFE / SPIRE",
     "uor:profileLabels": {
