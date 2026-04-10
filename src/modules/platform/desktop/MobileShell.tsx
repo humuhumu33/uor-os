@@ -90,9 +90,9 @@ const swipeVariants = {
 };
 
 const swipeTransition = {
-  x: { type: "spring", stiffness: 350, damping: 35 },
-  opacity: { duration: 0.25, ease: "easeInOut" },
-  scale: { duration: 0.25, ease: "easeOut" },
+  x: { type: "spring" as const, stiffness: 350, damping: 35 },
+  opacity: { duration: 0.25, ease: [0.4, 0, 0.2, 1] as const },
+  scale: { duration: 0.25, ease: [0, 0, 0.2, 1] as const },
 };
 
 export default function MobileShell() {
