@@ -46,7 +46,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/UOR-Foundation/uor-os/releases/latest/download/latest.json"
+        "https://github.com/humuhumu33/uor-os/releases/latest/download/latest.json"
       ],
       "pubkey": "REPLACE_WITH_YOUR_UPDATER_PUBKEY"
     },
