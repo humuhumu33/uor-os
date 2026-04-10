@@ -3,10 +3,8 @@
  *
  * DayRingClock centered in the upper region, two corner icons
  * at the bottom (menu + search), theme dots centered between them.
- * Apps and search open via Vaul bottom-sheet drawers.
- *
- * PERFORMANCE: Clock tick is isolated in MobileClock component
- * to prevent full shell re-renders every second.
+ * Swipe left/right to cycle through immersive/dark/light themes.
+ * Fullscreen toggle in top-right corner persists across browsing.
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef, Suspense } from "react";
@@ -16,9 +14,11 @@ import { useDesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopThem
 import DesktopThemeDots from "@/modules/platform/desktop/DesktopThemeDots";
 import DesktopImmersiveWallpaper from "@/modules/platform/desktop/DesktopImmersiveWallpaper";
 import DayRingClock from "@/modules/platform/desktop/components/DayRingClock";
-import { Menu, Search, Mic } from "lucide-react";
+import { Menu, Search, Mic, Maximize2, Minimize2 } from "lucide-react";
 
 import type { DesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
+
+const THEME_ORDER: DesktopTheme[] = ["immersive", "dark", "light"];
 
 // ── Isolated clock component — ticks without re-rendering the shell ──
 function MobileClock({ theme, isLight }: { theme: DesktopTheme; isLight: boolean }) {
@@ -31,14 +31,78 @@ function MobileClock({ theme, isLight }: { theme: DesktopTheme; isLight: boolean
   return <DayRingClock time={time} theme={theme} isLight={isLight} opacity={1} />;
 }
 
+// ── Fullscreen toggle — persists via Fullscreen API ──
+function FullscreenButton({ isLight }: { isLight: boolean }) {
+  const [isFs, setIsFs] = useState(!!document.fullscreenElement);
+
+  useEffect(() => {
+    const onChange = () => setIsFs(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const toggle = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    } else {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }, []);
+
+  const iconColor = isLight ? "text-black/25 active:text-black/50" : "text-white/25 active:text-white/50";
+
+  return (
+    <button
+      onClick={toggle}
+      className={`w-10 h-10 flex items-center justify-center rounded-full active:scale-90 transition-all ${iconColor}`}
+      aria-label={isFs ? "Exit fullscreen" : "Enter fullscreen"}
+    >
+      {isFs ? <Minimize2 size={18} strokeWidth={1.5} /> : <Maximize2 size={18} strokeWidth={1.5} />}
+    </button>
+  );
+}
+
 export default function MobileShell() {
-  const { isLight, theme } = useDesktopTheme();
+  const { isLight, theme, setTheme } = useDesktopTheme();
   const [openAppId, setOpenAppId] = useState<string | null>(null);
   const [appDrawerOpen, setAppDrawerOpen] = useState(false);
   const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Swipe detection for theme cycling ──
+  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, t: Date.now() };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    if (!start) return;
+    touchStartRef.current = null;
+
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    const dt = Date.now() - start.t;
+
+    // Must be a horizontal swipe: >60px, more horizontal than vertical, <400ms
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.7 || dt > 400) return;
+
+    const currentIdx = THEME_ORDER.indexOf(theme);
+    if (dx < 0) {
+      // Swipe left → next theme
+      const next = (currentIdx + 1) % THEME_ORDER.length;
+      setTheme(THEME_ORDER[next]);
+    } else {
+      // Swipe right → previous theme
+      const prev = (currentIdx - 1 + THEME_ORDER.length) % THEME_ORDER.length;
+      setTheme(THEME_ORDER[prev]);
+    }
+  }, [theme, setTheme]);
 
   const openApp = useCallback((appId: string) => {
     setOpenAppId(appId);
@@ -76,9 +140,21 @@ export default function MobileShell() {
   const titleColor = isLight ? "text-black/60" : "text-white/65";
 
   return (
-    <div className={`fixed inset-0 ${shellBg} select-none overflow-hidden`}>
+    <div
+      className={`fixed inset-0 ${shellBg} select-none overflow-hidden`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* ── Background ── */}
       {theme === "immersive" && <DesktopImmersiveWallpaper />}
+
+      {/* ── Fullscreen toggle — top-right ── */}
+      <div
+        className="absolute top-0 right-0 z-30"
+        style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0.75rem))", paddingRight: "0.75rem" }}
+      >
+        <FullscreenButton isLight={isLight} />
+      </div>
 
       {/* ── DayRingClock — centered upper area, GPU-promoted ── */}
       <div className="absolute inset-x-0 top-0 bottom-0 flex flex-col items-center z-10 pointer-events-none gpu-promote">
@@ -90,9 +166,9 @@ export default function MobileShell() {
       </div>
 
       {/* ── Bottom Controls — safe-area aware, GPU-promoted ── */}
-      <div className="absolute inset-x-0 bottom-0 z-20 gpu-promote" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0.5rem))" }}>
+      <div className="absolute inset-x-0 bottom-0 z-20 gpu-promote" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0.75rem))" }}>
         {/* Corner icons + theme dots */}
-        <div className="flex items-end justify-between px-6 pb-3">
+        <div className="flex items-end justify-between px-6 pb-2">
           {/* Menu icon */}
           <button
             onClick={() => setMenuDrawerOpen(true)}
@@ -115,18 +191,6 @@ export default function MobileShell() {
           >
             <Search size={22} strokeWidth={1.5} />
           </button>
-        </div>
-
-        {/* Home indicator pill */}
-        <div className="flex justify-center pb-1">
-          <div
-            className="rounded-full"
-            style={{
-              width: 134,
-              height: 5,
-              backgroundColor: isLight ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.15)",
-            }}
-          />
         </div>
       </div>
 
