@@ -357,4 +357,26 @@ export const STATIC_BLUEPRINTS: AppBlueprint[] = [
     iconName: "Hammer",
     resources: { callBudget: { maxPerSecond: 30 } },
   },
+
+  // ── DOWNLOAD ──────────────────────────────────────────────────────────
+
+  {
+    "@context": CTX,
+    "@type": TYPE,
+    name: "download",
+    version: "1.0.0",
+    requires: [],
+    permissions: [],
+    morphisms: [],
+    autoStart: false,
+    ui: { component: "@/modules/platform/landing/pages/DownloadPage", lazy: true },
+    defaultSize: { w: 560, h: 480 },
+    color: "hsl(210 80% 60%)",
+    category: "RESOLVE",
+    description: "Get the desktop app for your platform",
+    keywords: ["download", "install", "desktop", "app", "native"],
+    iconName: "Download",
+    hidden: true,
+    resources: {},
+  },
 ];
