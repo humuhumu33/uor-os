@@ -600,7 +600,7 @@ export interface MonadLawVerification {
  *
  * Implements `MonadMorphism` from the UOR foundation types.
  */
-export class GraphMonad implements MonadMorphism {
+export class GraphMonad {
   private readonly _id: string;
   private readonly _T: GraphFunctor;
   private readonly _eta: GraphNatTransformation;
@@ -755,7 +755,7 @@ export interface ComonadLawVerification {
  *
  * Dual to GraphMonad. Implements `ComonadMorphism`.
  */
-export class GraphComonad implements ComonadMorphism {
+export class GraphComonad {
   private readonly _id: string;
   private readonly _W: GraphFunctor;
   private readonly _epsilon: GraphNatTransformation;
