@@ -20,7 +20,7 @@ export default function EngineStatusIndicator({ isLight = false }: EngineStatusI
   return (
     <button
       onClick={handleClick}
-      className={`flex items-center justify-center w-[24px] h-[24px] rounded-full transition-all duration-150 ${isLight ? "bg-black/[0.08] hover:bg-black/[0.12] border border-black/[0.08]" : "bg-white/[0.08] hover:bg-white/[0.12] border border-white/[0.08]"}`}
+      className={`flex items-center justify-center w-[24px] h-[24px] rounded-full transition-all duration-150`}
       title={`System: ${label}`}
     >
       <div className="relative">
