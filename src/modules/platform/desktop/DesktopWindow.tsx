@@ -263,7 +263,6 @@ export default function DesktopWindow({
                 centerLabel={win.title}
               />
             </WindowContextProvider>
-          )}
         </div>
       </div>
 
