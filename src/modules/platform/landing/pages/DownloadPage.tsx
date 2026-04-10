@@ -34,9 +34,9 @@ const AppleIcon = ({ size = 20 }: { size?: number }) => (
 );
 
 const OS_DATA: OSEntry[] = [
-  { key: "macos", label: "macOS", shortLabel: "Mac", icon: <AppleIcon size={18} />, file: `UOR.OS_${VERSION}_universal.dmg` },
-  { key: "windows", label: "Windows", shortLabel: "Windows", icon: <Monitor size={18} />, file: `UOR.OS_${VERSION}_x64-setup.exe` },
-  { key: "linux", label: "Linux", shortLabel: "Linux", icon: <Terminal size={18} />, file: `UOR.OS_${VERSION}_amd64.AppImage` },
+  { key: "macos", label: "macOS", shortLabel: "Mac", icon: <AppleIcon size={18} />, file: `UOR-OS_${VERSION}_universal.dmg` },
+  { key: "windows", label: "Windows", shortLabel: "Windows", icon: <Monitor size={18} />, file: `UOR-OS_${VERSION}_x64-setup.exe` },
+  { key: "linux", label: "Linux", shortLabel: "Linux", icon: <Terminal size={18} />, file: `uor-os_${VERSION}_amd64.AppImage` },
 ];
 
 const INCLUDED_MODULES = [
