@@ -1,89 +1,49 @@
 
 
-# Plan: `.hologram` File Format — Graph-Native, RDF-Quad Wrapped
+# Run Master Gate and Fix Top Health Findings
 
-## Problem
+## Step 1: Run the Master Gate
 
-The external Hologram repo uses a binary `.holo` format that is opaque to the Knowledge Graph. We need a `.hologram` format that is **graph-native**: content wrapped as RDF quads with UOR metadata, loadable directly into GrafeoDB, and executable via the categorical engine.
+Execute a script that imports and runs `runMasterGate()` from the canonical compliance engine, then prints the full `MasterGateReport` including coherence analysis, cross-gate correlations, and the composite verdict.
 
-## Design
-
-A `.hologram` file is a **JSON-LD document** with a fixed structure. It is simultaneously:
-- A valid JSON-LD `@graph` (parseable by any RDF toolchain)
-- A content-addressed UOR object (single proof hash → canonical identity)
-- A LensBlueprint container (executable via the hologram projection system)
-- A sovereign bundle (portable across devices via the persistence layer)
-
-```text
-┌─────────────────────────────────────────────────┐
-│  .hologram file (JSON-LD)                       │
-│                                                 │
-│  @context   → UOR + Schema.org + Dublin Core    │
-│  @type      → uor:HologramFile                  │
-│  identity   → u:canonicalId, u:cid, u:ipv6      │
-│  manifest   → version, created, author, tags    │
-│  content    → @graph [ ...RDF quads... ]         │
-│  blueprint  → LensBlueprint (optional)           │
-│  deltas     → Delta[] (morphism chains)          │
-│  seal       → SHA-256 of canonical N-Quads       │
-└─────────────────────────────────────────────────┘
+```ts
+import { runMasterGate } from "@/modules/research/canonical-compliance";
+const report = await runMasterGate(70);
+console.log(JSON.stringify(report, null, 2));
 ```
 
-## Files
+This will be run via `npx tsx` or embedded in a Vitest test file for execution.
 
-### 1. New: `src/modules/data/knowledge-graph/hologram-file/types.ts`
-Type definitions for the `.hologram` format:
+## Step 2 (Optional): Fix the three failing gates
 
-- **`HologramFileManifest`** — version, createdAt, author DID, tags, description, mimeHint (what the content originally was: image, code, document, etc.)
-- **`HologramFileIdentity`** — all four UOR identity forms (canonicalId, ipv6, cid, glyph)
-- **`HologramFileContent`** — the `@graph` array of RDF quad objects (`{ s, p, o, g }`)
-- **`HologramFile`** — the top-level interface: `@context`, `@type: "uor:HologramFile"`, manifest, identity, content, optional blueprint reference (CID), optional deltas, seal hash
-- **`HologramFileOptions`** — options for creating a hologram file (named graph IRI, include blueprint, compression level)
+If you want to proceed beyond just running the master gate, the highest-impact fixes are:
 
-### 2. New: `src/modules/data/knowledge-graph/hologram-file/codec.ts`
-Encode/decode logic:
+### 2a. KG Anchor — Wire 20 modules (~20 one-line calls)
+For each module in the REQUIRED_ANCHORED_MODULES list, add a single `anchor()` call in its primary entry point or hook. Example:
+```ts
+anchor("messenger", "event:module-init", { label: "Messenger loaded" });
+```
 
-- **`encodeHologramFile(content, options)`** — Takes any JS object or raw bytes, canonicalizes via URDNA2015, computes the UOR identity, wraps the content as an `@graph` of RDF quads, seals with SHA-256, returns a `HologramFile`
-- **`decodeHologramFile(file)`** — Parses a `.hologram` JSON-LD, verifies the seal hash, recomputes identity, returns the deserialized content and verification result
-- **`verifySeal(file)`** — Recomputes SHA-256 over the canonical N-Quads of the content `@graph` and checks it matches the seal
-- **`hologramToNQuads(file)`** — Serializes the entire file to N-Quads for GrafeoDB ingestion
-- **`hologramFromNQuads(nquads)`** — Reconstitutes a HologramFile from N-Quads (round-trip)
+### 2b. Provenance — Add 31 registry entries
+Add `ModuleProvenance` entries to `provenance-map.ts` for the 31 untraced modules, mapping their key exports to UOR atoms.
 
-### 3. New: `src/modules/data/knowledge-graph/hologram-file/ingest.ts`
-GrafeoDB integration:
+### 2c. Pipeline — Replace 13 sha256hex calls
+In each flagged file, replace `sha256hex(data)` with `singleProofHash(data)` and update imports.
 
-- **`ingestHologramFile(file)`** — Loads a `.hologram` file directly into GrafeoDB as a named graph. The file's CID becomes the graph IRI. All quads from `content["@graph"]` become first-class triples. The manifest and identity become metadata triples on the graph node.
-- **`exportHologramFile(graphIri)`** — Exports a named graph from GrafeoDB as a `.hologram` file. Queries all triples in the graph, wraps them with UOR identity and seal.
-- **`listHologramFiles()`** — SPARQL query for all `uor:HologramFile` type nodes in the graph.
+### 2d. SKOS — Fix 4 asymmetric related pairs
+Add reciprocal `skos:related` entries for the 4 flagged concept pairs in `vocabulary.ts`.
 
-### 4. New: `src/modules/data/knowledge-graph/hologram-file/index.ts`
-Barrel exports.
+## Files touched
 
-### 5. Update: `src/modules/data/knowledge-graph/index.ts`
-Add exports for the hologram-file module.
+| File | Action |
+|------|--------|
+| `src/test/master-gate-run.test.ts` | New — Vitest wrapper to execute and print master gate |
+| 20 module entry files | Edit — add `anchor()` call (if fixing KG gate) |
+| `provenance-map.ts` | Edit — add 31 entries (if fixing Provenance gate) |
+| 13 flagged source files | Edit — swap `sha256hex` → `singleProofHash` (if fixing Pipeline gate) |
+| `vocabulary.ts` | Edit — add 4 reciprocal related entries (if fixing SKOS gate) |
 
-### 6. New: `src/modules/platform/bus/modules/hologram-file.ts`
-Bus registration for:
-- `hologram-file/encode` — create a .hologram from any content
-- `hologram-file/decode` — parse and verify a .hologram
-- `hologram-file/ingest` — load into GrafeoDB
-- `hologram-file/export` — export a named graph as .hologram
+## Scope question
 
-### 7. New: `src/test/hologram-file.test.ts`
-Tests:
-1. Encode a JS object → `.hologram` file with valid identity and seal
-2. Decode + verify seal round-trips correctly
-3. Encode → N-Quads → decode round-trips losslessly
-4. Ingest into GrafeoDB → SPARQL query finds the content
-5. Export from GrafeoDB → matches original file
-6. Blueprint reference is preserved when included
-7. Invalid seal is detected on tampered content
-
-## Key Decisions
-
-- **JSON-LD, not binary** — every `.hologram` file is valid JSON-LD, readable by any RDF tool, grep-able, diff-able
-- **Content-addressed graph IRI** — the CID of the file becomes `urn:uor:hologram:{cid}`, making the named graph deterministic
-- **Seal = SHA-256 of canonical N-Quads** — not of the JSON text, but of the URDNA2015-canonicalized content, ensuring format-independent verification
-- **Blueprint-optional** — a `.hologram` can be pure data (no executable), or carry a LensBlueprint for executable content
-- **Extends SovereignBundle** — compatible with the existing persistence layer's export/import format
+The master gate run is quick (Step 1). Steps 2a-2d are optional but would raise the composite score from 85 to ~95+. Approve the plan and let me know if you want just the master gate run or the full fix sweep.
 
