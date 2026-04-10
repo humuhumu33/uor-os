@@ -1,55 +1,50 @@
 
 
-## Plan: Make Downloads Fully Functional with Self-Contained CI
+## Plan: Fix GitHub Pages Blank Page + Download CTA Positioning
 
-### Problem
-The "Download for Windows/Mac/Linux" button currently points to `https://github.com/UOR-Foundation/uor-os/releases/latest/download/...` — but no GitHub Release with actual installers exists. The download handler uses `mode: "no-cors"` which always gets an opaque (successful) response, so it opens a 404 page. The user wants the entire build pipeline and artifacts to live in the same repo.
+### Problem 1: Blank page on GitHub Pages
+The deployed site at `humuhumu33.github.io/uor-os/` shows a completely blank page. The fetched HTML has an empty `<head>` — no script tags, no CSS. This means the Vite build output is broken.
+
+**Root causes:**
+
+1. **`index.html` uses absolute paths** — The favicon, manifest, and apple-touch-icon links are hardcoded with `/` prefix (e.g., `/favicon.png`, `/src/main.tsx`). On GitHub Pages at `/uor-os/`, these resolve to `humuhumu33.github.io/favicon.png` instead of `humuhumu33.github.io/uor-os/favicon.png`. Vite transforms the script tag during build but the link/meta tags remain hardcoded.
+
+2. **Rollup externals break the browser** — `rollupOptions.external` lists `@tauri-apps/*` and `@grafeo-db/wasm`. In a browser build, Rollup leaves these as bare `import "@tauri-apps/..."` statements. The browser can't resolve them, causing a fatal module error that prevents the entire app from loading. These externals should only apply in Tauri mode, not in the GitHub Pages build.
+
+3. **`build:dev` uses development mode** — The deploy workflow runs `bun run build:dev` which sets `mode=development`. This may include dev-only plugins and skip production optimizations.
+
+### Problem 2: Download CTA positioning
+Already addressed in prior changes — just needs verification.
 
 ### Solution
 
-**1. Add a Tauri release workflow** (`.github/workflows/release.yml`)
+**1. Fix `index.html` asset paths** — Use relative paths (`./favicon.png`) or Vite's `%BASE_URL%` pattern so the base path `/uor-os/` is respected.
 
-This project already has a full Tauri backend (`src-tauri/`). Add a GitHub Actions workflow that:
-- Triggers on version tags (`v*`) or manual dispatch
-- Builds native installers on all 3 platforms using `tauri-apps/tauri-action`:
-  - **macOS** → `.dmg` (universal)
-  - **Windows** → `.exe` (NSIS installer)
-  - **Linux** → `.AppImage`
-- Creates a GitHub Release in the **same repo** with all artifacts attached
-- No external repos or services needed — completely self-contained
+**2. Conditionally apply rollup externals** — Only externalize Tauri packages in `tauri` mode. For web builds, use empty shim modules or dynamic imports with try/catch so the app degrades gracefully.
 
-**2. Fix the download handler** (`DownloadPage.tsx`)
-
-- Replace the broken `no-cors` HEAD check with a direct `fetch` HEAD request (same-origin policy isn't an issue for GitHub release URLs — they allow CORS on download redirects)
-- Better fallback: if fetch fails, still attempt `window.location.href` assignment (browsers handle binary downloads gracefully even without pre-check)
-- Add a proper loading state on the button while checking
-
-**3. Update artifact filenames** to match what `tauri-action` actually produces:
-- macOS: `UOR-OS_2.0.0_universal.dmg`
-- Windows: `UOR-OS_2.0.0_x64-setup.exe`  
-- Linux: `UOR-OS_2.0.0_amd64.AppImage`
-
-These already match Tauri's default naming convention — just need to confirm alignment with `tauri.conf.json` `productName`.
+**3. Fix build script** — Change the deploy workflow to use `build` (production mode) instead of `build:dev`, with `GITHUB_PAGES=true` still set.
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `.github/workflows/release.yml` | **New** — Tauri cross-platform build & release workflow |
-| `src/modules/platform/landing/pages/DownloadPage.tsx` | Fix download handler to actually initiate downloads; add loading state |
-
-### How It Works End-to-End
-
-1. Maintainer pushes a tag `v2.0.0` → workflow builds installers on macOS, Windows, Linux runners
-2. `tauri-action` creates a GitHub Release with `.dmg`, `.exe`, `.AppImage` attached
-3. User clicks "Download for Windows" → browser navigates to the release URL → download starts immediately
-4. If no release exists yet → toast says "Release coming soon" with a clear message
+| `index.html` | Change absolute `/` paths to relative `./` for favicon, manifest, apple-touch-icon |
+| `vite.config.ts` | Move `rollupOptions.external` inside a `mode === "tauri"` check so web builds bundle shims instead of leaving broken bare imports |
+| `.github/workflows/deploy.yml` | Change `bun run build:dev` → `bun run build` for production-grade output |
 
 ### Technical Details
 
-The release workflow uses the official `tauri-apps/tauri-action@v0` which handles:
-- Rust toolchain setup
-- Platform-specific signing (optional, can be added later)
-- Artifact upload to GitHub Releases
-- Proper `productName` → filename mapping from `tauri.conf.json`
+The key fix is the rollup externals. Currently:
+```js
+// Breaks browser builds — bare imports left unresolved
+external: ["@tauri-apps/plugin-store", ...]
+```
+
+After fix:
+```js
+// Only externalize in Tauri mode
+...(mode === "tauri" ? { external: ["@tauri-apps/..."] } : {}),
+```
+
+For the web build, any code that imports Tauri packages should already have runtime guards (e.g., checking `window.__TAURI__`). If not, we add empty resolution aliases so the imports resolve to no-ops.
 
