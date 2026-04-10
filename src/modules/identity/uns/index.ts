@@ -91,26 +91,50 @@ export type {
 // ── Build. Uorfile, Docker Compat, Compose, Secrets, Registry ──────────────
 export {
   parseUorfile, parseDockerfile, buildImage, serializeUorfile,
-  parseDockerRef, wrapDockerImage, buildFromDockerfile, generateCompatReport,
-  DOCKER_FEATURE_MAP, DOCKER_VERB_MAP,
-  tagImage, resolveTag, listTags, removeTag,
-  pushImage, pullImage, listImages, inspectImage, imageHistory, removeImage,
-  searchImages, clearImageRegistry,
-  parseComposeSpec, composeUp, composeDown, composePs, composeScale,
-  getComposeApp, listComposeApps, clearComposeApps,
-  createSecret, listSecrets, inspectSecret, getSecretValue, removeSecret,
-  injectSecrets, clearSecrets,
-} from "./build/index";
+} from "./build/uorfile";
 
 export type {
   UorfileDirective, UorfileInstruction, UorfileBuildSpec, UorfileBaseImage,
   UorfileHealthcheck, UorImage, UorImageLayer,
+} from "./build/uorfile";
+
+export {
+  parseDockerRef, wrapDockerImage, buildFromDockerfile, generateCompatReport,
+  DOCKER_FEATURE_MAP, DOCKER_VERB_MAP,
+} from "./build/container";
+
+export type {
   DockerImageRef, WrappedDockerImage, DockerCompatStatus, DockerFeatureMapping, DockerVerbMapping,
+} from "./build/container";
+
+export {
+  tagImage, resolveTag, listTags, removeTag,
+  pushImage, pullImage, listImages, inspectImage, imageHistory, removeImage,
+  searchImages, clearImageRegistry,
+} from "./build/registry";
+
+export type {
   ImageTag, PushResult, PullResult, ImageHistoryEntry,
+} from "./build/registry";
+
+export {
+  parseComposeSpec, composeUp, composeDown, composePs, composeScale,
+  getComposeApp, listComposeApps, clearComposeApps,
+} from "./build/compose";
+
+export type {
   ComposeService, ComposeBuildConfig, ComposeHealthcheck, ComposeResources,
   ComposeVolume, ComposeNetwork, ComposeSecret, ComposeSpec, ComposeApp, ComposeServiceStatus,
+} from "./build/compose";
+
+export {
+  createSecret, listSecrets, inspectSecret, getSecretValue, removeSecret,
+  injectSecrets, clearSecrets,
+} from "./build/secrets";
+
+export type {
   UorSecret, SecretValue, SecretWriteResult,
-} from "./build/index";
+} from "./build/secrets";
 
 // ── Types (re-export all for consumer modules) ──────────────────────────────
 export type {
