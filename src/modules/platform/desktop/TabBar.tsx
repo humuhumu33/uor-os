@@ -463,7 +463,7 @@ export default function TabBar({
           className="text-[10.5px] font-medium tracking-[0.22em] uppercase select-none text-foreground pointer-events-none"
           style={{ opacity: isLight ? 0.6 : 0.45, letterSpacing: "0.22em" }}
         >
-          Universal Object Reference
+          Your Sovereign OS. Powered by UOR.
         </span>
       </div>
 
