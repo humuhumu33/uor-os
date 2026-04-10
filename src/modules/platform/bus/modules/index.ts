@@ -47,3 +47,4 @@ import "./mesh-sync";
 
 // ── Layer 4: Sovereign Portal ────────────────────────────────────────
 import "./clipboard";
+import "./hologram-file";
