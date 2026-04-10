@@ -27,6 +27,7 @@ const CONCEPTS: readonly SkosConcept[] = [
     "skos:scopeNote": "Use when referring to the system-wide message transport layer.",
     "skos:inScheme": "uor:SystemOntology",
     "skos:narrower": ["uor:ServiceRegistry", "uor:ServiceDiscovery"],
+    "skos:related": ["uor:mTLSTunnel"],
     "skos:exactMatch": ["https://kubernetes.io/docs/concepts/services-networking/"],
     "skos:closeMatch": ["https://schema.org/SoftwareApplication"],
     "uor:namespace": "bus/",
@@ -84,7 +85,7 @@ const CONCEPTS: readonly SkosConcept[] = [
     "skos:altLabel": ["Conduit", "Encrypted Channel"],
     "skos:definition": "Encrypted session channel between participants with mutual TLS authentication.",
     "skos:inScheme": "uor:SystemOntology",
-    "skos:related": ["uor:ServiceMesh"],
+    "skos:related": ["uor:ServiceMesh"] as string[],
     "uor:cncfCategory": "Security & Compliance",
     "uor:cncfProject": "SPIFFE / SPIRE",
     "uor:profileLabels": {
@@ -143,7 +144,7 @@ const CONCEPTS: readonly SkosConcept[] = [
     "skos:altLabel": ["Reconciler", "Sovereign Reconciler", "Auto-repair"],
     "skos:definition": "Continuous desired-state ↔ actual-state diff loop that converges system to declared intent.",
     "skos:inScheme": "uor:SystemOntology",
-    "skos:related": ["uor:DeploymentManifest"],
+    "skos:related": ["uor:DeploymentManifest", "uor:Scheduler", "uor:Operator"],
     "skos:exactMatch": ["https://kubernetes.io/docs/concepts/architecture/controller/"],
     "uor:namespace": "compose/",
     "uor:cncfCategory": "Scheduling & Orchestration",
@@ -570,6 +571,7 @@ const CONCEPTS: readonly SkosConcept[] = [
     "skos:definition": "User-defined resource type that extends the system's API surface.",
     "skos:inScheme": "uor:SystemOntology",
     "uor:cncfCategory": "Scheduling & Orchestration",
+    "skos:related": ["uor:Operator"],
     "uor:k8sEquivalent": "CustomResourceDefinition",
     "uor:cncfProject": "Kubernetes",
     "uor:profileLabels": {

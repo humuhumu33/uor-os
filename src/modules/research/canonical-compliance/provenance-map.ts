@@ -216,6 +216,225 @@ export const PROVENANCE_REGISTRY: ModuleProvenance[] = [
       { export: "AppStorePage",         atoms: ["type:query", "type:resolver", "type:context"],        pipeline: "browse-catalog → resolve-app → render" },
     ],
   },
+  // ── Additional Modules (full provenance coverage) ─────────────
+  {
+    module: "core",
+    description: "Core framework primitives",
+    exports: [
+      { export: "App",                   atoms: ["type:context", "type:session"],                       pipeline: "init-context → bind-routes → render" },
+    ],
+  },
+  {
+    module: "boot",
+    description: "Deterministic boot sequence",
+    exports: [
+      { export: "SovereignBoot",         atoms: ["type:context", "type:effect", "type:transition"],     pipeline: "load-order → seal-boot → emit-ready" },
+    ],
+  },
+  {
+    module: "engine",
+    description: "Computation engine runtime",
+    exports: [
+      { export: "EngineRuntime",         atoms: ["type:operation", "type:effect", "type:stream"],       pipeline: "accept-op → execute → yield-stream" },
+    ],
+  },
+  {
+    module: "morphism",
+    description: "Structure-preserving transformations",
+    exports: [
+      { export: "MorphismEngine",        atoms: ["morph:transform", "type:derivation", "type:proof"],   pipeline: "parse-morphism → apply → derive-proof" },
+    ],
+  },
+  {
+    module: "knowledge-graph",
+    description: "Sovereign Knowledge Graph",
+    exports: [
+      { export: "grafeoStore",           atoms: ["type:datum", "type:query", "type:observable"],        pipeline: "ingest → index → query → observe" },
+      { export: "sparqlQuery",           atoms: ["type:query", "type:resolver"],                        pipeline: "parse-sparql → match → bind → return" },
+    ],
+  },
+  {
+    module: "derivation",
+    description: "Derivation chain tracking",
+    exports: [
+      { export: "DerivationTracker",     atoms: ["type:derivation", "type:proof", "type:address"],      pipeline: "record-input → hash-step → chain" },
+    ],
+  },
+  {
+    module: "epistemic",
+    description: "Epistemic reasoning engine",
+    exports: [
+      { export: "EpistemicEngine",       atoms: ["type:query", "type:predicate", "type:derivation"],    pipeline: "hypothesize → test → derive-belief" },
+    ],
+  },
+  {
+    module: "sparql",
+    description: "SPARQL query engine",
+    exports: [
+      { export: "SparqlEngine",          atoms: ["type:query", "type:resolver", "type:observable"],     pipeline: "parse → optimize → execute → stream" },
+    ],
+  },
+  {
+    module: "resolver",
+    description: "Name resolution service",
+    exports: [
+      { export: "ResolverService",       atoms: ["type:resolver", "type:query", "type:address"],        pipeline: "accept-name → resolve → verify → return" },
+    ],
+  },
+  {
+    module: "observable",
+    description: "Reactive observable system",
+    exports: [
+      { export: "ObservableSystem",      atoms: ["type:observable", "type:stream", "type:effect"],      pipeline: "subscribe → filter → transform → emit" },
+    ],
+  },
+  {
+    module: "state",
+    description: "State management primitives",
+    exports: [
+      { export: "StateManager",          atoms: ["type:context", "type:transition", "type:observable"], pipeline: "init-state → dispatch → reduce → notify" },
+    ],
+  },
+  {
+    module: "trace",
+    description: "Distributed tracing",
+    exports: [
+      { export: "TraceProvider",         atoms: ["type:observable", "type:stream", "type:address"],     pipeline: "create-span → propagate-context → export" },
+    ],
+  },
+  {
+    module: "verify",
+    description: "Verification engine",
+    exports: [
+      { export: "VerifyEngine",          atoms: ["type:proof", "type:certificate", "pipe:sha256"],      pipeline: "extract-claim → recompute → compare → assert" },
+    ],
+  },
+  {
+    module: "agent-tools",
+    description: "AI agent tool runtime",
+    exports: [
+      { export: "AgentToolkit",          atoms: ["type:operation", "type:effect", "type:resolver"],     pipeline: "register-tool → bind-schema → execute → return" },
+    ],
+  },
+  {
+    module: "code-kg",
+    description: "Source code knowledge graph",
+    exports: [
+      { export: "CodeAnalyzer",          atoms: ["type:datum", "type:derivation", "pipe:sha256"],       pipeline: "parse-source → extract-entities → hash → ingest" },
+    ],
+  },
+  {
+    module: "atlas",
+    description: "Geospatial atlas engine",
+    exports: [
+      { export: "AtlasEngine",           atoms: ["type:datum", "type:query", "type:observable"],        pipeline: "load-tiles → index-spatial → query → render" },
+    ],
+  },
+  {
+    module: "audio",
+    description: "Audio synthesis and processing",
+    exports: [
+      { export: "AudioEngine",           atoms: ["type:stream", "type:effect", "type:observable"],      pipeline: "decode → process → mix → output" },
+    ],
+  },
+  {
+    module: "bitcoin",
+    description: "Bitcoin protocol integration",
+    exports: [
+      { export: "BitcoinBridge",         atoms: ["type:address", "type:certificate", "type:effect"],    pipeline: "derive-address → sign-tx → broadcast" },
+    ],
+  },
+  {
+    module: "certificate",
+    description: "UOR certificate generation",
+    exports: [
+      { export: "generateCertificate",   atoms: ["type:certificate", "type:proof", "pipe:urdna2015", "pipe:sha256"], pipeline: "source-hash → boundary → encode → coherence → seal" },
+    ],
+  },
+  {
+    module: "community",
+    description: "Community governance",
+    exports: [
+      { export: "CommunityHub",          atoms: ["type:context", "type:session", "type:effect"],        pipeline: "auth → load-governance → render → interact" },
+    ],
+  },
+  {
+    module: "console",
+    description: "System console",
+    exports: [
+      { export: "ConsolePage",           atoms: ["type:query", "type:observable", "type:stream"],       pipeline: "accept-command → parse → execute → display" },
+    ],
+  },
+  {
+    module: "datum",
+    description: "Datum page renderer",
+    exports: [
+      { export: "DatumPage",             atoms: ["type:datum", "type:address", "type:observable"],      pipeline: "resolve-address → load-datum → render → observe" },
+    ],
+  },
+  {
+    module: "hologram-ui",
+    description: "Hologram visualization",
+    exports: [
+      { export: "HologramViewer",        atoms: ["type:observable", "type:stream", "type:context"],     pipeline: "load-hologram → parse-graph → render-3d" },
+    ],
+  },
+  {
+    module: "interoperability",
+    description: "Cross-system interop layer",
+    exports: [
+      { export: "InteropBridge",         atoms: ["type:resolver", "morph:transform", "type:envelope"],  pipeline: "detect-format → transform → wrap → deliver" },
+    ],
+  },
+  {
+    module: "mcp",
+    description: "Model Context Protocol",
+    exports: [
+      { export: "McpServer",             atoms: ["type:resolver", "type:operation", "type:stream"],     pipeline: "accept-request → route → execute → respond" },
+    ],
+  },
+  {
+    module: "projects",
+    description: "Project management",
+    exports: [
+      { export: "ProjectsPage",          atoms: ["type:context", "type:session", "type:observable"],    pipeline: "load-workspace → list-projects → interact" },
+    ],
+  },
+  {
+    module: "quantum",
+    description: "Quantum computation primitives",
+    exports: [
+      { export: "QuantumEngine",         atoms: ["alg:ring", "type:operation", "type:proof"],           pipeline: "init-qubits → apply-gates → measure → verify" },
+    ],
+  },
+  {
+    module: "qsvg",
+    description: "Quantum SVG visualization",
+    exports: [
+      { export: "QsvgRenderer",          atoms: ["type:observable", "type:stream"],                     pipeline: "parse-circuit → layout → render-svg" },
+    ],
+  },
+  {
+    module: "sovereign-vault",
+    description: "Encrypted sovereign storage",
+    exports: [
+      { export: "SovereignVault",        atoms: ["type:envelope", "type:certificate", "pipe:sha256"],   pipeline: "encrypt → seal → store → verify" },
+    ],
+  },
+  {
+    module: "trust-graph",
+    description: "Trust relationship graph",
+    exports: [
+      { export: "TrustGraph",            atoms: ["type:certificate", "type:derivation", "type:predicate"], pipeline: "evaluate-trust → propagate → aggregate-score" },
+    ],
+  },
+  {
+    module: "uor-sdk",
+    description: "UOR developer SDK",
+    exports: [
+      { export: "UorSdk",                atoms: ["type:context", "type:operation", "type:resolver"],    pipeline: "init-sdk → bind-modules → expose-api" },
+    ],
+  },
 ];
 
 // ── System Layers ───────────────────────────────────────────────
@@ -236,31 +455,43 @@ export const SYSTEM_LAYERS: SystemLayer[] = [
     id: "kernel",
     label: "Kernel",
     description: "Algebraic foundation, content-addressing, identity, and cryptographic primitives",
-    modules: ["ring-core", "uns/core/address", "uns/core/ring", "uns/core/identity", "uns/core/keypair"],
+    modules: ["ring-core", "uns/core/address", "uns/core/ring", "uns/core/identity", "uns/core/keypair", "core", "engine", "state"],
   },
   {
     id: "protocol",
     label: "Protocol",
     description: "Name resolution, record management, and distributed hash table",
-    modules: ["uns/core/record", "uns/core/resolver", "uns/core/dht"],
+    modules: ["uns/core/record", "uns/core/resolver", "uns/core/dht", "resolver", "sparql"],
   },
   {
     id: "runtime",
     label: "Runtime",
     description: "Container lifecycle, image build, registry, compose, secrets, and snapshots",
-    modules: ["uns/build/container", "uns/build/uorfile", "uns/build/registry", "uns/build/compose", "uns/build/secrets", "uns/build/snapshot"],
+    modules: ["uns/build/container", "uns/build/uorfile", "uns/build/registry", "uns/build/compose", "uns/build/secrets", "uns/build/snapshot", "boot"],
+  },
+  {
+    id: "knowledge",
+    label: "Knowledge",
+    description: "Knowledge graph, derivation, epistemic reasoning, code analysis, and trust",
+    modules: ["knowledge-graph", "derivation", "epistemic", "code-kg", "trust-graph", "morphism"],
+  },
+  {
+    id: "observability",
+    label: "Observability",
+    description: "Observable system, tracing, verification, and agent tools",
+    modules: ["observable", "trace", "verify", "agent-tools"],
   },
   {
     id: "services",
     label: "Services",
     description: "Orchestration, kernel isolation, reasoning, identity, and messaging",
-    modules: ["compose/orchestrator", "compose/app-kernel", "oracle", "identity", "messenger"],
+    modules: ["compose/orchestrator", "compose/app-kernel", "oracle", "identity", "messenger", "mcp", "interoperability"],
   },
   {
     id: "applications",
     label: "Applications",
-    description: "User-facing workloads: landing, desktop shell, app store, and donations",
-    modules: ["donate", "landing", "desktop", "app-store"],
+    description: "User-facing workloads: landing, desktop shell, app store, and community",
+    modules: ["donate", "landing", "desktop", "app-store", "community", "projects", "console", "datum", "hologram-ui", "audio", "atlas", "quantum", "qsvg", "sovereign-vault", "bitcoin", "certificate", "uor-sdk"],
   },
 ];
 

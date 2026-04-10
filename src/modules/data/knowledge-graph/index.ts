@@ -134,6 +134,9 @@ export type { AnchorOptions, GraphAnchorHandle } from "./anchor";
 // ── Graph Anchor Compliance Gate (side-effect registration) ──────────────────
 import "./graph-anchor-gate";
 
+// ── Bulk Module Anchoring (registers all required modules at boot) ───────────
+import "./anchor-all-modules";
+
 // ── Graph Infrastructure ────────────────────────────────────────────────────
 
 export { adjacencyIndex } from "./lib/adjacency-index";
