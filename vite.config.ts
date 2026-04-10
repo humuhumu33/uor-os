@@ -81,10 +81,10 @@ export default defineConfig(({ mode }) => {
   build: {
     rollupOptions: {
       external: [
-        "@grafeo-db/wasm",
-        "@grafeo-db/web",
         ...(mode === "tauri"
           ? [
+              "@grafeo-db/wasm",
+              "@grafeo-db/web",
               "@tauri-apps/plugin-clipboard-manager",
               "@tauri-apps/plugin-notification",
               "@tauri-apps/plugin-deep-link",
@@ -111,6 +111,7 @@ export default defineConfig(({ mode }) => {
             "@tauri-apps/plugin-updater": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
             "@tauri-apps/api": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
             "@grafeo-db/wasm": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
+            "@grafeo-db/web": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
           }
         : {}),
     },
