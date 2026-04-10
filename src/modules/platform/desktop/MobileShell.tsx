@@ -3,22 +3,31 @@
  *
  * DayRingClock centered in the upper region, two corner icons
  * at the bottom (menu + search), theme dots centered between them.
- * Apps and search open via Vaul bottom-sheet drawers.
- *
- * PERFORMANCE: Clock tick is isolated in MobileClock component
- * to prevent full shell re-renders every second.
+ * Swipe left/right to cycle through immersive/dark/light themes
+ * with a smooth crossfade + slide transition.
+ * Fullscreen toggle in top-right corner persists across browsing.
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef, Suspense } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/modules/platform/core/ui/drawer";
 import { DESKTOP_APPS, getApp } from "@/modules/platform/desktop/lib/desktop-apps";
 import { useDesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
 import DesktopThemeDots from "@/modules/platform/desktop/DesktopThemeDots";
 import DesktopImmersiveWallpaper from "@/modules/platform/desktop/DesktopImmersiveWallpaper";
 import DayRingClock from "@/modules/platform/desktop/components/DayRingClock";
-import { Menu, Search, Mic } from "lucide-react";
+import { Menu, Search, Mic, Maximize2, Minimize2 } from "lucide-react";
 
 import type { DesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
+
+const THEME_ORDER: DesktopTheme[] = ["immersive", "dark", "light"];
+
+// ── Background colors per theme (for non-immersive themes) ──
+const THEME_BG: Record<DesktopTheme, string> = {
+  immersive: "#000000",
+  dark: "#000000",
+  light: "#ffffff",
+};
 
 // ── Isolated clock component — ticks without re-rendering the shell ──
 function MobileClock({ theme, isLight }: { theme: DesktopTheme; isLight: boolean }) {
@@ -27,18 +36,109 @@ function MobileClock({ theme, isLight }: { theme: DesktopTheme; isLight: boolean
     const id = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
-
   return <DayRingClock time={time} theme={theme} isLight={isLight} opacity={1} />;
 }
 
+// ── Fullscreen toggle — persists via Fullscreen API ──
+function FullscreenButton({ isLight }: { isLight: boolean }) {
+  const [isFs, setIsFs] = useState(!!document.fullscreenElement);
+
+  useEffect(() => {
+    const onChange = () => setIsFs(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const toggle = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    } else {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }, []);
+
+  const iconColor = isLight ? "text-black/25 active:text-black/50" : "text-white/25 active:text-white/50";
+
+  return (
+    <button
+      onClick={toggle}
+      className={`w-10 h-10 flex items-center justify-center rounded-full active:scale-90 transition-all ${iconColor}`}
+      aria-label={isFs ? "Exit fullscreen" : "Enter fullscreen"}
+    >
+      {isFs ? <Minimize2 size={18} strokeWidth={1.5} /> : <Maximize2 size={18} strokeWidth={1.5} />}
+    </button>
+  );
+}
+
+// ── Swipe transition variants ──
+const swipeVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? 80 : -80,
+    opacity: 0,
+    scale: 0.97,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+    scale: 1,
+  },
+  exit: (direction: number) => ({
+    x: direction > 0 ? -80 : 80,
+    opacity: 0,
+    scale: 0.97,
+  }),
+};
+
+const swipeTransition = {
+  x: { type: "spring", stiffness: 350, damping: 35 },
+  opacity: { duration: 0.25, ease: "easeInOut" },
+  scale: { duration: 0.25, ease: "easeOut" },
+};
+
 export default function MobileShell() {
-  const { isLight, theme } = useDesktopTheme();
+  const { isLight, theme, setTheme } = useDesktopTheme();
   const [openAppId, setOpenAppId] = useState<string | null>(null);
   const [appDrawerOpen, setAppDrawerOpen] = useState(false);
   const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
   const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Swipe direction for AnimatePresence ──
+  const [swipeDirection, setSwipeDirection] = useState(0);
+  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, t: Date.now() };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    if (!start) return;
+    touchStartRef.current = null;
+
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    const dt = Date.now() - start.t;
+
+    // Must be horizontal swipe: >60px, more horizontal than vertical, <400ms
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.7 || dt > 400) return;
+
+    const currentIdx = THEME_ORDER.indexOf(theme);
+    if (dx < 0) {
+      // Swipe left → next theme
+      const next = (currentIdx + 1) % THEME_ORDER.length;
+      setSwipeDirection(1);
+      setTheme(THEME_ORDER[next]);
+    } else {
+      // Swipe right → previous theme
+      const prev = (currentIdx - 1 + THEME_ORDER.length) % THEME_ORDER.length;
+      setSwipeDirection(-1);
+      setTheme(THEME_ORDER[prev]);
+    }
+  }, [theme, setTheme]);
 
   const openApp = useCallback((appId: string) => {
     setOpenAppId(appId);
@@ -53,7 +153,6 @@ export default function MobileShell() {
     openApp("oracle");
   }, [searchQuery, openApp]);
 
-  // Auto-focus search input when drawer opens
   useEffect(() => {
     if (searchDrawerOpen) {
       setTimeout(() => searchInputRef.current?.focus(), 300);
@@ -70,29 +169,63 @@ export default function MobileShell() {
     [],
   );
 
-  const shellBg = theme === "light" ? "bg-white" : "bg-black";
   const iconColor = isLight ? "text-black/30" : "text-white/30";
   const drawerBg = isLight ? "bg-[#f5f5f5] border-black/[0.08]" : "bg-[#191919] border-white/[0.08]";
   const titleColor = isLight ? "text-black/60" : "text-white/65";
 
   return (
-    <div className={`fixed inset-0 ${shellBg} select-none overflow-hidden`}>
-      {/* ── Background ── */}
-      {theme === "immersive" && <DesktopImmersiveWallpaper />}
+    <div
+      className="fixed inset-0 select-none overflow-hidden"
+      style={{ backgroundColor: THEME_BG[theme], transition: "background-color 0.4s ease" }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* ── Animated background layer ── */}
+      <AnimatePresence mode="wait" custom={swipeDirection}>
+        <motion.div
+          key={theme}
+          className="absolute inset-0"
+          custom={swipeDirection}
+          variants={swipeVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={swipeTransition}
+        >
+          {theme === "immersive" && <DesktopImmersiveWallpaper />}
+        </motion.div>
+      </AnimatePresence>
 
-      {/* ── DayRingClock — centered upper area, GPU-promoted ── */}
-      <div className="absolute inset-x-0 top-0 bottom-0 flex flex-col items-center z-10 pointer-events-none gpu-promote">
-        {/* Spacer: push clock to ~18% from top */}
-        <div className="flex-[0_0_18%]" />
-        <div className="pointer-events-auto">
-          <MobileClock theme={theme} isLight={isLight} />
-        </div>
+      {/* ── Fullscreen toggle — top-right ── */}
+      <div
+        className="absolute top-0 right-0 z-30"
+        style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0.75rem))", paddingRight: "0.75rem" }}
+      >
+        <FullscreenButton isLight={isLight} />
       </div>
 
-      {/* ── Bottom Controls — safe-area aware, GPU-promoted ── */}
-      <div className="absolute inset-x-0 bottom-0 z-20 gpu-promote" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0.5rem))" }}>
-        {/* Corner icons + theme dots */}
-        <div className="flex items-end justify-between px-6 pb-3">
+      {/* ── DayRingClock — animated with theme transition ── */}
+      <AnimatePresence mode="wait" custom={swipeDirection}>
+        <motion.div
+          key={theme}
+          className="absolute inset-x-0 top-0 bottom-0 flex flex-col items-center z-10 pointer-events-none gpu-promote"
+          custom={swipeDirection}
+          variants={swipeVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={swipeTransition}
+        >
+          <div className="flex-[0_0_18%]" />
+          <div className="pointer-events-auto">
+            <MobileClock theme={theme} isLight={isLight} />
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* ── Bottom Controls — safe-area aware ── */}
+      <div className="absolute inset-x-0 bottom-0 z-20 gpu-promote" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0.75rem))" }}>
+        <div className="flex items-end justify-between px-6 pb-2">
           {/* Menu icon */}
           <button
             onClick={() => setMenuDrawerOpen(true)}
@@ -115,18 +248,6 @@ export default function MobileShell() {
           >
             <Search size={22} strokeWidth={1.5} />
           </button>
-        </div>
-
-        {/* Home indicator pill */}
-        <div className="flex justify-center pb-1">
-          <div
-            className="rounded-full"
-            style={{
-              width: 134,
-              height: 5,
-              backgroundColor: isLight ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.15)",
-            }}
-          />
         </div>
       </div>
 
@@ -196,7 +317,6 @@ export default function MobileShell() {
                 </button>
               </div>
             </div>
-            {/* Quick app suggestions */}
             <div className="space-y-1">
               {visibleApps.slice(0, 5).map(a => {
                 const Icon = a.icon;
