@@ -7,6 +7,7 @@
 
 import { useCallback, useState, useMemo, useEffect, useRef } from "react";
 import { Download } from "lucide-react";
+import { usePlatform } from "@/modules/platform/desktop/hooks/usePlatform";
 import DesktopImmersiveWallpaper from "@/modules/platform/desktop/DesktopImmersiveWallpaper";
 import QuickCapture from "@/modules/intelligence/oracle/components/QuickCapture";
 import VinylPlayer from "@/modules/platform/desktop/components/VinylPlayer";
