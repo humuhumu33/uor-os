@@ -163,6 +163,19 @@ async function retrieveDatum(iri: string): Promise<Datum | null> {
   return null;
 }
 
+/**
+ * Identity morphism — source === target, no transformation.
+ */
+export function identityMorphism(iri: string): GraphMorphism {
+  return {
+    source: iri,
+    target: iri,
+    via: "add" as PrimitiveOp, // add 0 = identity
+    deterministic: true,
+    morphismCid: `identity:${iri}`,
+  };
+}
+
 function computeOp(op: PrimitiveOp, a: number, b?: number): number {
   if (op === "neg" || op === "bnot" || op === "succ" || op === "pred") {
     return compute(op, a, 0);

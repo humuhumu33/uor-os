@@ -162,3 +162,22 @@ export {
   listNamespaces,
 } from "./lib/graph-namespaces";
 export type { GraphNamespace } from "./lib/graph-namespaces";
+
+// ── Categorical Computation Engine ──────────────────────────────────────────
+
+export {
+  GraphFunctor,
+  GraphNatTransformation,
+  GraphAdjunction,
+  composeFunctors,
+  verticalCompose,
+  horizontalCompose,
+} from "./lib/categorical-engine";
+export type {
+  FunctorRule,
+  FunctorApplicationResult,
+  NaturalityVerification,
+  NatTransComponent,
+} from "./lib/categorical-engine";
+
+export { identityMorphism } from "./lib/graph-morphisms";
