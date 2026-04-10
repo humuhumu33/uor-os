@@ -49,16 +49,24 @@ const INCLUDED_MODULES = [
   { icon: Brain, label: "Library", desc: "Curated book summaries" },
 ];
 
-async function handleDownload(e: React.MouseEvent<HTMLAnchorElement>, file: string) {
+async function handleDownload(e: React.MouseEvent<HTMLAnchorElement>, file: string, setLoading?: (v: boolean) => void) {
   e.preventDefault();
   const url = `${RELEASE_BASE}/${file}`;
+  setLoading?.(true);
   try {
-    await fetch(url, { method: "HEAD", mode: "no-cors" });
-    window.open(url, "_blank", "noopener");
+    const res = await fetch(url, { method: "HEAD", redirect: "follow" });
+    if (res.ok) {
+      window.location.href = url;
+    } else {
+      toast.error("Release coming soon", {
+        description: "The desktop installer is being prepared. Check back shortly.",
+      });
+    }
   } catch {
-    toast.error("Release coming soon", {
-      description: "The desktop installer is being prepared. Check back shortly.",
-    });
+    // Network error or CORS — try direct navigation as fallback
+    window.location.href = url;
+  } finally {
+    setLoading?.(false);
   }
 }
 
