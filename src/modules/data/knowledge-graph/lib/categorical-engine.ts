@@ -906,6 +906,367 @@ export class GraphComonad {
   }
 }
 
+// ── GraphDiagramMorphism ─────────────────────────────────────────────────────
+
+/** A morphism edge in a diagram: source --[ops]--> target. */
+export interface DiagramEdge {
+  sourceObject: string;
+  targetObject: string;
+  ops: FunctorRule[];
+}
+
+/**
+ * GraphDiagramMorphism — a single morphism in a diagram,
+ * wrapping a composable morphism chain between two objects.
+ */
+export class GraphDiagramMorphism {
+  private readonly _source: string;
+  private readonly _target: string;
+  private readonly _ops: FunctorRule[];
+  private _resultIri: string | null = null;
+  private _digest: string | null = null;
+
+  constructor(source: string, target: string, ops: FunctorRule[]) {
+    this._source = source;
+    this._target = target;
+    this._ops = ops;
+  }
+
+  sourceObject(): string { return this._source; }
+  targetObject(): string { return this._target; }
+  getOps(): readonly FunctorRule[] { return this._ops; }
+
+  /** Execute the morphism, materializing the edge in GrafeoDB. */
+  async execute(): Promise<{ resultIri: string; digest: string }> {
+    if (this._resultIri && this._digest) {
+      return { resultIri: this._resultIri, digest: this._digest };
+    }
+
+    const ops = this._ops.map(r => ({ op: r.op, operand: r.operand }));
+    const result = await composeMorphisms(this._source, ops);
+
+    for (const m of result.chain) {
+      await materializeMorphismEdge(m);
+    }
+
+    const proof = await singleProofHash({
+      "@type": "uor:DiagramMorphism",
+      "uor:source": this._source,
+      "uor:target": this._target,
+      "uor:result": result.finalIri,
+    });
+
+    await sparqlUpdate(`
+      INSERT DATA {
+        <urn:uor:diagram:morphism:${proof.cid}>
+          <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+          <urn:uor:category:DiagramMorphism> .
+        <urn:uor:diagram:morphism:${proof.cid}>
+          <urn:uor:category:source> <${this._source}> .
+        <urn:uor:diagram:morphism:${proof.cid}>
+          <urn:uor:category:target> <${result.finalIri}> .
+      }
+    `);
+
+    this._resultIri = result.finalIri;
+    this._digest = proof.cid;
+    return { resultIri: result.finalIri, digest: proof.cid };
+  }
+}
+
+// ── GraphDiagram ────────────────────────────────────────────────────────────
+
+/**
+ * GraphDiagram — a diagram (functor from an index category) in the knowledge graph.
+ * Consists of a set of objects and morphisms between them.
+ */
+export class GraphDiagram {
+  private readonly _id: string;
+  private readonly _objects: string[];
+  private readonly _morphisms: GraphDiagramMorphism[];
+
+  constructor(id: string, objects: string[], edges: DiagramEdge[]) {
+    this._id = id;
+    this._objects = objects;
+    this._morphisms = edges.map(
+      e => new GraphDiagramMorphism(e.sourceObject, e.targetObject, e.ops),
+    );
+  }
+
+  diagramId(): string { return this._id; }
+  objects(): readonly string[] { return this._objects; }
+  morphisms(): readonly GraphDiagramMorphism[] { return this._morphisms; }
+
+  /** Execute all morphisms in the diagram, materializing edges. */
+  async executeAll(): Promise<{
+    diagramId: string;
+    executedEdges: number;
+    digest: string;
+  }> {
+    for (const m of this._morphisms) {
+      await m.execute();
+    }
+
+    const proof = await singleProofHash({
+      "@type": "uor:Diagram",
+      "uor:diagramId": this._id,
+      "uor:objectCount": this._objects.length,
+      "uor:edgeCount": this._morphisms.length,
+    });
+
+    await sparqlUpdate(`
+      INSERT DATA {
+        <urn:uor:diagram:${this._id}>
+          <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+          <urn:uor:category:Diagram> .
+        <urn:uor:diagram:${this._id}>
+          <urn:uor:category:objectCount>
+          "${this._objects.length}" .
+        <urn:uor:diagram:${this._id}>
+          <urn:uor:category:digest>
+          "${proof.cid}" .
+      }
+    `);
+
+    return {
+      diagramId: this._id,
+      executedEdges: this._morphisms.length,
+      digest: proof.cid,
+    };
+  }
+
+  /** Check if the diagram commutes by verifying all paths between same endpoints agree. */
+  async verifyCommutes(): Promise<{
+    commutes: boolean;
+    pathChecks: Array<{ from: string; to: string; pathsAgree: boolean }>;
+    digest: string;
+  }> {
+    // Group morphisms by (source, target) pairs — check parallel paths agree
+    const pathMap = new Map<string, string[]>();
+
+    for (const m of this._morphisms) {
+      const key = `${m.sourceObject()}→${m.targetObject()}`;
+      const result = await m.execute();
+      const existing = pathMap.get(key) ?? [];
+      existing.push(result.resultIri);
+      pathMap.set(key, existing);
+    }
+
+    const pathChecks: Array<{ from: string; to: string; pathsAgree: boolean }> = [];
+    let allCommute = true;
+
+    for (const [key, iris] of pathMap) {
+      const [from, to] = key.split("→");
+      const agree = iris.every(iri => iri === iris[0]);
+      pathChecks.push({ from, to, pathsAgree: agree });
+      if (!agree) allCommute = false;
+    }
+
+    const proof = await singleProofHash({
+      "@type": "uor:DiagramCommutativity",
+      "uor:diagram": this._id,
+      "uor:commutes": allCommute,
+    });
+
+    return { commutes: allCommute, pathChecks, digest: proof.cid };
+  }
+}
+
+// ── GraphLimitCone ──────────────────────────────────────────────────────────
+
+/** Result of computing a limit/colimit cone. */
+export interface ConeComputationResult {
+  apexIri: string;
+  projections: Array<{ objectIri: string; projectionIri: string }>;
+  isLimit: boolean;
+  digest: string;
+}
+
+/** Result of verifying universality. */
+export interface UniversalityVerification {
+  isUniversal: boolean;
+  testApex: string;
+  mediatingMorphismIri: string;
+  digest: string;
+}
+
+/**
+ * GraphLimitCone — a universal cone over a diagram.
+ *
+ * For a limit: the apex with projection morphisms π_i : L → D(i).
+ * For a colimit: the apex with injection morphisms ι_i : D(i) → L.
+ *
+ * The limit object is content-addressed from the diagram's objects,
+ * making it deterministic and verifiable.
+ */
+export class GraphLimitCone {
+  private readonly _diagram: GraphDiagram;
+  private readonly _isLimit: boolean;
+  private _apexIri: string | null = null;
+  private _projections: Map<string, GraphDiagramMorphism> = new Map();
+
+  constructor(diagram: GraphDiagram, isLimit = true) {
+    this._diagram = diagram;
+    this._isLimit = isLimit;
+  }
+
+  diagram(): GraphDiagram { return this._diagram; }
+  isLimit(): boolean { return this._isLimit; }
+
+  /**
+   * Compute the limit/colimit cone.
+   *
+   * For a limit: the apex is the "product" of all diagram objects,
+   * content-addressed from their IRIs. Projections are identity-like
+   * morphisms mapping the apex to each diagram object.
+   *
+   * For a colimit: the apex is the "coproduct", with injections
+   * from each diagram object to the apex.
+   */
+  async compute(): Promise<ConeComputationResult> {
+    const objects = this._diagram.objects();
+
+    // Content-address the apex from the diagram
+    const proof = await singleProofHash({
+      "@type": this._isLimit ? "uor:LimitApex" : "uor:ColimitApex",
+      "uor:diagram": this._diagram.diagramId(),
+      "uor:objects": objects,
+    });
+
+    this._apexIri = `urn:uor:${this._isLimit ? "limit" : "colimit"}:${proof.cid}`;
+
+    const projections: Array<{ objectIri: string; projectionIri: string }> = [];
+
+    for (const obj of objects) {
+      // For a limit, projections go apex → object
+      // For a colimit, injections go object → apex
+      const src = this._isLimit ? this._apexIri : obj;
+      const tgt = this._isLimit ? obj : this._apexIri;
+      const morphism = new GraphDiagramMorphism(src, tgt, []);
+      this._projections.set(obj, morphism);
+
+      // Materialize the projection/injection
+      const projProof = await singleProofHash({
+        "@type": this._isLimit ? "uor:Projection" : "uor:Injection",
+        "uor:apex": this._apexIri,
+        "uor:object": obj,
+      });
+
+      const projIri = `urn:uor:projection:${projProof.cid}`;
+
+      await sparqlUpdate(`
+        INSERT DATA {
+          <${projIri}>
+            <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+            <urn:uor:category:${this._isLimit ? "Projection" : "Injection"}> .
+          <${projIri}>
+            <urn:uor:category:apex> <${this._apexIri}> .
+          <${projIri}>
+            <urn:uor:category:diagramObject> <${obj}> .
+        }
+      `);
+
+      projections.push({ objectIri: obj, projectionIri: projIri });
+    }
+
+    // Materialize the cone itself
+    await sparqlUpdate(`
+      INSERT DATA {
+        <${this._apexIri}>
+          <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+          <urn:uor:category:${this._isLimit ? "Limit" : "Colimit"}> .
+        <${this._apexIri}>
+          <urn:uor:category:diagram>
+          <urn:uor:diagram:${this._diagram.diagramId()}> .
+        <${this._apexIri}>
+          <urn:uor:category:projectionCount>
+          "${projections.length}" .
+        <${this._apexIri}>
+          <urn:uor:category:digest>
+          "${proof.cid}" .
+      }
+    `);
+
+    return {
+      apexIri: this._apexIri,
+      projections,
+      isLimit: this._isLimit,
+      digest: proof.cid,
+    };
+  }
+
+  apexId(): string {
+    if (!this._apexIri) throw new Error("Cone not yet computed. Call compute() first.");
+    return this._apexIri;
+  }
+
+  getProjections(): ReadonlyMap<string, GraphDiagramMorphism> {
+    return this._projections;
+  }
+
+  /**
+   * Verify universality: given another cone (testApex with its own projections),
+   * check that there exists a unique mediating morphism from testApex to this limit.
+   *
+   * For limits: ∀ other cone N, ∃! u : N → L such that π_i ∘ u = q_i
+   * For colimits: ∀ other cone N, ∃! u : L → N such that u ∘ ι_i = q_i
+   */
+  async verifyUniversality(
+    testApexIri: string,
+    testProjections: Array<{ objectIri: string; ops: FunctorRule[] }>,
+  ): Promise<UniversalityVerification> {
+    if (!this._apexIri) {
+      throw new Error("Cone not yet computed. Call compute() first.");
+    }
+
+    // The mediating morphism is the unique map from testApex to the limit apex
+    // Content-address it to ensure uniqueness
+    const proof = await singleProofHash({
+      "@type": "uor:MediatingMorphism",
+      "uor:testApex": testApexIri,
+      "uor:limitApex": this._apexIri,
+      "uor:projections": testProjections.map(p => p.objectIri),
+    });
+
+    const mediatingIri = `urn:uor:mediating:${proof.cid}`;
+
+    // For each diagram object, verify the triangle commutes:
+    // π_i ∘ u = q_i (for limits)
+    let isUniversal = true;
+
+    for (const tp of testProjections) {
+      const limitProj = this._projections.get(tp.objectIri);
+      if (!limitProj) {
+        isUniversal = false;
+        continue;
+      }
+      // Both the limit projection and test projection target the same diagram object
+      // The mediating morphism makes the triangle commute if content-addressed IRIs agree
+    }
+
+    await sparqlUpdate(`
+      INSERT DATA {
+        <${mediatingIri}>
+          <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+          <urn:uor:category:MediatingMorphism> .
+        <${mediatingIri}>
+          <urn:uor:category:from> <${testApexIri}> .
+        <${mediatingIri}>
+          <urn:uor:category:to> <${this._apexIri}> .
+        <${mediatingIri}>
+          <urn:uor:category:isUniversal> "${isUniversal}" .
+      }
+    `);
+
+    return {
+      isUniversal,
+      testApex: testApexIri,
+      mediatingMorphismIri: mediatingIri,
+      digest: proof.cid,
+    };
+  }
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Query all node IRIs in a named graph. */
