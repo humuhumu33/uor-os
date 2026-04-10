@@ -18,8 +18,8 @@
  */
 
 import { singleProofHash } from "@/lib/uor-canonical";
-import { buildImage, parseUorfile } from "@/modules/identity/uns/build/uorfile";
-import type { UorImage, UorImageLayer } from "@/modules/identity/uns/build/uorfile";
+import { buildImage, parseUorfile } from "@/modules/identity/uns";
+import type { UorImage, UorImageLayer } from "@/modules/identity/uns";
 import type { AppFile } from "../import-adapter";
 
 // ── Types ───────────────────────────────────────────────────────────────────
