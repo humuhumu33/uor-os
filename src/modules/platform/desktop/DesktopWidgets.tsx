@@ -415,23 +415,36 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
           <div className="flex items-center gap-3 mt-5" style={{ opacity: clockOpacity, transition: "opacity 300ms ease-out" }}>
             <a
               href="/download"
-              className="group inline-flex items-center gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-widest transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+              className="group inline-flex items-center gap-2.5 rounded-full px-6 py-2.5 text-[14px] font-medium tracking-wide transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
               style={{
-                color: isImmersive ? "hsl(210 100% 80%)" : isLight ? "hsl(210 80% 45%)" : "hsl(210 100% 75%)",
-                border: isImmersive
-                  ? "1px solid hsl(210 100% 72% / 0.20)"
-                  : isLight ? "1px solid hsl(210 80% 45% / 0.15)" : "1px solid hsl(210 100% 72% / 0.15)",
-                borderRadius: isMac ? "9999px" : "0.75rem",
-                background: isImmersive
-                  ? "linear-gradient(135deg, hsl(210 100% 72% / 0.08), hsl(220 80% 60% / 0.05))"
-                  : isLight
-                    ? "linear-gradient(135deg, hsl(210 80% 45% / 0.06), hsl(210 80% 45% / 0.02))"
-                    : "linear-gradient(135deg, hsl(210 100% 72% / 0.06), hsl(220 80% 60% / 0.03))",
-                boxShadow: "0 2px 12px -4px hsl(210 100% 50% / 0.1)",
+                color: isLight ? "hsl(0 0% 100%)" : "hsl(0 0% 100% / 0.90)",
+                background: isLight
+                  ? "hsl(0 0% 8%)"
+                  : "hsl(0 0% 100% / 0.10)",
+                border: isLight
+                  ? "1px solid hsl(0 0% 20%)"
+                  : "1px solid hsl(0 0% 100% / 0.12)",
+                boxShadow: isLight
+                  ? "0 2px 16px -4px hsl(0 0% 0% / 0.25)"
+                  : "0 2px 20px -4px hsl(0 0% 100% / 0.06)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
               }}
             >
-              <Download className="w-4 h-4 transition-transform duration-300 group-hover:-translate-y-0.5" />
-              <span>Go Sovereign — Download Desktop</span>
+              {/* OS-aware icon */}
+              {isMac ? (
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="opacity-90">
+                  <path d="M11.182 0c.223 1.87-.55 3.243-1.492 4.322-.967 1.1-2.245 1.903-3.627 1.782-.17-1.472.56-3.014 1.49-3.975C8.555 1.06 10.024.18 11.182 0ZM14.5 11.673c-.358.812-.528 1.175-.988 1.89-.641.997-1.545 2.238-2.666 2.25-1 .013-1.257-.651-2.614-.643-1.358.008-1.64.66-2.64.647-1.122-.012-1.975-1.121-2.616-2.118C1.265 11.047.673 7.622 2.497 5.78c.65-.656 1.558-1.08 2.497-1.08 1.11 0 1.806.656 2.723.656.89 0 1.433-.657 2.717-.657.837 0 1.64.337 2.25.92-1.976 1.084-1.657 3.91.394 4.66-.303.784-.7 1.525-1.183 2.204l-.009-.013.008.012.006.012c.12-.196.36-.565.6-.82Z"/>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="opacity-90">
+                  <rect x="1" y="1" width="6.5" height="6.5" rx="0.5"/>
+                  <rect x="8.5" y="1" width="6.5" height="6.5" rx="0.5"/>
+                  <rect x="1" y="8.5" width="6.5" height="6.5" rx="0.5"/>
+                  <rect x="8.5" y="8.5" width="6.5" height="6.5" rx="0.5"/>
+                </svg>
+              )}
+              <span>Download</span>
             </a>
 
             {/* Transfer to Desktop — only when authenticated */}
