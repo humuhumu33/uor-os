@@ -417,7 +417,7 @@ export class GraphNatTransformation {
   async isIsomorphism(objectIris: string[]): Promise<boolean> {
     for (const iri of objectIris) {
       const component = await this.componentAt(iri);
-      const inverse = invertDelta(component.delta);
+      const inverse = await invertDelta(component.delta);
       // An invertible delta has a non-empty chain that can round-trip
       if (!inverse || inverse.chain.length === 0) return false;
     }

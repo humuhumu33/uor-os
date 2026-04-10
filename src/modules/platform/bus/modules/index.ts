@@ -27,6 +27,9 @@ import "./vault";
 import "./continuity";
 import "./local-llm";
 
+// ── Layer 1.5: Categorical Computation ───────────────────────────────
+import "./categorical";
+
 // ── Layer 2: Bus / API Surface ────────────────────────────────────────
 import "./data-engine";
 import "./blueprint";
