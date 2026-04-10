@@ -1,28 +1,50 @@
 
 
-## Plan: Fix Build Error and Ensure UOR OS Boots Correctly
+## Plan: Fix UOR OS Boot — Three Root Causes
 
-### Problem
-The build fails with `Could not resolve "./build" from "src/modules/identity/uns/index.ts"`, even though the `./build/` directory and all its files (`index.ts`, `uorfile.ts`, `registry.ts`, `snapshot.ts`, `container.ts`, `compose.ts`, `secrets.ts`) exist and export every symbol referenced in `uns/index.ts`.
+### What's Wrong
 
-After comparing with the original repo at `github.com/UOR-Foundation/website/tree/main/uor-os`, the code is identical. The live site at `uor.foundation/os` shows a terminal-style boot sequence (POST, BIOS, KERNEL, BUS, SEAL, MONITOR phases) followed by the desktop shell.
+1. **`src/modules/identity/uns/build/` directory is empty** — The stub files created in previous sessions were never persisted. The barrel export in `uns/index.ts` references `"./build/index"` which doesn't exist, causing the build to fail. This is the **primary build blocker**.
 
-### Root Cause
-The most likely cause is a stale Vite/Rollup build cache, or the PWA `injectManifest` plugin's separate Rollup build failing to resolve project-relative imports. The `rollupFormat: "iife"` option in the PWA config creates a second Rollup build for the service worker, which may be hitting a resolution edge case.
+2. **Supabase placeholder values cause silent failures** — `AuthProvider` and boot health checks call Supabase with `placeholder.supabase.co`, which can hang or throw, preventing the React tree from rendering.
 
-### Steps
+3. **PWA `vite-plugin-pwa:build` amplifies the error** — The PWA plugin runs a second Rollup build that hits the same missing `./build/index` resolution and surfaces it as the build error.
 
-1. **Clear build caches** — Remove `.vite`, `dist`, and `node_modules/.vite` directories, then run `bun install` to ensure a clean state.
+### Implementation Steps
 
-2. **Rebuild and verify** — Run `bun run build` (not `build:dev`) to confirm the production build succeeds. If it still fails on the `./build` resolution:
-   - Add `./build` to the Vite `resolve.alias` or try switching the import to `./build/index` explicitly as a fallback.
+**Step 1: Create all 7 stub files in `src/modules/identity/uns/build/`**
 
-3. **Verify dev server** — Restart the dev server and confirm the DesktopShell renders with the BootSequence terminal animation (the same POST → BIOS → KERNEL → BUS → SEAL → MONITOR flow visible on `uor.foundation/os`).
+Create these files with stub exports matching every symbol imported across the codebase:
 
-4. **Verify preview** — Check that the preview URL loads the boot sequence and transitions to the desktop shell with the immersive wallpaper, dock, tab bar, and spotlight search.
+- `index.ts` — barrel re-export of all sibling files
+- `uorfile.ts` — `parseUorfile`, `parseDockerfile`, `buildImage`, `serializeUorfile`, types
+- `registry.ts` — `pushImage`, `pullImage`, `tagImage`, `resolveTag`, `listTags`, `removeTag`, `listImages`, `inspectImage`, `imageHistory`, `removeImage`, `searchImages`, `clearImageRegistry`, types
+- `snapshot.ts` — `createSnapshot`, `hashComponentBytes`, `buildSnapshotChain`, `SnapshotRegistry`, types
+- `container.ts` — `parseDockerRef`, `wrapDockerImage`, `buildFromDockerfile`, `generateCompatReport`, `DOCKER_FEATURE_MAP`, `DOCKER_VERB_MAP`, types
+- `compose.ts` — `parseComposeSpec`, `composeUp`, `composeDown`, `composePs`, `composeScale`, `getComposeApp`, `listComposeApps`, `clearComposeApps`, types
+- `secrets.ts` — `createSecret`, `listSecrets`, `inspectSecret`, `getSecretValue`, `removeSecret`, `injectSecrets`, `clearSecrets`, types
 
-### Technical Details
-- The `vite-plugin-pwa` `injectManifest` config uses `rollupFormat: "iife"` which triggers a separate Rollup build for `src/custom-sw.ts`. The error surfaces as `[vite-plugin-pwa:build]` because the plugin's `buildEnd` hook catches and re-throws the main build failure.
-- The `globIgnores: ["**/modules/uns/build/**"]` pattern only affects PWA precache manifests, not module resolution.
-- All 7 files in `src/modules/identity/uns/build/` are confirmed stubs with correct exports matching every symbol listed in `uns/index.ts`.
+Each function returns a no-op/empty result. Each type is exported as an interface with minimal fields.
+
+**Step 2: Make Supabase resilient to placeholder values**
+
+In `src/integrations/supabase/client.ts`, add a detection flag:
+```typescript
+export const isSupabasePlaceholder = SUPABASE_URL.includes('placeholder');
+```
+
+In `src/hooks/use-auth.tsx`, skip Supabase calls when placeholder is detected — immediately set `loading: false` with null session/profile so the app boots without auth.
+
+In `src/modules/platform/boot/useCompositeHealth.ts`, guard the Supabase import similarly.
+
+**Step 3: Clean build and verify**
+
+- Clear `dist`, `.vite`, `node_modules/.vite`
+- Run `bun run build:dev` to confirm success
+- Verify the preview loads the boot sequence and transitions to desktop shell
+
+### Files Changed
+- **Created (7):** `src/modules/identity/uns/build/index.ts`, `uorfile.ts`, `registry.ts`, `snapshot.ts`, `container.ts`, `compose.ts`, `secrets.ts`
+- **Modified (2):** `src/integrations/supabase/client.ts`, `src/hooks/use-auth.tsx`
+- **Modified (1):** `src/modules/platform/boot/useCompositeHealth.ts` (guard Supabase)
 
