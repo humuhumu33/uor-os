@@ -91,6 +91,16 @@ function duplicateDetectionGate() {
   return buildGateResult("duplicate-detection", "Duplicates Gate", findings);
 }
 
-registerGate(duplicateDetectionGate);
+registerGate(duplicateDetectionGate, {
+  id: "duplicate-detection",
+  name: "Duplicates Gate",
+  version: "1.0.0",
+  category: "structural",
+  description: "Identifies absorbed modules with active code, duplicate component paths, and redundant exports.",
+  scope: ["src/modules/*/"],
+  deductionWeights: { error: 10, warning: 4, info: 1 },
+  owner: "canonical-compliance",
+  lastUpdated: "2026-04-10",
+});
 
 export { duplicateDetectionGate };

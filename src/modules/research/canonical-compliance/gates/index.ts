@@ -43,7 +43,8 @@ import "./master-gate";
 export { runAllGates, runAllGatesAsync, exportGatesMarkdown } from "./gate-runner";
 export { runMasterGate, exportMasterGateMarkdown } from "./master-gate";
 export type {
-  GateResult, GateFinding, GateReport, Gate, AsyncGate,
+  GateResult, GateFinding, GateReport, Gate, AsyncGate, GateSpec,
   MasterGateReport, CoherenceAnalysis, OverlapPair, Contradiction,
   ConsolidationProposal, HotspotCluster, SelfImprovementProposal,
+  SelfImprovementQuestion, NewGateProposal,
 } from "./gate-runner";

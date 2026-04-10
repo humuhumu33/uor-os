@@ -148,4 +148,14 @@ function devopsAlignmentGate() {
   );
 }
 
-registerGate(devopsAlignmentGate);
+registerGate(devopsAlignmentGate, {
+  id: "devops-alignment",
+  name: "DevOps Gate",
+  version: "1.0.0",
+  category: "operational",
+  description: "Verifies CNCF category maturity claims, health probe coverage, and terminology consistency via the DevOps glossary.",
+  scope: ["bus/", "cncf-compat/", "compose/"],
+  deductionWeights: { error: 8, warning: 4, info: 0 },
+  owner: "canonical-compliance",
+  lastUpdated: "2026-04-10",
+});

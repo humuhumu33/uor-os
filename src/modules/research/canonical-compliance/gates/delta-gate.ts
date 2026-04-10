@@ -109,4 +109,14 @@ function runDeltaGate() {
   return buildGateResult("delta-gate", "Delta Gate", findings);
 }
 
-registerGate(runDeltaGate);
+registerGate(runDeltaGate, {
+  id: "delta-gate",
+  name: "Delta Gate",
+  version: "1.0.0",
+  category: "operational",
+  description: "Enforces delta-based computation: engine activation, latency, chain complexity, compression ratio, and adjacency index health.",
+  scope: ["op:", "delta-engine", "adjacency-index"],
+  deductionWeights: { error: 10, warning: 4, info: 0 },
+  owner: "canonical-compliance",
+  lastUpdated: "2026-04-10",
+});

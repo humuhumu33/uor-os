@@ -72,6 +72,16 @@ function provenanceCoverageGate() {
   );
 }
 
-registerGate(provenanceCoverageGate);
+registerGate(provenanceCoverageGate, {
+  id: "provenance-coverage",
+  name: "Provenance Gate",
+  version: "1.1.0",
+  category: "semantic",
+  description: "Cross-references active modules against PROVENANCE_REGISTRY to identify modules without UOR atom traceability.",
+  scope: ["provenance-map.ts", "src/modules/*/"],
+  deductionWeights: { error: 8, warning: 2, info: 0 },
+  owner: "canonical-compliance",
+  lastUpdated: "2026-04-10",
+});
 
 export { provenanceCoverageGate };

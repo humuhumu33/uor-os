@@ -2,7 +2,8 @@
  * Master Gate Execution Test
  * ══════════════════════════
  *
- * Runs the full Master Gate and outputs the complete MasterGateReport.
+ * Runs the full Master Gate v2 and outputs the complete MasterGateReport
+ * including self-improvement questions and new gate proposals.
  */
 
 import { describe, it, expect } from "vitest";
@@ -12,13 +13,14 @@ import "@/modules/research/canonical-compliance/gates";
 
 // Import the master gate runner
 import { runMasterGate, exportMasterGateMarkdown } from "@/modules/research/canonical-compliance/gates/master-gate";
+import { getGateSpec } from "@/modules/research/canonical-compliance/gates/gate-runner";
 
-describe("Master Gate", () => {
-  it("runs the full master gate and produces a report", async () => {
+describe("Master Gate v2", () => {
+  it("runs the full master gate and produces a structured report", async () => {
     const report = await runMasterGate(70);
 
     console.log("\n" + "═".repeat(72));
-    console.log("  MASTER GATE REPORT");
+    console.log("  MASTER GATE REPORT v2");
     console.log("═".repeat(72));
     console.log(`  Composite Score:     ${report.compositeScore}/100`);
     console.log(`  Coherence Score:     ${report.coherence.coherenceScore}/100`);
@@ -31,11 +33,12 @@ describe("Master Gate", () => {
     console.log(`  Improvement Props:   ${report.selfImprovementProposals.length}`);
     console.log("═".repeat(72));
 
-    // Per-gate breakdown
-    console.log("\n── Per-Gate Scores ──\n");
+    // Per-gate breakdown with spec metadata
+    console.log("\n── Per-Gate Scorecard ──\n");
     for (const gate of report.gates) {
+      const spec = getGateSpec(gate.id, gate.name);
       const icon = gate.status === "pass" ? "✅" : gate.status === "warn" ? "⚠️" : "❌";
-      console.log(`  ${icon} ${gate.name.padEnd(45)} ${String(gate.score).padStart(3)}/100  (${gate.status})`);
+      console.log(`  ${icon} ${gate.name.padEnd(30)} v${spec.version.padEnd(8)} ${spec.category.padEnd(12)} ${String(gate.score).padStart(3)}/100  (${gate.status})`);
     }
 
     // Coherence details
@@ -70,7 +73,7 @@ describe("Master Gate", () => {
 
     console.log("\n" + "═".repeat(72) + "\n");
 
-    // Export markdown
+    // Export markdown (v2 format)
     const md = exportMasterGateMarkdown(report);
     console.log(md);
 
@@ -80,5 +83,13 @@ describe("Master Gate", () => {
     expect(report.coherence.coherenceScore).toBeGreaterThanOrEqual(0);
     expect(report.gates.length).toBeGreaterThan(0);
     expect(report.timestamp).toBeTruthy();
+
+    // Verify the markdown contains the new v2 sections
+    expect(md).toContain("Master Gate Report v2");
+    expect(md).toContain("Scorecard");
+    expect(md).toContain("Per-Gate Detail Cards");
+    expect(md).toContain("Gate Improvement Engine");
+    expect(md).toContain("Self-Improvement Questions");
+    expect(md).toContain("Appendix");
   });
 });

@@ -146,4 +146,14 @@ function axiomsComplianceGate() {
 
 // ── Register ─────────────────────────────────────────────────────────────
 
-registerGate(axiomsComplianceGate);
+registerGate(axiomsComplianceGate, {
+  id: "axioms-compliance",
+  name: "Axioms Gate",
+  version: "1.0.0",
+  category: "aesthetic",
+  description: "Verifies design system axioms: CSS token presence, constant checks, import analysis, and category coverage.",
+  scope: ["axioms/", "design-system"],
+  deductionWeights: { error: 10, warning: 4, info: 1 },
+  owner: "canonical-compliance",
+  lastUpdated: "2026-04-10",
+});

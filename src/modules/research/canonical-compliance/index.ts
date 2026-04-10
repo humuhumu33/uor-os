@@ -22,7 +22,7 @@ export type { ProvenanceTriple } from "./provenance-graph";
 export { exportMarkdown, exportJsonLd, exportNQuads } from "./export";
 
 export { runAllGates, runAllGatesAsync, exportGatesMarkdown, runMasterGate, exportMasterGateMarkdown } from "./gates";
-export type { GateResult, GateFinding, GateReport, AsyncGate, MasterGateReport, CoherenceAnalysis } from "./gates";
+export type { GateResult, GateFinding, GateReport, AsyncGate, GateSpec, MasterGateReport, CoherenceAnalysis, SelfImprovementQuestion, NewGateProposal } from "./gates";
 
 export { DEVOPS_GLOSSARY, lookupStandard, glossaryToMarkdown } from "./devops-glossary";
 export type { GlossaryEntry } from "./devops-glossary";

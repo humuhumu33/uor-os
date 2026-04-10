@@ -69,6 +69,16 @@ function patternSentinelGate() {
   );
 }
 
-registerGate(patternSentinelGate);
+registerGate(patternSentinelGate, {
+  id: "pattern-sentinel",
+  name: "Sentinel Gate",
+  version: "1.0.0",
+  category: "semantic",
+  description: "Meta-gate that scans for recurring anti-patterns and surfaces clusters warranting dedicated gates.",
+  scope: ["src/modules/*/", "anti-patterns"],
+  deductionWeights: { error: 8, warning: 3, info: 0 },
+  owner: "canonical-compliance",
+  lastUpdated: "2026-04-10",
+});
 
 export { patternSentinelGate };
