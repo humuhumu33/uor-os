@@ -240,4 +240,14 @@ function runAestheticsGate() {
 
 // ── Register ─────────────────────────────────────────────────────────────
 
-registerGate(runAestheticsGate);
+registerGate(runAestheticsGate, {
+  id: "aesthetics-conformance",
+  name: "Aesthetics Gate",
+  version: "1.0.0",
+  category: "aesthetic",
+  description: "Enforces φ-proportioned typography, spacing, opacity, and layout constraints from the Algebrica design language.",
+  scope: ["golden-ratio.ts", "desktop/lib/"],
+  deductionWeights: { error: 10, warning: 4, info: 1 },
+  owner: "canonical-compliance",
+  lastUpdated: "2026-04-10",
+});

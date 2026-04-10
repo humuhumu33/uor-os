@@ -160,4 +160,14 @@ function blueprintConformanceGate() {
 
 // ── Register ─────────────────────────────────────────────────────────────
 
-registerGate(blueprintConformanceGate);
+registerGate(blueprintConformanceGate, {
+  id: "blueprint-conformance",
+  name: "Blueprint Gate",
+  version: "1.0.0",
+  category: "structural",
+  description: "Enforces pyramid architecture: ghost detection, layer budgets, and blueprint coverage for all active modules.",
+  scope: ["src/modules/*/"],
+  deductionWeights: { error: 10, warning: 5, info: 0 },
+  owner: "canonical-compliance",
+  lastUpdated: "2026-04-10",
+});

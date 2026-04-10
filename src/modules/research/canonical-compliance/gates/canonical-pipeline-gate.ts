@@ -81,6 +81,16 @@ function canonicalPipelineGate() {
   return buildGateResult("canonical-pipeline", "Pipeline Gate", findings);
 }
 
-registerGate(canonicalPipelineGate);
+registerGate(canonicalPipelineGate, {
+  id: "canonical-pipeline",
+  name: "Pipeline Gate",
+  version: "1.1.0",
+  category: "structural",
+  description: "Detects modules bypassing the canonical URDNA2015 → SHA-256 → UOR identity pipeline with raw sha256hex().",
+  scope: ["proof:", "partition:", "sha256hex"],
+  deductionWeights: { error: 10, warning: 4, info: 1 },
+  owner: "canonical-compliance",
+  lastUpdated: "2026-04-10",
+});
 
 export { canonicalPipelineGate };
