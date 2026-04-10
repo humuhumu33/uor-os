@@ -64,33 +64,54 @@ export default defineConfig(({ mode }) => {
   optimizeDeps: {
     exclude: [
       "@grafeo-db/web",
-      "@grafeo-db/wasm",
-      "@tauri-apps/plugin-clipboard-manager",
-      "@tauri-apps/plugin-notification",
-      "@tauri-apps/plugin-deep-link",
-      "@tauri-apps/plugin-store",
-      "@tauri-apps/plugin-sql",
-      "@tauri-apps/plugin-stronghold",
-      "@tauri-apps/api",
+      ...(mode === "tauri"
+        ? [
+            "@grafeo-db/wasm",
+            "@tauri-apps/plugin-clipboard-manager",
+            "@tauri-apps/plugin-notification",
+            "@tauri-apps/plugin-deep-link",
+            "@tauri-apps/plugin-store",
+            "@tauri-apps/plugin-sql",
+            "@tauri-apps/plugin-stronghold",
+            "@tauri-apps/api",
+          ]
+        : []),
     ],
   },
   build: {
     rollupOptions: {
       external: [
         "@grafeo-db/wasm",
-        "@tauri-apps/plugin-clipboard-manager",
-        "@tauri-apps/plugin-notification",
-        "@tauri-apps/plugin-deep-link",
-        "@tauri-apps/plugin-store",
-        "@tauri-apps/plugin-sql",
-        "@tauri-apps/plugin-stronghold",
-        "@tauri-apps/api",
+        "@grafeo-db/web",
+        ...(mode === "tauri"
+          ? [
+              "@tauri-apps/plugin-clipboard-manager",
+              "@tauri-apps/plugin-notification",
+              "@tauri-apps/plugin-deep-link",
+              "@tauri-apps/plugin-store",
+              "@tauri-apps/plugin-sql",
+              "@tauri-apps/plugin-stronghold",
+              "@tauri-apps/api",
+            ]
+          : []),
       ],
     },
   },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      ...(mode !== "tauri"
+        ? {
+            "@tauri-apps/plugin-clipboard-manager": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
+            "@tauri-apps/plugin-notification": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
+            "@tauri-apps/plugin-deep-link": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
+            "@tauri-apps/plugin-store": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
+            "@tauri-apps/plugin-sql": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
+            "@tauri-apps/plugin-stronghold": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
+            "@tauri-apps/api": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
+            "@grafeo-db/wasm": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
+          }
+        : {}),
     },
   },
   css: {
