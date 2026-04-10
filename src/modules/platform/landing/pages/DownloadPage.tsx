@@ -4,6 +4,7 @@
  * Shows what's included. Gracefully handles missing releases.
  */
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { usePlatform } from "@/modules/platform/desktop/hooks/usePlatform";
 import { useDesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
@@ -78,6 +79,7 @@ const fadeUp = {
 export default function DownloadPage() {
   const { platform, isMac } = usePlatform();
   const { theme } = useDesktopTheme();
+  const [downloading, setDownloading] = useState(false);
 
   const isImmersive = theme === "immersive";
   const isLight = theme === "light";
@@ -193,7 +195,7 @@ export default function DownloadPage() {
 
               <a
                 href={`${RELEASE_BASE}/${primary.file}`}
-                onClick={(e) => handleDownload(e, primary.file)}
+                onClick={(e) => handleDownload(e, primary.file, setDownloading)}
                 className="flex items-center justify-center gap-2.5 w-full py-3.5 text-[15px] font-semibold transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
                 style={{
                   borderRadius: isMac ? "9999px" : "10px",
