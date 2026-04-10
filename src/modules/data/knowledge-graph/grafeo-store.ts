@@ -30,8 +30,16 @@ const fallbackStore = {
   triples: [] as { s: string; p: string; o: string; g: string }[],
 };
 
+let _dbInitPromise: Promise<any> | null = null;
+
 async function getDb(): Promise<any> {
   if (dbInstance) return dbInstance;
+  if (_dbInitPromise) return _dbInitPromise;
+  _dbInitPromise = _initDb();
+  return _dbInitPromise;
+}
+
+async function _initDb(): Promise<any> {
   try {
     const mod = await import("@grafeo-db/web");
     const GrafeoDB = (mod as any).GrafeoDB ?? (mod as any).default;
@@ -47,7 +55,6 @@ async function getDb(): Promise<any> {
   } catch (err) {
     console.warn(`[GrafeoDB] WASM init failed, using in-memory fallback:`, (err as Error).message);
     dbFallback = true;
-    // Return a minimal adapter that implements the methods we actually call
     dbInstance = createFallbackDb();
     return dbInstance;
   }
@@ -55,21 +62,15 @@ async function getDb(): Promise<any> {
 
 function createFallbackDb() {
   return {
-    query: async (sparql: string) => {
-      // Minimal SPARQL SELECT handler over in-memory triples
-      // Supports basic triple pattern matching for system health
-      const selectMatch = sparql.match(/SELECT\s+(.+?)\s+WHERE/is);
-      if (!selectMatch) return [];
-      return [];
+    execute: async (sparql: string) => {
+      // Unified execute method — handles both SELECT and UPDATE
+      const isSelect = /^\s*SELECT/i.test(sparql);
+      if (isSelect) return [];
+      // INSERT/DELETE — no-op in fallback
+      return undefined;
     },
-    update: async (sparql: string) => {
-      // Parse basic INSERT DATA statements
-      const insertMatch = sparql.match(/INSERT\s+DATA\s*\{([^}]+)\}/is);
-      if (insertMatch) {
-        // Store raw for minimal functionality
-        console.debug("[GrafeoDB:fallback] INSERT recorded");
-      }
-    },
+    query: async (_sparql: string) => [],
+    update: async (_sparql: string) => {},
     _isFallback: true,
   };
 }
