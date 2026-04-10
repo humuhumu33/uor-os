@@ -291,8 +291,8 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
                 background: searchBg,
                 border: searchBorder,
                 boxShadow: isMac
-                  ? (isImmersive ? "0 8px 32px -8px hsl(0 0% 0% / 0.5)" : isLight ? "0 6px 28px -8px rgba(0,0,0,0.08)" : "0 6px 28px -8px rgba(0,0,0,0.25)")
-                  : (isImmersive ? "0 4px 16px -4px hsl(0 0% 0% / 0.6)" : isLight ? "0 2px 12px -4px rgba(0,0,0,0.1)" : "0 2px 12px -4px rgba(0,0,0,0.3)"),
+                  ? (isImmersive ? "0 8px 32px -8px hsl(0 0% 0% / 0.5)" : isLight ? "0 6px 28px -8px rgba(0,0,0,0.12)" : "0 6px 28px -8px rgba(0,0,0,0.25)")
+                  : (isImmersive ? "0 4px 16px -4px hsl(0 0% 0% / 0.6)" : isLight ? "0 2px 12px -4px rgba(0,0,0,0.12)" : "0 2px 12px -4px rgba(0,0,0,0.3)"),
                 color: inputColor,
                 caretColor: isImmersive ? "hsl(195 70% 65%)" : undefined,
                 fontFamily: isAddress
