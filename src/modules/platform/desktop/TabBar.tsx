@@ -186,11 +186,11 @@ interface Props {
   onSnapMultiple: (assignments: { id: string; zone: { col: number; row: number; colSpan: number; rowSpan: number }; cols?: number; rows?: number }[]) => void;
 }
 
-const TAB_BAR_H = 38;
-const TAB_H = 34;
+const TAB_BAR_H = 44;
+const TAB_H = 38;
 const TAB_MAX_W = 220;
-const TAB_PADDING = 44;
-const PINNED_TAB_W = 38;
+const TAB_PADDING = 48;
+const PINNED_TAB_W = 42;
 const DRAG_THRESHOLD = 4;
 
 export default function TabBar({
@@ -323,9 +323,9 @@ export default function TabBar({
         <DropdownMenuTrigger asChild>
           <button
             className="flex items-center justify-center shrink-0 h-full transition-opacity duration-150 hover:opacity-70"
-            style={{ width: 46 }}
+            style={{ width: 50 }}
           >
-            <Home className={`w-[14px] h-[14px] ${isLight ? "text-black/50" : "text-white/50"}`} />
+            <Home className={`w-[16px] h-[16px] ${isLight ? "text-black/50" : "text-white/50"}`} />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -445,12 +445,12 @@ export default function TabBar({
       <div className="absolute left-1/2 top-0 h-full -translate-x-1/2 flex items-center z-[1] gap-[6px]">
         {/* UOR glyph — inline SVG for crispness */}
         <svg
-          width="14"
-          height="14"
+          width="16"
+          height="16"
           viewBox="0 0 24 24"
           fill="none"
           className="shrink-0 pointer-events-none"
-          style={{ opacity: isLight ? 0.6 : 0.45 }}
+          style={{ opacity: isLight ? 0.6 : 0.5 }}
         >
           <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" className="text-foreground" />
           <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5" className="text-foreground" />
@@ -460,8 +460,8 @@ export default function TabBar({
           <line x1="16" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="1.5" className="text-foreground" />
         </svg>
         <span
-          className="text-[10.5px] font-medium tracking-[0.22em] uppercase select-none text-foreground pointer-events-none"
-          style={{ opacity: isLight ? 0.6 : 0.45, letterSpacing: "0.22em" }}
+          className="text-[12px] font-medium tracking-[0.2em] uppercase select-none text-foreground pointer-events-none"
+          style={{ opacity: isLight ? 0.6 : 0.5, letterSpacing: "0.2em" }}
         >
           Your Sovereign OS. Powered by UOR.
         </span>
@@ -589,14 +589,14 @@ export default function TabBar({
 
         {/* New tab "+" */}
         <button
-          className={`flex items-center justify-center w-[28px] h-[28px] rounded-full shrink-0 ml-1 transition-colors duration-150
+          className={`flex items-center justify-center w-[30px] h-[30px] rounded-full shrink-0 ml-1 transition-colors duration-150
             ${isLight ? "hover:bg-black/[0.05] text-black/40" : "hover:bg-white/[0.07] text-white/40"}
           `}
           style={{ marginTop: "auto", marginBottom: "auto" }}
           onClick={onSpotlight}
           title={`New tab (${ringKey} K)`}
         >
-          <Plus className="w-[16px] h-[16px]" />
+          <Plus className="w-[17px] h-[17px]" />
         </button>
 
         {/* Snap layout picker */}
@@ -608,7 +608,7 @@ export default function TabBar({
       {/* Right: time → connectivity → engine → fullscreen → profile */}
       <div className="flex items-center shrink-0 pr-2.5 h-full" style={{ gap: `${SPACE.md}px` }}>
         <span
-          className={`text-[12px] ${clockColor} font-medium tabular-nums transition-opacity duration-300`}
+          className={`text-[13px] ${clockColor} font-medium tabular-nums transition-opacity duration-300`}
           style={{ opacity: hideTime ? 0 : 1 }}
         >
           {formatted}&ensp;{clock}
