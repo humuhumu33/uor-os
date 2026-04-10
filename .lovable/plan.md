@@ -1,33 +1,38 @@
 
 
-## Plan: Polished OS-Aware Download CTA Button
+## Plan: Fix GitHub Pages Deployment
 
-### What changes
+### Problem
 
-**File:** `src/modules/platform/desktop/DesktopWidgets.tsx` (lines 413–447)
+The site is deployed at `https://humuhumu33.github.io/uor-os/` but the build uses `base: "/"`, so all asset URLs (JS, CSS, images, PWA icons) point to the root (`/assets/...`) instead of `/uor-os/assets/...`. This causes a blank page — nothing loads.
 
-Replace the current verbose "Go Sovereign — Download Desktop" CTA with a concise, polished download button inspired by the uploaded reference image.
+Additionally, the `404.html` SPA redirect uses `pathSegmentsToKeep = 0`, which strips the `/uor-os/` prefix, breaking navigation.
 
-### Design
+### Changes
 
-The button will look like a sleek, dark pill-shaped button with:
-- **OS icon**: Windows logo (4-square grid) or Apple logo, auto-detected via the existing `usePlatform()` hook
-- **Text**: Simply **"Download"** — concise, confident
-- The icon and text sit side-by-side, centered, with generous padding
-- Dark filled background (not outlined) — `bg-white/10` in dark/immersive mode, `bg-black/90 text-white` in light mode
-- Subtle border, soft glow on hover, smooth scale transition
-- Pill shape (`rounded-full`) to match the reference image
-- Font size ~14px, medium weight — larger and more confident than current 11px
+**1. `vite.config.ts` — set correct base path for GitHub Pages**
 
-### Platform detection
+Update the `base` config (line 12) to detect a GitHub Pages build via an environment variable:
 
-Already available via `usePlatform()` hook (imported in the file). Will use `isMac` to switch between an inline Apple SVG icon and a Windows grid icon (matching the uploaded reference). Linux falls back to a generic download icon.
+```ts
+base: mode === "tauri" ? "./" : process.env.GITHUB_PAGES === "true" ? "/uor-os/" : "/",
+```
 
-### Technical details
+**2. `.github/workflows/deploy.yml` — pass the env variable**
 
-- Replace lines 413–447 with the new button component
-- Keep the `!("__TAURI__" in window)` guard
-- Keep the `TransferToDesktopButton` alongside
-- Use inline SVG paths for Apple/Windows logos (no new dependencies)
-- Remove the `Download` lucide icon import if no longer used elsewhere
+Add `GITHUB_PAGES: "true"` to the build step's `env` block so Vite picks up the correct base path.
+
+**3. `vite.config.ts` — fix PWA manifest paths**
+
+Update the PWA manifest `scope`, `start_url`, `id`, and icon `src` paths to use the resolved base path (e.g., `/uor-os/`) so the service worker and manifest work correctly on GitHub Pages.
+
+**4. `public/404.html` — fix SPA redirect segment count**
+
+Change `pathSegmentsToKeep` from `0` to `1` so the `/uor-os/` prefix is preserved during the SPA redirect.
+
+**5. `public/spa-redirect.js`** — verify and update if it also contains a segment count.
+
+### Result
+
+After these changes, the GitHub Pages build will produce assets with `/uor-os/` prefixed paths. The boot sequence, routing, and PWA will all work correctly at `https://humuhumu33.github.io/uor-os/`. The Lovable preview and Lovable-published site remain unaffected (they still use `base: "/"`).
 
