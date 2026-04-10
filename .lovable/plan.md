@@ -1,50 +1,81 @@
 
+Goal: make the preview boot reliably, fix the current build blocker, and harden the web runtime so the OS loads even when native/Tauri-only features are unavailable.
 
-## Plan: Fix UOR OS Boot — Three Root Causes
+1. Fix the actual preview blocker first
+- Update `src/modules/data/sovereign-spaces/deep-link/handler.ts` so web preview never tries to import `@tauri-apps/plugin-deep-link`.
+- The dev-server log shows this unresolved import is the real reason `DesktopShell` fails to lazy-load in preview.
+- Replace the direct string import with a browser-safe strategy, e.g. only attempt the import when a real Tauri runtime is detected and structure it so Vite does not statically analyze the module in web mode.
 
-### What's Wrong
+2. Fix the UNS build export path robustly
+- Update `src/modules/identity/uns/index.ts` to avoid the fragile `./build/index` re-export that is still failing in Rollup/PWA build.
+- Re-export directly from the concrete files:
+  - `./build/uorfile`
+  - `./build/registry`
+  - `./build/snapshot`
+  - `./build/container`
+  - `./build/compose`
+  - `./build/secrets`
+- This removes the barrel-resolution failure that currently breaks `vite-plugin-pwa:build`.
 
-1. **`src/modules/identity/uns/build/` directory is empty** — The stub files created in previous sessions were never persisted. The barrel export in `uns/index.ts` references `"./build/index"` which doesn't exist, causing the build to fail. This is the **primary build blocker**.
+3. Keep the preview resilient after boot
+- Leave the Supabase placeholder guards in place.
+- Also make `App.tsx` more resilient during debugging by using a visible fallback or guarded shell loader instead of `fallback={null}`, so future lazy-load failures don’t produce a totally blank screen.
 
-2. **Supabase placeholder values cause silent failures** — `AuthProvider` and boot health checks call Supabase with `placeholder.supabase.co`, which can hang or throw, preventing the React tree from rendering.
+4. Fix the knowledge-graph fallback runtime bug
+- Update `src/modules/data/knowledge-graph/grafeo-store.ts`.
+- The current fallback object exposes `query`/`update`, but callers use `db.execute`, which is why the console shows `db.execute is not a function`.
+- Make the fallback adapter implement the same surface the rest of the file expects, especially `execute`, so boot-time anchoring cannot spam runtime warnings or break downstream behavior.
 
-3. **PWA `vite-plugin-pwa:build` amplifies the error** — The PWA plugin runs a second Rollup build that hits the same missing `./build/index` resolution and surfaces it as the build error.
+5. Verify the native-only modules follow the same pattern
+- Audit other dynamic Tauri imports already present:
+  - `plugin-clipboard-manager`
+  - `plugin-notification`
+  - `plugin-store`
+  - `plugin-sql`
+- Ensure each one is safely wrapped so web preview can transform the module graph without import-analysis failures.
 
-### Implementation Steps
+6. Validate end-to-end after implementation
+- Rebuild in development mode and confirm the PWA build no longer fails on `uns/index.ts`.
+- Verify preview behavior:
+  - root route renders
+  - boot sequence animation plays
+  - boot overlay completes
+  - desktop shell appears
+  - no dynamic import failure for `DesktopShell.tsx`
+- Re-check console for any remaining boot-blocking errors.
 
-**Step 1: Create all 7 stub files in `src/modules/identity/uns/build/`**
+Technical details
+```text
+Current root cause chain:
 
-Create these files with stub exports matching every symbol imported across the codebase:
+DesktopShell lazy import
+  -> HandoffReceiver
+    -> deep-link/handler.ts
+      -> dynamic import("@tauri-apps/plugin-deep-link")
+        -> Vite import-analysis fails in web preview
+          -> DesktopShell fetch/import fails
+            -> blank screen
 
-- `index.ts` — barrel re-export of all sibling files
-- `uorfile.ts` — `parseUorfile`, `parseDockerfile`, `buildImage`, `serializeUorfile`, types
-- `registry.ts` — `pushImage`, `pullImage`, `tagImage`, `resolveTag`, `listTags`, `removeTag`, `listImages`, `inspectImage`, `imageHistory`, `removeImage`, `searchImages`, `clearImageRegistry`, types
-- `snapshot.ts` — `createSnapshot`, `hashComponentBytes`, `buildSnapshotChain`, `SnapshotRegistry`, types
-- `container.ts` — `parseDockerRef`, `wrapDockerImage`, `buildFromDockerfile`, `generateCompatReport`, `DOCKER_FEATURE_MAP`, `DOCKER_VERB_MAP`, types
-- `compose.ts` — `parseComposeSpec`, `composeUp`, `composeDown`, `composePs`, `composeScale`, `getComposeApp`, `listComposeApps`, `clearComposeApps`, types
-- `secrets.ts` — `createSecret`, `listSecrets`, `inspectSecret`, `getSecretValue`, `removeSecret`, `injectSecrets`, `clearSecrets`, types
-
-Each function returns a no-op/empty result. Each type is exported as an interface with minimal fields.
-
-**Step 2: Make Supabase resilient to placeholder values**
-
-In `src/integrations/supabase/client.ts`, add a detection flag:
-```typescript
-export const isSupabasePlaceholder = SUPABASE_URL.includes('placeholder');
+Separate build issue:
+uns/index.ts
+  -> re-export from "./build/index"
+  -> Rollup/PWA build cannot resolve barrel reliably
+  -> build fails
 ```
 
-In `src/hooks/use-auth.tsx`, skip Supabase calls when placeholder is detected — immediately set `loading: false` with null session/profile so the app boots without auth.
+Files to change
+- `src/modules/data/sovereign-spaces/deep-link/handler.ts`
+- `src/modules/identity/uns/index.ts`
+- `src/modules/data/knowledge-graph/grafeo-store.ts`
+- `src/App.tsx`
+- Possibly small follow-up guards in:
+  - `src/modules/data/sovereign-spaces/clipboard/clipboard-sync.ts`
+  - `src/modules/data/sovereign-spaces/notify/native-notify.ts`
+  - `src/modules/data/sovereign-spaces/continuity/native-store.ts`
+  - `src/modules/data/knowledge-graph/stores/sqlite-store.ts`
 
-In `src/modules/platform/boot/useCompositeHealth.ts`, guard the Supabase import similarly.
-
-**Step 3: Clean build and verify**
-
-- Clear `dist`, `.vite`, `node_modules/.vite`
-- Run `bun run build:dev` to confirm success
-- Verify the preview loads the boot sequence and transitions to desktop shell
-
-### Files Changed
-- **Created (7):** `src/modules/identity/uns/build/index.ts`, `uorfile.ts`, `registry.ts`, `snapshot.ts`, `container.ts`, `compose.ts`, `secrets.ts`
-- **Modified (2):** `src/integrations/supabase/client.ts`, `src/hooks/use-auth.tsx`
-- **Modified (1):** `src/modules/platform/boot/useCompositeHealth.ts` (guard Supabase)
-
+Expected outcome
+- Build succeeds.
+- Preview loads without the `Failed to fetch dynamically imported module` error.
+- Boot sequence runs and hands off to the desktop shell.
+- Native-only integrations degrade gracefully in browser/Lovable preview.
