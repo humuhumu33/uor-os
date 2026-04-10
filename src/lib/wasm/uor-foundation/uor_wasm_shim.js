@@ -286,7 +286,10 @@ async function __wbg_init(module_or_path) {
     if (wasm !== undefined) return wasm;
     if (module_or_path !== undefined) { if (Object.getPrototypeOf(module_or_path) === Object.prototype) { ({module_or_path} = module_or_path); } }
     // Patched: default path points to /wasm/ served by Vite from public/
-    if (module_or_path === undefined) { module_or_path = '/wasm/uor_wasm_shim_bg.wasm'; }
+    if (module_or_path === undefined) {
+      const base = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
+      module_or_path = base + 'wasm/uor_wasm_shim_bg.wasm';
+    }
     const imports = __wbg_get_imports();
     if (typeof module_or_path === 'string' || (typeof Request === 'function' && module_or_path instanceof Request) || (typeof URL === 'function' && module_or_path instanceof URL)) { module_or_path = fetch(module_or_path); }
     const { instance, module } = await __wbg_load(await module_or_path, imports);

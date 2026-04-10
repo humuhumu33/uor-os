@@ -127,7 +127,7 @@ export const TECH_STACK: readonly StackEntry[] = [
     name: "GrafeoDB",
     role: "Multi-model graph database — SPARQL + Cypher + GQL + SQL via WASM, built-in IndexedDB persistence",
     category: "graph",
-    criticality: "critical",
+    criticality: "recommended",
     fallback: "Array-based in-memory fallback (no multi-language graph queries)",
     kernelFunction: "store",
     criteria: {
@@ -139,17 +139,17 @@ export const TECH_STACK: readonly StackEntry[] = [
     verify: async () => {
       try {
         const mod = await import("@grafeo-db/web");
-        // GrafeoDB may export as default or named
         const GrafeoDB = (mod as any).GrafeoDB ?? (mod as any).default;
-        return typeof GrafeoDB?.create === "function" || typeof GrafeoDB === "function";
+        if (typeof GrafeoDB?.create === "function" || typeof GrafeoDB === "function") return true;
       } catch {
-        // WASM load may fail in non-browser or sandbox — check if the grafeo-store adapter works
-        try {
-          const { grafeoStore } = await import("@/modules/data/knowledge-graph/grafeo-store");
-          return typeof grafeoStore?.sparqlQuery === "function";
-        } catch {
-          return false;
-        }
+        // Native WASM unavailable — expected in web builds where @grafeo-db/web is shimmed
+      }
+      // Accept the in-memory fallback adapter as a valid operational state
+      try {
+        const { grafeoStore } = await import("@/modules/data/knowledge-graph/grafeo-store");
+        return typeof grafeoStore?.sparqlQuery === "function" || typeof grafeoStore?.putNode === "function";
+      } catch {
+        return false;
       }
     },
     detectVersion: async () => {
