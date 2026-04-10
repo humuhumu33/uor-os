@@ -58,7 +58,17 @@ export default defineConfig(({ mode }) => ({
     }),
   ].filter(Boolean),
   optimizeDeps: {
-    exclude: ["@grafeo-db/web", "@grafeo-db/wasm"],
+    exclude: [
+      "@grafeo-db/web",
+      "@grafeo-db/wasm",
+      "@tauri-apps/plugin-clipboard-manager",
+      "@tauri-apps/plugin-notification",
+      "@tauri-apps/plugin-deep-link",
+      "@tauri-apps/plugin-store",
+      "@tauri-apps/plugin-sql",
+      "@tauri-apps/plugin-stronghold",
+      "@tauri-apps/api",
+    ],
   },
   build: {
     rollupOptions: {
