@@ -325,7 +325,7 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
                 onClick={() => onOpenApp?.("files")}
                 className="flex items-center justify-center transition-all relative p-1"
                 style={{
-                  color: isImmersive ? "hsl(0 0% 100% / 0.40)" : isLight ? "hsl(0 0% 0% / 0.25)" : "hsl(0 0% 100% / 0.30)",
+                  color: isImmersive ? "hsl(0 0% 100% / 0.40)" : isLight ? "hsl(0 0% 0% / 0.40)" : "hsl(0 0% 100% / 0.30)",
                 }}
                 title="Open File Explorer"
               >
@@ -391,10 +391,10 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
               style={{
                 background: isImmersive
                   ? "hsl(200 10% 12% / 0.55)"
-                  : isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.04)",
+                  : isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.04)",
                 border: isImmersive
                   ? "1px solid hsl(0 0% 100% / 0.08)"
-                  : isLight ? "1px solid rgba(0,0,0,0.05)" : "1px solid rgba(255,255,255,0.06)",
+                  : isLight ? "1px solid rgba(0,0,0,0.10)" : "1px solid rgba(255,255,255,0.06)",
                 boxShadow: isImmersive
                   ? "0 2px 8px -2px hsl(0 0% 0% / 0.3)"
                   : "none",
@@ -403,7 +403,7 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
               <Icon
                 className="w-[14px] h-[14px]"
                 style={{
-                  color: isImmersive ? "hsl(0 0% 100% / 0.45)" : isLight ? "hsl(0 0% 0% / 0.30)" : "hsl(0 0% 100% / 0.40)",
+                  color: isImmersive ? "hsl(0 0% 100% / 0.45)" : isLight ? "hsl(0 0% 0% / 0.50)" : "hsl(0 0% 100% / 0.40)",
                 }}
               />
             </button>
