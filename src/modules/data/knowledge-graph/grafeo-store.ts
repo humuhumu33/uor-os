@@ -30,8 +30,16 @@ const fallbackStore = {
   triples: [] as { s: string; p: string; o: string; g: string }[],
 };
 
+let _dbInitPromise: Promise<any> | null = null;
+
 async function getDb(): Promise<any> {
   if (dbInstance) return dbInstance;
+  if (_dbInitPromise) return _dbInitPromise;
+  _dbInitPromise = _initDb();
+  return _dbInitPromise;
+}
+
+async function _initDb(): Promise<any> {
   try {
     const mod = await import("@grafeo-db/web");
     const GrafeoDB = (mod as any).GrafeoDB ?? (mod as any).default;
@@ -47,7 +55,6 @@ async function getDb(): Promise<any> {
   } catch (err) {
     console.warn(`[GrafeoDB] WASM init failed, using in-memory fallback:`, (err as Error).message);
     dbFallback = true;
-    // Return a minimal adapter that implements the methods we actually call
     dbInstance = createFallbackDb();
     return dbInstance;
   }
