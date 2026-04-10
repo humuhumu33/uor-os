@@ -181,3 +181,30 @@ export type {
 } from "./lib/categorical-engine";
 
 export { identityMorphism } from "./lib/graph-morphisms";
+
+// ── Hologram File Format ────────────────────────────────────────────────────
+
+export {
+  encodeHologramFile,
+  decodeHologramFile,
+  verifySeal,
+  serializeHologram,
+  parseHologram,
+  hologramToNQuads,
+  nquadsToHologramQuads,
+} from "./hologram-file/codec";
+
+export {
+  ingestHologramFile,
+  exportHologramFile,
+  listHologramFiles,
+} from "./hologram-file/ingest";
+
+export type {
+  HologramFile,
+  HologramFileManifest,
+  HologramFileIdentity,
+  HologramFileOptions,
+  HologramQuad,
+  HologramDecodeResult,
+} from "./hologram-file/types";
