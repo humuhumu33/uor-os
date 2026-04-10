@@ -10,7 +10,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useBootStatus } from "./useBootStatus";
 import { getErrorBudget } from "./seal-error-budget";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, isSupabasePlaceholder } from "@/integrations/supabase/client";
 
 export interface AuditStats {
   receipts: number;
@@ -130,8 +130,12 @@ export function useCompositeHealth(): CompositeHealth {
     traces: 0, loading: true,
   });
 
-  // Fetch audit stats once
+  // Fetch audit stats once (skip when Supabase is a placeholder)
   useEffect(() => {
+    if (isSupabasePlaceholder) {
+      setAudit((s) => ({ ...s, loading: false }));
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
