@@ -37,19 +37,69 @@ export interface GateReport {
 export type Gate = () => GateResult;
 export type AsyncGate = () => Promise<GateResult>;
 
+// ── Gate Specification (metadata template) ────────────────────────────────
+
+export interface GateSpec {
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
+  readonly category: "structural" | "semantic" | "operational" | "aesthetic";
+  readonly description: string;
+  readonly scope: readonly string[];
+  readonly deductionWeights: { readonly error: number; readonly warning: number; readonly info: number };
+  readonly owner: string;
+  readonly lastUpdated: string;
+}
+
+/** Default spec for gates that don't provide one. */
+function defaultSpec(id: string, name: string): GateSpec {
+  return {
+    id,
+    name,
+    version: "0.0.0",
+    category: "structural",
+    description: "(no description provided)",
+    scope: [],
+    deductionWeights: { error: 10, warning: 4, info: 1 },
+    owner: "canonical-compliance",
+    lastUpdated: "2026-01-01",
+  };
+}
+
+// ── Self-Improvement Question Types ───────────────────────────────────────
+
+export interface SelfImprovementQuestion {
+  readonly question: string;
+  readonly context: string;
+  readonly suggestedAction: string;
+}
+
+// ── New Gate Proposal Types ───────────────────────────────────────────────
+
+export interface NewGateProposal {
+  readonly suggestedId: string;
+  readonly suggestedName: string;
+  readonly targetNamespaces: readonly string[];
+  readonly rationale: string;
+  readonly complexity: "low" | "medium" | "high";
+}
+
 // ── Registry ──────────────────────────────────────────────────────────────
 
 const GATE_REGISTRY: Gate[] = [];
 const ASYNC_GATE_REGISTRY: AsyncGate[] = [];
+const SPEC_REGISTRY = new Map<string, GateSpec>();
 
-/** Register a synchronous gate function. */
-export function registerGate(gate: Gate): void {
+/** Register a synchronous gate function with optional metadata spec. */
+export function registerGate(gate: Gate, spec?: GateSpec): void {
   GATE_REGISTRY.push(gate);
+  if (spec) SPEC_REGISTRY.set(spec.id, spec);
 }
 
-/** Register an async gate function (e.g. IndexedDB readers). */
-export function registerAsyncGate(gate: AsyncGate): void {
+/** Register an async gate function with optional metadata spec. */
+export function registerAsyncGate(gate: AsyncGate, spec?: GateSpec): void {
   ASYNC_GATE_REGISTRY.push(gate);
+  if (spec) SPEC_REGISTRY.set(spec.id, spec);
 }
 
 /** Introspect the sync gate registry (used by Master Gate). */
@@ -60,6 +110,16 @@ export function getRegisteredGates(): readonly Gate[] {
 /** Introspect the async gate registry (used by Master Gate). */
 export function getRegisteredAsyncGates(): readonly AsyncGate[] {
   return ASYNC_GATE_REGISTRY;
+}
+
+/** Retrieve a gate's spec by id (returns default if unregistered). */
+export function getGateSpec(id: string, name?: string): GateSpec {
+  return SPEC_REGISTRY.get(id) ?? defaultSpec(id, name ?? id);
+}
+
+/** Get all registered specs. */
+export function getAllGateSpecs(): ReadonlyMap<string, GateSpec> {
+  return SPEC_REGISTRY;
 }
 
 /** Number of total registered gates. */
