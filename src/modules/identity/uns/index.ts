@@ -96,7 +96,7 @@ export interface UorfileInstruction { directive: UorfileDirective; args: string[
 export interface UorfileBuildSpec { directives?: UorfileDirective[]; instructions?: UorfileInstruction[]; base?: UorfileBaseImage; from?: UorfileBaseImage; healthcheck?: UorfileHealthcheck | null; env: Record<string, string>; args: Record<string, string>; ports: number[]; volumes: string[]; entrypoint: string[]; cmd: string[]; labels?: Record<string, string>; workdir?: string; copies?: any[]; runCommands?: any[]; trustRequirements?: any[]; shieldLevel?: string; maintainer?: string; }
 export interface UorfileBaseImage { type?: string; name?: string; reference?: string; tag?: string; }
 export interface UorfileHealthcheck { interval?: number; command?: string; }
-export interface UorImage { id?: string; canonicalId: string; cid?: string; ipv6?: string; layers: UorImageLayer[]; created?: string; builtAt?: string; sizeBytes: number; tags?: string[]; spec: UorfileBuildSpec; }
+export interface UorImage { id?: string; canonicalId: string; cid?: string; ipv6?: string; layers: UorImageLayer[]; created?: string; builtAt?: string; sizeBytes: number; tags?: string[]; spec: UorfileBuildSpec; builderCanonicalId?: string; }
 export interface UorImageLayer { hash: string; size: number; }
 export function parseUorfile(_c: string): UorfileBuildSpec { return { env: {}, args: {}, ports: [], volumes: [], entrypoint: [], cmd: [] }; }
 export function parseDockerfile(_c: string): UorfileBuildSpec { return { env: {}, args: {}, ports: [], volumes: [], entrypoint: [], cmd: [] }; }
@@ -192,7 +192,7 @@ export function diffSnapshots(older: DeploymentSnapshot, newer: DeploymentSnapsh
   return { added, removed, changed, unchanged };
 }
 export async function hashComponentBytes(type: string, label: string, bytes: Uint8Array): Promise<SnapshotComponent> {
-  const buf = await crypto.subtle.digest("SHA-256", bytes);
+  const buf = await crypto.subtle.digest("SHA-256", bytes as unknown as ArrayBuffer);
   const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
   return { type, canonicalId: `urn:uor:derivation:sha256:${hex}`, label, sizeBytes: bytes.length };
 }
