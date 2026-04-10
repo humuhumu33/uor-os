@@ -100,7 +100,7 @@ export {
   getComposeApp, listComposeApps, clearComposeApps,
   createSecret, listSecrets, inspectSecret, getSecretValue, removeSecret,
   injectSecrets, clearSecrets,
-} from "./build";
+} from "./build/index";
 
 export type {
   UorfileDirective, UorfileInstruction, UorfileBuildSpec, UorfileBaseImage,
@@ -110,7 +110,7 @@ export type {
   ComposeService, ComposeBuildConfig, ComposeHealthcheck, ComposeResources,
   ComposeVolume, ComposeNetwork, ComposeSecret, ComposeSpec, ComposeApp, ComposeServiceStatus,
   UorSecret, SecretValue, SecretWriteResult,
-} from "./build";
+} from "./build/index";
 
 // ── Types (re-export all for consumer modules) ──────────────────────────────
 export type {
