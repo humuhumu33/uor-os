@@ -64,17 +64,17 @@ function DownloadCTA({ theme, onClick }: { theme: string; onClick: () => void })
       onClick={onClick}
       className="fixed right-5 z-[4] inline-flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-medium tracking-wide transition-all duration-300 hover:scale-[1.04] active:scale-[0.97]"
       style={{
-        top: "52px",
+        top: "60px",
         color: isLight
           ? "hsl(0 0% 100%)"
           : isImmersive
             ? "hsl(0 0% 100% / 0.88)"
             : "hsl(0 0% 90%)",
         background: isLight
-          ? "hsl(0 0% 10%)"
+          ? "hsl(0 0% 10% / 0.75)"
           : isImmersive
-            ? "hsl(0 0% 100% / 0.10)"
-            : "hsl(0 0% 100% / 0.08)",
+            ? "hsl(0 0% 100% / 0.06)"
+            : "hsl(0 0% 100% / 0.05)",
         border: isLight
           ? "1px solid hsl(0 0% 22%)"
           : isImmersive
