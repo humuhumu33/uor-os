@@ -88,29 +88,9 @@ export type {
   OrbitRouteAnnouncement, UnsNodeConfig, ServiceStatus, HealthResponse,
 } from "./mesh";
 
-// ── Build. Uorfile, Docker Compat, Compose, Secrets, Registry ──────────────
-export {
-  parseUorfile, parseDockerfile, buildImage, serializeUorfile,
-  parseDockerRef, wrapDockerImage, buildFromDockerfile, generateCompatReport,
-  DOCKER_FEATURE_MAP, DOCKER_VERB_MAP,
-  tagImage, resolveTag, listTags, removeTag,
-  pushImage, pullImage, listImages, inspectImage, imageHistory, removeImage,
-  searchImages, clearImageRegistry,
-  parseComposeSpec, composeUp, composeDown, composePs, composeScale,
-  getComposeApp, listComposeApps, clearComposeApps,
-  createSecret, listSecrets, inspectSecret, getSecretValue, removeSecret,
-  injectSecrets, clearSecrets,
-} from "./build";
-
-export type {
-  UorfileDirective, UorfileInstruction, UorfileBuildSpec, UorfileBaseImage,
-  UorfileHealthcheck, UorImage, UorImageLayer,
-  DockerImageRef, WrappedDockerImage, DockerCompatStatus, DockerFeatureMapping, DockerVerbMapping,
-  ImageTag, PushResult, PullResult, ImageHistoryEntry,
-  ComposeService, ComposeBuildConfig, ComposeHealthcheck, ComposeResources,
-  ComposeVolume, ComposeNetwork, ComposeSecret, ComposeSpec, ComposeApp, ComposeServiceStatus,
-  UorSecret, SecretValue, SecretWriteResult,
-} from "./build";
+// ── Build module (not yet imported into this workspace) ──────────────
+// TODO: Re-enable when uns/build is added
+// export { ... } from "./build";
 
 // ── Types (re-export all for consumer modules) ──────────────────────────────
 export type {
