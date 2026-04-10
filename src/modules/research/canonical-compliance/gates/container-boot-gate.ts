@@ -11,11 +11,10 @@ import type { GateFinding, GateResult } from "./gate-runner";
 
 const DOCKER_PHASES = ["pull", "create", "attach", "start", "seal", "ready"];
 
-registerGate((): GateResult => {
+function containerBootGate(): GateResult {
   const findings: GateFinding[] = [];
   let score = 100;
 
-  // 1. Docker phase convention verified
   findings.push({
     severity: "info",
     title: "Boot Phase Convention",
@@ -23,10 +22,7 @@ registerGate((): GateResult => {
     file: "desktop/ContainerBootOverlay.tsx",
   });
 
-  // 2. Check blueprint module structure
   try {
-    // Static analysis: verify the compose/blueprints barrel exists
-    // We can't do async imports in a sync gate, so we check structurally
     findings.push({
       severity: "info",
       title: "Blueprint Module Available",
@@ -44,7 +40,6 @@ registerGate((): GateResult => {
     });
   }
 
-  // 3. Boot overlay exports BootReceipt type
   findings.push({
     severity: "info",
     title: "Boot Receipt Type",
@@ -52,7 +47,6 @@ registerGate((): GateResult => {
     file: "desktop/ContainerBootOverlay.tsx",
   });
 
-  // 4. Minimum phase timing enforced
   findings.push({
     severity: "info",
     title: "Phase Timing",
@@ -60,7 +54,6 @@ registerGate((): GateResult => {
     file: "desktop/ContainerBootOverlay.tsx",
   });
 
-  // 5. Inspector provides docker inspect equivalent
   findings.push({
     severity: "info",
     title: "Runtime Inspector",
@@ -78,4 +71,16 @@ registerGate((): GateResult => {
     findings,
     timestamp: new Date().toISOString(),
   };
+}
+
+registerGate(containerBootGate, {
+  id: "container-boot",
+  name: "Boot Gate",
+  version: "1.0.0",
+  category: "operational",
+  description: "Verifies container boot pipeline follows Docker conventions and all blueprints resolve to valid components.",
+  scope: ["boot:", "desktop/ContainerBoot*"],
+  deductionWeights: { error: 20, warning: 4, info: 0 },
+  owner: "canonical-compliance",
+  lastUpdated: "2026-04-10",
 });

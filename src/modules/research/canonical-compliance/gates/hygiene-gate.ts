@@ -38,6 +38,16 @@ function hygieneGate(): GateResult {
   };
 }
 
-registerGate(hygieneGate);
+registerGate(hygieneGate, {
+  id: "module-hygiene",
+  name: "Hygiene Gate",
+  version: "1.0.0",
+  category: "structural",
+  description: "Wraps the pruning gate to detect inactive modules, orphaned projections, and simplification opportunities.",
+  scope: ["src/modules/*/"],
+  deductionWeights: { error: 10, warning: 4, info: 1 },
+  owner: "canonical-compliance",
+  lastUpdated: "2026-04-10",
+});
 
 export { hygieneGate };
