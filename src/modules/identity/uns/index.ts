@@ -166,6 +166,54 @@ export function removeSecret(_n: string): boolean { return false; }
 export function injectSecrets(_t: any, _ns: string[]): any { return _t; }
 export function clearSecrets(): void {}
 
+// Snapshot
+export interface SnapshotComponent { type: string; canonicalId: string; label: string; sizeBytes?: number; }
+export interface DeploymentSnapshot { "u:canonicalId": string; "u:cid": string; "u:ipv6": string; "@type": string; components: SnapshotComponent[]; label: string; version: string; creatorCanonicalId: string; previousSnapshotId?: string; createdAt: string; }
+export async function createSnapshot(input: { components: SnapshotComponent[]; label: string; version: string; creatorCanonicalId: string; previousSnapshotId?: string }): Promise<DeploymentSnapshot> {
+  const sorted = [...input.components].sort((a, b) => `${a.type}:${a.canonicalId}`.localeCompare(`${b.type}:${b.canonicalId}`));
+  const payload = JSON.stringify(sorted.map(c => `${c.type}:${c.canonicalId}`));
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(payload));
+  const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  const cid = `b${hex.slice(0, 59)}`;
+  return { "u:canonicalId": `urn:uor:derivation:sha256:${hex}`, "u:cid": cid, "u:ipv6": `fd00::${hex.slice(0, 4)}:${hex.slice(4, 8)}`, "@type": "state:DeploymentSnapshot", components: sorted, label: input.label, version: input.version, creatorCanonicalId: input.creatorCanonicalId, previousSnapshotId: input.previousSnapshotId, createdAt: new Date().toISOString() };
+}
+export async function verifySnapshot(s: DeploymentSnapshot): Promise<boolean> {
+  const payload = JSON.stringify(s.components.map(c => `${c.type}:${c.canonicalId}`));
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(payload));
+  const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  return s["u:canonicalId"] === `urn:uor:derivation:sha256:${hex}`;
+}
+export function diffSnapshots(older: DeploymentSnapshot, newer: DeploymentSnapshot) {
+  const oMap = new Map(older.components.map(c => [c.type, c]));
+  const nMap = new Map(newer.components.map(c => [c.type, c]));
+  const added: SnapshotComponent[] = [], removed: SnapshotComponent[] = [], changed: SnapshotComponent[] = [], unchanged: SnapshotComponent[] = [];
+  for (const [t, c] of nMap) { const o = oMap.get(t); if (!o) added.push(c); else if (o.canonicalId !== c.canonicalId) changed.push(c); else unchanged.push(c); }
+  for (const [t, c] of oMap) { if (!nMap.has(t)) removed.push(c); }
+  return { added, removed, changed, unchanged };
+}
+export async function hashComponentBytes(type: string, label: string, bytes: Uint8Array): Promise<SnapshotComponent> {
+  const buf = await crypto.subtle.digest("SHA-256", bytes);
+  const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  return { type, canonicalId: `urn:uor:derivation:sha256:${hex}`, label, sizeBytes: bytes.length };
+}
+export function buildSnapshotChain(snapshots: DeploymentSnapshot[]): DeploymentSnapshot[] {
+  const byId = new Map(snapshots.map(s => [s["u:canonicalId"], s]));
+  const roots = snapshots.filter(s => !s.previousSnapshotId || !byId.has(s.previousSnapshotId));
+  const chain: DeploymentSnapshot[] = [];
+  const visited = new Set<string>();
+  const walk = (s: DeploymentSnapshot) => { if (visited.has(s["u:canonicalId"])) return; visited.add(s["u:canonicalId"]); chain.push(s); for (const n of snapshots) { if (n.previousSnapshotId === s["u:canonicalId"]) walk(n); } };
+  roots.forEach(walk);
+  return chain;
+}
+export class SnapshotRegistry {
+  private kv: any;
+  constructor(kv: any) { this.kv = kv; }
+  async store(s: DeploymentSnapshot) { await this.kv.set(`snap:${s["u:canonicalId"]}`, s); await this.kv.set(`snap:label:${s.label}`, s["u:canonicalId"]); await this.kv.set(`snap:latest:${s.creatorCanonicalId}`, s["u:canonicalId"]); }
+  async get(id: string): Promise<DeploymentSnapshot | null> { return (await this.kv.get(id.startsWith("snap:") ? id : `snap:${id}`)) ?? null; }
+  async getByLabel(label: string): Promise<DeploymentSnapshot | null> { const id = await this.kv.get(`snap:label:${label}`); return id ? this.get(id) : null; }
+  async getLatest(creator: string): Promise<DeploymentSnapshot | null> { const id = await this.kv.get(`snap:latest:${creator}`); return id ? this.get(id) : null; }
+}
+
 // ── Types (re-export all for consumer modules) ──────────────────────────────
 export type {
   UnsRecordType,
