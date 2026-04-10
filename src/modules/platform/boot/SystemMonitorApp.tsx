@@ -323,280 +323,284 @@ export default function SystemMonitorApp() {
   return (
     <div className="h-full flex flex-col bg-background text-foreground select-none overflow-hidden">
       {/* ── Header Bar ── */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/50 flex-shrink-0">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 border-b border-border/50 flex-shrink-0 gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <PulseDot color={unifiedColor} size={7} />
-          <span className="text-sm font-semibold" style={{ color: unifiedColor }}>{compositeHealth.label}</span>
-          <span className="text-xs text-muted-foreground font-mono tabular-nums">{formatUptime(uptimeMs)}</span>
-          <span className="text-muted-foreground/30 text-xs">·</span>
-          <span className="text-xs text-muted-foreground/50 font-mono">Session {receipt.seal.sessionNonce.slice(0, 8)}</span>
+          <span className="text-sm font-semibold whitespace-nowrap" style={{ color: unifiedColor }}>{compositeHealth.label}</span>
+          <span className="text-xs text-muted-foreground font-mono tabular-nums whitespace-nowrap">{formatUptime(uptimeMs)}</span>
+          <span className="text-muted-foreground/30 text-xs hidden sm:inline">·</span>
+          <span className="text-xs text-muted-foreground/50 font-mono hidden sm:inline whitespace-nowrap">Session {receipt.seal.sessionNonce.slice(0, 8)}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {isDegraded && degradationLog.length > 0 && (
-            <span className="flex items-center gap-1.5 text-[10px] text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-md font-medium">
+            <span className="flex items-center gap-1.5 text-[10px] text-amber-500 bg-amber-500/10 px-2 sm:px-2.5 py-1 rounded-md font-medium whitespace-nowrap">
               <IconAlertTriangle size={12} />
               {degradationLog.length} alert{degradationLog.length > 1 ? "s" : ""}
             </span>
           )}
           <button
             onClick={handleCopyReport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-muted/30 hover:bg-muted/60 transition-all duration-150 text-foreground/60 hover:text-foreground border border-transparent hover:border-border/50"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium bg-muted/30 hover:bg-muted/60 transition-all duration-150 text-foreground/60 hover:text-foreground border border-transparent hover:border-border/50 whitespace-nowrap"
           >
-            {copied ? (<><IconClipboardCheck size={14} /> Copied</>) : (<><IconCopy size={14} /> Export Report</>)}
+            {copied ? (<><IconClipboardCheck size={14} /> Copied</>) : (<><IconCopy size={14} /> <span className="hidden sm:inline">Export Report</span><span className="sm:hidden">Export</span></>)}
           </button>
         </div>
       </div>
 
       {/* ── Active Alerts Banner (conditional) ── */}
       {isDegraded && degradationLog.length > 0 && (
-        <div className="px-4 py-2 border-b border-amber-500/15 bg-amber-500/5 flex-shrink-0">
-          <div className="flex flex-wrap gap-x-6 gap-y-1">
+        <div className="px-3 sm:px-4 py-2 border-b border-amber-500/15 bg-amber-500/5 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1.5 sm:gap-x-6 sm:gap-y-1">
             {degradationLog.map((entry, i) => (
-              <span key={i} className="flex items-center gap-1.5 text-xs text-amber-400/90">
+              <span key={i} className="flex items-start sm:items-center gap-1.5 text-xs text-amber-400/90">
                 <PulseDot color="#f59e0b" size={4} />
-                <span className="font-semibold text-amber-500">{entry.component}:</span> {entry.issue}
+                <span className="break-words">
+                  <span className="font-semibold text-amber-500">{entry.component}:</span> {entry.issue}
+                </span>
               </span>
             ))}
           </div>
         </div>
       )}
 
-      {/* ── 3-Column Grid ── */}
-      <div className="flex-1 grid grid-cols-3 gap-3 p-4 min-h-0">
+      {/* ── Responsive Grid ── */}
+      <div className="flex-1 overflow-y-auto scrollbar-none p-3 sm:p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-auto">
 
-        {/* ═══ Column 1: HARDWARE ═══ */}
-        <div className="flex flex-col gap-3 min-h-0 overflow-y-auto scrollbar-none">
-          <ColumnHeader label="Hardware" icon={<IconCpu size={13} />} />
+          {/* ═══ Section 1: HARDWARE ═══ */}
+          <div className="flex flex-col gap-3">
+            <ColumnHeader label="Hardware" icon={<IconCpu size={13} />} />
 
-          {/* Processors */}
-          <GrafanaPanel title="Processors" icon={<IconCpu size={14} />} onClick={() => setActiveView("cpu")}>
-            <div className="text-lg font-bold font-mono text-foreground/90">{hw.cores} vCPU</div>
-            <MiniSparkline
-              data={cpuSparkline}
-              color="hsl(56, 80%, 55%)"
-              thresholds={[
-                { max: 50, color: "hsl(152, 44%, 50%)" },
-                { max: 80, color: "hsl(40, 90%, 55%)" },
-                { max: 100, color: "hsl(0, 70%, 55%)" },
-              ]}
-              height={28}
-            />
-          </GrafanaPanel>
+            {/* Processors */}
+            <GrafanaPanel title="Processors" icon={<IconCpu size={14} />} onClick={() => setActiveView("cpu")}>
+              <div className="text-lg font-bold font-mono text-foreground/90">{hw.cores} vCPU</div>
+              <MiniSparkline
+                data={cpuSparkline}
+                color="hsl(56, 80%, 55%)"
+                thresholds={[
+                  { max: 50, color: "hsl(152, 44%, 50%)" },
+                  { max: 80, color: "hsl(40, 90%, 55%)" },
+                  { max: 100, color: "hsl(0, 70%, 55%)" },
+                ]}
+                height={28}
+              />
+            </GrafanaPanel>
 
-          {/* Memory */}
-          <GrafanaPanel title="Memory" icon={<IconDeviceDesktop size={14} />} onClick={() => setActiveView("memory")}>
-            <div className="text-lg font-bold font-mono text-foreground/90">{hw.memoryGb ? `${hw.memoryGb} GB` : "Restricted"}</div>
-            <MiniSparkline
-              data={memSparkline}
-              color="hsl(210, 70%, 60%)"
-              thresholds={[
-                { max: 60, color: "hsl(152, 44%, 50%)" },
-                { max: 85, color: "hsl(40, 90%, 55%)" },
-                { max: 100, color: "hsl(0, 70%, 55%)" },
-              ]}
-              height={28}
-            />
-          </GrafanaPanel>
+            {/* Memory */}
+            <GrafanaPanel title="Memory" icon={<IconDeviceDesktop size={14} />} onClick={() => setActiveView("memory")}>
+              <div className="text-lg font-bold font-mono text-foreground/90">{hw.memoryGb ? `${hw.memoryGb} GB` : "Restricted"}</div>
+              <MiniSparkline
+                data={memSparkline}
+                color="hsl(210, 70%, 60%)"
+                thresholds={[
+                  { max: 60, color: "hsl(152, 44%, 50%)" },
+                  { max: 85, color: "hsl(40, 90%, 55%)" },
+                  { max: 100, color: "hsl(0, 70%, 55%)" },
+                ]}
+                height={28}
+              />
+            </GrafanaPanel>
 
-          {/* Display */}
-          <GrafanaPanel title="Display" icon={<IconDeviceDesktop size={14} />} onClick={() => setActiveView("hardware")}>
-            <div className="space-y-2">
-              <GrafanaRow label="Resolution"><span className="font-mono">{hw.screenWidth}×{hw.screenHeight}</span></GrafanaRow>
-              <GrafanaRow label="GPU"><span className="font-mono text-[11px] truncate max-w-[160px] inline-block">{hw.gpu ?? "Unknown"}</span></GrafanaRow>
-              <GrafanaRow label="Touch"><span className="font-mono">{hw.touchCapable ? "Yes" : "No"}</span></GrafanaRow>
-            </div>
-          </GrafanaPanel>
+            {/* Display */}
+            <GrafanaPanel title="Display" icon={<IconDeviceDesktop size={14} />} onClick={() => setActiveView("hardware")}>
+              <div className="space-y-2">
+                <GrafanaRow label="Resolution"><span className="font-mono">{hw.screenWidth}×{hw.screenHeight}</span></GrafanaRow>
+                <GrafanaRow label="GPU"><span className="font-mono text-[11px] break-all">{hw.gpu ?? "Unknown"}</span></GrafanaRow>
+                <GrafanaRow label="Touch"><span className="font-mono">{hw.touchCapable ? "Yes" : "No"}</span></GrafanaRow>
+              </div>
+            </GrafanaPanel>
 
-          {/* Provenance */}
-          <GrafanaPanel title="Provenance" icon={<IconServer size={14} />}>
-            <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-semibold ${
-              receipt.provenance.context === "local" ? "bg-green-500/10 text-green-500" : "bg-blue-500/10 text-blue-500"
-            }`}>
-              <PulseDot color={receipt.provenance.context === "local" ? "#22c55e" : "#3b82f6"} size={5} />
-              {receipt.provenance.context === "local" ? "Local Instance" : `Remote · ${receipt.provenance.hostname}`}
-            </div>
-            <div className="text-[11px] text-muted-foreground/50 font-mono mt-1 truncate">
-              {receipt.provenance.provenanceHash.slice(0, 28)}…
-            </div>
-          </GrafanaPanel>
-        </div>
+            {/* Provenance */}
+            <GrafanaPanel title="Provenance" icon={<IconServer size={14} />}>
+              <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-semibold ${
+                receipt.provenance.context === "local" ? "bg-green-500/10 text-green-500" : "bg-blue-500/10 text-blue-500"
+              }`}>
+                <PulseDot color={receipt.provenance.context === "local" ? "#22c55e" : "#3b82f6"} size={5} />
+                {receipt.provenance.context === "local" ? "Local Instance" : `Remote · ${receipt.provenance.hostname}`}
+              </div>
+              <div className="text-[11px] text-muted-foreground/50 font-mono mt-1 break-all">
+                {receipt.provenance.provenanceHash}
+              </div>
+            </GrafanaPanel>
+          </div>
 
-        {/* ═══ Column 2: SYSTEM ═══ */}
-        <div className="flex flex-col gap-3 min-h-0 overflow-y-auto scrollbar-none">
-          <ColumnHeader label="System" icon={<IconCircleCheck size={13} />} />
+          {/* ═══ Section 2: SYSTEM ═══ */}
+          <div className="flex flex-col gap-3">
+            <ColumnHeader label="System" icon={<IconCircleCheck size={13} />} />
 
-          {/* Kernel Primitives (Fano Plane) */}
-          <GrafanaPanel title="Kernel P₀–P₆" icon={<IconCircleCheck size={14} />} onClick={() => setActiveView("kernel")}>
-            {kernelData ? (
-              <>
-                <div className="grid grid-cols-1 gap-1.5">
-                  {kernelData.table.map((fn, i) => {
-                    const ok = kernelData.verification.results.find((r) => r.name === fn.name)?.ok ?? false;
-                    return (
-                      <div key={fn.name} className="flex items-center gap-2">
-                        <div
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{
-                            backgroundColor: ok ? "#22c55e" : "#ef4444",
-                            boxShadow: ok ? "0 0 6px rgba(34,197,94,0.4)" : "0 0 6px rgba(239,68,68,0.4)",
-                          }}
-                        />
-                        <span className="text-muted-foreground text-[11px] font-mono w-5">P{FANO_SUB[i]}</span>
-                        <span className="text-foreground/80 text-xs font-semibold">{FANO_LABELS[i]}</span>
-                        <span className="ml-auto text-[10px] text-muted-foreground/40 font-mono truncate max-w-[100px]">{fn.framework}</span>
-                      </div>
-                    );
-                  })}
+            {/* Kernel Primitives (Fano Plane) */}
+            <GrafanaPanel title="Kernel P₀–P₆" icon={<IconCircleCheck size={14} />} onClick={() => setActiveView("kernel")}>
+              {kernelData ? (
+                <>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {kernelData.table.map((fn, i) => {
+                      const ok = kernelData.verification.results.find((r) => r.name === fn.name)?.ok ?? false;
+                      return (
+                        <div key={fn.name} className="flex items-center gap-2">
+                          <div
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{
+                              backgroundColor: ok ? "#22c55e" : "#ef4444",
+                              boxShadow: ok ? "0 0 6px rgba(34,197,94,0.4)" : "0 0 6px rgba(239,68,68,0.4)",
+                            }}
+                          />
+                          <span className="text-muted-foreground text-[11px] font-mono w-5 shrink-0">P{FANO_SUB[i]}</span>
+                          <span className="text-foreground/80 text-xs font-semibold">{FANO_LABELS[i]}</span>
+                          <span className="ml-auto text-[10px] text-muted-foreground/40 font-mono break-all text-right">{fn.framework}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground pt-2 border-t border-border/50 font-mono">
+                    {kernelData.verification.allPassed ? "7/7 verified ✓" : `${kernelData.verification.results.filter((r) => r.ok).length}/7 verified`}
+                  </div>
+                </>
+              ) : (
+                <div className="text-muted-foreground text-xs">Unavailable</div>
+              )}
+            </GrafanaPanel>
+
+            {/* Stack Health */}
+            <GrafanaPanel title="Stack Health" icon={<IconStack2 size={14} />} onClick={() => setActiveView("stack")}>
+              {stackSummary && (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-foreground/80 font-medium">{stackSummary.available}/{stackSummary.total} active</span>
+                    <span className="font-bold tabular-nums text-sm font-mono" style={{ color: stackPct === 100 ? "#22c55e" : stackPct > 80 ? "#f59e0b" : "#ef4444" }}>
+                      {stackPct}%
+                    </span>
+                  </div>
+                  <ThresholdBar
+                    value={stackPct}
+                    thresholds={[
+                      { max: 60, color: "#ef4444" },
+                      { max: 80, color: "#f59e0b" },
+                      { max: 100, color: "#22c55e" },
+                    ]}
+                  />
+                </>
+              )}
+            </GrafanaPanel>
+
+            {/* Modules */}
+            <GrafanaPanel title="Modules" icon={<IconStack2 size={14} />} onClick={() => setActiveView("modules")}>
+              <div className="text-lg font-bold font-mono text-foreground/90">{receipt.moduleCount} loaded</div>
+              <MiniSparkline data={moduleSparkline} color="hsl(270, 60%, 60%)" height={24} />
+            </GrafanaPanel>
+
+            {/* Capabilities */}
+            <GrafanaPanel title="Capabilities" icon={<IconActivity size={14} />} onClick={() => setActiveView("capabilities")}>
+              <div className="flex gap-2 flex-wrap">
+                <CapChip label="WASM" ok={hw.wasmSupported} />
+                <CapChip label="SIMD" ok={hw.simdSupported} />
+                <CapChip label="SAB" ok={typeof SharedArrayBuffer !== "undefined"} />
+              </div>
+            </GrafanaPanel>
+          </div>
+
+          {/* ═══ Section 3: HEALTH ═══ */}
+          <div className="flex flex-col gap-3">
+            <ColumnHeader label="Health" icon={<IconHeartbeat size={13} />} />
+
+            {/* Availability Ring */}
+            <GrafanaPanel title="Availability" icon={<IconHeartbeat size={14} />} onClick={() => setActiveView("availability")}>
+              <div className="flex items-center gap-4">
+                <div className="relative w-16 h-16 shrink-0">
+                  <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
+                    <circle cx="40" cy="40" r="34" fill="none" strokeWidth="5" className="stroke-muted/20" />
+                    <circle
+                      cx="40" cy="40" r="34"
+                      fill="none" strokeWidth="5"
+                      stroke={unifiedColor}
+                      strokeDasharray={`${2 * Math.PI * 34}`}
+                      strokeDashoffset={`${2 * Math.PI * 34 * (1 - compositeHealth.score / 100)}`}
+                      strokeLinecap="round"
+                      style={{ filter: `drop-shadow(0 0 6px ${unifiedColor}50)` }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-sm font-bold font-mono" style={{ color: unifiedColor }}>{compositeHealth.score}%</span>
+                  </div>
                 </div>
-                <div className="text-[11px] text-muted-foreground pt-2 border-t border-border/50 font-mono">
-                  {kernelData.verification.allPassed ? "7/7 verified ✓" : `${kernelData.verification.results.filter((r) => r.ok).length}/7 verified`}
+                <div className="space-y-1.5 flex-1 text-xs min-w-0">
+                  <GrafanaRow label="Status" color={unifiedColor}>{compositeHealth.label}</GrafanaRow>
+                  <GrafanaRow label="Boot"><span className="font-mono">{receipt.bootTimeMs}ms</span></GrafanaRow>
+                  <GrafanaRow label="Engine"><span className="font-mono">{receipt.engineType === "wasm" ? "WASM" : "TS"}</span></GrafanaRow>
+                  <GrafanaRow label="Ring" color={ringOk ? "#22c55e" : "#ef4444"}>{ringOk ? "✓" : "✗"}</GrafanaRow>
                 </div>
-              </>
-            ) : (
-              <div className="text-muted-foreground text-xs">Unavailable</div>
-            )}
-          </GrafanaPanel>
+              </div>
+            </GrafanaPanel>
 
-          {/* Stack Health */}
-          <GrafanaPanel title="Stack Health" icon={<IconStack2 size={14} />} onClick={() => setActiveView("stack")}>
-            {stackSummary && (
-              <>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-foreground/80 font-medium">{stackSummary.available}/{stackSummary.total} active</span>
-                  <span className="font-bold tabular-nums text-sm font-mono" style={{ color: stackPct === 100 ? "#22c55e" : stackPct > 80 ? "#f59e0b" : "#ef4444" }}>
-                    {stackPct}%
+            {/* Services */}
+            <GrafanaPanel title="Services" icon={<IconServer size={14} />}>
+              <div className="space-y-2">
+                {SERVICE_ORDER.map((featureId) => {
+                  const feat = conn.features[featureId];
+                  const dotColor = feat.available ? "#22c55e" : feat.localOnly ? "#f59e0b" : "#6b7280";
+                  return (
+                    <div key={featureId} className="flex items-center gap-2.5">
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dotColor, boxShadow: `0 0 6px ${dotColor}40` }} />
+                      <span className="text-xs text-foreground/80 font-medium">{SERVICE_LABELS[featureId]}</span>
+                      {feat.localOnly && (
+                        <span className="ml-auto text-[9px] text-amber-500/60 font-mono">local</span>
+                      )}
+                      {!feat.available && !feat.localOnly && (
+                        <span className="ml-auto text-[9px] text-muted-foreground/40 font-mono">offline</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </GrafanaPanel>
+
+            {/* Error Budget / Composite */}
+            <GrafanaPanel title="Error Budget" icon={<IconClipboardCheck size={14} />}>
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Seal</span>
+                  <span className="text-sm font-bold font-mono" style={{ color: compositeHealth.signals.sealWeight >= 90 ? "#22c55e" : "#f59e0b" }}>
+                    {compositeHealth.signals.sealWeight}%
                   </span>
                 </div>
                 <ThresholdBar
-                  value={stackPct}
-                  thresholds={[
-                    { max: 60, color: "#ef4444" },
-                    { max: 80, color: "#f59e0b" },
-                    { max: 100, color: "#22c55e" },
-                  ]}
+                  value={compositeHealth.signals.sealWeight}
+                  thresholds={[{ max: 60, color: "#ef4444" }, { max: 80, color: "#f59e0b" }, { max: 100, color: "#22c55e" }]}
                 />
-              </>
-            )}
-          </GrafanaPanel>
-
-          {/* Modules */}
-          <GrafanaPanel title="Modules" icon={<IconStack2 size={14} />} onClick={() => setActiveView("modules")}>
-            <div className="text-lg font-bold font-mono text-foreground/90">{receipt.moduleCount} loaded</div>
-            <MiniSparkline data={moduleSparkline} color="hsl(270, 60%, 60%)" height={24} />
-          </GrafanaPanel>
-
-          {/* Capabilities */}
-          <GrafanaPanel title="Capabilities" icon={<IconActivity size={14} />} onClick={() => setActiveView("capabilities")}>
-            <div className="flex gap-2 flex-wrap">
-              <CapChip label="WASM" ok={hw.wasmSupported} />
-              <CapChip label="SIMD" ok={hw.simdSupported} />
-              <CapChip label="SAB" ok={typeof SharedArrayBuffer !== "undefined"} />
-            </div>
-          </GrafanaPanel>
-        </div>
-
-        {/* ═══ Column 3: HEALTH ═══ */}
-        <div className="flex flex-col gap-3 min-h-0 overflow-y-auto scrollbar-none">
-          <ColumnHeader label="Health" icon={<IconHeartbeat size={13} />} />
-
-          {/* Availability Ring */}
-          <GrafanaPanel title="Availability" icon={<IconHeartbeat size={14} />} onClick={() => setActiveView("availability")}>
-            <div className="flex items-center gap-4">
-              <div className="relative w-16 h-16 shrink-0">
-                <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
-                  <circle cx="40" cy="40" r="34" fill="none" strokeWidth="5" className="stroke-muted/20" />
-                  <circle
-                    cx="40" cy="40" r="34"
-                    fill="none" strokeWidth="5"
-                    stroke={unifiedColor}
-                    strokeDasharray={`${2 * Math.PI * 34}`}
-                    strokeDashoffset={`${2 * Math.PI * 34 * (1 - compositeHealth.score / 100)}`}
-                    strokeLinecap="round"
-                    style={{ filter: `drop-shadow(0 0 6px ${unifiedColor}50)` }}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Budget</span>
+                  <span className="text-sm font-bold font-mono" style={{ color: compositeHealth.signals.errorBudget >= 90 ? "#22c55e" : "#f59e0b" }}>
+                    {compositeHealth.signals.errorBudget}%
+                  </span>
+                </div>
+                <ThresholdBar
+                  value={compositeHealth.signals.errorBudget}
+                  thresholds={[{ max: 60, color: "#ef4444" }, { max: 80, color: "#f59e0b" }, { max: 100, color: "#22c55e" }]}
+                />
+                <div className="flex items-center justify-between pt-1.5 border-t border-border/50">
+                  <span className="text-xs text-muted-foreground font-semibold">Composite</span>
                   <span className="text-sm font-bold font-mono" style={{ color: unifiedColor }}>{compositeHealth.score}%</span>
                 </div>
               </div>
-              <div className="space-y-1.5 flex-1 text-xs">
-                <GrafanaRow label="Status" color={unifiedColor}>{compositeHealth.label}</GrafanaRow>
-                <GrafanaRow label="Boot"><span className="font-mono">{receipt.bootTimeMs}ms</span></GrafanaRow>
-                <GrafanaRow label="Engine"><span className="font-mono">{receipt.engineType === "wasm" ? "WASM" : "TS"}</span></GrafanaRow>
-                <GrafanaRow label="Ring" color={ringOk ? "#22c55e" : "#ef4444"}>{ringOk ? "✓" : "✗"}</GrafanaRow>
-              </div>
-            </div>
-          </GrafanaPanel>
-
-          {/* Services */}
-          <GrafanaPanel title="Services" icon={<IconServer size={14} />}>
-            <div className="space-y-2">
-              {SERVICE_ORDER.map((featureId) => {
-                const feat = conn.features[featureId];
-                const dotColor = feat.available ? "#22c55e" : feat.localOnly ? "#f59e0b" : "#6b7280";
-                return (
-                  <div key={featureId} className="flex items-center gap-2.5">
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dotColor, boxShadow: `0 0 6px ${dotColor}40` }} />
-                    <span className="text-xs text-foreground/80 font-medium">{SERVICE_LABELS[featureId]}</span>
-                    {feat.localOnly && (
-                      <span className="ml-auto text-[9px] text-amber-500/60 font-mono">local</span>
-                    )}
-                    {!feat.available && !feat.localOnly && (
-                      <span className="ml-auto text-[9px] text-muted-foreground/40 font-mono">offline</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </GrafanaPanel>
-
-          {/* Error Budget / Composite */}
-          <GrafanaPanel title="Error Budget" icon={<IconClipboardCheck size={14} />}>
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Seal</span>
-                <span className="text-sm font-bold font-mono" style={{ color: compositeHealth.signals.sealWeight >= 90 ? "#22c55e" : "#f59e0b" }}>
-                  {compositeHealth.signals.sealWeight}%
-                </span>
-              </div>
-              <ThresholdBar
-                value={compositeHealth.signals.sealWeight}
-                thresholds={[{ max: 60, color: "#ef4444" }, { max: 80, color: "#f59e0b" }, { max: 100, color: "#22c55e" }]}
-              />
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Budget</span>
-                <span className="text-sm font-bold font-mono" style={{ color: compositeHealth.signals.errorBudget >= 90 ? "#22c55e" : "#f59e0b" }}>
-                  {compositeHealth.signals.errorBudget}%
-                </span>
-              </div>
-              <ThresholdBar
-                value={compositeHealth.signals.errorBudget}
-                thresholds={[{ max: 60, color: "#ef4444" }, { max: 80, color: "#f59e0b" }, { max: 100, color: "#22c55e" }]}
-              />
-              <div className="flex items-center justify-between pt-1.5 border-t border-border/50">
-                <span className="text-xs text-muted-foreground font-semibold">Composite</span>
-                <span className="text-sm font-bold font-mono" style={{ color: unifiedColor }}>{compositeHealth.score}%</span>
-              </div>
-            </div>
-          </GrafanaPanel>
+            </GrafanaPanel>
+          </div>
         </div>
       </div>
 
       {/* ── Footer ── */}
-      <div className="border-t border-border/50 px-4 py-2.5 flex items-center justify-between text-xs text-muted-foreground flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+      <div className="border-t border-border/50 px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between text-xs text-muted-foreground flex-shrink-0 gap-2">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 shrink-0">
             <PulseDot color={unifiedColor} size={5} />
             <span className="tabular-nums font-mono">{formatUptime(uptimeMs)}</span>
           </div>
-          <span className="opacity-30">·</span>
-          <span className="tracking-[0.04em] opacity-40 max-w-[180px] truncate font-mono">{receipt.seal.glyph}</span>
-          <span className="opacity-30">·</span>
-          <span className="opacity-50 font-mono">Session {receipt.seal.sessionNonce.slice(0, 8)}</span>
+          <span className="opacity-30 hidden sm:inline">·</span>
+          <span className="tracking-[0.04em] opacity-40 font-mono hidden md:inline break-all text-[10px] leading-tight line-clamp-1">{receipt.seal.glyph}</span>
+          <span className="opacity-30 hidden md:inline">·</span>
+          <span className="opacity-50 font-mono hidden sm:inline whitespace-nowrap">Session {receipt.seal.sessionNonce.slice(0, 8)}</span>
         </div>
         <button
           onClick={handleCopyReport}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-muted/30 hover:bg-muted/60 transition-all duration-150 text-foreground/60 hover:text-foreground border border-transparent hover:border-border/50"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium bg-muted/30 hover:bg-muted/60 transition-all duration-150 text-foreground/60 hover:text-foreground border border-transparent hover:border-border/50 shrink-0 whitespace-nowrap"
         >
           {copied ? (<><IconClipboardCheck size={14} /> Copied</>) : (<><IconCopy size={14} /> Export Report</>)}
         </button>
