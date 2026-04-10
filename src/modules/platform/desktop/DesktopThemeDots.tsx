@@ -85,7 +85,7 @@ export default function DesktopThemeDots({ windows = [] }: Props) {
       }}
     >
       <div
-        className="pointer-events-auto flex items-center gap-3 py-1.5 px-3 rounded-full relative"
+        className="pointer-events-auto flex items-center gap-4 py-2 px-4 rounded-full relative"
         style={{
           pointerEvents: hasVisibleWindows ? "none" : "auto",
           background: "rgba(0,0,0,0.12)",
@@ -101,7 +101,7 @@ export default function DesktopThemeDots({ windows = [] }: Props) {
             <div key={dot.id} className="relative flex flex-col items-center">
               {/* Hover label */}
               <span
-                className="absolute -top-6 text-white/50 text-[10px] tracking-wide font-medium whitespace-nowrap select-none pointer-events-none"
+                className="absolute -top-7 text-white/50 text-[11px] tracking-wide font-medium whitespace-nowrap select-none pointer-events-none"
                 style={{
                   opacity: hovered ? 1 : 0,
                   transform: hovered ? "translateY(0)" : "translateY(3px)",
@@ -118,8 +118,8 @@ export default function DesktopThemeDots({ windows = [] }: Props) {
                 title={`${dot.label} — press ${dot.key}`}
                 className="rounded-full"
                 style={{
-                  width: active ? 10 : 8,
-                  height: active ? 10 : 8,
+                  width: active ? 14 : 11,
+                  height: active ? 14 : 11,
                   background: dot.colors.fill,
                   boxShadow: active ? dot.colors.glow : "none",
                   outline: active ? `1.5px solid ${dot.colors.ring}` : "1.5px solid transparent",
