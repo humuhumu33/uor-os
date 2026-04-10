@@ -40,6 +40,8 @@ import type {
   FunctorMorphism,
   NaturalTransformation,
   AdjunctionPair,
+  MonadMorphism,
+  ComonadMorphism,
   Transform,
 } from "@/types/uor-foundation/user/morphism";
 
@@ -577,6 +579,333 @@ export function horizontalCompose(
     composedSource,
     composedTarget,
   );
+}
+
+// ── GraphMonad ──────────────────────────────────────────────────────────────
+
+/** Result of verifying monad laws. */
+export interface MonadLawVerification {
+  leftUnit: boolean;   // μ ∘ ηT = id_T
+  rightUnit: boolean;  // μ ∘ Tη = id_T
+  associativity: boolean; // μ ∘ Tμ = μ ∘ μT
+  testedObjects: number;
+  digest: string;
+}
+
+/**
+ * GraphMonad — a monad (T, η, μ) on the knowledge graph.
+ *
+ * T : C → C is an endofunctor, η : Id → T is the unit,
+ * μ : T² → T is the multiplication.
+ *
+ * Implements `MonadMorphism` from the UOR foundation types.
+ */
+export class GraphMonad implements MonadMorphism {
+  private readonly _id: string;
+  private readonly _T: GraphFunctor;
+  private readonly _eta: GraphNatTransformation;
+  private readonly _mu: GraphNatTransformation;
+
+  constructor(
+    id: string,
+    T: GraphFunctor,
+    eta: GraphNatTransformation,
+    mu: GraphNatTransformation,
+  ) {
+    this._id = id;
+    this._T = T;
+    this._eta = eta;
+    this._mu = mu;
+  }
+
+  monadId(): string { return this._id; }
+  endofunctor(): GraphFunctor { return this._T; }
+  unit(): GraphNatTransformation { return this._eta; }
+  multiplication(): GraphNatTransformation { return this._mu; }
+
+  /**
+   * Monadic bind: given a value in T(A) and a Kleisli arrow f : A → T(B),
+   * produce T(B). Implemented as μ ∘ T(f).
+   */
+  async bind(
+    objectIri: string,
+    kleisliOps: FunctorRule[],
+  ): Promise<{ resultIri: string; digest: string }> {
+    // Apply T to the object
+    const tA = await this._T.apply(objectIri);
+
+    // Apply the Kleisli arrow (modeled as morphism chain)
+    const ops = kleisliOps.map(r => ({ op: r.op, operand: r.operand }));
+    const kleisliResult = await composeMorphisms(tA, ops);
+
+    // Apply T again (T²)
+    const ttB = await this._T.apply(kleisliResult.finalIri);
+
+    // Apply μ (multiplication flattens T² → T)
+    const muComp = await this._mu.componentAt(ttB);
+
+    const proof = await singleProofHash({
+      "@type": "uor:MonadBind",
+      "uor:monad": this._id,
+      "uor:source": objectIri,
+      "uor:result": muComp.targetImage,
+    });
+
+    await sparqlUpdate(`
+      INSERT DATA {
+        <urn:uor:monad:${this._id}:bind:${proof.cid}>
+          <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+          <urn:uor:category:MonadBind> .
+        <urn:uor:monad:${this._id}:bind:${proof.cid}>
+          <urn:uor:category:source> <${objectIri}> .
+        <urn:uor:monad:${this._id}:bind:${proof.cid}>
+          <urn:uor:category:result> <${muComp.targetImage}> .
+      }
+    `);
+
+    return { resultIri: muComp.targetImage, digest: proof.cid };
+  }
+
+  /**
+   * Verify the three monad laws for a set of test objects.
+   *
+   * 1. Left unit:  μ ∘ ηT = id_T
+   * 2. Right unit: μ ∘ Tη = id_T
+   * 3. Associativity: μ ∘ Tμ = μ ∘ μT
+   */
+  async verifyLaws(testObjects: string[]): Promise<MonadLawVerification> {
+    let leftUnit = true;
+    let rightUnit = true;
+    let associativity = true;
+
+    for (const obj of testObjects) {
+      const tA = await this._T.apply(obj);
+
+      // Left unit: μ(η(T(A))) should equal T(A)
+      const etaAtTA = await this._eta.componentAt(tA);
+      const muAtEta = await this._mu.componentAt(etaAtTA.targetImage);
+      if (muAtEta.targetImage !== tA) leftUnit = false;
+
+      // Right unit: μ(T(η(A))) should equal T(A)
+      const etaAtA = await this._eta.componentAt(obj);
+      const tEtaA = await this._T.apply(etaAtA.targetImage);
+      const muAtTEta = await this._mu.componentAt(tEtaA);
+      if (muAtTEta.targetImage !== tA) rightUnit = false;
+
+      // Associativity: μ(Tμ(A)) = μ(μT(A))
+      // Both paths from T³ → T should agree
+      const ttA = await this._T.apply(tA);
+      const tttA = await this._T.apply(ttA);
+      
+      // Path 1: μ ∘ Tμ
+      const muInner = await this._mu.componentAt(ttA);
+      const tMuInner = await this._T.apply(muInner.targetImage);
+      const path1 = await this._mu.componentAt(tMuInner);
+
+      // Path 2: μ ∘ μT
+      const muOuter = await this._mu.componentAt(tttA);
+      const path2 = await this._mu.componentAt(muOuter.targetImage);
+
+      if (path1.targetImage !== path2.targetImage) associativity = false;
+    }
+
+    const proof = await singleProofHash({
+      "@type": "uor:MonadLawVerification",
+      "uor:monad": this._id,
+      "uor:leftUnit": leftUnit,
+      "uor:rightUnit": rightUnit,
+      "uor:associativity": associativity,
+      "uor:tested": testObjects.length,
+    });
+
+    await sparqlUpdate(`
+      INSERT DATA {
+        <urn:uor:monad:${this._id}:laws:${proof.cid}>
+          <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+          <urn:uor:category:MonadLawWitness> .
+        <urn:uor:monad:${this._id}:laws:${proof.cid}>
+          <urn:uor:category:leftUnit> "${leftUnit}" .
+        <urn:uor:monad:${this._id}:laws:${proof.cid}>
+          <urn:uor:category:rightUnit> "${rightUnit}" .
+        <urn:uor:monad:${this._id}:laws:${proof.cid}>
+          <urn:uor:category:associativity> "${associativity}" .
+      }
+    `);
+
+    return { leftUnit, rightUnit, associativity, testedObjects: testObjects.length, digest: proof.cid };
+  }
+}
+
+// ── GraphComonad ────────────────────────────────────────────────────────────
+
+/** Result of verifying comonad laws. */
+export interface ComonadLawVerification {
+  leftCounit: boolean;   // εW ∘ δ = id_W
+  rightCounit: boolean;  // Wε ∘ δ = id_W
+  coassociativity: boolean; // Wδ ∘ δ = δW ∘ δ
+  testedObjects: number;
+  digest: string;
+}
+
+/**
+ * GraphComonad — a comonad (W, ε, δ) on the knowledge graph.
+ *
+ * W : C → C is an endofunctor, ε : W → Id is the counit,
+ * δ : W → W² is the comultiplication.
+ *
+ * Dual to GraphMonad. Implements `ComonadMorphism`.
+ */
+export class GraphComonad implements ComonadMorphism {
+  private readonly _id: string;
+  private readonly _W: GraphFunctor;
+  private readonly _epsilon: GraphNatTransformation;
+  private readonly _delta: GraphNatTransformation;
+
+  constructor(
+    id: string,
+    W: GraphFunctor,
+    epsilon: GraphNatTransformation,
+    delta: GraphNatTransformation,
+  ) {
+    this._id = id;
+    this._W = W;
+    this._epsilon = epsilon;
+    this._delta = delta;
+  }
+
+  comonadId(): string { return this._id; }
+  endofunctor(): GraphFunctor { return this._W; }
+  counit(): GraphNatTransformation { return this._epsilon; }
+  comultiplication(): GraphNatTransformation { return this._delta; }
+
+  /**
+   * Comonadic extend (cobind): dual of monadic bind.
+   * Given W(A) and a co-Kleisli arrow f : W(A) → B, produce W(B).
+   * Implemented as W(f) ∘ δ.
+   */
+  async extend(
+    objectIri: string,
+    coKleisliOps: FunctorRule[],
+  ): Promise<{ resultIri: string; digest: string }> {
+    // Apply W to get W(A)
+    const wA = await this._W.apply(objectIri);
+
+    // Apply δ (comultiplication) to get W²(A)
+    const deltaComp = await this._delta.componentAt(wA);
+
+    // Apply the co-Kleisli arrow
+    const ops = coKleisliOps.map(r => ({ op: r.op, operand: r.operand }));
+    const coKleisliResult = await composeMorphisms(deltaComp.targetImage, ops);
+
+    // Apply W to the result
+    const wB = await this._W.apply(coKleisliResult.finalIri);
+
+    const proof = await singleProofHash({
+      "@type": "uor:ComonadExtend",
+      "uor:comonad": this._id,
+      "uor:source": objectIri,
+      "uor:result": wB,
+    });
+
+    await sparqlUpdate(`
+      INSERT DATA {
+        <urn:uor:comonad:${this._id}:extend:${proof.cid}>
+          <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+          <urn:uor:category:ComonadExtend> .
+        <urn:uor:comonad:${this._id}:extend:${proof.cid}>
+          <urn:uor:category:source> <${objectIri}> .
+        <urn:uor:comonad:${this._id}:extend:${proof.cid}>
+          <urn:uor:category:result> <${wB}> .
+      }
+    `);
+
+    return { resultIri: wB, digest: proof.cid };
+  }
+
+  /**
+   * Extract: apply counit ε to extract a value from W(A) → A.
+   */
+  async extract(objectIri: string): Promise<{ resultIri: string; digest: string }> {
+    const wA = await this._W.apply(objectIri);
+    const epsilonComp = await this._epsilon.componentAt(wA);
+
+    const proof = await singleProofHash({
+      "@type": "uor:ComonadExtract",
+      "uor:comonad": this._id,
+      "uor:source": objectIri,
+      "uor:result": epsilonComp.targetImage,
+    });
+
+    return { resultIri: epsilonComp.targetImage, digest: proof.cid };
+  }
+
+  /**
+   * Verify the three comonad laws for a set of test objects.
+   *
+   * 1. Left counit:  ε_W ∘ δ = id_W
+   * 2. Right counit: Wε ∘ δ = id_W
+   * 3. Coassociativity: Wδ ∘ δ = δW ∘ δ
+   */
+  async verifyLaws(testObjects: string[]): Promise<ComonadLawVerification> {
+    let leftCounit = true;
+    let rightCounit = true;
+    let coassociativity = true;
+
+    for (const obj of testObjects) {
+      const wA = await this._W.apply(obj);
+
+      // Left counit: ε(W(δ(W(A)))) = W(A)
+      const deltaAtWA = await this._delta.componentAt(wA);
+      const epsilonAtDelta = await this._epsilon.componentAt(deltaAtWA.targetImage);
+      if (epsilonAtDelta.targetImage !== wA) leftCounit = false;
+
+      // Right counit: W(ε)(δ(W(A))) = W(A)
+      const wEpsilon = await this._W.apply(
+        (await this._epsilon.componentAt(deltaAtWA.targetImage)).targetImage,
+      );
+      if (wEpsilon !== wA) rightCounit = false;
+
+      // Coassociativity: Wδ ∘ δ = δW ∘ δ
+      // Path 1: δ then Wδ
+      const delta1 = await this._delta.componentAt(wA);
+      const wDelta1 = await this._W.apply(
+        (await this._delta.componentAt(delta1.targetImage)).targetImage,
+      );
+
+      // Path 2: δ then δW
+      const delta2 = await this._delta.componentAt(wA);
+      const deltaW = await this._delta.componentAt(
+        await this._W.apply(delta2.targetImage),
+      );
+
+      if (wDelta1 !== deltaW.targetImage) coassociativity = false;
+    }
+
+    const proof = await singleProofHash({
+      "@type": "uor:ComonadLawVerification",
+      "uor:comonad": this._id,
+      "uor:leftCounit": leftCounit,
+      "uor:rightCounit": rightCounit,
+      "uor:coassociativity": coassociativity,
+      "uor:tested": testObjects.length,
+    });
+
+    await sparqlUpdate(`
+      INSERT DATA {
+        <urn:uor:comonad:${this._id}:laws:${proof.cid}>
+          <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+          <urn:uor:category:ComonadLawWitness> .
+        <urn:uor:comonad:${this._id}:laws:${proof.cid}>
+          <urn:uor:category:leftCounit> "${leftCounit}" .
+        <urn:uor:comonad:${this._id}:laws:${proof.cid}>
+          <urn:uor:category:rightCounit> "${rightCounit}" .
+        <urn:uor:comonad:${this._id}:laws:${proof.cid}>
+          <urn:uor:category:coassociativity> "${coassociativity}" .
+      }
+    `);
+
+    return { leftCounit, rightCounit, coassociativity, testedObjects: testObjects.length, digest: proof.cid };
+  }
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
