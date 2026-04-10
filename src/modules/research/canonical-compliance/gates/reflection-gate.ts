@@ -135,33 +135,23 @@ function analyzeReflections(reflections: ReflectionEntry[]): GateFinding[] {
 
 // ── Gate Registration ────────────────────────────────────────────────────
 
-registerAsyncGate(async () => {
+async function reflectionGate() {
   let reflections: ReflectionEntry[] = [];
   try {
     reflections = await getAllReflections();
   } catch {
     return buildGateResult("reflection-sentinel", "Reflection Gate", [
-      {
-        severity: "info",
-        title: "Reflection chain unavailable",
-        detail: "Could not read IndexedDB. This is expected in server-side or incognito contexts.",
-      },
+      { severity: "info", title: "Reflection chain unavailable", detail: "Could not read IndexedDB. This is expected in server-side or incognito contexts." },
     ]);
   }
 
   if (reflections.length === 0) {
     return buildGateResult("reflection-sentinel", "Reflection Gate", [
-      {
-        severity: "info",
-        title: "No reflections yet",
-        detail: "The reflection chain is empty. Converse with the Oracle to populate it.",
-      },
+      { severity: "info", title: "No reflections yet", detail: "The reflection chain is empty. Converse with the Oracle to populate it." },
     ]);
   }
 
   const findings = analyzeReflections(reflections);
-
-  // Always add a summary info finding
   findings.push({
     severity: "info",
     title: `Tracking ${reflections.length} reflection entries`,
@@ -169,4 +159,16 @@ registerAsyncGate(async () => {
   });
 
   return buildGateResult("reflection-sentinel", "Reflection Gate", findings);
+}
+
+registerAsyncGate(reflectionGate, {
+  id: "reflection-sentinel",
+  name: "Reflection Gate",
+  version: "1.0.0",
+  category: "semantic",
+  description: "Reads the reflection chain (IndexedDB) and applies pattern detectors for verbosity, redundancy, security, performance, and UX friction.",
+  scope: ["reflection-chain", "oracle/"],
+  deductionWeights: { error: 8, warning: 3, info: 0 },
+  owner: "canonical-compliance",
+  lastUpdated: "2026-04-10",
 });
