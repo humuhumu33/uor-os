@@ -40,8 +40,6 @@ import type {
   FunctorMorphism,
   NaturalTransformation,
   AdjunctionPair,
-  MonadMorphism,
-  ComonadMorphism,
   Transform,
 } from "@/types/uor-foundation/user/morphism";
 
