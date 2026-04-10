@@ -442,7 +442,7 @@ export default function TabBar({
       </DropdownMenu>
 
       {/* Center wordmark — sovereign masthead */}
-      <div className="absolute left-1/2 top-0 h-full -translate-x-1/2 flex items-center z-[1] gap-3 select-none pointer-events-none">
+      <div className="absolute left-1/2 top-0 h-full -translate-x-1/2 flex items-center z-[1] gap-3 select-none pointer-events-none [&_a]:pointer-events-auto">
         <span
           className="text-[13px] font-semibold tracking-[0.28em] uppercase text-foreground/90"
           style={{ textShadow: isLight ? "none" : "0 0 20px rgba(255,255,255,0.06)" }}
