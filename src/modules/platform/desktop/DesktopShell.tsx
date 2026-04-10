@@ -95,7 +95,7 @@ function DownloadCTA({ theme, onClick }: { theme: string; onClick: () => void })
   );
 }
 
-
+function DesktopShellInner() {
   const [booted, setBooted] = useState(false);
   const [welcomed, setWelcomed] = useState(!shouldShowLocalTwinWelcome());
   const { theme } = useDesktopTheme();
