@@ -203,35 +203,35 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
   // Lighter clock — ethereal, weightless
   
   // Greeting defers to clock — lower opacity
-  const greetingColor = isImmersive ? "text-white/70" : isLight ? "text-black/30" : "text-white/35";
+  const greetingColor = isImmersive ? "text-white/70" : isLight ? "text-black/55" : "text-white/35";
 
   // Search bar styles — frosted glass
   const searchBg = isImmersive
     ? "hsl(200 10% 12% / 0.82)"
     : isLight
-      ? "rgba(0,0,0,0.04)"
+      ? "rgba(0,0,0,0.06)"
       : "rgba(255,255,255,0.04)";
   const searchBorder = isImmersive
     ? "1px solid hsl(0 0% 100% / 0.10)"
     : isLight
-      ? "1px solid rgba(0,0,0,0.06)"
+      ? "1px solid rgba(0,0,0,0.10)"
       : "1px solid rgba(255,255,255,0.06)";
   const searchShadow = isImmersive
     ? "0 8px 32px -8px hsl(0 0% 0% / 0.5)"
-    : isLight ? "0 4px 24px -8px rgba(0,0,0,0.06)" : "0 4px 24px -8px rgba(0,0,0,0.2)";
+    : isLight ? "0 4px 24px -8px rgba(0,0,0,0.10)" : "0 4px 24px -8px rgba(0,0,0,0.2)";
   const inputColor = isImmersive
     ? "hsl(0 0% 100% / 0.95)"
     : isLight
       ? "hsl(0 0% 0% / 0.85)"
       : "hsl(0 0% 100% / 0.9)";
-  const placeholderColor = isImmersive ? "hsl(0 0% 100% / 0.30)" : isLight ? "hsl(0 0% 0% / 0.22)" : "hsl(0 0% 100% / 0.22)";
+  const placeholderColor = isImmersive ? "hsl(0 0% 100% / 0.30)" : isLight ? "hsl(0 0% 0% / 0.38)" : "hsl(0 0% 100% / 0.22)";
   const btnBgStyle = isImmersive
     ? "hsl(0 0% 100% / 0.08)"
-    : isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.06)";
+    : isLight ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.06)";
   const btnBorderStyle = isImmersive
     ? "1px solid hsl(0 0% 100% / 0.08)"
-    : isLight ? "1px solid rgba(0,0,0,0.05)" : "1px solid rgba(255,255,255,0.06)";
-  const btnIconColor = isImmersive ? "text-white" : isLight ? "text-black/60" : "text-white/70";
+    : isLight ? "1px solid rgba(0,0,0,0.10)" : "1px solid rgba(255,255,255,0.06)";
+  const btnIconColor = isImmersive ? "text-white" : isLight ? "text-black/70" : "text-white/70";
 
   const widgetOpacity = hasMaximized ? 0 : 1;
   const clockOpacity = hasAnyWindows ? 0.4 : 1;
@@ -291,8 +291,8 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
                 background: searchBg,
                 border: searchBorder,
                 boxShadow: isMac
-                  ? (isImmersive ? "0 8px 32px -8px hsl(0 0% 0% / 0.5)" : isLight ? "0 6px 28px -8px rgba(0,0,0,0.08)" : "0 6px 28px -8px rgba(0,0,0,0.25)")
-                  : (isImmersive ? "0 4px 16px -4px hsl(0 0% 0% / 0.6)" : isLight ? "0 2px 12px -4px rgba(0,0,0,0.1)" : "0 2px 12px -4px rgba(0,0,0,0.3)"),
+                  ? (isImmersive ? "0 8px 32px -8px hsl(0 0% 0% / 0.5)" : isLight ? "0 6px 28px -8px rgba(0,0,0,0.12)" : "0 6px 28px -8px rgba(0,0,0,0.25)")
+                  : (isImmersive ? "0 4px 16px -4px hsl(0 0% 0% / 0.6)" : isLight ? "0 2px 12px -4px rgba(0,0,0,0.12)" : "0 2px 12px -4px rgba(0,0,0,0.3)"),
                 color: inputColor,
                 caretColor: isImmersive ? "hsl(195 70% 65%)" : undefined,
                 fontFamily: isAddress
@@ -325,7 +325,7 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
                 onClick={() => onOpenApp?.("files")}
                 className="flex items-center justify-center transition-all relative p-1"
                 style={{
-                  color: isImmersive ? "hsl(0 0% 100% / 0.40)" : isLight ? "hsl(0 0% 0% / 0.25)" : "hsl(0 0% 100% / 0.30)",
+                  color: isImmersive ? "hsl(0 0% 100% / 0.40)" : isLight ? "hsl(0 0% 0% / 0.40)" : "hsl(0 0% 100% / 0.30)",
                 }}
                 title="Open File Explorer"
               >
@@ -391,10 +391,10 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
               style={{
                 background: isImmersive
                   ? "hsl(200 10% 12% / 0.55)"
-                  : isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.04)",
+                  : isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.04)",
                 border: isImmersive
                   ? "1px solid hsl(0 0% 100% / 0.08)"
-                  : isLight ? "1px solid rgba(0,0,0,0.05)" : "1px solid rgba(255,255,255,0.06)",
+                  : isLight ? "1px solid rgba(0,0,0,0.10)" : "1px solid rgba(255,255,255,0.06)",
                 boxShadow: isImmersive
                   ? "0 2px 8px -2px hsl(0 0% 0% / 0.3)"
                   : "none",
@@ -403,7 +403,7 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
               <Icon
                 className="w-[14px] h-[14px]"
                 style={{
-                  color: isImmersive ? "hsl(0 0% 100% / 0.45)" : isLight ? "hsl(0 0% 0% / 0.30)" : "hsl(0 0% 100% / 0.40)",
+                  color: isImmersive ? "hsl(0 0% 100% / 0.45)" : isLight ? "hsl(0 0% 0% / 0.50)" : "hsl(0 0% 100% / 0.40)",
                 }}
               />
             </button>

@@ -44,24 +44,24 @@ export default function DesktopMenuBar({
   const formatted = time.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
   const clock = time.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
-  const bg = isLight ? "rgba(245,245,245,0.85)" : "rgba(20,20,20,0.65)";
-  const border = isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.06)";
-  const textPrimary = isLight ? "text-black/80" : "text-white/85";
-  const textSecondary = isLight ? "text-black/45" : "text-white/50";
-  const iconMuted = isLight ? "text-black/25" : "text-white/35";
-  const clockColor = isLight ? "text-black/50" : "text-white/55";
+  const bg = isLight ? "rgba(245,245,245,0.92)" : "rgba(20,20,20,0.65)";
+  const border = isLight ? "rgba(0,0,0,0.10)" : "rgba(255,255,255,0.06)";
+  const textPrimary = isLight ? "text-black/90" : "text-white/85";
+  const textSecondary = isLight ? "text-black/60" : "text-white/50";
+  const iconMuted = isLight ? "text-black/45" : "text-white/35";
+  const clockColor = isLight ? "text-black/65" : "text-white/55";
 
   const menuContentClass = isLight
-    ? "border-black/[0.08] bg-white/92 backdrop-blur-xl text-black/70"
+    ? "border-black/[0.10] bg-white/95 backdrop-blur-xl text-black/80"
     : "border-white/[0.08] bg-[rgba(30,30,30,0.90)] backdrop-blur-xl text-white/75";
   const menuItemClass = isLight
-    ? "text-[12px] text-black/65 font-medium focus:bg-black/[0.05] focus:text-black/80"
+    ? "text-[12px] text-black/75 font-medium focus:bg-black/[0.06] focus:text-black/90"
     : "text-[12px] text-white/70 font-medium focus:bg-white/[0.08] focus:text-white/90";
   const menuTriggerClass = isLight
-    ? "text-[13px] text-black/50 font-medium data-[state=open]:bg-black/[0.06] hover:bg-black/[0.04] h-5 px-2 py-0"
+    ? "text-[13px] text-black/65 font-medium data-[state=open]:bg-black/[0.08] hover:bg-black/[0.05] h-5 px-2 py-0"
     : "text-[13px] text-white/55 font-medium data-[state=open]:bg-white/[0.08] hover:bg-white/[0.04] h-5 px-2 py-0";
-  const shortcutClass = isLight ? "text-black/20" : "text-white/25";
-  const separatorClass = isLight ? "bg-black/[0.06]" : "bg-white/[0.06]";
+  const shortcutClass = isLight ? "text-black/35" : "text-white/25";
+  const separatorClass = isLight ? "bg-black/[0.08]" : "bg-white/[0.06]";
 
   return (
     <div

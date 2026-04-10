@@ -47,25 +47,25 @@ export default function DayRingClock({ time, theme, isLight, opacity }: Props) {
   const trackColor = isImmersive
     ? "rgba(255,255,255,0.08)"
     : isLight
-      ? "rgba(0,0,0,0.06)"
+      ? "rgba(0,0,0,0.15)"
       : "rgba(255,255,255,0.08)";
 
   const progressColor = isImmersive
     ? "rgba(255,255,255,0.55)"
     : isLight
-      ? "rgba(0,0,0,0.35)"
+      ? "rgba(0,0,0,0.55)"
       : "rgba(255,255,255,0.55)";
 
   const timeColor = isImmersive
     ? "rgba(255,255,255,0.75)"
     : isLight
-      ? "rgba(0,0,0,0.65)"
+      ? "rgba(0,0,0,0.85)"
       : "rgba(255,255,255,0.70)";
 
   const dateColor = isImmersive
     ? "rgba(255,255,255,0.35)"
     : isLight
-      ? "rgba(0,0,0,0.30)"
+      ? "rgba(0,0,0,0.50)"
       : "rgba(255,255,255,0.35)";
 
   const rotation = GAP_START_ANGLE - 90;
