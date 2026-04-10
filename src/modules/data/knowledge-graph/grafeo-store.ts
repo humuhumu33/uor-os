@@ -55,21 +55,15 @@ async function getDb(): Promise<any> {
 
 function createFallbackDb() {
   return {
-    query: async (sparql: string) => {
-      // Minimal SPARQL SELECT handler over in-memory triples
-      // Supports basic triple pattern matching for system health
-      const selectMatch = sparql.match(/SELECT\s+(.+?)\s+WHERE/is);
-      if (!selectMatch) return [];
-      return [];
+    execute: async (sparql: string) => {
+      // Unified execute method — handles both SELECT and UPDATE
+      const isSelect = /^\s*SELECT/i.test(sparql);
+      if (isSelect) return [];
+      // INSERT/DELETE — no-op in fallback
+      return undefined;
     },
-    update: async (sparql: string) => {
-      // Parse basic INSERT DATA statements
-      const insertMatch = sparql.match(/INSERT\s+DATA\s*\{([^}]+)\}/is);
-      if (insertMatch) {
-        // Store raw for minimal functionality
-        console.debug("[GrafeoDB:fallback] INSERT recorded");
-      }
-    },
+    query: async (_sparql: string) => [],
+    update: async (_sparql: string) => {},
     _isFallback: true,
   };
 }
