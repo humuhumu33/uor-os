@@ -147,7 +147,7 @@ export const TECH_STACK: readonly StackEntry[] = [
       // Accept the in-memory fallback adapter as a valid operational state
       try {
         const { grafeoStore } = await import("@/modules/data/knowledge-graph/grafeo-store");
-        return typeof grafeoStore?.sparqlQuery === "function" || typeof grafeoStore?.addTriple === "function";
+        return typeof grafeoStore?.sparqlQuery === "function" || typeof grafeoStore?.putNode === "function";
       } catch {
         return false;
       }
