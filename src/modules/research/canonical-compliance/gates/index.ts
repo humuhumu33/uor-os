@@ -33,6 +33,12 @@ import "./aesthetics-gate";
 // Delta gate — canonical computation substrate
 import "./delta-gate";
 
+// Proof namespace gate — singleProofHash pipeline compliance
+import "./proof-namespace-gate";
+
+// Partition namespace gate — R₈ partition set integrity
+import "./partition-namespace-gate";
+
 // Axioms gate is registered via the axioms module barrel
 import "@/modules/kernel/axioms/gate";
 
