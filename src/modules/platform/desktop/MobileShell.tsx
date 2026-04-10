@@ -127,13 +127,14 @@ export default function MobileShell() {
     if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.7 || dt > 400) return;
 
     const currentIdx = THEME_ORDER.indexOf(theme);
+    // Haptic feedback — short vibration on theme switch
+    if (navigator.vibrate) navigator.vibrate(12);
+
     if (dx < 0) {
-      // Swipe left → next theme
       const next = (currentIdx + 1) % THEME_ORDER.length;
       setSwipeDirection(1);
       setTheme(THEME_ORDER[next]);
     } else {
-      // Swipe right → previous theme
       const prev = (currentIdx - 1 + THEME_ORDER.length) % THEME_ORDER.length;
       setSwipeDirection(-1);
       setTheme(THEME_ORDER[prev]);
