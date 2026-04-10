@@ -1,103 +1,89 @@
 
 
-# Plan: Implement FunctorMorphism and NaturalTransformation as Executable Graph Operations
+# Plan: `.hologram` File Format — Graph-Native, RDF-Quad Wrapped
 
-## Context
+## Problem
 
-The type interfaces `FunctorMorphism`, `NaturalTransformation`, `AdjunctionPair`, `MonadMorphism`, and `ComonadMorphism` already exist in `src/types/uor-foundation/user/morphism.ts` (lines 201-276) as pure type declarations. The knowledge graph already has a working morphism execution layer in `src/modules/data/knowledge-graph/lib/graph-morphisms.ts` (ring operations as graph edges) and `delta-engine.ts` (composition, inversion, compression of morphism chains).
+The external Hologram repo uses a binary `.holo` format that is opaque to the Knowledge Graph. We need a `.hologram` format that is **graph-native**: content wrapped as RDF quads with UOR metadata, loadable directly into GrafeoDB, and executable via the categorical engine.
 
-The task: make these categorical abstractions **executable inside GrafeoDB** — functors map between named graphs, natural transformations produce verifiable commuting diagrams, and all results are content-addressed and materialized as quads.
+## Design
 
-## Architecture
+A `.hologram` file is a **JSON-LD document** with a fixed structure. It is simultaneously:
+- A valid JSON-LD `@graph` (parseable by any RDF toolchain)
+- A content-addressed UOR object (single proof hash → canonical identity)
+- A LensBlueprint container (executable via the hologram projection system)
+- A sovereign bundle (portable across devices via the persistence layer)
 
 ```text
-Existing layer (ring morphisms):
-  graph-morphisms.ts    → applyMorphism(), composeMorphisms()
-  delta-engine.ts       → computeDelta(), composeDelta(), invertDelta()
-
-New layer (categorical morphisms):
-  categorical-engine.ts → applyFunctor(), applyNatTransform(), verifyNaturality()
-                          Built ON TOP of graph-morphisms + delta-engine
+┌─────────────────────────────────────────────────┐
+│  .hologram file (JSON-LD)                       │
+│                                                 │
+│  @context   → UOR + Schema.org + Dublin Core    │
+│  @type      → uor:HologramFile                  │
+│  identity   → u:canonicalId, u:cid, u:ipv6      │
+│  manifest   → version, created, author, tags    │
+│  content    → @graph [ ...RDF quads... ]         │
+│  blueprint  → LensBlueprint (optional)           │
+│  deltas     → Delta[] (morphism chains)          │
+│  seal       → SHA-256 of canonical N-Quads       │
+└─────────────────────────────────────────────────┘
 ```
 
-A Functor maps nodes from one named graph to another, applying a morphism chain to each node. A NaturalTransformation maps between two Functors, producing component morphisms at each object and verifying the naturality square commutes.
+## Files
 
-## Changes
+### 1. New: `src/modules/data/knowledge-graph/hologram-file/types.ts`
+Type definitions for the `.hologram` format:
 
-### 1. New file: `src/modules/data/knowledge-graph/lib/categorical-engine.ts`
+- **`HologramFileManifest`** — version, createdAt, author DID, tags, description, mimeHint (what the content originally was: image, code, document, etc.)
+- **`HologramFileIdentity`** — all four UOR identity forms (canonicalId, ipv6, cid, glyph)
+- **`HologramFileContent`** — the `@graph` array of RDF quad objects (`{ s, p, o, g }`)
+- **`HologramFile`** — the top-level interface: `@context`, `@type: "uor:HologramFile"`, manifest, identity, content, optional blueprint reference (CID), optional deltas, seal hash
+- **`HologramFileOptions`** — options for creating a hologram file (named graph IRI, include blueprint, compression level)
 
-The core implementation. Concrete classes implementing the existing interfaces:
+### 2. New: `src/modules/data/knowledge-graph/hologram-file/codec.ts`
+Encode/decode logic:
 
-**`GraphFunctor` implements `FunctorMorphism`**
-- Constructor takes: functor ID, source graph IRI, target graph IRI, a mapping function (PrimitiveOp chain per node)
-- `apply(nodeIri)` — runs the morphism chain on the node, materializes the result in the target graph, returns the target IRI
-- `applyAll()` — maps every node in the source graph to the target graph via SPARQL SELECT + batch morphism application
-- `preservesIdentity()` — verified by checking that the identity morphism maps to identity
-- `preservesComposition()` — verified by checking F(g∘f) = F(g)∘F(f) for sampled pairs
-- Every result is content-addressed via `singleProofHash` and stored as a typed quad: `<functorIri> uor:mapsTo <targetIri>`
+- **`encodeHologramFile(content, options)`** — Takes any JS object or raw bytes, canonicalizes via URDNA2015, computes the UOR identity, wraps the content as an `@graph` of RDF quads, seals with SHA-256, returns a `HologramFile`
+- **`decodeHologramFile(file)`** — Parses a `.hologram` JSON-LD, verifies the seal hash, recomputes identity, returns the deserialized content and verification result
+- **`verifySeal(file)`** — Recomputes SHA-256 over the canonical N-Quads of the content `@graph` and checks it matches the seal
+- **`hologramToNQuads(file)`** — Serializes the entire file to N-Quads for GrafeoDB ingestion
+- **`hologramFromNQuads(nquads)`** — Reconstitutes a HologramFile from N-Quads (round-trip)
 
-**`GraphNatTransformation` implements `NaturalTransformation`**
-- Constructor takes: transformation ID, source functor F, target functor G
-- `componentAt(objectIri)` — computes the morphism η_A : F(A) → G(A) by applying F, applying G, then finding the delta between them
-- `verifyNaturality(morphismIri)` — for a morphism f : A → B, checks the naturality square:
-  ```text
-  F(A) --η_A--> G(A)
-    |              |
-  F(f)           G(f)
-    |              |
-  F(B) --η_B--> G(B)
-  ```
-  Computes both paths, verifies they produce the same target IRI (content-addressed equality)
-- `isIsomorphism()` — checks that every component η_A has an inverse (via `invertDelta`)
-- All verification results materialized as `uor:NaturalityWitness` quads in GrafeoDB
+### 3. New: `src/modules/data/knowledge-graph/hologram-file/ingest.ts`
+GrafeoDB integration:
 
-**`GraphAdjunction` implements `AdjunctionPair`**
-- Wraps a left/right functor pair with unit (η) and counit (ε) natural transformations
-- `verifyTriangleIdentities()` — checks εF ∘ Fη = id_F and Gε ∘ ηG = id_G
+- **`ingestHologramFile(file)`** — Loads a `.hologram` file directly into GrafeoDB as a named graph. The file's CID becomes the graph IRI. All quads from `content["@graph"]` become first-class triples. The manifest and identity become metadata triples on the graph node.
+- **`exportHologramFile(graphIri)`** — Exports a named graph from GrafeoDB as a `.hologram` file. Queries all triples in the graph, wraps them with UOR identity and seal.
+- **`listHologramFiles()`** — SPARQL query for all `uor:HologramFile` type nodes in the graph.
 
-**Helper functions:**
-- `composeFunctors(F, G)` → new GraphFunctor for G∘F
-- `horizontalCompose(η, μ)` → horizontal composition of natural transformations
-- `verticalCompose(η, μ)` → vertical composition (component-wise delta composition)
+### 4. New: `src/modules/data/knowledge-graph/hologram-file/index.ts`
+Barrel exports.
 
-### 2. Update: `src/modules/data/knowledge-graph/lib/graph-morphisms.ts`
+### 5. Update: `src/modules/data/knowledge-graph/index.ts`
+Add exports for the hologram-file module.
 
-Add export of a new `identityMorphism(iri)` function that returns a `GraphMorphism` with source === target and an empty op chain. Needed by the functor's `preservesIdentity()` check.
+### 6. New: `src/modules/platform/bus/modules/hologram-file.ts`
+Bus registration for:
+- `hologram-file/encode` — create a .hologram from any content
+- `hologram-file/decode` — parse and verify a .hologram
+- `hologram-file/ingest` — load into GrafeoDB
+- `hologram-file/export` — export a named graph as .hologram
 
-### 3. New file: `src/modules/data/knowledge-graph/lib/categorical-engine.test.ts`
-
+### 7. New: `src/test/hologram-file.test.ts`
 Tests:
-1. GraphFunctor maps all Q0 datums from one named graph to another
-2. GraphFunctor preserves identity
-3. GraphFunctor preserves composition (F(g∘f) = F(g)∘F(f))
-4. NaturalTransformation componentAt produces valid morphism
-5. NaturalTransformation naturality square commutes
-6. Vertical composition of two natural transformations
-7. Adjunction triangle identities hold
-8. All results are content-addressed (deterministic CIDs)
+1. Encode a JS object → `.hologram` file with valid identity and seal
+2. Decode + verify seal round-trips correctly
+3. Encode → N-Quads → decode round-trips losslessly
+4. Ingest into GrafeoDB → SPARQL query finds the content
+5. Export from GrafeoDB → matches original file
+6. Blueprint reference is preserved when included
+7. Invalid seal is detected on tampered content
 
-### 4. Update: `src/modules/data/knowledge-graph/index.ts`
+## Key Decisions
 
-Add barrel exports for the new categorical engine.
-
-### 5. Register on service bus: `src/modules/platform/bus/modules/categorical.ts`
-
-Register `categorical/applyFunctor`, `categorical/natTransform`, `categorical/verifyNaturality` operations so the rest of the OS can invoke categorical computation via the bus.
-
-## Key Design Decisions
-
-- **Functors operate on named graphs** — source/target categories are GrafeoDB named graphs (e.g., `urn:uor:graph:q0`, `urn:uor:graph:q1`). This makes "category" concrete and queryable.
-- **Naturality verification is content-addressed** — two paths through the square produce the same CID if and only if the square commutes. No floating-point tolerance needed.
-- **Everything materializes in the graph** — functor applications, natural transformation components, and verification witnesses all become first-class quads. The graph grows richer with each computation.
-- **Built on delta-engine** — natural transformation components reuse `computeDelta()` for finding the morphism between F(A) and G(A), and `composeDelta()` for verifying commutativity.
-
-## Files Summary
-
-| File | Action |
-|------|--------|
-| `src/modules/data/knowledge-graph/lib/categorical-engine.ts` | New — core implementation |
-| `src/modules/data/knowledge-graph/lib/graph-morphisms.ts` | Edit — add `identityMorphism()` |
-| `src/modules/data/knowledge-graph/index.ts` | Edit — add exports |
-| `src/modules/platform/bus/modules/categorical.ts` | New — bus registration |
-| `src/test/categorical-engine.test.ts` | New — 8 verification tests |
+- **JSON-LD, not binary** — every `.hologram` file is valid JSON-LD, readable by any RDF tool, grep-able, diff-able
+- **Content-addressed graph IRI** — the CID of the file becomes `urn:uor:hologram:{cid}`, making the named graph deterministic
+- **Seal = SHA-256 of canonical N-Quads** — not of the JSON text, but of the URDNA2015-canonicalized content, ensuring format-independent verification
+- **Blueprint-optional** — a `.hologram` can be pure data (no executable), or carry a LensBlueprint for executable content
+- **Extends SovereignBundle** — compatible with the existing persistence layer's export/import format
 
