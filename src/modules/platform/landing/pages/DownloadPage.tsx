@@ -50,6 +50,8 @@ const INCLUDED_MODULES = [
   { icon: Brain, label: "Library", desc: "Curated book summaries" },
 ];
 
+const RELEASES_PAGE = "https://github.com/UOR-Foundation/uor-os/releases/latest";
+
 async function handleDownload(e: React.MouseEvent<HTMLAnchorElement>, file: string, setLoading?: (v: boolean) => void) {
   e.preventDefault();
   const url = `${RELEASE_BASE}/${file}`;
@@ -59,12 +61,14 @@ async function handleDownload(e: React.MouseEvent<HTMLAnchorElement>, file: stri
     if (res.ok) {
       window.location.href = url;
     } else {
-      toast.error("Release coming soon", {
-        description: "The desktop installer is being prepared. Check back shortly.",
+      // Release artifact not found — send to releases page
+      toast.info("Opening releases page", {
+        description: "The direct download wasn't found. Opening the GitHub releases page instead.",
       });
+      window.open(RELEASES_PAGE, "_blank");
     }
   } catch {
-    // Network error or CORS — try direct navigation as fallback
+    // Network error or CORS — try direct navigation (GitHub often blocks HEAD)
     window.location.href = url;
   } finally {
     setLoading?.(false);
