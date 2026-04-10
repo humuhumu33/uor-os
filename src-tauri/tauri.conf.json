@@ -24,7 +24,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://api.lovable.dev https://*.lovable.app; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; frame-src 'self' https:"
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://api.lovable.dev https://*.lovable.app https://github.com https://api.github.com https://objects.githubusercontent.com; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' blob:; worker-src 'self' blob:; frame-src 'self' https:"
     },
     "trayIcon": {
       "iconPath": "icons/icon.png",
@@ -45,8 +45,10 @@
   },
   "plugins": {
     "updater": {
-      "active": false,
-      "pubkey": ""
+      "endpoints": [
+        "https://github.com/UOR-Foundation/uor-os/releases/latest/download/latest.json"
+      ],
+      "pubkey": "REPLACE_WITH_YOUR_UPDATER_PUBKEY"
     },
     "fs": {
       "scope": {

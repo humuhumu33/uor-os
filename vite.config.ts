@@ -108,6 +108,7 @@ export default defineConfig(({ mode }) => {
             "@tauri-apps/plugin-store": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
             "@tauri-apps/plugin-sql": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
             "@tauri-apps/plugin-stronghold": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
+            "@tauri-apps/plugin-updater": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
             "@tauri-apps/api": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
             "@grafeo-db/wasm": path.resolve(__dirname, "./src/lib/tauri-shims.ts"),
           }

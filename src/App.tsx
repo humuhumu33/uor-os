@@ -10,6 +10,7 @@ import { PrivyWalletProvider } from "@/modules/platform/auth/PrivyWalletProvider
 
 // ── Sovereign Bus ─────────────────────────────────────────────────────
 import { sovereignBoot } from "@/modules/platform/boot";
+import { startUpdateSchedule } from "@/lib/auto-updater";
 
 // The OS shell is the root — loaded eagerly for instant render
 const DesktopShell = lazy(() => import("@/modules/platform/desktop/DesktopShell"));
@@ -36,6 +37,7 @@ const queryClient = new QueryClient({
 const App = () => {
   useEffect(() => {
     sovereignBoot().catch(() => {});
+    startUpdateSchedule();
     if ("requestIdleCallback" in window) {
       (window as any).requestIdleCallback(() => {
         import("@/modules/platform/bus/modules");

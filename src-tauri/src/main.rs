@@ -516,6 +516,7 @@ fn main() {
             }
         }))
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_updater::Builder::default().build())
         .setup(|app| {
             // System tray menu
             use tauri::menu::{MenuBuilder, MenuItemBuilder};
