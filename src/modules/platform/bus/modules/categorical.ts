@@ -402,5 +402,122 @@ register({
         required: ["comonadId", "W", "testObjects"],
       },
     },
+
+    createDiagram: {
+      handler: async (params: any) => {
+        const { GraphDiagram } = await import(
+          "@/modules/data/knowledge-graph/lib/categorical-engine"
+        );
+        const diagram = new GraphDiagram(
+          params.id, params.objects ?? [], params.edges ?? [],
+        );
+        return diagram.executeAll();
+      },
+      description: "Create and execute a diagram (index functor) with objects and morphism edges.",
+      paramsSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          objects: { type: "array", items: { type: "string" } },
+          edges: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                sourceObject: { type: "string" },
+                targetObject: { type: "string" },
+                ops: { type: "array", items: { type: "object" } },
+              },
+            },
+          },
+        },
+        required: ["id", "objects"],
+      },
+    },
+
+    verifyDiagramCommutes: {
+      handler: async (params: any) => {
+        const { GraphDiagram } = await import(
+          "@/modules/data/knowledge-graph/lib/categorical-engine"
+        );
+        const diagram = new GraphDiagram(
+          params.id, params.objects ?? [], params.edges ?? [],
+        );
+        return diagram.verifyCommutes();
+      },
+      description: "Verify that a diagram commutes (all parallel paths agree).",
+      paramsSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          objects: { type: "array", items: { type: "string" } },
+          edges: { type: "array", items: { type: "object" } },
+        },
+        required: ["id", "objects"],
+      },
+    },
+
+    computeLimit: {
+      handler: async (params: any) => {
+        const { GraphDiagram, GraphLimitCone } = await import(
+          "@/modules/data/knowledge-graph/lib/categorical-engine"
+        );
+        const diagram = new GraphDiagram(
+          params.diagramId, params.objects ?? [], params.edges ?? [],
+        );
+        const cone = new GraphLimitCone(diagram, params.isLimit ?? true);
+        return cone.compute();
+      },
+      description: "Compute a limit or colimit cone over a diagram.",
+      paramsSchema: {
+        type: "object",
+        properties: {
+          diagramId: { type: "string" },
+          objects: { type: "array", items: { type: "string" } },
+          edges: { type: "array", items: { type: "object" } },
+          isLimit: { type: "boolean", description: "true for limit, false for colimit" },
+        },
+        required: ["diagramId", "objects"],
+      },
+    },
+
+    verifyUniversality: {
+      handler: async (params: any) => {
+        const { GraphDiagram, GraphLimitCone } = await import(
+          "@/modules/data/knowledge-graph/lib/categorical-engine"
+        );
+        const diagram = new GraphDiagram(
+          params.diagramId, params.objects ?? [], params.edges ?? [],
+        );
+        const cone = new GraphLimitCone(diagram, params.isLimit ?? true);
+        await cone.compute();
+        return cone.verifyUniversality(
+          params.testApexIri,
+          params.testProjections ?? [],
+        );
+      },
+      description: "Verify universality of a limit cone against a test cone.",
+      paramsSchema: {
+        type: "object",
+        properties: {
+          diagramId: { type: "string" },
+          objects: { type: "array", items: { type: "string" } },
+          edges: { type: "array", items: { type: "object" } },
+          isLimit: { type: "boolean" },
+          testApexIri: { type: "string" },
+          testProjections: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                objectIri: { type: "string" },
+                ops: { type: "array", items: { type: "object" } },
+              },
+            },
+          },
+        },
+        required: ["diagramId", "objects", "testApexIri", "testProjections"],
+      },
+    },
   },
 });
