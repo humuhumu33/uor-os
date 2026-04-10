@@ -5,12 +5,12 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { UnsClient } from "../modules/uns/sdk/client";
-import { generateKeypair } from "../modules/uns/core/keypair";
-import { createRecord, clearRecordStore } from "../modules/uns/core/record";
-import { clearRegistry } from "../modules/uns/compute/registry";
-import { buildAgentMessage } from "../modules/uns/compute/agent-gateway";
-import type { UnsKeypair } from "../modules/uns/core/keypair";
+import { UnsClient } from "../modules/identity/uns/sdk/client";
+import { generateKeypair } from "../modules/identity/uns/core/keypair";
+import { createRecord, clearRecordStore } from "../modules/identity/uns/core/record";
+import { clearRegistry } from "../modules/identity/uns/compute/registry";
+import { buildAgentMessage } from "../modules/identity/uns/compute/agent-gateway";
+import type { UnsKeypair } from "../modules/identity/uns/core/keypair";
 
 const CANONICAL_RE = /^urn:uor:derivation:sha256:[0-9a-f]{64}$/;
 const IPV6_RE = /^fd00:0075:6f72:[0-9a-f]{4}:[0-9a-f]{4}:[0-9a-f]{4}:[0-9a-f]{4}:[0-9a-f]{4}$/;

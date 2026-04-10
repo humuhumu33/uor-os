@@ -23,22 +23,22 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 // ── Core imports ────────────────────────────────────────────────────────────
-import { generateKeypair, type UnsKeypair } from "../modules/uns/core/keypair";
-import { verifyCriticalIdentity } from "../modules/uns/core/ring";
-import { singleProofHash } from "../modules/uns/core/identity";
+import { generateKeypair, type UnsKeypair } from "../modules/identity/uns/core/keypair";
+import { verifyCriticalIdentity } from "../modules/identity/uns/core/ring";
+import { singleProofHash } from "../modules/identity/uns/core/identity";
 import {
   attachUorHeader,
   verifyPacketIdentity,
-} from "../modules/uns/core/ipv6ext";
-import { createRecord, clearRecordStore } from "../modules/uns/core/record";
-import { clearRegistry } from "../modules/uns/compute/registry";
-import { buildAgentMessage } from "../modules/uns/compute/agent-gateway";
+} from "../modules/identity/uns/core/ipv6ext";
+import { createRecord, clearRecordStore } from "../modules/identity/uns/core/record";
+import { clearRegistry } from "../modules/identity/uns/compute/registry";
+import { buildAgentMessage } from "../modules/identity/uns/compute/agent-gateway";
 
 // ── SDK client ──────────────────────────────────────────────────────────────
-import { UnsClient } from "../modules/uns/sdk/client";
+import { UnsClient } from "../modules/identity/uns/sdk/client";
 
 // ── Node orchestrator ───────────────────────────────────────────────────────
-import { UnsNode, type UnsNodeConfig } from "../modules/uns/mesh/node";
+import { UnsNode, type UnsNodeConfig } from "../modules/identity/uns/mesh/node";
 
 // ── Patterns ────────────────────────────────────────────────────────────────
 const CANONICAL_RE = /^urn:uor:derivation:sha256:[0-9a-f]{64}$/;
