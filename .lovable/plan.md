@@ -1,61 +1,103 @@
 
 
-# Fix GitHub Pages Black Screen
+# Plan: Implement FunctorMorphism and NaturalTransformation as Executable Graph Operations
 
-## Root Causes
+## Context
 
-**1. grafeo-db externals break the browser bundle**
-In `vite.config.ts` lines 83-85, `@grafeo-db/wasm` and `@grafeo-db/web` are marked as `external` for ALL build modes (not just Tauri). This produces bare `import "@grafeo-db/wasm"` statements in the output JS that browsers cannot resolve, crashing the app before it renders.
+The type interfaces `FunctorMorphism`, `NaturalTransformation`, `AdjunctionPair`, `MonadMorphism`, and `ComonadMorphism` already exist in `src/types/uor-foundation/user/morphism.ts` (lines 201-276) as pure type declarations. The knowledge graph already has a working morphism execution layer in `src/modules/data/knowledge-graph/lib/graph-morphisms.ts` (ring operations as graph edges) and `delta-engine.ts` (composition, inversion, compression of morphism chains).
 
-**2. Empty Supabase URL crashes `createClient`**
-The GitHub Actions workflow passes `${{ secrets.VITE_SUPABASE_URL }}` — if the secret is not configured in the repo, this resolves to empty string `""`. The `??` operator in `client.ts` only catches `null`/`undefined`, not empty string. So `createClient("")` throws `"supabaseUrl is required."` and the app dies.
+The task: make these categorical abstractions **executable inside GrafeoDB** — functors map between named graphs, natural transformations produce verifiable commuting diagrams, and all results are content-addressed and materialized as quads.
+
+## Architecture
+
+```text
+Existing layer (ring morphisms):
+  graph-morphisms.ts    → applyMorphism(), composeMorphisms()
+  delta-engine.ts       → computeDelta(), composeDelta(), invertDelta()
+
+New layer (categorical morphisms):
+  categorical-engine.ts → applyFunctor(), applyNatTransform(), verifyNaturality()
+                          Built ON TOP of graph-morphisms + delta-engine
+```
+
+A Functor maps nodes from one named graph to another, applying a morphism chain to each node. A NaturalTransformation maps between two Functors, producing component morphisms at each object and verifying the naturality square commutes.
 
 ## Changes
 
-### 1. `vite.config.ts` — Move grafeo-db to Tauri-only externals and add shim aliases
+### 1. New file: `src/modules/data/knowledge-graph/lib/categorical-engine.ts`
 
-Move `@grafeo-db/wasm` and `@grafeo-db/web` from always-external into the Tauri-only block. For web builds, alias them to the existing tauri-shims (they already resolve to no-ops via the alias block for `@grafeo-db/wasm`, but the `external` declaration takes precedence and prevents the alias from working).
+The core implementation. Concrete classes implementing the existing interfaces:
 
-```js
-// build.rollupOptions.external — remove the two grafeo lines from the top:
-external: [
-  // ONLY externalize these for Tauri builds
-  ...(mode === "tauri"
-    ? [
-        "@grafeo-db/wasm",
-        "@grafeo-db/web",
-        "@tauri-apps/plugin-clipboard-manager",
-        // ... rest
-      ]
-    : []),
-],
-```
+**`GraphFunctor` implements `FunctorMorphism`**
+- Constructor takes: functor ID, source graph IRI, target graph IRI, a mapping function (PrimitiveOp chain per node)
+- `apply(nodeIri)` — runs the morphism chain on the node, materializes the result in the target graph, returns the target IRI
+- `applyAll()` — maps every node in the source graph to the target graph via SPARQL SELECT + batch morphism application
+- `preservesIdentity()` — verified by checking that the identity morphism maps to identity
+- `preservesComposition()` — verified by checking F(g∘f) = F(g)∘F(f) for sampled pairs
+- Every result is content-addressed via `singleProofHash` and stored as a typed quad: `<functorIri> uor:mapsTo <targetIri>`
 
-Also add `@grafeo-db/web` to the web shim aliases (currently only `@grafeo-db/wasm` is shimmed).
+**`GraphNatTransformation` implements `NaturalTransformation`**
+- Constructor takes: transformation ID, source functor F, target functor G
+- `componentAt(objectIri)` — computes the morphism η_A : F(A) → G(A) by applying F, applying G, then finding the delta between them
+- `verifyNaturality(morphismIri)` — for a morphism f : A → B, checks the naturality square:
+  ```text
+  F(A) --η_A--> G(A)
+    |              |
+  F(f)           G(f)
+    |              |
+  F(B) --η_B--> G(B)
+  ```
+  Computes both paths, verifies they produce the same target IRI (content-addressed equality)
+- `isIsomorphism()` — checks that every component η_A has an inverse (via `invertDelta`)
+- All verification results materialized as `uor:NaturalityWitness` quads in GrafeoDB
 
-### 2. `src/integrations/supabase/client.ts` — Handle empty string fallback
+**`GraphAdjunction` implements `AdjunctionPair`**
+- Wraps a left/right functor pair with unit (η) and counit (ε) natural transformations
+- `verifyTriangleIdentities()` — checks εF ∘ Fη = id_F and Gε ∘ ηG = id_G
 
-Change `??` to `||` so empty strings also fall back to the placeholder:
+**Helper functions:**
+- `composeFunctors(F, G)` → new GraphFunctor for G∘F
+- `horizontalCompose(η, μ)` → horizontal composition of natural transformations
+- `verticalCompose(η, μ)` → vertical composition (component-wise delta composition)
 
-```ts
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key';
-```
+### 2. Update: `src/modules/data/knowledge-graph/lib/graph-morphisms.ts`
 
-### 3. `.github/workflows/deploy.yml` — Add fallback values for env vars
+Add export of a new `identityMorphism(iri)` function that returns a `GraphMorphism` with source === target and an empty op chain. Needed by the functor's `preservesIdentity()` check.
 
-Add default values so the build never gets empty strings even without secrets:
+### 3. New file: `src/modules/data/knowledge-graph/lib/categorical-engine.test.ts`
 
-```yaml
-VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key' }}
-```
+Tests:
+1. GraphFunctor maps all Q0 datums from one named graph to another
+2. GraphFunctor preserves identity
+3. GraphFunctor preserves composition (F(g∘f) = F(g)∘F(f))
+4. NaturalTransformation componentAt produces valid morphism
+5. NaturalTransformation naturality square commutes
+6. Vertical composition of two natural transformations
+7. Adjunction triangle identities hold
+8. All results are content-addressed (deterministic CIDs)
 
-## Outcome
+### 4. Update: `src/modules/data/knowledge-graph/index.ts`
 
-After these three changes, the GitHub Pages build will produce a self-contained bundle with no unresolved imports and a safe Supabase client initialization. The OS will boot and render the desktop shell. Supabase-dependent features (auth, database) will gracefully degrade when using placeholder credentials.
+Add barrel exports for the new categorical engine.
 
-## Note to user
+### 5. Register on service bus: `src/modules/platform/bus/modules/categorical.ts`
 
-For full functionality on GitHub Pages (auth, database, edge functions), you need to add the real `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` as repository secrets in **GitHub → Settings → Secrets and variables → Actions**. Without them, the OS boots but backend features are disabled.
+Register `categorical/applyFunctor`, `categorical/natTransform`, `categorical/verifyNaturality` operations so the rest of the OS can invoke categorical computation via the bus.
+
+## Key Design Decisions
+
+- **Functors operate on named graphs** — source/target categories are GrafeoDB named graphs (e.g., `urn:uor:graph:q0`, `urn:uor:graph:q1`). This makes "category" concrete and queryable.
+- **Naturality verification is content-addressed** — two paths through the square produce the same CID if and only if the square commutes. No floating-point tolerance needed.
+- **Everything materializes in the graph** — functor applications, natural transformation components, and verification witnesses all become first-class quads. The graph grows richer with each computation.
+- **Built on delta-engine** — natural transformation components reuse `computeDelta()` for finding the morphism between F(A) and G(A), and `composeDelta()` for verifying commutativity.
+
+## Files Summary
+
+| File | Action |
+|------|--------|
+| `src/modules/data/knowledge-graph/lib/categorical-engine.ts` | New — core implementation |
+| `src/modules/data/knowledge-graph/lib/graph-morphisms.ts` | Edit — add `identityMorphism()` |
+| `src/modules/data/knowledge-graph/index.ts` | Edit — add exports |
+| `src/modules/platform/bus/modules/categorical.ts` | New — bus registration |
+| `src/test/categorical-engine.test.ts` | New — 8 verification tests |
 
