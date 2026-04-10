@@ -11,8 +11,6 @@
  * @layer sovereign-spaces/deep-link
  */
 
-import { isLocal } from "@/lib/runtime";
-
 // ── Types ───────────────────────────────────────────────────────────────
 
 export type DeepLinkAction =
@@ -81,15 +79,23 @@ export function onDeepLink(handler: DeepLinkHandler): () => void {
 }
 
 /**
+ * Detect whether we're running inside a real Tauri shell.
+ */
+function isTauriRuntime(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
+/**
  * Initialize deep link listener.
  * In Tauri, listens to the deep-link plugin events.
  * In browser, checks for ?uor= query parameter on load.
  */
 export async function initDeepLinks(): Promise<void> {
-  if (isLocal()) {
+  if (isTauriRuntime()) {
     try {
-      // @ts-ignore — Tauri plugin only available in desktop builds
-      const mod = await import(/* @vite-ignore */ "@tauri-apps/plugin-deep-link");
+      // Dynamic import with string construction to prevent Vite static analysis
+      const pluginName = ["@tauri-apps", "plugin-deep-link"].join("/");
+      const mod = await (new Function("p", "return import(p)"))(pluginName);
       // Listen for incoming URLs
       await mod.onOpenUrl((urls: string[]) => {
         for (const url of urls) {
