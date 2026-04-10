@@ -1,50 +1,61 @@
 
 
-## Plan: Fix GitHub Pages Blank Page + Download CTA Positioning
+# Fix GitHub Pages Black Screen
 
-### Problem 1: Blank page on GitHub Pages
-The deployed site at `humuhumu33.github.io/uor-os/` shows a completely blank page. The fetched HTML has an empty `<head>` — no script tags, no CSS. This means the Vite build output is broken.
+## Root Causes
 
-**Root causes:**
+**1. grafeo-db externals break the browser bundle**
+In `vite.config.ts` lines 83-85, `@grafeo-db/wasm` and `@grafeo-db/web` are marked as `external` for ALL build modes (not just Tauri). This produces bare `import "@grafeo-db/wasm"` statements in the output JS that browsers cannot resolve, crashing the app before it renders.
 
-1. **`index.html` uses absolute paths** — The favicon, manifest, and apple-touch-icon links are hardcoded with `/` prefix (e.g., `/favicon.png`, `/src/main.tsx`). On GitHub Pages at `/uor-os/`, these resolve to `humuhumu33.github.io/favicon.png` instead of `humuhumu33.github.io/uor-os/favicon.png`. Vite transforms the script tag during build but the link/meta tags remain hardcoded.
+**2. Empty Supabase URL crashes `createClient`**
+The GitHub Actions workflow passes `${{ secrets.VITE_SUPABASE_URL }}` — if the secret is not configured in the repo, this resolves to empty string `""`. The `??` operator in `client.ts` only catches `null`/`undefined`, not empty string. So `createClient("")` throws `"supabaseUrl is required."` and the app dies.
 
-2. **Rollup externals break the browser** — `rollupOptions.external` lists `@tauri-apps/*` and `@grafeo-db/wasm`. In a browser build, Rollup leaves these as bare `import "@tauri-apps/..."` statements. The browser can't resolve them, causing a fatal module error that prevents the entire app from loading. These externals should only apply in Tauri mode, not in the GitHub Pages build.
+## Changes
 
-3. **`build:dev` uses development mode** — The deploy workflow runs `bun run build:dev` which sets `mode=development`. This may include dev-only plugins and skip production optimizations.
+### 1. `vite.config.ts` — Move grafeo-db to Tauri-only externals and add shim aliases
 
-### Problem 2: Download CTA positioning
-Already addressed in prior changes — just needs verification.
+Move `@grafeo-db/wasm` and `@grafeo-db/web` from always-external into the Tauri-only block. For web builds, alias them to the existing tauri-shims (they already resolve to no-ops via the alias block for `@grafeo-db/wasm`, but the `external` declaration takes precedence and prevents the alias from working).
 
-### Solution
-
-**1. Fix `index.html` asset paths** — Use relative paths (`./favicon.png`) or Vite's `%BASE_URL%` pattern so the base path `/uor-os/` is respected.
-
-**2. Conditionally apply rollup externals** — Only externalize Tauri packages in `tauri` mode. For web builds, use empty shim modules or dynamic imports with try/catch so the app degrades gracefully.
-
-**3. Fix build script** — Change the deploy workflow to use `build` (production mode) instead of `build:dev`, with `GITHUB_PAGES=true` still set.
-
-### Files Changed
-
-| File | Change |
-|------|--------|
-| `index.html` | Change absolute `/` paths to relative `./` for favicon, manifest, apple-touch-icon |
-| `vite.config.ts` | Move `rollupOptions.external` inside a `mode === "tauri"` check so web builds bundle shims instead of leaving broken bare imports |
-| `.github/workflows/deploy.yml` | Change `bun run build:dev` → `bun run build` for production-grade output |
-
-### Technical Details
-
-The key fix is the rollup externals. Currently:
 ```js
-// Breaks browser builds — bare imports left unresolved
-external: ["@tauri-apps/plugin-store", ...]
+// build.rollupOptions.external — remove the two grafeo lines from the top:
+external: [
+  // ONLY externalize these for Tauri builds
+  ...(mode === "tauri"
+    ? [
+        "@grafeo-db/wasm",
+        "@grafeo-db/web",
+        "@tauri-apps/plugin-clipboard-manager",
+        // ... rest
+      ]
+    : []),
+],
 ```
 
-After fix:
-```js
-// Only externalize in Tauri mode
-...(mode === "tauri" ? { external: ["@tauri-apps/..."] } : {}),
+Also add `@grafeo-db/web` to the web shim aliases (currently only `@grafeo-db/wasm` is shimmed).
+
+### 2. `src/integrations/supabase/client.ts` — Handle empty string fallback
+
+Change `??` to `||` so empty strings also fall back to the placeholder:
+
+```ts
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key';
 ```
 
-For the web build, any code that imports Tauri packages should already have runtime guards (e.g., checking `window.__TAURI__`). If not, we add empty resolution aliases so the imports resolve to no-ops.
+### 3. `.github/workflows/deploy.yml` — Add fallback values for env vars
+
+Add default values so the build never gets empty strings even without secrets:
+
+```yaml
+VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key' }}
+```
+
+## Outcome
+
+After these three changes, the GitHub Pages build will produce a self-contained bundle with no unresolved imports and a safe Supabase client initialization. The OS will boot and render the desktop shell. Supabase-dependent features (auth, database) will gracefully degrade when using placeholder credentials.
+
+## Note to user
+
+For full functionality on GitHub Pages (auth, database, edge functions), you need to add the real `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` as repository secrets in **GitHub → Settings → Secrets and variables → Actions**. Without them, the OS boots but backend features are disabled.
 
