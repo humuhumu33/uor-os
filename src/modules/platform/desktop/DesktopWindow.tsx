@@ -226,14 +226,7 @@ export default function DesktopWindow({
         <div className="relative z-[1] h-full overflow-auto" style={{
           borderRadius: `0 0 ${RADIUS.md}px ${RADIUS.md}px`,
         }}>
-          {/* ── Two-phase render: Boot → Mount ────────────────────────── */}
-          {!booted ? (
-            <ContainerBootOverlay
-              appId={win.appId}
-              appLabel={app?.label ?? win.title}
-              onReady={handleBootReady}
-            />
-          ) : (
+          {/* ── Direct mount — no boot overlay ────────────────────────── */}
             <WindowContextProvider initialQuery={win.title}>
               <Suspense fallback={
                 <div className="flex items-center justify-center h-full">
@@ -270,7 +263,6 @@ export default function DesktopWindow({
                 centerLabel={win.title}
               />
             </WindowContextProvider>
-          )}
         </div>
       </div>
 
