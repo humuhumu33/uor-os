@@ -17,6 +17,7 @@
 
 import { registerGate, buildGateResult, type GateFinding } from "./gate-runner";
 import { classifyByte } from "@/lib/uor-ring";
+import type { PartitionClassification } from "@/types/uor";
 
 // ── Partition set names (canonical) ──────────────────────────────────────
 
@@ -47,15 +48,24 @@ function partitionNamespaceGate() {
   const RING_SIZE = 256; // R₈ = ℤ/256ℤ
 
   // ─── Check 1: classifyByte covers all 256 elements ─────────────────
+  // Map from short key to partition:* component name
+  const COMPONENT_MAP: Record<string, string> = {
+    unit: "partition:UnitSet",
+    exterior: "partition:ExteriorSet",
+    irreducible: "partition:IrreducibleSet",
+    reducible: "partition:ReducibleSet",
+  };
+
   const classMap = new Map<string, number[]>();
   for (const s of PARTITION_SETS) classMap.set(s, []);
 
   let classificationErrors = 0;
   for (let i = 0; i < RING_SIZE; i++) {
-    const cls = classifyByte(i, 8);
-    const key = cls.toLowerCase();
-    if (classMap.has(key)) {
-      classMap.get(key)!.push(i);
+    const cls: PartitionClassification = classifyByte(i, 8);
+    // cls.component is like "partition:UnitSet" → extract short key
+    const short = Object.entries(COMPONENT_MAP).find(([, v]) => v === cls.component)?.[0];
+    if (short && classMap.has(short)) {
+      classMap.get(short)!.push(i);
     } else {
       classificationErrors++;
     }
