@@ -68,24 +68,21 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # ── macOS code signing & notarization ──
+          # ── Tauri updater signing ──
+          # Generate keypair: cargo tauri signer generate -w ~/.tauri/uor-os.key
           # Set these secrets in GitHub repo settings:
-          #   APPLE_CERTIFICATE        — Base64-encoded .p12 Developer ID cert
-          #   APPLE_CERTIFICATE_PASSWORD — Password for the .p12 file
-          #   APPLE_SIGNING_IDENTITY   — e.g. "Developer ID Application: UOR Foundation (TEAM_ID)"
-          #   APPLE_ID                 — Apple ID email for notarization
-          #   APPLE_PASSWORD           — App-specific password (appleid.apple.com → Sign-In and Security)
-          #   APPLE_TEAM_ID            — 10-char Apple Developer Team ID
+          #   TAURI_SIGNING_PRIVATE_KEY      — Contents of the .key file
+          #   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — Password used during generation
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # ── macOS code signing & notarization ──
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # ── Windows code signing (EV / OV certificate) ──
-          # Set these secrets in GitHub repo settings:
-          #   WINDOWS_CERTIFICATE          — Base64-encoded .pfx code signing cert
-          #   WINDOWS_CERTIFICATE_PASSWORD — Password for the .pfx file
+          # ── Windows code signing ──
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         with:
@@ -95,3 +92,5 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+          # Generate updater JSON artifact (latest.json) for auto-updates
+          updaterJsonPreferNsis: true
