@@ -58,6 +58,7 @@ const ICON_MAP: Record<string, ComponentType<any>> = {
   Clock,
   ShieldCheck,
   Hammer,
+  Download,
 };
 
 // ── Component Loader ──────────────────────────────────────────────────────
@@ -78,6 +79,7 @@ const COMPONENT_MAP: Record<string, React.LazyExoticComponent<ComponentType<any>
   "@/modules/data/time-machine/pages/TimeMachinePage": lazy(() => import("@/modules/data/time-machine/pages/TimeMachinePage")),
   "@/modules/research/canonical-compliance/pages/ComplianceDashboardPage": lazy(() => import("@/modules/research/canonical-compliance/pages/ComplianceDashboardPage")),
   "@/modules/platform/app-builder/pages/AppBuilderPage": lazy(() => import("@/modules/platform/app-builder/pages/AppBuilderPage")),
+  "@/modules/platform/landing/pages/DownloadPage": lazy(() => import("@/modules/platform/landing/pages/DownloadPage")),
 };
 
 // ── Blueprint → DesktopApp Derivation ─────────────────────────────────────

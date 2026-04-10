@@ -64,7 +64,7 @@ const App = () => {
                     <Route path="/library" element={<LibraryPage />} />
                     <Route path="/app-store" element={<AppStorePage />} />
                     <Route path="/compliance" element={<ComplianceDashboardPage />} />
-                    <Route path="/download" element={<DownloadPage />} />
+                    <Route path="/download" element={<Navigate to="/" replace />} />
 
                     {/* Legacy redirects */}
                     <Route path="/os" element={<Navigate to="/" replace />} />
