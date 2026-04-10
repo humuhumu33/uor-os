@@ -451,7 +451,16 @@ export default function TabBar({
         </span>
         <div className="w-px h-3 bg-foreground/20" />
         <span className="text-[10.5px] font-medium tracking-[0.28em] uppercase text-foreground/50">
-          POWERED BY UOR
+          POWERED BY{" "}
+          <a
+            href="https://uor.foundation/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground/50 hover:text-foreground/75 transition-colors duration-200 cursor-pointer"
+            style={{ textDecoration: "none" }}
+          >
+            UOR
+          </a>
         </span>
       </div>
 
