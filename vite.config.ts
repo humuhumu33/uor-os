@@ -8,8 +8,12 @@ import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 import { componentTagger } from "lovable-tagger";
 
-export default defineConfig(({ mode }) => ({
-  base: mode === "tauri" ? "./" : "/",
+export default defineConfig(({ mode }) => {
+  const isGitHubPages = process.env.GITHUB_PAGES === "true";
+  const basePath = mode === "tauri" ? "./" : isGitHubPages ? "/uor-os/" : "/";
+
+  return {
+  base: basePath,
   server: {
     host: "::",
     port: 8080,
@@ -45,14 +49,14 @@ export default defineConfig(({ mode }) => ({
         background_color: "#0b1420",
         display: "standalone",
         orientation: "any",
-        scope: "/",
-        start_url: "/",
-        id: "/",
+        scope: basePath,
+        start_url: basePath,
+        id: basePath,
         categories: ["productivity", "utilities", "developer-tools"],
         icons: [
-          { src: "/pwa-icon-192.png", sizes: "192x192", type: "image/png" },
-          { src: "/pwa-icon-512.png", sizes: "512x512", type: "image/png" },
-          { src: "/pwa-icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          { src: `${basePath}pwa-icon-192.png`, sizes: "192x192", type: "image/png" },
+          { src: `${basePath}pwa-icon-512.png`, sizes: "512x512", type: "image/png" },
+          { src: `${basePath}pwa-icon-512.png`, sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
     }),
@@ -100,4 +104,5 @@ export default defineConfig(({ mode }) => ({
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
   },
-}));
+  };
+});
