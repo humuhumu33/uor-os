@@ -3,10 +3,9 @@
  * @ontology uor:ServiceMesh
  */
 
-import { serviceBus } from "../service-bus";
-import type { ModuleRegistration } from "../types";
+import { register } from "../registry";
 
-const hologramFileModule: ModuleRegistration = {
+register({
   ns: "hologram-file",
   label: "Hologram File Format",
   layer: 1,
@@ -83,6 +82,4 @@ const hologramFileModule: ModuleRegistration = {
       description: "List all .hologram files stored in GrafeoDB",
     },
   },
-};
-
-serviceBus.registerModule(hologramFileModule);
+});
