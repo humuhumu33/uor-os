@@ -6,6 +6,7 @@
  */
 
 import { useCallback, useState, useMemo, useEffect, useRef } from "react";
+import { Download } from "lucide-react";
 import DesktopImmersiveWallpaper from "@/modules/platform/desktop/DesktopImmersiveWallpaper";
 import QuickCapture from "@/modules/intelligence/oracle/components/QuickCapture";
 import VinylPlayer from "@/modules/platform/desktop/components/VinylPlayer";
@@ -176,6 +177,31 @@ function DesktopShellInner() {
           onUnmergeTabs={wm.unmergeTabs}
           onSnapMultiple={wm.snapMultiple}
         />
+
+        {/* Download CTA — top right, below menu bar */}
+        {!("__TAURI__" in window) && (
+          <button
+            onClick={() => handleOpenApp("download")}
+            className="fixed top-11 right-4 z-[5] inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[12px] font-medium tracking-wide transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+            style={{
+              color: theme === "light" ? "hsl(0 0% 100%)" : "hsl(0 0% 100% / 0.85)",
+              background: theme === "light"
+                ? "hsl(0 0% 8%)"
+                : "hsl(0 0% 100% / 0.08)",
+              border: theme === "light"
+                ? "1px solid hsl(0 0% 20%)"
+                : "1px solid hsl(0 0% 100% / 0.10)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              boxShadow: theme === "light"
+                ? "0 2px 12px -4px hsl(0 0% 0% / 0.2)"
+                : "0 2px 12px -4px hsl(0 0% 100% / 0.04)",
+            }}
+          >
+            <Download size={13} />
+            <span>Download</span>
+          </button>
+        )}
 
         <SnapOverlay zone={snapPreview} />
 
