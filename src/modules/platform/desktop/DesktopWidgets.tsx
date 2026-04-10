@@ -387,7 +387,7 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
               key={id}
               onClick={() => onOpenApp?.(id)}
               title={label}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+              className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
               style={{
                 background: isImmersive
                   ? "hsl(200 10% 12% / 0.55)"
@@ -401,7 +401,7 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
               }}
             >
               <Icon
-                className="w-[14px] h-[14px]"
+                className="w-[17px] h-[17px]"
                 style={{
                   color: isImmersive ? "hsl(0 0% 100% / 0.45)" : isLight ? "hsl(0 0% 0% / 0.50)" : "hsl(0 0% 100% / 0.40)",
                 }}
