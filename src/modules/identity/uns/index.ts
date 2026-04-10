@@ -93,14 +93,14 @@ export type {
 // Uorfile
 export interface UorfileDirective { type: string; value: string; }
 export interface UorfileInstruction { directive: UorfileDirective; args: string[]; }
-export interface UorfileBuildSpec { directives?: UorfileDirective[]; instructions?: UorfileInstruction[]; base?: UorfileBaseImage; from?: UorfileBaseImage; healthcheck?: UorfileHealthcheck | null; env: Record<string, string>; args: Record<string, string>; ports: number[]; volumes: string[]; entrypoint: string[]; cmd: string[]; labels?: Record<string, string>; workdir?: string; }
+export interface UorfileBuildSpec { directives?: UorfileDirective[]; instructions?: UorfileInstruction[]; base?: UorfileBaseImage; from?: UorfileBaseImage; healthcheck?: UorfileHealthcheck | null; env: Record<string, string>; args: Record<string, string>; ports: number[]; volumes: string[]; entrypoint: string[]; cmd: string[]; labels?: Record<string, string>; workdir?: string; copies?: any[]; runCommands?: any[]; trustRequirements?: any[]; shieldLevel?: string; maintainer?: string; }
 export interface UorfileBaseImage { type?: string; name?: string; reference?: string; tag?: string; }
 export interface UorfileHealthcheck { interval?: number; command?: string; }
 export interface UorImage { id?: string; canonicalId: string; cid?: string; ipv6?: string; layers: UorImageLayer[]; created?: string; builtAt?: string; sizeBytes: number; tags?: string[]; spec: UorfileBuildSpec; }
 export interface UorImageLayer { hash: string; size: number; }
 export function parseUorfile(_c: string): UorfileBuildSpec { return { env: {}, args: {}, ports: [], volumes: [], entrypoint: [], cmd: [] }; }
 export function parseDockerfile(_c: string): UorfileBuildSpec { return { env: {}, args: {}, ports: [], volumes: [], entrypoint: [], cmd: [] }; }
-export function buildImage(_s: UorfileBuildSpec): UorImage { return { canonicalId: "stub", layers: [], sizeBytes: 0, spec: _s }; }
+export function buildImage(_s: UorfileBuildSpec, _b?: string, _f?: Map<string, Uint8Array>): UorImage { return { canonicalId: "stub", layers: [], sizeBytes: 0, spec: _s }; }
 export function serializeUorfile(_s: UorfileBuildSpec): string { return ""; }
 
 // Container / Docker compat
@@ -125,7 +125,7 @@ export function tagImage(_id: string, _t: string): ImageTag { return { name: "",
 export function resolveTag(_t: string): string | null { return null; }
 export function listTags(): ImageTag[] { return []; }
 export function removeTag(_t: string): boolean { return false; }
-export function pushImage(_i: any): PushResult { return { success: false, registryUrl: "" }; }
+export function pushImage(_i: any, _tags?: string[]): PushResult { return { success: false, registryUrl: "" }; }
 export function pullImage(_r: string): PullResult | null { return null; }
 export function listImages(): any[] { return []; }
 export function inspectImage(_id: string): any { return null; }
