@@ -203,35 +203,35 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
   // Lighter clock — ethereal, weightless
   
   // Greeting defers to clock — lower opacity
-  const greetingColor = isImmersive ? "text-white/70" : isLight ? "text-black/30" : "text-white/35";
+  const greetingColor = isImmersive ? "text-white/70" : isLight ? "text-black/55" : "text-white/35";
 
   // Search bar styles — frosted glass
   const searchBg = isImmersive
     ? "hsl(200 10% 12% / 0.82)"
     : isLight
-      ? "rgba(0,0,0,0.04)"
+      ? "rgba(0,0,0,0.06)"
       : "rgba(255,255,255,0.04)";
   const searchBorder = isImmersive
     ? "1px solid hsl(0 0% 100% / 0.10)"
     : isLight
-      ? "1px solid rgba(0,0,0,0.06)"
+      ? "1px solid rgba(0,0,0,0.10)"
       : "1px solid rgba(255,255,255,0.06)";
   const searchShadow = isImmersive
     ? "0 8px 32px -8px hsl(0 0% 0% / 0.5)"
-    : isLight ? "0 4px 24px -8px rgba(0,0,0,0.06)" : "0 4px 24px -8px rgba(0,0,0,0.2)";
+    : isLight ? "0 4px 24px -8px rgba(0,0,0,0.10)" : "0 4px 24px -8px rgba(0,0,0,0.2)";
   const inputColor = isImmersive
     ? "hsl(0 0% 100% / 0.95)"
     : isLight
       ? "hsl(0 0% 0% / 0.85)"
       : "hsl(0 0% 100% / 0.9)";
-  const placeholderColor = isImmersive ? "hsl(0 0% 100% / 0.30)" : isLight ? "hsl(0 0% 0% / 0.22)" : "hsl(0 0% 100% / 0.22)";
+  const placeholderColor = isImmersive ? "hsl(0 0% 100% / 0.30)" : isLight ? "hsl(0 0% 0% / 0.38)" : "hsl(0 0% 100% / 0.22)";
   const btnBgStyle = isImmersive
     ? "hsl(0 0% 100% / 0.08)"
-    : isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.06)";
+    : isLight ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.06)";
   const btnBorderStyle = isImmersive
     ? "1px solid hsl(0 0% 100% / 0.08)"
-    : isLight ? "1px solid rgba(0,0,0,0.05)" : "1px solid rgba(255,255,255,0.06)";
-  const btnIconColor = isImmersive ? "text-white" : isLight ? "text-black/60" : "text-white/70";
+    : isLight ? "1px solid rgba(0,0,0,0.10)" : "1px solid rgba(255,255,255,0.06)";
+  const btnIconColor = isImmersive ? "text-white" : isLight ? "text-black/70" : "text-white/70";
 
   const widgetOpacity = hasMaximized ? 0 : 1;
   const clockOpacity = hasAnyWindows ? 0.4 : 1;
