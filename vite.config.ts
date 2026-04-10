@@ -9,7 +9,7 @@ import topLevelAwait from "vite-plugin-top-level-await";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  base: mode === "tauri" ? "./" : "/",
+  base: mode === "tauri" ? "./" : process.env.GITHUB_PAGES === "true" ? "/uor-os/" : "/",
   server: {
     host: "::",
     port: 8080,
