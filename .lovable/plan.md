@@ -1,56 +1,55 @@
 
 
-## Plan: Redesign Download as In-OS Experience
+## Plan: Make Downloads Fully Functional with Self-Contained CI
 
 ### Problem
-1. The Download page is a separate route (`/download`) outside the OS shell — it should be an in-OS experience like any other app
-2. The page requires scrolling — everything should fit on one screen
-3. The download button links to `https://github.com/UOR-Foundation/uor-os/releases/latest/download/...` which likely 404s (no actual GitHub release published), causing an error
-4. Too much text, tech jargon, and visual noise
-5. Hardcoded dark theme colors — doesn't respect immersive/dark/light theme
+The "Download for Windows/Mac/Linux" button currently points to `https://github.com/UOR-Foundation/uor-os/releases/latest/download/...` — but no GitHub Release with actual installers exists. The download handler uses `mode: "no-cors"` which always gets an opaque (successful) response, so it opens a 404 page. The user wants the entire build pipeline and artifacts to live in the same repo.
 
-### Changes
+### Solution
 
-**1. Convert Download page to a desktop app (blueprint + registry)**
+**1. Add a Tauri release workflow** (`.github/workflows/release.yml`)
 
-- Add a `"download"` entry to `STATIC_BLUEPRINTS` and `COMPONENT_MAP` in `desktop-apps.ts`
-- Change the CTA button on DesktopWidgets to open the download app as an OS window instead of navigating to `/download`
-- Keep the `/download` route as a redirect or remove it
+This project already has a full Tauri backend (`src-tauri/`). Add a GitHub Actions workflow that:
+- Triggers on version tags (`v*`) or manual dispatch
+- Builds native installers on all 3 platforms using `tauri-apps/tauri-action`:
+  - **macOS** → `.dmg` (universal)
+  - **Windows** → `.exe` (NSIS installer)
+  - **Linux** → `.AppImage`
+- Creates a GitHub Release in the **same repo** with all artifacts attached
+- No external repos or services needed — completely self-contained
 
-**2. Completely rewrite `DownloadPage.tsx` → compact, single-screen, in-OS component**
+**2. Fix the download handler** (`DownloadPage.tsx`)
 
-New layout (no scroll needed):
-- OS-detected platform card with download button (concise: "Download for Mac" / "Download for Windows")
-- 3 install steps as a tight horizontal row, not a vertical list
-- Other platforms as small icon buttons in a single row
-- Remove ModuleChecklist, system requirements section, and browser fallback entirely
-- All text: minimal, no jargon, large readable labels
+- Replace the broken `no-cors` HEAD check with a direct `fetch` HEAD request (same-origin policy isn't an issue for GitHub release URLs — they allow CORS on download redirects)
+- Better fallback: if fetch fails, still attempt `window.location.href` assignment (browsers handle binary downloads gracefully even without pre-check)
+- Add a proper loading state on the button while checking
 
-**3. Fix download URL — graceful handling**
+**3. Update artifact filenames** to match what `tauri-action` actually produces:
+- macOS: `UOR-OS_2.0.0_universal.dmg`
+- Windows: `UOR-OS_2.0.0_x64-setup.exe`  
+- Linux: `UOR-OS_2.0.0_amd64.AppImage`
 
-- The GitHub release URL (`UOR-Foundation/uor-os/releases/latest/download`) likely doesn't have actual artifacts yet
-- Add `onClick` handler that checks URL availability with a HEAD request; if 404, show a toast saying "Release coming soon" instead of navigating to a broken page
-- Keep the `<a>` tag with the correct href for when releases exist, but intercept the click to validate
+These already match Tauri's default naming convention — just need to confirm alignment with `tauri.conf.json` `productName`.
 
-**4. Theme-aware styling**
+### Files Changed
 
-- Use the `useDesktopTheme` hook to read current theme
-- Use CSS variables / conditional styles for immersive, dark, and light modes instead of hardcoded `hsl(220 18% 6%)` values
-- Glass/blur effects for immersive, solid surfaces for dark/light
+| File | Change |
+|------|--------|
+| `.github/workflows/release.yml` | **New** — Tauri cross-platform build & release workflow |
+| `src/modules/platform/landing/pages/DownloadPage.tsx` | Fix download handler to actually initiate downloads; add loading state |
+
+### How It Works End-to-End
+
+1. Maintainer pushes a tag `v2.0.0` → workflow builds installers on macOS, Windows, Linux runners
+2. `tauri-action` creates a GitHub Release with `.dmg`, `.exe`, `.AppImage` attached
+3. User clicks "Download for Windows" → browser navigates to the release URL → download starts immediately
+4. If no release exists yet → toast says "Release coming soon" with a clear message
 
 ### Technical Details
 
-**Files modified:**
-- `src/modules/platform/landing/pages/DownloadPage.tsx` — full rewrite as a compact in-OS component
-- `src/modules/platform/desktop/DesktopWidgets.tsx` — change CTA from `<a href="/download">` to `onClick` that opens download as an OS window
-- `src/modules/platform/compose/static-blueprints.ts` — add download blueprint
-- `src/modules/platform/desktop/lib/desktop-apps.ts` — add component mapping
-- `src/App.tsx` — keep `/download` route but redirect to `/` (or remove)
-
-**Design approach:**
-- Single card, ~500px wide, centered in window
-- Platform icon + "Download for [OS]" button (pill, gradient blue)
-- Below: 3 steps as `1 → 2 → 3` compact horizontal pills
-- Below that: "Also available for" row with small OS icon buttons
-- Total height: ~400px — no scroll on any viewport
+The release workflow uses the official `tauri-apps/tauri-action@v0` which handles:
+- Rust toolchain setup
+- Platform-specific signing (optional, can be added later)
+- Artifact upload to GitHub Releases
+- Proper `productName` → filename mapping from `tauri.conf.json`
 
