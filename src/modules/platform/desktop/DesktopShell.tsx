@@ -36,7 +36,66 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { getApp } from "@/modules/platform/desktop/lib/desktop-apps";
 import "@/modules/platform/desktop/desktop.css";
 
-function DesktopShellInner() {
+/** Download CTA — OS-aware icon, theme-adaptive, positioned below menu bar */
+function DownloadCTA({ theme, onClick }: { theme: string; onClick: () => void }) {
+  const { isMac, isWindows } = usePlatform();
+  const isLight = theme === "light";
+  const isImmersive = theme === "immersive";
+
+  const OsIcon = () => {
+    if (isMac) return (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M11.182 0c.223 1.87-.55 3.243-1.492 4.322-.967 1.1-2.245 1.903-3.627 1.782-.17-1.472.56-3.014 1.49-3.975C8.555 1.06 10.024.18 11.182 0ZM14.5 11.673c-.358.812-.528 1.175-.988 1.89-.641.997-1.545 2.238-2.666 2.25-1 .013-1.257-.651-2.614-.643-1.358.008-1.64.66-2.64.647-1.122-.012-1.975-1.121-2.616-2.118C1.265 11.047.673 7.622 2.497 5.78c.65-.656 1.558-1.08 2.497-1.08 1.11 0 1.806.656 2.723.656.89 0 1.433-.657 2.717-.657.837 0 1.64.337 2.25.92-1.976 1.084-1.657 3.91.394 4.66-.303.784-.7 1.525-1.183 2.204l-.009-.013.008.012.006.012c.12-.196.36-.565.6-.82Z"/>
+      </svg>
+    );
+    if (isWindows) return (
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+        <rect x="1" y="1" width="6.5" height="6.5" rx="0.5"/>
+        <rect x="8.5" y="1" width="6.5" height="6.5" rx="0.5"/>
+        <rect x="1" y="8.5" width="6.5" height="6.5" rx="0.5"/>
+        <rect x="8.5" y="8.5" width="6.5" height="6.5" rx="0.5"/>
+      </svg>
+    );
+    return <Download size={13} />;
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className="fixed right-5 z-[4] inline-flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-medium tracking-wide transition-all duration-300 hover:scale-[1.04] active:scale-[0.97]"
+      style={{
+        top: "52px",
+        color: isLight
+          ? "hsl(0 0% 100%)"
+          : isImmersive
+            ? "hsl(0 0% 100% / 0.88)"
+            : "hsl(0 0% 90%)",
+        background: isLight
+          ? "hsl(0 0% 10%)"
+          : isImmersive
+            ? "hsl(0 0% 100% / 0.10)"
+            : "hsl(0 0% 100% / 0.08)",
+        border: isLight
+          ? "1px solid hsl(0 0% 22%)"
+          : isImmersive
+            ? "1px solid hsl(0 0% 100% / 0.14)"
+            : "1px solid hsl(0 0% 100% / 0.10)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        boxShadow: isLight
+          ? "0 3px 16px -4px hsl(0 0% 0% / 0.25)"
+          : isImmersive
+            ? "0 4px 20px -6px hsl(0 0% 0% / 0.4)"
+            : "0 2px 12px -4px hsl(0 0% 0% / 0.3)",
+      }}
+    >
+      <OsIcon />
+      <span>Download</span>
+    </button>
+  );
+}
+
+
   const [booted, setBooted] = useState(false);
   const [welcomed, setWelcomed] = useState(!shouldShowLocalTwinWelcome());
   const { theme } = useDesktopTheme();
