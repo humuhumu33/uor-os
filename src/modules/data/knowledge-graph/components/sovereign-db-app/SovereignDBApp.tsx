@@ -148,18 +148,16 @@ const SovereignDBApp = () => {
   return (
     <div className="flex flex-col h-full w-full bg-background text-foreground overflow-hidden">
       {/* ── Header ───────────────────────────── */}
-      <header className="flex items-center justify-between h-12 px-5 border-b border-border bg-card shrink-0">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowPulse(true)}
-            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
-            title="Back to HyperGraph Pulse"
-          >
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[15px] font-semibold tracking-tight">SovereignDB</span>
-          </button>
-          <span className="text-[13px] text-muted-foreground font-mono">{db.name}</span>
-        </div>
+      <header className="flex items-center justify-between h-11 px-5 border-b border-border bg-card shrink-0">
+        <button
+          onClick={() => setShowPulse(true)}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          title="Back to HyperGraph Pulse"
+        >
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[14px] font-semibold tracking-tight">SovereignDB</span>
+          <span className="text-[12px] text-muted-foreground/50 font-mono ml-1">{db.name}</span>
+        </button>
 
         <SdbModeSwitch
           mode={mode}
@@ -168,13 +166,7 @@ const SovereignDBApp = () => {
           onViewChange={handleViewChange}
         />
 
-        <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            Connected
-          </span>
-          <span className="font-mono text-[12px]">{db.backend}</span>
-        </div>
+        <div className="w-32" />
       </header>
 
       {/* ── Body ─────────────────────────────── */}
