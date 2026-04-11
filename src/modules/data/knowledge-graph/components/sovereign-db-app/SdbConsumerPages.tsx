@@ -8,12 +8,13 @@
  * @product SovereignDB
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
-  IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash,
+  IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash, IconSearch, IconX,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
+import { textIndexManager } from "../../text-index";
 
 interface Props {
   db: SovereignDB;
@@ -37,6 +38,17 @@ export function SdbConsumerPages({ db }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [noteContent, setNoteContent] = useState("");
   const [noteTitle, setNoteTitle] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // Ensure workspace text index exists
+  useEffect(() => {
+    const existing = textIndexManager.list().find(i => i.name === "workspace-notes");
+    if (!existing) {
+      textIndexManager.create("workspace-notes", ["title", "content", "name"]);
+    }
+  }, []);
 
   // Load workspace items from hypergraph
   const reload = useCallback(async () => {
@@ -62,6 +74,22 @@ export function SdbConsumerPages({ db }: Props) {
   }, [db]);
 
   useEffect(() => { reload(); }, [reload]);
+
+  // Rebuild text index after reload
+  useEffect(() => {
+    if (items.length > 0) {
+      textIndexManager.drop("workspace-notes");
+      textIndexManager.create("workspace-notes", ["title", "content", "name"]);
+    }
+  }, [items]);
+
+  // Search results
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim() || !searchOpen) return [];
+    try {
+      return textIndexManager.search("workspace-notes", searchQuery, { limit: 15 });
+    } catch { return []; }
+  }, [searchQuery, searchOpen, items]);
 
   const selected = items.find(i => i.id === selectedId);
 
@@ -191,6 +219,13 @@ export function SdbConsumerPages({ db }: Props) {
             Workspaces
           </span>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => { setSearchOpen(o => !o); setTimeout(() => searchRef.current?.focus(), 50); }}
+              className={`p-1 rounded hover:bg-muted/60 transition-colors ${searchOpen ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+              title="Search notes"
+            >
+              <IconSearch size={15} />
+            </button>
             <button onClick={createFolder} className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors" title="New folder">
               <IconFolder size={15} />
             </button>
@@ -199,6 +234,59 @@ export function SdbConsumerPages({ db }: Props) {
             </button>
           </div>
         </div>
+
+        {/* Search bar */}
+        {searchOpen && (
+          <div className="px-3 py-2 border-b border-border">
+            <div className="relative">
+              <IconSearch size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search notes…"
+                className="w-full pl-8 pr-7 py-1.5 text-[13px] rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary/50"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => { setSearchQuery(""); searchRef.current?.focus(); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground"
+                >
+                  <IconX size={12} />
+                </button>
+              )}
+            </div>
+            {/* Search results */}
+            {searchQuery.trim() && (
+              <div className="mt-2 max-h-48 overflow-auto space-y-0.5">
+                {searchResults.length === 0 ? (
+                  <p className="text-[12px] text-muted-foreground/50 text-center py-2">No results</p>
+                ) : (
+                  searchResults.map(r => (
+                    <button
+                      key={r.edge.id}
+                      onClick={() => {
+                        const noteId = r.edge.nodes[1] || r.edge.id;
+                        setSelectedId(noteId);
+                        setSearchOpen(false);
+                        setSearchQuery("");
+                      }}
+                      className="flex flex-col gap-0.5 w-full px-2.5 py-2 rounded-md text-left hover:bg-muted/50 transition-colors"
+                    >
+                      <span className="text-[13px] text-foreground truncate">
+                        {String(r.edge.properties.title || r.edge.properties.name || "Untitled")}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground/60 truncate">
+                        {r.matchedTerms.join(", ")} · score {r.score}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
         <nav className="flex-1 overflow-auto py-2">
           {rootItems.length === 0 ? (
             <div className="px-4 py-8 text-center text-[13px] text-muted-foreground/60">
