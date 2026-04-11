@@ -487,7 +487,7 @@ export const hyperedgeReaper = {
     this.stop();
     reaperCallback = onReap ?? null;
     reaperTimer = setInterval(async () => {
-      const n = await sovereignHypergraph.reapExpired();
+      const n = await hypergraph.reapExpired();
       if (n > 0 && reaperCallback) reaperCallback(n);
     }, intervalMs);
   },
