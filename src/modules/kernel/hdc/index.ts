@@ -12,10 +12,10 @@ export type { Hypervector } from "./hypervector";
 export {
   random, zero, fromBytes, fromE8Root,
   bind, unbind, bundle, permute,
-  distance, similarity,
+  distance, similarity, resonate,
   encodeSequence, encodeRecord,
   fingerprint, compatible,
-  DEFAULT_DIM, E8_DIM,
+  DEFAULT_DIM, COMPACT_DIM, E8_DIM,
 } from "./hypervector";
 
 // Associative memory

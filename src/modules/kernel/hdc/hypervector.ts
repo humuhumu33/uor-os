@@ -2,22 +2,24 @@
  * Hyperdimensional Computing Engine — R₈-Native Hypervectors
  * ═══════════════════════════════════════════════════════════
  *
- * Implements VSA (Vector Symbolic Architecture) primitives directly
- * on the UOR R₈ = Z/256Z ring. No external HDC library needed —
- * the ring IS the hyperdimensional algebra:
+ * VSA primitives on UOR R₈ = Z/256Z ring. SIMD-width optimized.
  *
- *   Bind    = component-wise XOR (ring ⊕)
- *   Bundle  = component-wise majority vote
- *   Permute = cyclic shift
- *   Similarity = normalized Hamming distance (via popcount/stratum)
+ *   Bind    = component-wise XOR (Uint32Array, 4x throughput)
+ *   Bundle  = majority vote (sparsity-aware fast path)
+ *   Permute = copyWithin-based cyclic shift
+ *   Distance = delegated to uor-core hammingBytes (single impl)
+ *   Resonate = resonator network unbundling (NVSA-inspired)
  *
- * Pure functions. Zero dependencies. Maximum hot-path performance.
- *
- * @version 1.2.0
+ * @version 2.0.0
  */
+
+import { hammingBytes, popcount32 } from "@/lib/uor-core";
 
 /** Default hypervector dimension (number of R₈ components). */
 export const DEFAULT_DIM = 1024;
+
+/** Compact dimension for lightweight embeddings (protocol fingerprints, IDs). */
+export const COMPACT_DIM = 64;
 
 /** E8 root count — the Atlas-native structured basis size. */
 export const E8_DIM = 240;
@@ -46,24 +48,30 @@ export function fromBytes(bytes: Uint8Array, dim = DEFAULT_DIM): Hypervector {
   return hv;
 }
 
-// ── VSA Primitives (R₈-native) ──────────────────────────────────────────────
+// ── VSA Primitives (SIMD-width optimized) ───────────────────────────────────
 
 /**
- * Bind: component-wise XOR. The "multiplication" of HDC.
- * bind(A, B) produces a vector dissimilar to both A and B.
- * Self-inverse: bind(bind(A, B), B) ≈ A.
- *
- * Inlined XOR (no function call overhead) for hot-path performance.
+ * Bind: component-wise XOR via Uint32Array views.
+ * Processes 4 bytes per iteration → 4x throughput over scalar loop.
+ * Self-inverse: bind(bind(A, B), B) = A.
  */
 export function bind(a: Hypervector, b: Hypervector): Hypervector {
-  const out = new Uint8Array(a.length);
-  for (let i = 0; i < a.length; i++) out[i] = a[i] ^ b[i];
+  const len = a.length;
+  const out = new Uint8Array(len);
+  // SIMD-width: XOR 4 bytes at a time
+  const words = (len >>> 2);
+  const a32 = new Uint32Array(a.buffer, a.byteOffset, words);
+  const b32 = new Uint32Array(b.buffer, b.byteOffset, words);
+  const o32 = new Uint32Array(out.buffer, out.byteOffset, words);
+  for (let i = 0; i < words; i++) o32[i] = a32[i] ^ b32[i];
+  // Handle tail bytes (dim not divisible by 4)
+  for (let i = words << 2; i < len; i++) out[i] = a[i] ^ b[i];
   return out;
 }
 
 /**
  * Bundle: component-wise majority vote across N vectors.
- * The "addition" of HDC — produces a vector similar to all inputs.
+ * Sparsity-aware: skips bit loop when all vectors are zero at a position.
  */
 export function bundle(vectors: Hypervector[]): Hypervector {
   if (vectors.length === 0) return zero();
@@ -71,16 +79,26 @@ export function bundle(vectors: Hypervector[]): Hypervector {
 
   const dim = vectors[0].length;
   const out = new Uint8Array(dim);
+  const n = vectors.length;
+  const half = n >>> 1;
 
-  // Bit-level majority vote across all vectors
   for (let d = 0; d < dim; d++) {
+    // Sparsity fast path: check if all vectors are zero at this position
+    let allZero = true;
+    for (let v = 0; v < n; v++) {
+      if (vectors[v][d] !== 0) { allZero = false; break; }
+    }
+    if (allZero) continue; // out[d] already 0
+
     let result = 0;
     for (let bit = 0; bit < 8; bit++) {
       let ones = 0;
-      for (const v of vectors) ones += (v[d] >> bit) & 1;
-      if (ones * 2 > vectors.length) result |= (1 << bit);
-      // Tie-breaking: use first vector's bit
-      else if (ones * 2 === vectors.length) result |= (vectors[0][d] >> bit) & 1 ? (1 << bit) : 0;
+      for (let v = 0; v < n; v++) ones += (vectors[v][d] >> bit) & 1;
+      if (ones > half) result |= (1 << bit);
+      else if (ones === half && n % 2 === 0) {
+        // Tie-break: use first vector's bit
+        result |= ((vectors[0][d] >> bit) & 1) << bit;
+      }
     }
     out[d] = result;
   }
@@ -88,29 +106,28 @@ export function bundle(vectors: Hypervector[]): Hypervector {
 }
 
 /**
- * Permute: cyclic shift by k positions.
- * Used to encode order/sequence in structured data.
+ * Permute: cyclic shift using copyWithin + temp buffer.
  */
 export function permute(v: Hypervector, k = 1): Hypervector {
   const dim = v.length;
   const shift = ((k % dim) + dim) % dim;
+  if (shift === 0) return v.slice() as Hypervector;
   const out = new Uint8Array(dim);
-  for (let i = 0; i < dim; i++) out[i] = v[(i + shift) % dim];
+  // Copy tail → start, then head → end
+  out.set(v.subarray(shift));
+  out.set(v.subarray(0, shift), dim - shift);
   return out;
 }
 
 /**
- * Similarity: normalized Hamming distance.
+ * Distance: normalized Hamming distance delegated to uor-core.
+ * Single implementation for the entire system.
  * Returns 0.0 (identical) to 1.0 (maximally different).
- * Uses popcount (stratum) on each byte difference.
  */
 export function distance(a: Hypervector, b: Hypervector): number {
-  let diff = 0;
   const total = a.length * 8;
-  for (let i = 0; i < a.length; i++) {
-    diff += popcount8(a[i] ^ b[i]);
-  }
-  return diff / total;
+  if (total === 0) return 0;
+  return hammingBytes(a, b) / total;
 }
 
 /** Cosine-like similarity: 1 - distance. Range [0, 1]. */
@@ -120,16 +137,12 @@ export function similarity(a: Hypervector, b: Hypervector): number {
 
 // ── Algebraic Operations ────────────────────────────────────────────────────
 
-/**
- * Unbind: the inverse of bind (since XOR is self-inverse).
- * unbind(bind(A, B), B) = A
- */
+/** Unbind: inverse of bind (XOR is self-inverse). */
 export const unbind = bind;
 
 /**
  * Sequence encoding: encode an ordered sequence of symbols.
  * seq([A, B, C]) = permute(A, 2) ⊕ permute(B, 1) ⊕ C
- * Position is encoded via permutation depth.
  */
 export function encodeSequence(items: Hypervector[]): Hypervector {
   if (items.length === 0) return zero();
@@ -142,16 +155,72 @@ export function encodeSequence(items: Hypervector[]): Hypervector {
 
 /**
  * Record encoding: encode a set of key-value pairs.
- * record({role: "agent", action: "read"}) = bundle([bind(role, agent), bind(action, read)])
+ * record({role: "agent"}) = bundle([bind(role, agent), ...])
  */
 export function encodeRecord(pairs: [Hypervector, Hypervector][]): Hypervector {
   return bundle(pairs.map(([k, v]) => bind(k, v)));
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ── Resonator Network (NVSA-inspired unbundling) ────────────────────────────
 
-// Popcount delegated to the addressing kernel
-import { popcount8 } from "@/lib/uor-core";
+/**
+ * Resonate: iterative codebook-based factorization.
+ *
+ * Given a bundled vector and a codebook, iteratively sharpens
+ * estimates of constituent factors. This is the inverse of bundle —
+ * recovering which codebook items were superposed.
+ *
+ * @param bundled   The superposed vector to decompose
+ * @param codebook  Array of [label, vector] candidate factors
+ * @param maxIter   Maximum iterations (default 20)
+ * @param threshold Convergence threshold for similarity change (default 0.001)
+ * @returns         Array of { label, similarity } sorted by similarity descending
+ */
+export function resonate(
+  bundled: Hypervector,
+  codebook: [string, Hypervector][],
+  maxIter = 20,
+  threshold = 0.001,
+): Array<{ label: string; similarity: number }> {
+  if (codebook.length === 0) return [];
+
+  // Score each codebook item against the bundled vector
+  let scores = codebook.map(([label, vec]) => ({
+    label,
+    similarity: similarity(bundled, vec),
+    vec,
+  }));
+
+  // Iterative sharpening: reconstruct from top estimates, re-score
+  for (let iter = 0; iter < maxIter; iter++) {
+    // Sort by similarity, take top estimates
+    scores.sort((a, b) => b.similarity - a.similarity);
+
+    // Reconstruct: bundle top candidates weighted by similarity
+    const topN = scores.filter(s => s.similarity > 0.5);
+    if (topN.length === 0) break;
+
+    const reconstructed = bundle(topN.map(s => s.vec));
+
+    // Re-score against residual (bundled XOR reconstructed highlights missing components)
+    const residual = bind(bundled, reconstructed);
+    let maxDelta = 0;
+
+    scores = scores.map(s => {
+      const newSim = similarity(bundled, s.vec) * 0.7 + similarity(residual, s.vec) * 0.3;
+      maxDelta = Math.max(maxDelta, Math.abs(newSim - s.similarity));
+      return { ...s, similarity: newSim };
+    });
+
+    if (maxDelta < threshold) break; // Converged
+  }
+
+  return scores
+    .sort((a, b) => b.similarity - a.similarity)
+    .map(({ label, similarity: sim }) => ({ label, similarity: sim }));
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Hypervector fingerprint: first 8 bytes as hex. */
 export function fingerprint(v: Hypervector): string {
@@ -167,11 +236,6 @@ export function compatible(a: Hypervector, b: Hypervector): boolean {
 
 /**
  * Create a deterministic hypervector from an E8 root index (0–239).
- *
- * Expands the 8D E8 root into a full-dimension hypervector by
- * deterministic expansion: each root coordinate seeds 128 bytes
- * via a mixing function, yielding 8×128 = 1024 components.
- *
  * Same root index → same hypervector on any machine.
  */
 export function fromE8Root(rootIndex: number, dim = DEFAULT_DIM): Hypervector {
@@ -179,7 +243,6 @@ export function fromE8Root(rootIndex: number, dim = DEFAULT_DIM): Hypervector {
     throw new RangeError(`E8 root index ${rootIndex} out of range [0,239]`);
   }
 
-  // Lazy import to avoid circular dependency at module level
   const { getE8Roots } = require("@/modules/research/atlas/e8-roots");
   const roots = getE8Roots();
   const root = roots[rootIndex];
@@ -189,11 +252,8 @@ export function fromE8Root(rootIndex: number, dim = DEFAULT_DIM): Hypervector {
 
   for (let coord = 0; coord < 8; coord++) {
     const base = coord * chunkSize;
-    const rv = root[coord]; // -2, -1, 0, 1, or 2
-
+    const rv = root[coord];
     for (let j = 0; j < chunkSize && base + j < dim; j++) {
-      // Deterministic mix: root value × position-dependent scramble
-      // Maps the algebraic structure of E8 into byte space
       hv[base + j] = ((rv * 53 + j * 137 + coord * 43 + rootIndex * 7) & 0xff) >>> 0;
     }
   }
