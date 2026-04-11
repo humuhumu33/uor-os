@@ -8,12 +8,13 @@
  * @product SovereignDB
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
-  IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash,
+  IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash, IconSearch, IconX,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
+import { textIndexManager } from "../../text-index";
 
 interface Props {
   db: SovereignDB;
