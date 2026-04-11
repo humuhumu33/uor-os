@@ -392,7 +392,7 @@ async function cmdRun(ref) {
   process.on("SIGTERM", shutdown);
 }
 
-async function cmdPush(ref) {
+async function cmdPush(ref, flags = {}) {
   const image = findImage(ref);
   if (!image) {
     console.error(`${RED}✗ Image not found: ${ref}${RESET}`);
@@ -401,9 +401,8 @@ async function cmdPush(ref) {
   }
 
   console.log(`${CYAN}▸ Pushing ${BOLD}${image.appName}${RESET}${CYAN}:${image.version}${RESET}`);
-  console.log(`  ${DIM}Registry:${RESET} uor://registry/${image.canonicalId.slice(0, 16)}…`);
 
-  // Simulate structural deduplication analysis
+  // Structural deduplication analysis
   let uniqueNodes = 0;
   const seenHashes = new Set();
   for (const node of image.nodes) {
@@ -414,13 +413,33 @@ async function cmdPush(ref) {
   }
   const deduped = image.nodes.length - uniqueNodes;
 
+  // Remote sync via --sync flag
+  if (flags.sync) {
+    const endpoint = flags.sync === true ? "https://uor.foundation/api/registry" : flags.sync;
+    console.log(`  ${DIM}Syncing to:${RESET} ${endpoint}`);
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "push", image }),
+      });
+      if (res.ok) {
+        console.log(`  ${GREEN}✓${RESET} Remote sync complete`);
+      } else {
+        console.log(`  ${YELLOW}⚠${RESET} Remote returned ${res.status} — image saved locally only`);
+      }
+    } catch (err) {
+      console.log(`  ${YELLOW}⚠${RESET} Remote unreachable — image saved locally only`);
+    }
+  }
+
   console.log(`${GREEN}✓ Pushed successfully${RESET}`);
   console.log(`  ${DIM}New nodes:${RESET}    ${uniqueNodes}`);
   console.log(`  ${DIM}Deduplicated:${RESET} ${deduped}`);
   console.log(`  ${DIM}Tags:${RESET}         ${image.appName}:${image.version}, ${image.appName}:latest`);
 }
 
-async function cmdPull(ref) {
+async function cmdPull(ref, flags = {}) {
   if (!ref) {
     console.error(`${RED}✗ Usage: uor pull <app-ref>${RESET}`);
     process.exit(1);
@@ -429,15 +448,33 @@ async function cmdPull(ref) {
   console.log(`${CYAN}▸ Pulling ${BOLD}${ref}${RESET}`);
 
   const existing = findImage(ref);
-  if (existing) {
+  if (existing && !flags.sync) {
     console.log(`${GREEN}✓ Already present locally${RESET}`);
     console.log(`  ${DIM}ID:${RESET}    ${CYAN}${existing.canonicalId.slice(0, 24)}…${RESET}`);
     console.log(`  ${DIM}Nodes:${RESET} ${existing.nodes.length}`);
     return;
   }
 
-  // In full implementation, would fetch from remote registry/CDN
+  // Remote pull via --sync flag
+  if (flags.sync) {
+    const endpoint = flags.sync === true ? "https://uor.foundation/api/registry" : flags.sync;
+    console.log(`  ${DIM}Pulling from:${RESET} ${endpoint}`);
+    try {
+      const res = await fetch(`${endpoint}?ref=${encodeURIComponent(ref)}`);
+      if (res.ok) {
+        const image = await res.json();
+        ensureDir(IMAGES_DIR);
+        const imageFile = join(IMAGES_DIR, `${image.canonicalId.slice(0, 16)}.uor.json`);
+        writeFileSync(imageFile, JSON.stringify(image));
+        console.log(`${GREEN}✓ Pulled ${image.appName}:${image.version}${RESET}`);
+        console.log(`  ${DIM}Nodes:${RESET} ${image.nodes.length}`);
+        return;
+      }
+    } catch { /* fall through */ }
+  }
+
   console.error(`${YELLOW}⚠ Remote pull not yet implemented — use 'uor build' to create images locally${RESET}`);
+  console.error(`  ${DIM}Tip: use --sync=<endpoint> to pull from a remote registry${RESET}`);
 }
 
 async function cmdImages() {
