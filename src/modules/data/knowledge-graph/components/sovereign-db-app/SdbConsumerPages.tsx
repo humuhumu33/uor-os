@@ -25,8 +25,11 @@ import { SdbNoteProperties } from "./SdbNoteProperties";
 import { SdbOutline } from "./SdbOutline";
 import { SdbHomeView } from "./SdbHomeView";
 
+import type { AppSection } from "./SovereignDBApp";
+
 interface Props {
   db: SovereignDB;
+  onNavigateSection?: (section: AppSection) => void;
 }
 
 interface TreeItem {
@@ -49,7 +52,7 @@ const PAGE_ICONS: Record<string, string> = {
   folder: "📁",
 };
 
-export function SdbConsumerPages({ db }: Props) {
+export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   const [items, setItems] = useState<TreeItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());

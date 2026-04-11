@@ -22,8 +22,11 @@ import { useAtlasSeedData, SdbAtlasOverlay } from "./SdbAtlasSeed";
 import { getAtlas } from "@/modules/research/atlas/atlas";
 import { decodeTriality } from "@/modules/research/atlas/triality";
 
+import type { AppSection } from "./SovereignDBApp";
+
 interface Props {
   db: SovereignDB;
+  onNavigateSection?: (section: AppSection) => void;
 }
 
 const COLORS: Record<string, string> = {

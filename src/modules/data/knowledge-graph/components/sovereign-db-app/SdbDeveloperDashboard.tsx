@@ -19,9 +19,12 @@ import { hypergraph } from "../../hypergraph";
 import type { SdbSection } from "./SdbSidebar";
 import { loadHistory } from "./SdbQueryHistory";
 
+import type { AppSection } from "./SovereignDBApp";
+
 interface Props {
   db: SovereignDB;
   onNavigate: (section: SdbSection) => void;
+  onNavigateSection?: (section: AppSection) => void;
 }
 
 const SERVICES: {
@@ -39,7 +42,7 @@ const SERVICES: {
   { id: "storage", label: "Storage", description: "Providers, partitions, and migrations", icon: IconDatabase },
 ];
 
-export function SdbDeveloperDashboard({ db, onNavigate }: Props) {
+export function SdbDeveloperDashboard({ db, onNavigate, onNavigateSection }: Props) {
   const edges = hypergraph.cachedEdges();
   const nodeSet = new Set(edges.flatMap(e => e.nodes));
   const labels = new Set(edges.map(e => e.label));
@@ -76,7 +79,7 @@ export function SdbDeveloperDashboard({ db, onNavigate }: Props) {
       </div>
 
       {/* Quick actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <button
           onClick={() => onNavigate("query")}
           className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-[14px] font-medium hover:bg-primary/90 transition-colors"
@@ -95,6 +98,23 @@ export function SdbDeveloperDashboard({ db, onNavigate }: Props) {
         >
           <IconSearch size={16} /> View Schema
         </button>
+        {onNavigateSection && (
+          <>
+            <span className="w-px h-6 bg-border" />
+            <button
+              onClick={() => onNavigateSection("workspace")}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card text-[14px] font-medium text-foreground hover:bg-muted/50 transition-colors"
+            >
+              Open Workspace
+            </button>
+            <button
+              onClick={() => onNavigateSection("graph")}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card text-[14px] font-medium text-foreground hover:bg-muted/50 transition-colors"
+            >
+              View Graph
+            </button>
+          </>
+        )}
       </div>
 
       {/* Services grid */}
