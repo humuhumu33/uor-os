@@ -49,11 +49,6 @@ export function SdbConsumerPages({ db }: Props) {
       textIndexManager.create("workspace-notes", ["title", "content", "name"]);
     }
   }, []);
-  const [items, setItems] = useState<TreeItem[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [noteContent, setNoteContent] = useState("");
-  const [noteTitle, setNoteTitle] = useState("");
 
   // Load workspace items from hypergraph
   const reload = useCallback(async () => {
