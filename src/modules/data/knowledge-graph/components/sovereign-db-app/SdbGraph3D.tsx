@@ -27,7 +27,7 @@ interface Props {
 const BG_COLOR = "hsl(222, 47%, 6%)";
 
 /** Map layout mode to ForceGraph3D dagMode */
-function dagModeFor(mode: LayoutMode): string | null {
+function dagModeFor(mode: LayoutMode): "td" | "bu" | "lr" | "rl" | "zout" | "zin" | "radialout" | "radialin" | null {
   switch (mode) {
     case "radial": return "radialout";
     case "hierarchical": return "td";
