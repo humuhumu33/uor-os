@@ -1,84 +1,113 @@
 
 
-# SovereignDB — Algebrica-Inspired UX Polish
+# SovereignDB — Notion-Inspired Consumer UX Overhaul
 
-## What Algebrica Gets Right
+## Key Notion Patterns to Adopt
 
-Looking at their interface, the key qualities are:
+From the screenshot and the uploaded reference image, Notion's design is characterized by:
 
-1. **Rich home view** — not an empty state, but a curated landing with history, discovery, and most-explored content
-2. **Structured sidebar sections** — clear visual hierarchy: History (with timestamps), Discover (with connection counts), Most Explored (with view counts)
-3. **Generous whitespace and typography** — clean, confident spacing; nothing cramped
-4. **Discovery-oriented** — surfaces content the user hasn't explicitly searched for
-5. **Warm but precise** — subtle separators, readable hierarchy, no visual noise
+1. **Warm, light sidebar** — slightly tinted background (not dark), with emoji-prefixed page names, collapsible teamspace sections
+2. **Breadcrumb navigation** — top bar shows path (General / Company Home) instead of mode toggles
+3. **Full-width page layout** — page title is large with optional icon/cover, content flows naturally below
+4. **Notion-style blocks** — no bullet outliners by default; clean paragraph blocks with `/` slash commands for block types
+5. **Hover actions** — `+` to add block, `⋮⋮` drag handle appear on hover, not cluttering the UI
+6. **Sidebar structure** — Search, Inbox, Settings at top; then Teamspaces/Private sections with emoji icons; pages are nested with expand arrows
+7. **Clean page chrome** — minimal header, content is the hero
 
-## Current SovereignDB Gaps
+## Changes
 
-- Empty state is a generic "Welcome to your Knowledge Space" with two buttons
-- Sidebar is a flat workspace tree with no sections, no history, no discovery
-- Header feels functional but not polished
-- No concept of "most connected" or "discover" sections
-- Spacing and typography are adequate but not elevated
+### 1. Sidebar Overhaul (`SdbConsumerPages.tsx`)
 
-## Plan
+Transform from developer-style sections to Notion-style:
 
-### 1. Rich Home View (replaces empty state in `SdbConsumerPages.tsx`)
+- **Top section**: workspace name + chevron, then Search, Inbox (future), Settings (future), New page
+- **Teamspaces section header** → rename to "Workspace" with collapsible tree
+- **Private section** → "Private" for daily notes  
+- Remove the uppercase mono section headers (Daily, History, Workspace) — replace with Notion-style warm gray labels
+- Sidebar items: emoji support before page names, softer hover states (`bg-[#00000008]`), slightly warmer styling
+- Sidebar background: `bg-[#fbfbfa]` (light mode feel) or keep dark but warmer
+- Item padding: `py-1.5 px-2` for compact Notion feel
+- Nested pages indent with thin vertical guide lines
 
-When no note is selected, instead of the generic welcome message, render a **home dashboard** with:
+### 2. Breadcrumb Navigation Bar
 
-- **Your History** — last 10 visited notes with relative timestamps (like "1m ago", "2d")
-- **Most Connected** — notes ranked by inbound link count, showing connection count badges
-- **Discover** — hashtags/topics across the workspace ranked by frequency, with counts
-- **Atlas teaser** — subtle "Explore the Ontological Graph →" link to switch to Graph view
-- **Quick actions** — "Today's Note", "New Page" as clean pill buttons
+Replace the current header mode/view toggle approach in consumer mode:
 
-This is a new component `SdbHomeView.tsx` (~120 lines) rendered when `selected === null`.
+- Show breadcrumb path: `🏠 Home / 📁 Folder / 📄 Page Name`
+- Right side: share button (stub), favorite star toggle, `•••` menu
+- Keep the Workspace/Console + Pages/Graph/Canvas toggles but move them to be more subtle (small pills in header right)
 
-### 2. Sidebar Redesign (`SdbConsumerPages.tsx` sidebar section)
+### 3. Page Layout (`SdbConsumerPages.tsx` main area)
 
-Restructure the sidebar into clear sections with dividers:
+- **Page icon**: clickable emoji picker area above title (shows a default icon)
+- **Cover image area**: optional colored gradient banner (subtle, can be toggled)
+- **Title**: `text-[40px] font-bold` — larger than current, with `placeholder="Untitled"`
+- **Content width**: `max-w-[720px]` centered (Notion's standard)
+- Remove the Properties panel from default view — move to `•••` menu or sidebar
+- Block editor content should feel like clean paragraphs, not an outliner
 
-- **Search** — the existing ⌘K trigger, but styled as a full-width search bar at the top
-- **Daily Notes** — already exists, keep as-is
-- **Your History** — recent 5 notes with relative timestamps (compact version of home)
-- **Workspace** — the existing folder/note tree
-- **Outline** — already exists at bottom, keep
+### 4. Block Editor Refinements (`SdbBlockEditor.tsx`)
 
-Each section gets a subtle `text-[11px] uppercase tracking-wider` section header like Algebrica uses.
+- **Hover handles**: on hover, show a `+` button (left of bullet) to add block below, and a `⋮⋮` drag handle
+- **Remove visible bullets** for indent-0 blocks — only show bullets for indented/nested items (Notion paragraphs don't have bullets)
+- **Slash command** (`/`): when typing `/` at start of a block, show a dropdown with block types: Text, Heading 1/2/3, Bullet List, Numbered List, To-do, Divider, Quote, Callout
+- **Block types**: add support for heading blocks (render larger), todo blocks (checkbox), divider blocks
+- **Placeholder**: first empty block shows "Press '/' for commands, or just start typing..."
 
-### 3. Typography & Spacing Refinements
+### 5. Block Types (extend `Block` interface)
 
-- Note title input: increase to `text-[32px]`, add `leading-tight`, more bottom margin
-- Block editor: increase line height, add `py-1` per block for more breathing room
-- Sidebar items: increase to `py-2.5` with `text-[14px]`
-- Header: reduce visual weight — remove "Connected" badge, simplify to just mode/view toggles and a subtle SovereignDB wordmark
+```typescript
+interface Block {
+  id: string;
+  text: string;
+  indent: number;
+  children: string[];
+  type?: "text" | "h1" | "h2" | "h3" | "bullet" | "numbered" | "todo" | "divider" | "quote" | "callout";
+  checked?: boolean; // for todo blocks
+}
+```
 
-### 4. Header Polish (`SovereignDBApp.tsx`)
+Rendering per type:
+- `h1`: `text-[30px] font-bold`
+- `h2`: `text-[24px] font-semibold`
+- `h3`: `text-[20px] font-semibold`
+- `todo`: checkbox + text
+- `bullet`: bullet point
+- `divider`: `<hr>` line
+- `quote`: left border + italic
+- `callout`: background card with emoji
 
-- Remove "Connected" indicator and backend label from header (move to status bar)
-- Clean wordmark: just the green dot + "SovereignDB" with the db name in lighter weight
-- Thinner header: `h-11` instead of `h-12`
+### 6. Slash Command Menu (new logic in `SdbBlockEditor.tsx`)
 
-### 5. Status Bar Enhancement (`SdbStatusBar.tsx`)
+When user types `/` at the start of a block or after a space:
+- Show floating menu with block type options
+- Filter as they type (`/h` shows headings)
+- Arrow keys + Enter to select
+- Converts current block to selected type
 
-- Consumer mode: show "X notes · Y connections · Z tags" instead of generic "items"
-- Add the connection status here instead of the header
+### 7. Home View Polish (`SdbHomeView.tsx`)
 
-## Technical Details
+Keep the existing home view but style it more like Notion's home:
+- Cleaner, warmer typography
+- "Getting Started" section for empty workspace with 3-4 template suggestions
+- Recent pages as a clean list with page icons
 
-### New File
-| File | Purpose | ~Lines |
-|---|---|---|
-| `SdbHomeView.tsx` | Rich home dashboard with history, discovery, most-connected | 120 |
+## Technical Plan
 
 ### Modified Files
+
 | File | Change |
 |---|---|
-| `SdbConsumerPages.tsx` | Replace empty state with `SdbHomeView`; restructure sidebar into sections with headers; refine spacing |
-| `SovereignDBApp.tsx` | Simplify header — remove connection status, cleaner layout |
-| `SdbStatusBar.tsx` | Consumer mode shows notes/connections/tags counts |
-| `SdbBlockEditor.tsx` | Increase line height and spacing for blocks |
+| `SdbBlockEditor.tsx` | Add block types, slash commands, hover handles, remove bullets for text blocks (~150 lines of changes) |
+| `SdbConsumerPages.tsx` | Notion-style sidebar with warm colors, breadcrumbs, page icon/cover, wider title (~200 lines of changes) |
+| `SdbHomeView.tsx` | Warmer styling, getting started templates (~30 lines) |
+| `SovereignDBApp.tsx` | Consumer mode: hide mode toggles from header, show breadcrumb instead (~20 lines) |
+
+### No New Files Needed
+
+All changes fit within existing components. The slash command menu and block type rendering extend `SdbBlockEditor.tsx`.
 
 ### Estimated Scope
-~120 new lines + ~100 lines of edits across 4 files.
+
+~400 lines of edits across 4 files. No new dependencies.
 
