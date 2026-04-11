@@ -223,6 +223,80 @@ export class SovereignDB {
     return indexManager.list();
   }
 
+  // ── Traversal ────────────────────────────────────────────────
+
+  /** Get neighbors of a node. */
+  neighbors(nodeId: string, options?: { depth?: number; direction?: "outgoing" | "incoming" | "both"; labels?: string[] }): string[] {
+    this.ensureOpen();
+    return traversalEngine.neighbors(nodeId, options);
+  }
+
+  /** BFS shortest path. */
+  shortestPath(from: string, to: string, options?: { labels?: string[]; direction?: "outgoing" | "incoming" | "both" }): PathResult | null {
+    this.ensureOpen();
+    return traversalEngine.shortestPath(from, to, options);
+  }
+
+  /** General BFS/DFS traversal. */
+  traverse(startNode: string, options?: TraversalOptions): TraversalResult {
+    this.ensureOpen();
+    return traversalEngine.traverse(startNode, options);
+  }
+
+  /** All paths between two nodes. */
+  pathsBetween(from: string, to: string, options?: { maxDepth?: number; labels?: string[] }): PathResult[] {
+    this.ensureOpen();
+    return traversalEngine.pathsBetween(from, to, options);
+  }
+
+  // ── Graph Algorithms ────────────────────────────────────────
+
+  /** Compute PageRank. */
+  pageRank(options?: { damping?: number; maxIterations?: number; tolerance?: number }): PageRankResult {
+    this.ensureOpen();
+    return graphAlgorithms.pageRank(options);
+  }
+
+  /** Find connected components. */
+  connectedComponents(): ComponentResult {
+    this.ensureOpen();
+    return graphAlgorithms.connectedComponents();
+  }
+
+  /** Degree centrality. */
+  degreeCentrality(): DegreeResult {
+    this.ensureOpen();
+    return graphAlgorithms.degreeCentrality();
+  }
+
+  /** Community detection via label propagation. */
+  communities(options?: { maxIterations?: number }): CommunityResult {
+    this.ensureOpen();
+    return graphAlgorithms.labelPropagation(options);
+  }
+
+  // ── Cypher ──────────────────────────────────────────────────
+
+  /** Execute a Cypher query. */
+  async cypher(query: string): Promise<CypherResult> {
+    this.ensureOpen();
+    return cypherEngine.execute(query);
+  }
+
+  // ── Full-Text Search ────────────────────────────────────────
+
+  /** Create a full-text search index. */
+  createTextIndex(name: string, fields: string[]): void {
+    this.ensureOpen();
+    textIndexManager.create(name, fields);
+  }
+
+  /** Search a text index. */
+  textSearch(indexName: string, query: string, options?: { limit?: number }): import("./text-index").TextSearchResult[] {
+    this.ensureOpen();
+    return textIndexManager.search(indexName, query, options);
+  }
+
   // ── Events ──────────────────────────────────────────────────
 
   /** Subscribe to hyperedge lifecycle events. */
