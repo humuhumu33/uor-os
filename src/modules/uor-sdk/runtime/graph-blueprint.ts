@@ -69,13 +69,13 @@ export function graphImageToBlueprint(
   // Map each graph node to a lens element spec
   const elements = image.nodes.map((node) => ({
     id: node.canonicalId,
-    type: mapNodeTypeToElementType(node.nodeType),
-    label: node.label,
+    kind: mapNodeTypeToElementType(node.nodeType),
     config: {
       path: node.path,
       mimeType: node.mimeType,
       byteLength: node.byteLength,
       nodeType: node.nodeType,
+      label: node.label,
       ...node.properties,
     },
   }));
@@ -108,16 +108,13 @@ export function graphImageToBlueprint(
     wires,
     entrypoint,
     constraints: {
-      maxMemoryMb: options.memoryLimitMb ?? 256,
-      maxTicksPerSecond: 60,
-      networkAccess: options.networkAccess ?? true,
-      filesystemAccess: options.filesystemAccess ?? true,
+      memoryLimitMb: options.memoryLimitMb ?? 256,
       maxConcurrentElements: image.nodes.length,
     },
     scheduler: {
       isConstant: false,
       initialPositions: image.nodes.length,
-      directionCount: 4, // navigate, execute, suspend, stop
+      directionCount: 4,
     },
   });
 
