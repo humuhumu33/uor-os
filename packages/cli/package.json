@@ -1,0 +1,30 @@
+{
+  "name": "@uor/cli",
+  "version": "0.1.0",
+  "description": "UOR Sovereign Runtime CLI — one command from graph to running app",
+  "type": "module",
+  "bin": {
+    "uor": "./bin/uor.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "echo 'CLI is plain JS — no build step needed'",
+    "start": "node bin/uor.js"
+  },
+  "keywords": [
+    "uor",
+    "sovereign",
+    "runtime",
+    "knowledge-graph",
+    "wasm",
+    "container"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
