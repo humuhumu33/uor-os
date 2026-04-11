@@ -30,7 +30,6 @@ import {
   removeContainer,
   inspectContainer,
 } from "@/modules/identity/uns/build/container";
-}
 import { shipApp } from "@/modules/uor-sdk/runtime/registry-ship";
 import type { ShipResult } from "@/modules/uor-sdk/runtime/registry-ship";
 import type { AppManifest } from "@/modules/uor-sdk/app-identity";
