@@ -143,7 +143,7 @@ describe("AtlasEngine", () => {
     const engine = getAtlasEngine();
     expect(engine.vertexCount).toBe(96);
     expect(engine.rootCount).toBe(240);
-    expect(engine.embedding.adjacencyPreserved).toBe(true);
+    expect(engine.embedding.allRootsValid).toBe(true);
     expect(engine.embedding.injective).toBe(true);
   });
 
