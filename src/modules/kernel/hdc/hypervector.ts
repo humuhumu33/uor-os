@@ -150,12 +150,8 @@ export function encodeRecord(pairs: [Hypervector, Hypervector][]): Hypervector {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-/** 8-bit popcount (number of set bits). */
-function popcount8(x: number): number {
-  x = x - ((x >> 1) & 0x55);
-  x = (x & 0x33) + ((x >> 2) & 0x33);
-  return (x + (x >> 4)) & 0x0f;
-}
+// Popcount delegated to the addressing kernel
+import { popcount8 } from "@/lib/uor-core";
 
 /** Hypervector fingerprint: first 8 bytes as hex. */
 export function fingerprint(v: Hypervector): string {
