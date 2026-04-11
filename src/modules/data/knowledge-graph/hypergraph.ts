@@ -253,6 +253,7 @@ export const hypergraph = {
     );
 
     indexEdge(he);
+    emitEvent("created", he);
     return he;
   },
 
@@ -261,7 +262,7 @@ export const hypergraph = {
    */
   async removeEdge(id: string): Promise<void> {
     const he = edgeCache.get(id);
-    if (he) deindexEdge(he);
+    if (he) { deindexEdge(he); emitEvent("removed", he); }
     await grafeoStore.removeNode(`${UOR_NS}hyperedge/${id}`);
   },
 
@@ -457,6 +458,7 @@ export const hypergraph = {
       he => he.expiresAt !== undefined && he.expiresAt <= now,
     );
     for (const he of expired) {
+      emitEvent("reaped", he);
       deindexEdge(he);
       await grafeoStore.removeNode(`${UOR_NS}hyperedge/${he.id}`);
     }
