@@ -9,6 +9,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash,
+  IconGraph, IconSun, IconLayoutBoard, IconTerminal2,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
@@ -17,7 +18,10 @@ import { textIndexManager } from "../../text-index";
 import { SdbBlockEditor, type Block } from "./SdbBlockEditor";
 import { SdbBacklinks } from "./SdbBacklinks";
 import { SdbDailyNoteSection, useDailyNotes } from "./SdbDailyNote";
-import { SdbQuickFinder, type FinderItem } from "./SdbQuickFinder";
+import { SdbQuickFinder, type FinderItem, type CommandAction } from "./SdbQuickFinder";
+import { SdbLocalGraph } from "./SdbLocalGraph";
+import { SdbNoteProperties } from "./SdbNoteProperties";
+import { SdbOutline } from "./SdbOutline";
 
 interface Props {
   db: SovereignDB;
@@ -141,6 +145,15 @@ export function SdbConsumerPages({ db }: Props) {
     items.filter(i => i.type === "note" || i.type === "daily").map(i => i.name).filter(n => n !== "Untitled"),
     [items]
   );
+
+  // Get preview text for a note title (for hover preview)
+  const getPreview = useCallback((title: string): string | null => {
+    const item = items.find(
+      i => (i.type === "note" || i.type === "daily") && i.name.toLowerCase() === title.toLowerCase()
+    );
+    if (!item) return null;
+    return String(item.edge.properties.content || "").slice(0, 150) || null;
+  }, [items]);
 
   // Extract [[wiki links]] from blocks
   const parseWikiLinks = useCallback((blockArr: Block[]): string[] => {
@@ -285,6 +298,15 @@ export function SdbConsumerPages({ db }: Props) {
     });
   };
 
+  // Command palette actions
+  const commands: CommandAction[] = useMemo(() => [
+    { id: "graph", label: "Switch to Graph View", icon: <IconGraph size={15} />, action: () => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "graph" })) },
+    { id: "canvas", label: "Open Canvas", icon: <IconLayoutBoard size={15} />, action: () => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "canvas" })) },
+    { id: "daily", label: "Create Daily Note", icon: <IconSun size={15} />, action: () => reloadDaily() },
+    { id: "folder", label: "New Folder", icon: <IconFolder size={15} />, action: createFolder },
+    { id: "note", label: "New Note", icon: <IconPlus size={15} />, action: () => createNote() },
+  ], [createFolder, createNote, reloadDaily]);
+
   // Quick finder items
   const finderItems: FinderItem[] = useMemo(() =>
     items.filter(i => i.type === "note" || i.type === "daily").map(i => ({
@@ -296,7 +318,7 @@ export function SdbConsumerPages({ db }: Props) {
     [items]
   );
 
-  // Build tree (folders + notes only, daily notes in separate section)
+  // Build tree
   const rootItems = items.filter(i => i.type !== "daily" && (!i.parentId || i.parentId === "ws:root"));
   const childrenOf = (parentId: string) => items.filter(i => i.parentId === parentId);
 
@@ -364,6 +386,7 @@ export function SdbConsumerPages({ db }: Props) {
         recentIds={recentIds}
         onSelect={id => { setSelectedId(id); }}
         onCreate={title => createNote("ws:root", title)}
+        commands={commands}
       />
 
       {/* Sidebar */}
@@ -405,6 +428,13 @@ export function SdbConsumerPages({ db }: Props) {
             rootItems.map(i => renderItem(i))
           )}
         </nav>
+
+        {/* Outline panel when note selected */}
+        {selected && (selected.type === "note" || selected.type === "daily") && (
+          <SdbOutline blocks={blocks} onFocusBlock={(idx) => {
+            // Scroll to block — trigger editing
+          }} />
+        )}
       </aside>
 
       {/* Main content area */}
@@ -445,7 +475,15 @@ export function SdbConsumerPages({ db }: Props) {
               onChange={e => setNoteTitle(e.target.value)}
               onBlur={saveNote}
               placeholder="Untitled"
-              className="w-full text-[28px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/30 mb-6"
+              className="w-full text-[28px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/30 mb-4"
+            />
+
+            {/* Note properties */}
+            <SdbNoteProperties
+              edge={selected.edge}
+              blocks={blocks}
+              allEdges={allEdges}
+              noteId={selected.id}
             />
 
             {/* Block outliner */}
@@ -454,10 +492,22 @@ export function SdbConsumerPages({ db }: Props) {
               onChange={handleBlocksChange}
               onWikiLinkClick={handleWikiLinkClick}
               noteNames={noteNames}
+              getPreview={getPreview}
             />
 
             {/* Backlinks */}
             <SdbBacklinks
+              currentNoteId={selected.id}
+              currentNoteTitle={noteTitle}
+              allEdges={allEdges}
+              onNavigate={async (noteId) => {
+                await saveNote();
+                navigateTo(noteId);
+              }}
+            />
+
+            {/* Local graph */}
+            <SdbLocalGraph
               currentNoteId={selected.id}
               currentNoteTitle={noteTitle}
               allEdges={allEdges}

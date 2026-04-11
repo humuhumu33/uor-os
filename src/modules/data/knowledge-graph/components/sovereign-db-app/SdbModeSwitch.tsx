@@ -5,7 +5,7 @@
 
 import type { UiMode } from "./SdbHyperPulse";
 
-export type ViewMode = "pages" | "graph";
+export type ViewMode = "pages" | "graph" | "canvas";
 
 interface Props {
   mode: UiMode;
@@ -65,6 +65,21 @@ export function SdbModeSwitch({ mode, view, onModeChange, onViewChange }: Props)
         >
           Graph
         </button>
+        {mode === "consumer" && (
+          <>
+            <span className="w-px h-5 bg-border" />
+            <button
+              onClick={() => onViewChange("canvas")}
+              className={`px-3 py-1 transition-colors ${
+                view === "canvas"
+                  ? "bg-primary/15 text-primary font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Canvas
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

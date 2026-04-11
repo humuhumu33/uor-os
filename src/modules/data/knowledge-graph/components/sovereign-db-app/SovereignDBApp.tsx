@@ -15,6 +15,7 @@ import { SovereignDB } from "../../sovereign-db";
 import { SdbHyperPulse, type UiMode } from "./SdbHyperPulse";
 import { SdbModeSwitch, type ViewMode } from "./SdbModeSwitch";
 import { SdbConsumerPages } from "./SdbConsumerPages";
+import { SdbCanvas } from "./SdbCanvas";
 import { SdbConsumerGraph } from "./SdbConsumerGraph";
 import { SdbDeveloperDashboard } from "./SdbDeveloperDashboard";
 import { SdbDeveloperGraph } from "./SdbDeveloperGraph";
@@ -72,6 +73,16 @@ const SovereignDBApp = () => {
     localStorage.setItem(STORAGE_VIEW_KEY, JSON.stringify(v));
   }, []);
 
+  // Listen for command palette view switching
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const view = (e as CustomEvent).detail as ViewMode;
+      handleViewChange(view);
+    };
+    window.addEventListener("sdb:set-view", handler);
+    return () => window.removeEventListener("sdb:set-view", handler);
+  }, [handleViewChange]);
+
   const handlePulseSelect = useCallback((m: UiMode) => {
     setShowPulse(false);
     handleModeChange(m);
@@ -112,9 +123,9 @@ const SovereignDBApp = () => {
   const renderContent = () => {
     // Consumer mode
     if (mode === "consumer") {
-      return view === "graph"
-        ? <SdbConsumerGraph db={db} />
-        : <SdbConsumerPages db={db} />;
+      if (view === "graph") return <SdbConsumerGraph db={db} />;
+      if (view === "canvas") return <SdbCanvas db={db} />;
+      return <SdbConsumerPages db={db} />;
     }
 
     // Developer mode — graph view
