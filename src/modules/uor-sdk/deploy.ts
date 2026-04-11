@@ -21,6 +21,7 @@
  */
 
 import { importApp } from "./import-adapter";
+import { RuntimeWitness } from "./runtime-witness";
 import type { ImportSource, ImportResult } from "./import-adapter";
 import { buildAppImage } from "./runtime/image-builder";
 import type { ImageBuildResult } from "./runtime/image-builder";
