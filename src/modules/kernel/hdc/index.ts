@@ -28,6 +28,9 @@ export {
   encodeHyperedge, getEncoderMemory,
 } from "./encoder";
 
+// Neural→VSA projection bridge
+export { projectToHV, projectBatch, learnProjection } from "./projection";
+
 // Reasoning engine
 export { ReasoningEngine } from "./reasoning";
-export type { ReasoningResult } from "./reasoning";
+export type { ReasoningResult, FactorResult } from "./reasoning";
