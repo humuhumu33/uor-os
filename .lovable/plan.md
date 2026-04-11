@@ -1,80 +1,87 @@
 
 
-# SovereignDB — Three-Section Unified Experience
+# SovereignDB — Fully Immersive 3D Graph View
 
-## Overview
+## Vision
 
-Replace the current two-mode system (consumer/developer with sub-views) and the HyperPulse welcome gate with a direct-launch app featuring three clear sections accessible via a persistent top-level switcher.
+Replace the 2D canvas graph with a full 3D force-directed graph as the **default** Graph section experience. All nodes float in 3D space, you can orbit, zoom, and fly through the graph. The Atlas torus remains as a structural substrate. Workspace nodes (notes, folders, tags) orbit around it. The result: graphs naturally form geometric clusters you can rotate and inspect from any angle.
 
-```text
-┌─────────────────────────────────────────────────┐
-│  ● SovereignDB    [Workspace] [Graph] [Console] │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│         Active section content                  │
-│                                                 │
-├─────────────────────────────────────────────────┤
-│  status bar                                     │
-└─────────────────────────────────────────────────┘
-```
+## Library Choice
 
-**Section 1 — Workspace** (Notion-like): The existing `SdbConsumerPages` with sidebar, block editor, home view. No changes to internals.
+**`react-force-graph-3d`** (by vasturiano, MIT, ~1.3K stars) — purpose-built for exactly this. It wraps Three.js with d3-force-3d physics, supports node/link customization, orbit controls, zoom, click/hover events, and works on mobile via touch gestures. Lightweight (tree-shakes well), battle-tested, and already compatible with our React 18 + Three.js setup.
 
-**Section 2 — Graph** (Obsidian-like): The existing `SdbConsumerGraph` with Atlas seed, filters, controls. Full canvas experience.
-
-**Section 3 — Console** (AWS-like): The existing developer dashboard + sidebar + all service panels (query, edges, schema, algo, import, stats, storage).
+Alternative considered: building from scratch with r3f — too much work to replicate force layout, hit testing, camera controls, and LOD that `react-force-graph-3d` gives out of the box.
 
 ## What Changes
 
-### `SovereignDBApp.tsx` — Major simplification
+### 1. Install `react-force-graph-3d` (~1.3MB min)
 
-- **Remove** `showPulse` state and the HyperPulse welcome gate entirely. App opens directly to the last-used section (default: "workspace").
-- **Replace** `mode` + `view` with a single `section` state: `"workspace" | "graph" | "console"`.
-- **Unified header** always visible across all three sections: SovereignDB wordmark on the left, three-tab switcher centered, right side empty or with subtle actions.
-- **Remove** `SdbModeSwitch` component usage — replaced by the inline three-tab switcher.
-- The Canvas view remains accessible from within Workspace (as a sub-view or via ⌘K).
+### 2. New component: `SdbGraph3D.tsx`
 
-### Header Design
+Wraps `ForceGraph3D` with our data pipeline:
+
+- Converts `GNode[]` + `GLink[]` into the `{ nodes, links }` format the library expects
+- Custom node rendering: colored spheres sized by degree, with emissive glow for Atlas nodes
+- Custom link rendering: semi-transparent lines, thicker for stronger weights
+- Dark background matching the app theme (`hsl(222, 47%, 6%)`)
+- Node click → opens detail panel (same panel as current 2D view)
+- Node right-click → context menu
+- Double-click → navigate to Workspace for that note
+- Hover → highlight node + connected edges
+- Atlas nodes get a subtle pulsing glow to distinguish structural substrate from user content
+- Camera auto-rotates slowly when idle, stops on interaction
+
+### 3. Update `SdbConsumerGraph.tsx`
+
+- Make 3D the **default** view (remove `show3D` toggle logic — 3D is now primary)
+- Keep a "2D" fallback button for users who prefer flat view
+- Pass merged nodes/links (Atlas + workspace) into `SdbGraph3D`
+- Overlay controls (search, filters, type toggles) remain as absolute-positioned HTML on top of the 3D canvas
+- Detail panel stays as HTML overlay (same as current)
+
+### 4. Update `SdbGraphControls.tsx`
+
+- Replace "3D" toggle with "2D" toggle (inverted — 3D is default now)
+- Keep all existing filter/layout controls; layout modes become 3D force config presets:
+  - "Force" → standard 3D force-directed
+  - "Radial" → `dagMode: 'radial'`
+  - "Tree" → `dagMode: 'td'` (top-down DAG)
+  - "Grid" → disable force, position on 3D grid
+
+### 5. Mobile Compatibility
+
+`react-force-graph-3d` uses Three.js OrbitControls which support touch:
+- Pinch to zoom
+- One-finger drag to orbit
+- Two-finger drag to pan
+- Tap to select node
+
+## Technical Details
 
 ```text
-● SovereignDB  sovereign-explorer     [Workspace] [Graph] [Console]
+┌──────────────────────────────────────────┐
+│  SdbConsumerGraph                        │
+│  ┌────────────────────────────────────┐  │
+│  │  SdbGraph3D (ForceGraph3D)        │  │
+│  │  - 3D force-directed layout       │  │
+│  │  - Custom sphere nodes            │  │
+│  │  - Orbit/zoom/pan controls        │  │
+│  │  - Auto-rotate when idle          │  │
+│  └────────────────────────────────────┘  │
+│  [Search] [Filters] [Layout] [2D]       │  ← HTML overlays
+│  [Detail Panel]  [Legend]                │
+└──────────────────────────────────────────┘
 ```
 
-Three tabs styled as clean pills (like the existing mode toggle but with three options). Active tab gets `bg-primary/15 text-primary font-semibold`. Clean, minimal, always present.
-
-### Cross-Links Between Sections
-
-These already partially exist and will be formalized:
-
-- **Workspace → Graph**: The "Explore the Atlas →" link in HomeView fires `setSection("graph")`. The local graph at the bottom of each note gets a "Open in Graph" button.
-- **Graph → Workspace**: Clicking a note node in the graph navigates to `setSection("workspace")` and selects that note.
-- **Workspace → Console**: A subtle "Console" link in the sidebar bottom or via ⌘K command.
-- **Console → Graph**: The developer graph view moves into the Console as a sub-view (already exists as `SdbDeveloperGraph`). Console dashboard "View Graph" button switches to the Graph section.
-- **Console → Workspace**: Console dashboard gets a "View Notes" quick action.
-
-Cross-links implemented via a shared `onNavigateSection` callback passed down, or via the existing `sdb:set-view` custom event pattern (renamed to `sdb:set-section`).
-
-### `SdbStatusBar.tsx` — Section-aware
-
-Status bar already switches between consumer/developer display. Change the `mode` prop to accept the section name:
-- `"workspace"` → show notes/connections/tags counts
-- `"graph"` → show nodes/edges/labels counts  
-- `"console"` → show edges/nodes/labels + providers
-
-### Console Section
-
-Renders exactly the current developer experience: the `SdbSidebar` + the service panels. The `SdbDeveloperDashboard` gets two additional quick-action buttons: "Open Workspace" and "View Graph" that cross-link to the other sections.
-
-## Files Modified
+### Files
 
 | File | Change |
 |---|---|
-| `SovereignDBApp.tsx` | Remove HyperPulse gate, replace mode+view with `section` state, unified 3-tab header, pass `onNavigateSection` down |
-| `SdbStatusBar.tsx` | Accept `section` prop instead of `mode`, add graph-specific display |
-| `SdbDeveloperDashboard.tsx` | Add "Open Workspace" and "View Graph" cross-link buttons |
-| `SdbConsumerGraph.tsx` | Accept `onNavigateSection` to enable note-click → workspace navigation |
-| `SdbHomeView.tsx` | Wire "Explore Atlas" to navigate to graph section via prop callback |
-| `SdbConsumerPages.tsx` | Add `onNavigateSection` prop, wire sidebar Console link and ⌘K commands |
+| `package.json` | Add `react-force-graph-3d` |
+| `SdbGraph3D.tsx` | **New** — wraps ForceGraph3D with our node/link data, custom rendering, event handlers (~150 lines) |
+| `SdbConsumerGraph.tsx` | Default to 3D, render `SdbGraph3D` as primary view, keep 2D as fallback (~80 lines changed) |
+| `SdbGraphControls.tsx` | Flip toggle to "2D", map layout modes to 3D presets (~15 lines changed) |
 
-No new files. No files deleted (HyperPulse stays available but is no longer the gate). ~150 lines of edits across 6 files.
+### Estimated Scope
+~150 new lines + ~100 lines of edits. One new dependency.
 
