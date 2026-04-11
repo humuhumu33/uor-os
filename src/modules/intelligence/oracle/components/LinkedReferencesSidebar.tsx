@@ -8,7 +8,7 @@
 import { useState, useEffect } from "react";
 import { getBacklinks, type Backlink } from "@/modules/data/knowledge-graph/backlinks";
 import { findUnlinkedReferences, type UnlinkedReference } from "@/modules/data/knowledge-graph/backlinks";
-import { localGraphStore } from "@/modules/data/knowledge-graph/local-store";
+import { grafeoStore as localGraphStore } from "@/modules/data/knowledge-graph/grafeo-store";
 
 interface Props {
   address: string;

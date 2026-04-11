@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wifi, WifiOff, Database, Brain, Globe, Mic, Shield, RefreshCw } from "lucide-react";
 import { useConnectivity, type FeatureId } from "@/modules/platform/desktop/hooks/useConnectivity";
-import { localGraphStore } from "@/modules/data/knowledge-graph/local-store";
+import { grafeoStore as localGraphStore } from "@/modules/data/knowledge-graph/grafeo-store";
 
 interface Props {
   open: boolean;
