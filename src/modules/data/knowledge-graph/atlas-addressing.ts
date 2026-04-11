@@ -253,10 +253,5 @@ export const atlasAddressing = {
 // ── Internal helper to access edge cache ────────────────────────────────────
 
 function edgeCacheValues(): Hyperedge[] {
-  // Access the hypergraph's stats to enumerate cached edges
-  // We use the byLabel approach via the cache
-  const result: Hyperedge[] = [];
-  // The hypergraph module exposes edgeCache indirectly; we query all cached
-  // This is a view-layer scan — acceptable for moderate edge counts
-  return result;
+  return hypergraph.cachedEdges();
 }
