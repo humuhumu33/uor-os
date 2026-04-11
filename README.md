@@ -1,125 +1,66 @@
-# UOR OS
+<p align="center">
+  <img src=".github/splash.png" alt="UOR OS" width="100%" />
+</p>
 
-**A sovereign virtual operating system that runs in the browser and ships as a native desktop app.**
+<p align="center">
+  <strong>A sovereign virtual operating system — from browser to desktop.</strong>
+</p>
 
-UOR OS is a local-first, privacy-preserving operating system built on content-addressed data and algebraic computation. Every object — a file, a message, an identity, a computation trace — gets a deterministic address derived from its content. This means data is portable, verifiable, and yours by default.
-
----
-
-## Why
-
-Modern operating systems tie your identity, data, and applications to a vendor's cloud. You can't move your messages between platforms. You can't verify that a computation actually happened. You can't own your namespace the way you own a domain name.
-
-UOR OS replaces these assumptions. It gives you a self-contained environment where identity is content-addressed (not account-based), storage is encrypted at rest (AES-256-GCM), messaging is post-quantum secure, and every operation leaves an auditable derivation chain. It runs as a web app during development and compiles to a native binary via Tauri for production use.
-
-## How It Works
-
-The system is organized into six layers, each in its own directory under `src/modules/`:
-
-```
-Layer 0 — kernel/           Computation & Algebra
-Layer 1 — identity/          Naming & Addressing
-Layer 2 — platform/          OS Shell & Services
-Layer 3 — data/              Storage & Knowledge
-Layer 4 — intelligence/      AI, Agents & Communication
-Layer 5 — research/          Experimental & Advanced
-         interoperability/   Standards Compatibility (CNCF, OpenAPI)
-```
-
-### Layer 0 · Kernel
-
-The mathematical foundation. A 256-element finite ring (R₈ = F₂[x]/(x⁸+1)) provides the algebraic substrate for content addressing, derivation proofs, and entity resolution. This is not a blockchain — it is a deterministic computation model where every result can be independently verified.
-
-**Modules:** `engine` · `ring-core` · `axioms` · `derivation` · `resolver` · `morphism` · `state` · `observable`
-
-### Layer 1 · Identity
-
-Content-addressed naming. Every piece of data gets a canonical identifier (CID) that maps deterministically to an IPv6 address, a Unicode glyph, and a Braille representation. The Universal Name System (UNS) is the DNS equivalent — it resolves human-readable names to content addresses.
-
-**Modules:** `uns` · `addressing` · `certificate` · `qr-cartridge`
-
-### Layer 2 · Platform
-
-The operating system shell. A windowed desktop environment with a dock, spotlight search, and theme engine. Applications are orchestrated through a service mesh (the "Bus") that provides typed RPC between modules. The Compose subsystem manages container-like app lifecycles.
-
-**Modules:** `desktop` · `boot` · `bus` · `compose` · `app-store` · `app-builder` · `auth` · `core` · `landing` · `ontology`
-
-### Layer 3 · Data
-
-Encrypted, content-addressed storage. The Knowledge Graph stores RDF-compatible triples locally via GrafeoDB. Sovereign Spaces provide peer-to-peer sync with CRDT-based conflict resolution. All data can be exported via Takeout or rolled back via Time Machine.
-
-**Modules:** `knowledge-graph` · `sovereign-vault` · `sovereign-spaces` · `sparql` · `jsonld` · `code-kg` · `takeout` · `time-machine`
-
-### Layer 4 · Intelligence
-
-AI assistant, encrypted messaging, and media. Oracle provides a multi-model AI interface with epistemic grading — every response carries a fidelity score and derivation proof. The Messenger uses post-quantum key exchange (ML-KEM) for end-to-end encryption. Agent Tools expose five canonical operations (derive, query, verify, correlate, partition) for MCP-compatible AI agents.
-
-**Modules:** `oracle` · `agent-tools` · `mcp` · `messenger` · `epistemic` · `media` · `audio`
-
-### Layer 5 · Research
-
-Experimental modules. Quantum circuit simulation, topological atlas visualization, SHACL conformance testing, and a compliance dashboard that validates the system against its own axioms.
-
-**Modules:** `quantum` · `atlas` · `qsvg` · `shacl` · `canonical-compliance`
+<p align="center">
+  <a href="https://github.com/nicholasgriffintn/uor-os/actions"><img src="https://img.shields.io/github/actions/workflow/status/nicholasgriffintn/uor-os/ci.yml?style=flat-square&label=CI" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square" alt="License"></a>
+  <a href="https://uor-os.lovable.app"><img src="https://img.shields.io/badge/demo-live-brightgreen?style=flat-square" alt="Live Demo"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Web-lightgrey?style=flat-square" alt="Platforms">
+</p>
 
 ---
+
+## What is UOR OS?
+
+UOR OS is a local-first, privacy-preserving operating system that runs in the browser and ships as a native desktop app via [Tauri](https://tauri.app). Every object — files, messages, identities, computation traces — gets a deterministic, content-addressed identity. Your data is portable, verifiable, and yours by default.
 
 ## Quick Start
-
-### Web (Development)
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open `http://localhost:8080`. The OS shell loads as the root route.
+Open **http://localhost:8080** — the OS shell loads immediately.
 
-### Desktop (Production)
+To build a native desktop app:
 
 ```bash
-# Requires: Rust toolchain (rustup.rs)
 npm run tauri:build
 ```
 
-Produces native installers:
-- **macOS** → `.dmg` in `src-tauri/target/release/bundle/dmg/`
-- **Windows** → `.msi` in `src-tauri/target/release/bundle/msi/`
-- **Linux** → `.AppImage` / `.deb` in `src-tauri/target/release/bundle/`
+> Requires the [Rust toolchain](https://rustup.rs). Produces `.dmg` (macOS), `.msi` (Windows), and `.AppImage`/`.deb` (Linux).
 
----
+## Features
 
-## Project Structure
+- 🖥️ **Windowed Desktop Shell** — Dock, spotlight search, theme engine
+- 🔐 **Encrypted by Default** — AES-256-GCM at rest, post-quantum (ML-KEM) in transit
+- 🧮 **Algebraic Computation** — Every result is independently verifiable via Ring R₈
+- 🌐 **Content Addressing** — SHA-256 → CID → IPv6 → Unicode glyph for every object
+- 🤖 **AI Oracle** — Multi-model interface with epistemic grading and derivation proofs
+- 💬 **Encrypted Messenger** — End-to-end encrypted with post-quantum key exchange
+- 📦 **Container Runtime** — Docker-compatible build/run/ship pipeline
+- 🔗 **Knowledge Graph** — RDF-compatible triples with SPARQL queries, stored locally
 
-```
-uor-os/
-├── src/
-│   ├── modules/
-│   │   ├── kernel/              ← Ring R₈, axioms, derivation, resolution
-│   │   ├── identity/            ← UNS, content addressing, certificates
-│   │   ├── platform/            ← Desktop shell, service bus, app lifecycle
-│   │   ├── data/                ← Knowledge graph, encrypted vault, sync
-│   │   ├── intelligence/        ← AI oracle, agents, encrypted messenger
-│   │   ├── research/            ← Quantum sim, topology, compliance
-│   │   ├── interoperability/    ← CNCF compat, API explorer
-│   │   ├── uor-sdk/             ← Developer SDK
-│   │   └── verify/              ← Audit & verification tools
-│   ├── lib/                     ← Shared utilities (crypto, WASM bridge)
-│   ├── types/                   ← UOR Foundation type declarations
-│   └── integrations/            ← Backend client
-├── supabase/                    ← Edge functions & database migrations
-├── src-tauri/                   ← Rust desktop backend (Tauri 2)
-└── public/                      ← Static assets & PWA manifest
-```
+## Platform Support
 
-## Configuration
+| Platform | Status |
+|----------|--------|
+| Web (Chrome, Firefox, Safari) | ✅ Supported |
+| macOS (Apple Silicon & Intel) | ✅ Supported |
+| Windows 10/11 | ✅ Supported |
+| Linux (Ubuntu, Fedora, Arch) | ✅ Supported |
 
-Create a `.env` file (auto-generated in Lovable Cloud):
+## Architecture
 
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
-```
+UOR OS is organized into six layers — from algebraic kernel to experimental research modules. Each layer enforces strict downward-only imports: intelligence → data → kernel, never upward.
+
+👉 **[Read the full architecture guide →](ARCHITECTURE.md)**
 
 ## Tech Stack
 
@@ -135,15 +76,8 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
 
 ## Contributing
 
-Each subsystem directory contains a `README.md` describing its modules. Start there. The codebase follows these conventions:
-
-- **Barrel exports** — Every module has an `index.ts` that defines its public API.
-- **Bus registration** — Modules expose RPC methods via `src/modules/platform/bus/`.
-- **Lazy loading** — Heavy modules (quantum, atlas, audio) are code-split and loaded on demand.
-- **No circular deps** — Layers only import downward (intelligence → data → kernel), never upward.
-
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the technical deep-dive.
+We welcome contributions! Please read the **[Contributing Guide](.github/CONTRIBUTING.md)** for setup instructions, coding conventions, and the PR process.
 
 ## License
 
-Apache License, Version 2.0. See [LICENSE](./LICENSE).
+[Apache License, Version 2.0](LICENSE)
