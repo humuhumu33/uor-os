@@ -146,6 +146,28 @@ export async function deployApp(opts: DeployOptions): Promise<DeployResult> {
     },
   );
 
+  // ── Stage 2.5: GRAPH ENCODE (optional) ──────────────────────
+  let graphImage: GraphImage | undefined;
+  let graphPushReceipt: GraphPushReceipt | undefined;
+
+  if (opts.encoding === "graph") {
+    progress("build", "Encoding app as knowledge graph subgraph...");
+
+    const appFiles = [
+      {
+        path: importResult.manifest["app:entrypoint"],
+        bytes: new TextEncoder().encode(
+          `<!-- ${appName} v${version}. entry: ${importResult.manifest["app:entrypoint"]} -->`
+        ),
+      },
+    ];
+
+    graphImage = await encodeAppToGraph(appFiles, importResult.manifest);
+
+    progress("ship", "Pushing graph image to registry (structural dedup)...");
+    graphPushReceipt = await pushGraph(graphImage);
+  }
+
   // ── Stage 3: SHIP ────────────────────────────────────────────
   progress("ship", "Pushing to registry and creating deployment snapshot...");
 
@@ -198,6 +220,11 @@ export async function deployApp(opts: DeployOptions): Promise<DeployResult> {
     ship: shipResult,
     ingest: ingestResult,
     instance,
+    durationMs,
+    graphImage,
+    graphPushReceipt,
+  };
+}
     durationMs,
   };
 }
