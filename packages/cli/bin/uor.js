@@ -54,9 +54,10 @@ const LOGO = `${CYAN}${BOLD}
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
+import { mkdirSync } from "node:fs";
+
 function ensureDir(dir) {
   if (!existsSync(dir)) {
-    const { mkdirSync } = await import("node:fs");
     mkdirSync(dir, { recursive: true });
   }
 }
