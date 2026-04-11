@@ -6,6 +6,11 @@
  * Build:  Import source → content-addressed UorImage
  * Ship:   Push to registry + create deployment snapshot
  * Run:    WASM sandbox with execution tracing
+ *
+ * Graph-Native (new):
+ *   Encode: App → knowledge graph subgraph
+ *   Registry: Structural deduplication at node level
+ *   Runtime: Sovereign WASM runtime with virtual OS
  */
 
 // ── Build ───────────────────────────────────────────────────────────────────
@@ -53,3 +58,72 @@ export type {
   HammingResult,
   BatchVerifyResult,
 } from "./webgpu-compute";
+
+// ── Graph-Native Image Encoding ─────────────────────────────────────────────
+export {
+  encodeAppToGraph,
+  decodeGraphToApp,
+  diffGraphImages,
+} from "./graph-image";
+export type {
+  GraphImage,
+  GraphNode,
+  GraphEdge,
+  GraphDelta,
+} from "./graph-image";
+
+// ── Graph-Native Registry ───────────────────────────────────────────────────
+export {
+  pushGraph,
+  pullGraph,
+  pushGraphDelta,
+  listTags,
+  imageExists,
+  setRegistryBackend,
+} from "./graph-registry";
+export type {
+  GraphPushReceipt,
+  GraphPullResult,
+  RegistryBackend,
+} from "./graph-registry";
+
+// ── Sovereign Runtime ───────────────────────────────────────────────────────
+export {
+  SovereignRuntime,
+  createSovereignRuntime,
+} from "./sovereign-runtime";
+export type {
+  SovereignRuntimeConfig,
+  RuntimeLifecycleState,
+  SovereignRuntimeStatus,
+} from "./sovereign-runtime";
+
+// ── Virtual Filesystem ──────────────────────────────────────────────────────
+export { VirtualFileSystem } from "./virtual-fs";
+export type {
+  VirtualStat,
+  VirtualDirEntry,
+  FsMutation,
+} from "./virtual-fs";
+
+// ── Virtual Network ─────────────────────────────────────────────────────────
+export { VirtualNetwork } from "./virtual-net";
+export type {
+  NetRequest,
+  NetResponse,
+  NetPolicy,
+  NetSummary,
+} from "./virtual-net";
+
+// ── Platform Adapter ────────────────────────────────────────────────────────
+export {
+  detectPlatform,
+  detectCapabilities,
+  selectStrategy,
+  getPlatformSummary,
+} from "./platform-adapter";
+export type {
+  PlatformType,
+  PlatformCapabilities,
+  RuntimeStrategy,
+} from "./platform-adapter";

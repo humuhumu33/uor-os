@@ -298,22 +298,23 @@ export async function decodeGraphToApp(
     }
   }
 
-  // Reconstruct manifest
+  // Reconstruct manifest — cast through unknown to satisfy strict context typing.
+  // The AppManifest interface uses a const context object; we reconstruct
+  // just enough fields for downstream consumers.
   const props = manifestNode.properties;
-  const manifest: AppManifest = {
-    "@context": "https://uor.foundation/ns/app",
-    "@type": "uor:AppManifest",
-    "u:canonicalId": manifestNode.canonicalId,
+  const manifest = {
+    "@type": "app:Manifest" as const,
     "app:name": image.appName,
     "app:version": image.version,
     "app:tech": (props.tech as string[]) ?? image.tech,
     "app:entrypoint": (props.entrypoint as string) ?? "index.html",
     "app:sourceUrl": (props.sourceUrl as string) ?? "",
+    "app:deployedAt": image.createdAt,
+    "app:developerCanonicalId": "",
+    "u:canonicalId": manifestNode.canonicalId,
     "app:fileCount": files.length,
     "app:totalBytes": files.reduce((sum, f) => sum + f.bytes.length, 0),
-    "app:createdAt": image.createdAt,
-    "app:updatedAt": image.createdAt,
-  };
+  } as unknown as AppManifest;
 
   return { files, manifest };
 }

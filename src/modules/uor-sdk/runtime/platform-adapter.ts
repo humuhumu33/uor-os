@@ -138,19 +138,20 @@ export function detectCapabilities(): PlatformCapabilities {
   }
 
   // Browser / Tauri / Mobile
-  const hasWebGpu = typeof (navigator as Record<string, unknown>).gpu !== "undefined";
+  const hasWebGpu = typeof (navigator as unknown as Record<string, unknown>).gpu !== "undefined";
   const hasServiceWorker = "serviceWorker" in navigator;
   const hasIndexedDb = typeof indexedDB !== "undefined";
   const hasSab = typeof SharedArrayBuffer !== "undefined";
   const hasFsAccess = "showOpenFilePicker" in window;
 
   // Memory estimate
-  const memoryMb = (navigator as Record<string, unknown>).deviceMemory
-    ? ((navigator as Record<string, unknown>).deviceMemory as number) * 1024
+  const navAny = navigator as unknown as Record<string, unknown>;
+  const memoryMb = navAny.deviceMemory
+    ? (navAny.deviceMemory as number) * 1024
     : 2048;
 
   // Network type
-  const connection = (navigator as Record<string, unknown>).connection as
+  const connection = navAny.connection as
     | { effectiveType?: string }
     | undefined;
   const networkType = connection?.effectiveType ?? "unknown";
