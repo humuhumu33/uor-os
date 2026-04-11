@@ -26,17 +26,6 @@ interface Props {
   onNavigateSection?: (section: AppSection) => void;
 }
 
-const SIGN_CLASS_LEGEND = [
-  { name: "SC₀ Blue",   color: "hsl(210, 80%, 60%)" },
-  { name: "SC₁ Teal",   color: "hsl(180, 70%, 50%)" },
-  { name: "SC₂ Green",  color: "hsl(150, 70%, 50%)" },
-  { name: "SC₃ Lime",   color: "hsl(120, 60%, 55%)" },
-  { name: "SC₄ Amber",  color: "hsl(40, 85%, 55%)" },
-  { name: "SC₅ Orange", color: "hsl(20, 85%, 55%)" },
-  { name: "SC₆ Rose",   color: "hsl(340, 70%, 55%)" },
-  { name: "SC₇ Purple", color: "hsl(270, 60%, 60%)" },
-];
-
 const COLORS: Record<string, string> = {
   folder: "hsl(40, 85%, 55%)",
   note: "hsl(210, 80%, 60%)",
@@ -44,6 +33,17 @@ const COLORS: Record<string, string> = {
   tag: "hsl(270, 60%, 60%)",
   node: "hsl(160, 70%, 50%)",
 };
+
+const SIGN_CLASS_LEGEND = [
+  { name: "SC₀", color: "hsl(210, 80%, 60%)" },
+  { name: "SC₁", color: "hsl(180, 70%, 50%)" },
+  { name: "SC₂", color: "hsl(150, 70%, 50%)" },
+  { name: "SC₃", color: "hsl(120, 60%, 55%)" },
+  { name: "SC₄", color: "hsl(40, 85%, 55%)" },
+  { name: "SC₅", color: "hsl(20, 85%, 55%)" },
+  { name: "SC₆", color: "hsl(340, 70%, 55%)" },
+  { name: "SC₇", color: "hsl(270, 60%, 60%)" },
+];
 
 export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("force");
@@ -59,6 +59,7 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
   const [showAtlasLayer, setShowAtlasLayer] = useState(true);
   const [show2D, setShow2D] = useState(false); // 3D is default
   const [gpuAvailable] = useState(() => SdbGpuForceLayout.isSupported());
+  const [highlightSc, setHighlightSc] = useState<number | null>(null);
 
   // Container sizing for ForceGraph3D
   const containerRef = useRef<HTMLDivElement>(null);
@@ -229,6 +230,7 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
           width={dims.w}
           height={dims.h}
           gpuAvailable={gpuAvailable}
+          highlightSignClass={highlightSc}
         />
       ) : (
         /* ── 2D fallback ── */
@@ -299,22 +301,48 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
         ))}
       </div>
 
-      {/* Sign class color legend (3D only, when Atlas layer visible) */}
+      {/* Interactive sign class legend (3D + Atlas layer) */}
       {!show2D && showAtlasLayer && (
         <div className="absolute bottom-14 right-4 bg-card/85 backdrop-blur-sm rounded-lg border border-border px-3 py-2.5 z-10">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 font-medium">Sign Classes</div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Sign Classes</span>
+            {highlightSc != null && (
+              <button
+                onClick={() => setHighlightSc(null)}
+                className="text-[9px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-            {SIGN_CLASS_LEGEND.map(sc => (
-              <span key={sc.name} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: sc.color }} />
+            {SIGN_CLASS_LEGEND.map((sc, i) => (
+              <button
+                key={sc.name}
+                onClick={() => setHighlightSc(prev => prev === i ? null : i)}
+                className={`flex items-center gap-1.5 text-[11px] transition-all rounded px-1 py-0.5 -mx-1 ${
+                  highlightSc === i
+                    ? "text-foreground bg-accent/30"
+                    : highlightSc != null
+                      ? "text-muted-foreground/40 hover:text-muted-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform"
+                  style={{
+                    background: sc.color,
+                    transform: highlightSc === i ? "scale(1.3)" : "scale(1)",
+                    opacity: highlightSc != null && highlightSc !== i ? 0.3 : 1,
+                  }}
+                />
                 {sc.name}
-              </span>
+              </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Detail panel */}
       {selected && (
         <div className="absolute top-16 left-4 w-72 bg-card/95 backdrop-blur-sm rounded-lg border border-border shadow-lg p-4 animate-scale-in z-30">
           <div className="flex items-start justify-between mb-3">
