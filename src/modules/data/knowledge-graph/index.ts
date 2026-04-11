@@ -126,6 +126,23 @@ export type {
 
 export { default as KnowledgeGraphPage } from "./pages/KnowledgeGraphPage";
 
+// ── SovereignDB Product API ─────────────────────────────────────────────────
+
+export { SovereignDB } from "./sovereign-db";
+export type { SovereignDBConfig, SovereignDBStats } from "./sovereign-db";
+export { QueryBuilder } from "./query-builder";
+export { SovereignTransaction } from "./transaction";
+export { schemaRegistry } from "./schema-constraints";
+export type { SchemaDefinition, PropertyConstraint, ValidationError } from "./schema-constraints";
+export { indexManager } from "./index-manager";
+export type { IndexInfo } from "./index-manager";
+export {
+  edgesToJsonLd, importJsonLd,
+  edgesToCsv, importCsv,
+  edgesToNQuads,
+  edgesToCypher, importCypher,
+} from "./io-adapters";
+
 // ── Persistence Provider Layer ──────────────────────────────────────────────
 
 export { getProvider, setProvider, initProvider } from "./persistence";
