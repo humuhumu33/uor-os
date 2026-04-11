@@ -48,6 +48,7 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
   const [showAtlasLayer, setShowAtlasLayer] = useState(true);
   const [show2D, setShow2D] = useState(false); // 3D is default
   const [gpuAvailable] = useState(() => SdbGpuForceLayout.isSupported());
+  const [highlightSc, setHighlightSc] = useState<number | null>(null);
 
   // Container sizing for ForceGraph3D
   const containerRef = useRef<HTMLDivElement>(null);

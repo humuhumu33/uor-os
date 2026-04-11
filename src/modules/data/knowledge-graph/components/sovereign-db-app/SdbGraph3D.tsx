@@ -260,24 +260,29 @@ export function SdbGraph3D({
     const baseSize = isAtlas ? 1.8 : Math.max(2, Math.min(6, 2 + deg * 0.5));
     const isHovered = hovered === node.id;
 
+    // Sign class filtering: extract SC index from atlas node type (e.g. "SC3")
+    const scMatch = node.type?.match(/^SC(\d)$/);
+    const nodeSc = scMatch ? parseInt(scMatch[1], 10) : null;
+    const isDimmed = highlightSignClass != null && nodeSc !== highlightSignClass;
+
     const group = new THREE.Group();
 
     // Main sphere
     const geo = new THREE.SphereGeometry(baseSize, isAtlas ? 16 : 12, isAtlas ? 16 : 12);
     const color = new THREE.Color(node.color || "hsl(210, 80%, 60%)");
     const mat = new THREE.MeshPhongMaterial({
-      color,
-      emissive: isAtlas ? color.clone().multiplyScalar(0.5) : new THREE.Color(0x000000),
-      emissiveIntensity: isAtlas ? 1.2 : 0,
+      color: isDimmed ? new THREE.Color(0x333344) : color,
+      emissive: isAtlas && !isDimmed ? color.clone().multiplyScalar(0.5) : new THREE.Color(0x000000),
+      emissiveIntensity: isAtlas && !isDimmed ? 1.2 : 0,
       transparent: true,
-      opacity: isHovered ? 1 : (isAtlas ? 0.85 : 0.92),
+      opacity: isDimmed ? 0.12 : (isHovered ? 1 : (isAtlas ? 0.85 : 0.92)),
       shininess: 60,
     });
     const mesh = new THREE.Mesh(geo, mat);
     group.add(mesh);
 
     // Glow ring for hovered
-    if (isHovered) {
+    if (isHovered && !isDimmed) {
       const ringGeo = new THREE.RingGeometry(baseSize * 1.4, baseSize * 1.8, 24);
       const ringMat = new THREE.MeshBasicMaterial({
         color,
@@ -293,7 +298,7 @@ export function SdbGraph3D({
     }
 
     // Atlas nodes: outer glow sphere (enhanced for bloom)
-    if (isAtlas) {
+    if (isAtlas && !isDimmed) {
       const glowGeo = new THREE.SphereGeometry(baseSize * 2.0, 12, 12);
       const glowMat = new THREE.MeshBasicMaterial({
         color,
@@ -304,7 +309,7 @@ export function SdbGraph3D({
     }
 
     return group;
-  }, [degreeMap, hovered, makeLabel]);
+  }, [degreeMap, hovered, makeLabel, highlightSignClass]);
 
   /* ── Link rendering ────────────────────────────────────────── */
 
