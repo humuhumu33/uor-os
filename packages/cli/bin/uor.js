@@ -737,7 +737,9 @@ function cmdHelp() {
   console.log(`    ${CYAN}run${RESET} <app-ref>       Run an app from the graph registry`);
   console.log(`    ${CYAN}build${RESET} [dir]          Build a directory into a graph image`);
   console.log(`    ${CYAN}push${RESET} <app-ref>       Push a graph image to the registry`);
+  console.log(`                         ${DIM}--sync[=url]  sync to remote registry${RESET}`);
   console.log(`    ${CYAN}pull${RESET} <app-ref>       Pull a graph image from the registry`);
+  console.log(`                         ${DIM}--sync[=url]  pull from remote registry${RESET}`);
   console.log(`    ${CYAN}images${RESET}               List local graph images`);
   console.log(`    ${CYAN}ps${RESET}                   List running sovereign processes`);
   console.log(`    ${CYAN}inspect${RESET} <app-ref>    Inspect a graph image`);
@@ -765,13 +767,30 @@ function pad(str, len) {
 
 // ── Entrypoint ──────────────────────────────────────────────────────────────
 
-const [,, command, ...args] = process.argv;
+const [,, command, ...rawArgs] = process.argv;
+
+// Parse flags from args
+function parseFlags(args) {
+  const positional = [];
+  const flags = {};
+  for (const arg of args) {
+    if (arg.startsWith("--")) {
+      const [key, val] = arg.slice(2).split("=");
+      flags[key] = val ?? true;
+    } else {
+      positional.push(arg);
+    }
+  }
+  return { positional, flags };
+}
+
+const { positional: args, flags } = parseFlags(rawArgs);
 
 switch (command) {
   case "run":     cmdRun(args[0]); break;
   case "build":   cmdBuild(args[0]); break;
-  case "push":    cmdPush(args[0]); break;
-  case "pull":    cmdPull(args[0]); break;
+  case "push":    cmdPush(args[0], flags); break;
+  case "pull":    cmdPull(args[0], flags); break;
   case "images":  cmdImages(); break;
   case "ps":      cmdPs(); break;
   case "inspect": cmdInspect(args[0]); break;
