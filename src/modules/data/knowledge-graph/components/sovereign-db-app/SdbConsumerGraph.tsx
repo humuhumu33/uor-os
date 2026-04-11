@@ -15,6 +15,7 @@ import { SdbGraphContextMenu, type ContextAction } from "./SdbGraphContextMenu";
 import { SdbGraphSelection, type SelectionAction } from "./SdbGraphSelection";
 import { useAtlasIntroAnimation, SdbAtlasOverlay } from "./SdbAtlasSeed";
 import { SdbGraph3D } from "./SdbGraph3D";
+import { SdbGpuForceLayout } from "./SdbGpuForceLayout";
 import { getAtlas } from "@/modules/research/atlas/atlas";
 import { decodeTriality } from "@/modules/research/atlas/triality";
 
@@ -46,6 +47,7 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [showAtlasLayer, setShowAtlasLayer] = useState(true);
   const [show2D, setShow2D] = useState(false); // 3D is default
+  const [gpuAvailable] = useState(() => SdbGpuForceLayout.isSupported());
 
   // Container sizing for ForceGraph3D
   const containerRef = useRef<HTMLDivElement>(null);
@@ -215,6 +217,7 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
           onBackgroundClick={() => { setSelected(null); setContextMenu(null); }}
           width={dims.w}
           height={dims.h}
+          gpuAvailable={gpuAvailable}
         />
       ) : (
         /* ── 2D fallback ── */
