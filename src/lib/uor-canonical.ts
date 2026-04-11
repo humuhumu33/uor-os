@@ -383,7 +383,7 @@ export async function singleProofHash(
 
   // Step 3: SHA-256. THE single hash
   const hashBytes = sha256raw(canonicalBytes);
-  const hashHex = bytesToHex(hashBytes);
+  const hashHex = toHex(hashBytes);
 
   // Step 4: Derive all four identity forms from ONE hash
   //   derivation_id. from hex
