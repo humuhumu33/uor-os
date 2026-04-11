@@ -71,7 +71,7 @@ const COMPONENT_MAP: Record<string, React.LazyExoticComponent<ComponentType<any>
   "@/modules/identity/addressing/pages/ProjectUorIdentity": lazy(() => import("@/modules/identity/addressing/pages/ProjectUorIdentity")),
   "@/modules/platform/boot/SystemMonitorApp": lazy(() => import("@/modules/platform/boot/SystemMonitorApp")),
   "@/modules/data/sovereign-vault/components/VaultPanel": lazy(() => import("@/modules/data/sovereign-vault/components/VaultPanel")),
-  "@/modules/data/knowledge-graph/components/SovereignGraphExplorer": lazy(() => import("@/modules/data/knowledge-graph/components/SovereignGraphExplorer")),
+  
   "@/modules/intelligence/oracle/pages/DailyNotesPage": lazy(() => import("@/modules/intelligence/oracle/pages/DailyNotesPage")),
   "@/modules/platform/desktop/components/AppHub": lazy(() => import("@/modules/platform/desktop/components/AppHub")),
   "@/modules/intelligence/media/components/MediaPlayer": lazy(() => import("@/modules/intelligence/media/components/MediaPlayer")),
