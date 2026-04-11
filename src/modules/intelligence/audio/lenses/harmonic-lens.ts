@@ -102,21 +102,8 @@ function computeFrameCid(
   return `frame:harmonic:${hex}`;
 }
 
-/** Popcount for unsigned 16-bit integer (stratum computation). */
-function popcount16(x: number): number {
-  x = x - ((x >> 1) & 0x5555);
-  x = (x & 0x3333) + ((x >> 2) & 0x3333);
-  x = (x + (x >> 4)) & 0x0f0f;
-  return (x + (x >> 8)) & 0x1f;
-}
-
-/** Popcount for 8-bit byte (Hamming weight). */
-function popcount8(n: number): number {
-  let c = 0;
-  let v = n & 0xff;
-  while (v) { c += v & 1; v >>= 1; }
-  return c;
-}
+// Popcount primitives delegated to the addressing kernel
+import { popcount8, popcount16 } from "@/lib/uor-core";
 
 // ── HarmonicLens ────────────────────────────────────────────────────────────
 

@@ -1,32 +1,40 @@
 /**
- * resolver module barrel export (merged with semantic-index).
+ * resolver module barrel export.
  */
 
 export { resolve, classifyElement } from "./resolver";
 export type { ResolverResult } from "./resolver";
 export { computePartition } from "./partition";
 export type { PartitionResult, ClosureMode } from "./partition";
-export { correlate } from "./correlation";
-export type { CorrelationResult } from "./correlation";
 
-// P33: Fidelity Engine + SKOS Semantic Recommendations
+// Unified correlation (ring-value + content-hash + SKOS)
 export {
+  correlate,
   correlateIds,
   correlateBytes,
   findNearDuplicates,
   classifyFidelity,
   FIDELITY_THRESHOLDS,
-} from "./correlate-engine";
-export type { CorrelateResult, SkosRelation, NearDuplicatePair } from "./correlate-engine";
+} from "./correlation";
+export type {
+  CorrelationResult,
+  CorrelateResult,
+  SkosRelation,
+  NearDuplicatePair,
+} from "./correlation";
 
-// P34: NL Entity Resolver via DihedralFactorizationResolver
-export { resolveEntity } from "./entity-resolver";
-export type { EntityResolution, DihedralFactor } from "./entity-resolver";
+// Unified entity resolver (dihedral + semantic)
+export { resolveEntity, resolveEntitySemantic } from "./entity-resolver";
+export type {
+  EntityResolution,
+  SemanticEntityResolution,
+  DihedralFactor,
+} from "./entity-resolver";
 
-// ── Absorbed from semantic-index ────────────────────────────────────────────
+// ── Semantic Index ──────────────────────────────────────────────────────────
 export { buildIndex, findSimilar, exactLookup } from "./index-builder";
 export type { SemanticIndex, IndexEntry, SimilarEntry } from "./index-builder";
-export { resolveEntity as resolveEntitySemantic } from "./entity-linker";
-export type { EntityResolution as SemanticEntityResolution } from "./entity-linker";
+
+// ── Deduplication ───────────────────────────────────────────────────────────
 export { deduplicateEntities } from "./deduplication";
 export type { DeduplicationGroup, DeduplicationResult } from "./deduplication";
