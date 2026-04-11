@@ -5,7 +5,7 @@
  * "what nodes link TO B?" with caching and TTL invalidation.
  */
 
-import { localGraphStore } from "./local-store";
+import { grafeoStore as localGraphStore } from "./grafeo-store";
 import type { KGEdge } from "./types";
 
 export interface Backlink {

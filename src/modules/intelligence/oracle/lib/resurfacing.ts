@@ -8,7 +8,7 @@
  * Respects attention aperture: suppresses when focus is high.
  */
 
-import { localGraphStore } from "@/modules/data/knowledge-graph/local-store";
+import { grafeoStore as localGraphStore } from "@/modules/data/knowledge-graph/grafeo-store";
 import { getBacklinkCount } from "@/modules/data/knowledge-graph/backlinks";
 import { loadProfile } from "./attention-tracker";
 import type { KGNode } from "@/modules/data/knowledge-graph/types";
