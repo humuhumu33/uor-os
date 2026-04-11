@@ -116,7 +116,7 @@ export function SdbQuickFinder({ open, onClose, items, recentIds = [], onSelect,
         onClose();
       }
     }
-  }, [activeIdx, filtered, showCreate, query, onSelect, onCreate, onClose, totalItems]);
+  }, [activeIdx, filtered, filteredCommands, inCommandMode, showCreate, query, onSelect, onCreate, onClose, totalItems]);
 
   if (!open) return null;
 
@@ -141,7 +141,7 @@ export function SdbQuickFinder({ open, onClose, items, recentIds = [], onSelect,
             value={query}
             onChange={e => { setQuery(e.target.value); setActiveIdx(0); }}
             onKeyDown={handleKeyDown}
-            placeholder="Find or create a page…"
+            placeholder={inCommandMode ? "Run a command…" : "Find or create a page… (> for commands)"}
             className="flex-1 text-[15px] bg-transparent text-foreground outline-none placeholder:text-muted-foreground/40"
           />
           <kbd className="text-[10px] text-muted-foreground/40 bg-muted/30 px-1.5 py-0.5 rounded font-mono">
@@ -151,11 +151,31 @@ export function SdbQuickFinder({ open, onClose, items, recentIds = [], onSelect,
 
         {/* Results */}
         <div className="max-h-80 overflow-auto py-1">
-          {filtered.length === 0 && !showCreate && (
+          {/* Command mode */}
+          {inCommandMode && filteredCommands.length === 0 && (
+            <p className="text-center text-[13px] text-muted-foreground/50 py-8">No matching commands</p>
+          )}
+
+          {inCommandMode && filteredCommands.map((cmd, idx) => (
+            <button
+              key={cmd.id}
+              onClick={() => { cmd.action(); onClose(); }}
+              onMouseEnter={() => setActiveIdx(idx)}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                idx === activeIdx ? "bg-primary/10" : "hover:bg-muted/30"
+              }`}
+            >
+              <span className="shrink-0 text-muted-foreground/60">{cmd.icon}</span>
+              <span className="text-[14px] text-foreground truncate flex-1">{cmd.label}</span>
+            </button>
+          ))}
+
+          {/* Page mode */}
+          {!inCommandMode && filtered.length === 0 && !showCreate && (
             <p className="text-center text-[13px] text-muted-foreground/50 py-8">No pages found</p>
           )}
 
-          {filtered.map((item, idx) => (
+          {!inCommandMode && filtered.map((item, idx) => (
             <button
               key={item.id}
               onClick={() => { onSelect(item.id); onClose(); }}
