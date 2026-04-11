@@ -65,7 +65,7 @@ function genBlockId() {
 }
 
 /** Render text with [[links]] and #tags highlighted */
-function renderBlockText(text: string, onLinkClick?: (t: string) => void) {
+function renderBlockText(text: string, onLinkClick?: (t: string) => void, noteNames: string[] = [], getPreview?: (title: string) => string | null) {
   const parts: (string | JSX.Element)[] = [];
   const combined = /(\[\[([^\]]+)\]\])|(#[a-zA-Z][\w-]{1,48})/g;
   let last = 0;
@@ -74,19 +74,17 @@ function renderBlockText(text: string, onLinkClick?: (t: string) => void) {
   while ((match = combined.exec(text)) !== null) {
     if (match.index > last) parts.push(text.slice(last, match.index));
     if (match[1]) {
-      // Wiki link
       const title = match[2];
       parts.push(
-        <button
+        <LinkWithPreview
           key={match.index}
-          onClick={(e) => { e.stopPropagation(); onLinkClick?.(title); }}
-          className="text-primary hover:underline font-medium cursor-pointer"
-        >
-          {title}
-        </button>
+          title={title}
+          onClick={t => onLinkClick?.(t)}
+          noteNames={noteNames}
+          getPreview={getPreview}
+        />
       );
     } else if (match[3]) {
-      // Hashtag
       parts.push(
         <span key={match.index} className="text-purple-400 font-medium">
           {match[3]}
@@ -99,7 +97,7 @@ function renderBlockText(text: string, onLinkClick?: (t: string) => void) {
   return parts;
 }
 
-export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = [] }: Props) {
+export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = [], getPreview }: Props) {
   const [focusIdx, setFocusIdx] = useState(0);
   const [editing, setEditing] = useState<number | null>(null);
   const [autocomplete, setAutocomplete] = useState<{ idx: number; query: string; pos: number } | null>(null);
