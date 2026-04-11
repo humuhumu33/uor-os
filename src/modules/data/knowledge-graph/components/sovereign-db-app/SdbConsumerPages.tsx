@@ -1,5 +1,5 @@
 /**
- * SdbConsumerPages — Roam-inspired workspace with daily notes, block editor,
+ * SdbConsumerPages — Notion-inspired workspace with page tree, block editor,
  * backlinks, and Cmd+K quick finder.
  * ══════════════════════════════════════════════════════════════════
  *
@@ -9,7 +9,8 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash,
-  IconGraph, IconSun, IconLayoutBoard, IconTerminal2,
+  IconGraph, IconSun, IconLayoutBoard, IconTerminal2, IconSearch,
+  IconStar, IconStarFilled, IconDots, IconArrowLeft,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
@@ -34,11 +35,19 @@ interface TreeItem {
   type: "folder" | "note" | "daily";
   name: string;
   parentId?: string;
+  icon?: string;
 }
 
 function generateId() {
   return crypto.randomUUID().slice(0, 8);
 }
+
+// Default page emojis by type
+const PAGE_ICONS: Record<string, string> = {
+  note: "📄",
+  daily: "☀️",
+  folder: "📁",
+};
 
 export function SdbConsumerPages({ db }: Props) {
   const [items, setItems] = useState<TreeItem[]>([]);
@@ -46,6 +55,13 @@ export function SdbConsumerPages({ db }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [finderOpen, setFinderOpen] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    try {
+      const v = localStorage.getItem("sdb-favorites");
+      return v ? new Set(JSON.parse(v)) : new Set();
+    } catch { return new Set(); }
+  });
+  const [showProperties, setShowProperties] = useState(false);
 
   // Block editor state
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -85,6 +101,7 @@ export function SdbConsumerPages({ db }: Props) {
         type: "folder" as const,
         name: String(e.properties.name || "Untitled"),
         parentId: e.nodes[0] === "ws:root" ? undefined : e.nodes[0],
+        icon: String(e.properties.icon || ""),
       })),
       ...notes.map(e => ({
         id: e.nodes[1] || e.id,
@@ -92,12 +109,14 @@ export function SdbConsumerPages({ db }: Props) {
         type: "note" as const,
         name: String(e.properties.title || "Untitled"),
         parentId: e.nodes[0],
+        icon: String(e.properties.icon || ""),
       })),
       ...daily.map(e => ({
         id: e.nodes[1] || e.id,
         edge: e,
         type: "daily" as const,
         name: String(e.properties.title || e.properties.date || "Daily"),
+        icon: String(e.properties.icon || ""),
       })),
     ];
     setItems(all);
@@ -120,7 +139,6 @@ export function SdbConsumerPages({ db }: Props) {
   useEffect(() => {
     if (selected && (selected.type === "note" || selected.type === "daily")) {
       setNoteTitle(selected.name);
-      // Parse blocks from edge properties
       const storedBlocks = selected.edge.properties.blocks;
       if (storedBlocks) {
         try {
@@ -136,18 +154,15 @@ export function SdbConsumerPages({ db }: Props) {
           : [{ id: "b0", text: "", indent: 0, children: [] }]
         );
       }
-      // Track as recent
       setRecentIds(prev => [selectedId!, ...prev.filter(id => id !== selectedId)].slice(0, 10));
     }
   }, [selectedId]);
 
-  // Note names for autocomplete
   const noteNames = useMemo(() =>
     items.filter(i => i.type === "note" || i.type === "daily").map(i => i.name).filter(n => n !== "Untitled"),
     [items]
   );
 
-  // Get preview text for a note title (for hover preview)
   const getPreview = useCallback((title: string): string | null => {
     const item = items.find(
       i => (i.type === "note" || i.type === "daily") && i.name.toLowerCase() === title.toLowerCase()
@@ -156,26 +171,21 @@ export function SdbConsumerPages({ db }: Props) {
     return String(item.edge.properties.content || "").slice(0, 150) || null;
   }, [items]);
 
-  // Extract [[wiki links]] from blocks
   const parseWikiLinks = useCallback((blockArr: Block[]): string[] => {
     const text = blockArr.map(b => b.text).join("\n");
     const matches = text.matchAll(/\[\[([^\]]+)\]\]/g);
     return [...matches].map(m => m[1].trim()).filter(Boolean);
   }, []);
 
-  // Extract #hashtags from blocks
   const parseHashtags = useCallback((blockArr: Block[]): string[] => {
     const text = blockArr.map(b => b.text).join("\n");
     const matches = text.matchAll(/(?:^|\s)#([a-zA-Z][\w-]{1,48})\b/g);
     return [...new Set([...matches].map(m => m[1]))];
   }, []);
 
-  // Sync wiki-link and hashtag edges
   const syncLinks = useCallback(async (noteId: string, blockArr: Block[]) => {
     const linkedTitles = parseWikiLinks(blockArr);
     const hashtags = parseHashtags(blockArr);
-
-    // Remove existing outgoing links and tags
     const existingLinks = await db.byLabel("workspace:link");
     const existingTags = await db.byLabel("workspace:tag");
     for (const link of existingLinks) {
@@ -184,8 +194,6 @@ export function SdbConsumerPages({ db }: Props) {
     for (const tag of existingTags) {
       if (tag.nodes[0] === noteId) await db.removeEdge(tag.id);
     }
-
-    // Create link edges
     for (const title of linkedTitles) {
       const target = items.find(
         i => (i.type === "note" || i.type === "daily") && i.name.toLowerCase() === title.toLowerCase()
@@ -199,8 +207,6 @@ export function SdbConsumerPages({ db }: Props) {
         });
       }
     }
-
-    // Create tag edges
     for (const tag of hashtags) {
       await db.addEdge([noteId, `tag:${tag.toLowerCase()}`], "workspace:tag", {
         tag: tag.toLowerCase(),
@@ -209,7 +215,6 @@ export function SdbConsumerPages({ db }: Props) {
     }
   }, [db, items, parseWikiLinks, parseHashtags, noteTitle]);
 
-  // Save note
   const saveNote = useCallback(async () => {
     if (!selected || (selected.type !== "note" && selected.type !== "daily")) return;
     const content = blocks.map(b => b.text).join("\n");
@@ -230,17 +235,13 @@ export function SdbConsumerPages({ db }: Props) {
     await reloadDaily();
   }, [db, selected, noteTitle, blocks, reload, reloadDaily, syncLinks]);
 
-  // Auto-save on block changes (debounced)
   const saveTimer = useRef<ReturnType<typeof setTimeout>>();
   const handleBlocksChange = useCallback((newBlocks: Block[]) => {
     setBlocks(newBlocks);
     clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      // Trigger save indirectly
-    }, 1500);
+    saveTimer.current = setTimeout(() => {}, 1500);
   }, []);
 
-  // Create new folder
   const createFolder = useCallback(async () => {
     const folderId = `ws:${generateId()}`;
     await db.addEdge(["ws:root", folderId], "workspace:folder", { name: "New Folder", createdAt: Date.now() });
@@ -248,7 +249,6 @@ export function SdbConsumerPages({ db }: Props) {
     setExpanded(prev => new Set(prev).add(folderId));
   }, [db, reload]);
 
-  // Create new note
   const createNote = useCallback(async (parentId = "ws:root", title = "Untitled") => {
     const noteId = `note:${generateId()}`;
     await db.addEdge([parentId, noteId], "workspace:note", {
@@ -263,18 +263,15 @@ export function SdbConsumerPages({ db }: Props) {
     setSelectedId(noteId);
   }, [db, reload]);
 
-  // Navigate to a note (from wiki-link click or backlink)
   const navigateTo = useCallback((noteId: string) => {
     setSelectedId(noteId);
   }, []);
 
-  // Navigate to wiki-link (find-or-create)
   const handleWikiLinkClick = useCallback(async (title: string) => {
     const existing = items.find(
       i => (i.type === "note" || i.type === "daily") && i.name.toLowerCase() === title.toLowerCase()
     );
     if (existing) {
-      // Save current note before navigating
       await saveNote();
       setSelectedId(existing.id);
     } else {
@@ -283,14 +280,12 @@ export function SdbConsumerPages({ db }: Props) {
     }
   }, [items, saveNote, createNote]);
 
-  // Delete item
   const deleteItem = useCallback(async (item: TreeItem) => {
     await db.removeEdge(item.edge.id);
     if (selectedId === item.id) setSelectedId(null);
     await reload();
   }, [db, selectedId, reload]);
 
-  // Toggle expand
   const toggleExpand = (id: string) => {
     setExpanded(prev => {
       const next = new Set(prev);
@@ -299,7 +294,35 @@ export function SdbConsumerPages({ db }: Props) {
     });
   };
 
-  // Command palette actions
+  const toggleFavorite = useCallback((id: string) => {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      localStorage.setItem("sdb-favorites", JSON.stringify([...next]));
+      return next;
+    });
+  }, []);
+
+  // Breadcrumb path for selected note
+  const breadcrumbs = useMemo(() => {
+    if (!selected) return [];
+    const path: { id: string; name: string; icon: string }[] = [];
+    let current = selected;
+    while (current) {
+      path.unshift({
+        id: current.id,
+        name: current.name,
+        icon: current.icon || PAGE_ICONS[current.type] || "📄",
+      });
+      if (current.parentId && current.parentId !== "ws:root") {
+        current = items.find(i => i.id === current!.parentId) as TreeItem | undefined as any;
+      } else {
+        break;
+      }
+    }
+    return path;
+  }, [selected, items]);
+
   const commands: CommandAction[] = useMemo(() => [
     { id: "graph", label: "Switch to Graph View", icon: <IconGraph size={15} />, action: () => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "graph" })) },
     { id: "canvas", label: "Open Canvas", icon: <IconLayoutBoard size={15} />, action: () => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "canvas" })) },
@@ -308,7 +331,6 @@ export function SdbConsumerPages({ db }: Props) {
     { id: "note", label: "New Note", icon: <IconPlus size={15} />, action: () => createNote() },
   ], [createFolder, createNote, reloadDaily]);
 
-  // Quick finder items
   const finderItems: FinderItem[] = useMemo(() =>
     items.filter(i => i.type === "note" || i.type === "daily").map(i => ({
       id: i.id,
@@ -323,11 +345,18 @@ export function SdbConsumerPages({ db }: Props) {
   const rootItems = items.filter(i => i.type !== "daily" && (!i.parentId || i.parentId === "ws:root"));
   const childrenOf = (parentId: string) => items.filter(i => i.parentId === parentId);
 
+  // Favorite items
+  const favoriteItems = useMemo(() =>
+    items.filter(i => favorites.has(i.id)),
+    [items, favorites]
+  );
+
   const renderItem = (item: TreeItem, depth = 0) => {
     const isFolder = item.type === "folder";
     const isExpanded = expanded.has(item.id);
     const isSelected = selectedId === item.id;
     const children = isFolder ? childrenOf(item.id) : [];
+    const icon = item.icon || PAGE_ICONS[item.type] || "📄";
 
     return (
       <div key={item.id}>
@@ -336,41 +365,46 @@ export function SdbConsumerPages({ db }: Props) {
             if (isFolder) toggleExpand(item.id);
             setSelectedId(item.id);
           }}
-          className={`group flex items-center gap-2 w-full px-3 py-2 text-[14px] transition-colors rounded-md mx-1 ${
+          className={`group flex items-center gap-1.5 w-full py-[5px] text-[14px] transition-colors rounded-md ${
             isSelected
-              ? "bg-primary/10 text-primary"
-              : "text-foreground/80 hover:bg-muted/50"
+              ? "bg-primary/8 text-foreground"
+              : "text-foreground/70 hover:bg-muted/40"
           }`}
-          style={{ paddingLeft: `${12 + depth * 16}px` }}
+          style={{ paddingLeft: `${8 + depth * 16}px`, paddingRight: "8px" }}
         >
           {isFolder ? (
-            isExpanded
-              ? <IconChevronDown size={14} className="text-muted-foreground shrink-0" />
-              : <IconChevronRight size={14} className="text-muted-foreground shrink-0" />
+            <span className="w-5 h-5 flex items-center justify-center shrink-0">
+              {isExpanded
+                ? <IconChevronDown size={14} className="text-muted-foreground/60" />
+                : <IconChevronRight size={14} className="text-muted-foreground/60" />
+              }
+            </span>
           ) : (
-            <span className="w-[14px]" />
+            <span className="w-5 h-5 flex items-center justify-center shrink-0 text-[13px]">
+              {icon}
+            </span>
           )}
-          {isFolder
-            ? <IconFolder size={16} className="text-muted-foreground shrink-0" />
-            : <IconFile size={16} className="text-muted-foreground shrink-0" />}
           <span className="truncate flex-1 text-left">{item.name}</span>
-          <button
-            onClick={e => { e.stopPropagation(); deleteItem(item); }}
-            className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity"
-          >
-            <IconTrash size={13} />
-          </button>
+          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={e => { e.stopPropagation(); deleteItem(item); }}
+              className="p-0.5 rounded hover:bg-muted/60 text-muted-foreground/40 hover:text-destructive transition-colors"
+            >
+              <IconTrash size={13} />
+            </button>
+            {isFolder && (
+              <button
+                onClick={e => { e.stopPropagation(); createNote(item.id); }}
+                className="p-0.5 rounded hover:bg-muted/60 text-muted-foreground/40 hover:text-foreground transition-colors"
+              >
+                <IconPlus size={13} />
+              </button>
+            )}
+          </div>
         </button>
         {isFolder && isExpanded && (
           <div>
             {children.map(c => renderItem(c, depth + 1))}
-            <button
-              onClick={() => createNote(item.id)}
-              className="flex items-center gap-2 w-full px-3 py-1.5 text-[12px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-              style={{ paddingLeft: `${28 + depth * 16}px` }}
-            >
-              <IconPlus size={12} /> New note
-            </button>
           </div>
         )}
       </div>
@@ -390,91 +424,109 @@ export function SdbConsumerPages({ db }: Props) {
         commands={commands}
       />
 
-      {/* Sidebar */}
-      <aside className="w-64 shrink-0 border-r border-border bg-card/50 flex flex-col overflow-hidden">
-        {/* Search trigger */}
-        <button
-          onClick={() => setFinderOpen(true)}
-          className="flex items-center gap-2.5 mx-3 mt-3 mb-2 px-3 py-2 rounded-lg border border-border/50 bg-muted/20 text-[13px] text-muted-foreground/50 hover:bg-muted/40 hover:text-muted-foreground transition-colors"
-        >
-          <span className="text-[13px]">⌘K</span>
-          <span>Search…</span>
-        </button>
-
-        <div className="flex items-center justify-between px-4 py-2">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
-            Workspace
-          </span>
-          <div className="flex items-center gap-1">
-            <button onClick={createFolder} className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors" title="New folder">
-              <IconFolder size={15} />
-            </button>
-            <button onClick={() => createNote()} className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors" title="New note">
-              <IconPlus size={15} />
-            </button>
+      {/* ── Sidebar ───────────────────────── */}
+      <aside className="w-60 shrink-0 border-r border-border/50 bg-muted/20 flex flex-col overflow-hidden">
+        {/* Workspace name */}
+        <div className="flex items-center gap-2 px-3 py-3 border-b border-border/30">
+          <div className="w-5 h-5 rounded bg-gradient-to-br from-primary/80 to-primary/40 flex items-center justify-center text-[10px] font-bold text-primary-foreground">
+            S
           </div>
+          <span className="text-[14px] font-semibold text-foreground truncate flex-1">SovereignDB</span>
+          <IconChevronDown size={14} className="text-muted-foreground/40" />
         </div>
 
-        {/* Daily Notes */}
-        <div className="px-4 pt-3 pb-1">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/40">Daily</span>
+        {/* Quick actions */}
+        <div className="px-2 py-2 space-y-0.5">
+          <button
+            onClick={() => setFinderOpen(true)}
+            className="flex items-center gap-2.5 w-full px-2 py-[5px] rounded-md text-[14px] text-muted-foreground/70 hover:bg-muted/40 transition-colors"
+          >
+            <IconSearch size={16} className="shrink-0" />
+            <span className="flex-1 text-left">Search</span>
+            <span className="text-[11px] text-muted-foreground/30 font-mono">⌘K</span>
+          </button>
+          <button
+            onClick={() => setSelectedId(null)}
+            className="flex items-center gap-2.5 w-full px-2 py-[5px] rounded-md text-[14px] text-muted-foreground/70 hover:bg-muted/40 transition-colors"
+          >
+            <span className="text-[15px] w-4 text-center">🏠</span>
+            <span>Home</span>
+          </button>
         </div>
-        <SdbDailyNoteSection db={db} onSelectDaily={navigateTo} selectedId={selectedId} />
 
-        {/* Recent history in sidebar */}
-        {recentIds.length > 0 && (
-          <>
-            <div className="px-4 pt-3 pb-1">
-              <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/40">History</span>
+        {/* Favorites */}
+        {favoriteItems.length > 0 && (
+          <div className="px-2 pt-3">
+            <div className="px-2 pb-1.5">
+              <span className="text-[12px] font-medium text-muted-foreground/40">Favorites</span>
             </div>
-            <div className="px-1 pb-1">
-              {recentIds.slice(0, 5).map(id => {
-                const item = items.find(i => i.id === id);
-                if (!item || item.type === "folder") return null;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => setSelectedId(id)}
-                    className={`flex items-center gap-2 w-full px-3 py-2 text-[13px] transition-colors rounded-md mx-1 ${
-                      selectedId === id ? "bg-primary/10 text-primary" : "text-foreground/60 hover:bg-muted/50 hover:text-foreground/80"
-                    }`}
-                  >
-                    <IconFile size={14} className="text-muted-foreground/40 shrink-0" />
-                    <span className="truncate">{item.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </>
+            {favoriteItems.map(item => (
+              <button
+                key={item.id}
+                onClick={() => setSelectedId(item.id)}
+                className={`flex items-center gap-1.5 w-full px-2 py-[5px] rounded-md text-[14px] transition-colors ${
+                  selectedId === item.id ? "bg-primary/8 text-foreground" : "text-foreground/70 hover:bg-muted/40"
+                }`}
+              >
+                <span className="w-5 h-5 flex items-center justify-center text-[13px]">
+                  {item.icon || PAGE_ICONS[item.type] || "📄"}
+                </span>
+                <span className="truncate">{item.name}</span>
+              </button>
+            ))}
+          </div>
         )}
+
+        {/* Private — Daily Notes */}
+        <div className="px-2 pt-3">
+          <div className="px-2 pb-1.5">
+            <span className="text-[12px] font-medium text-muted-foreground/40">Private</span>
+          </div>
+          <SdbDailyNoteSection db={db} onSelectDaily={navigateTo} selectedId={selectedId} />
+        </div>
 
         {/* Workspace tree */}
-        <div className="px-4 pt-3 pb-1">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/40">Workspace</span>
-        </div>
-        <nav className="flex-1 overflow-auto py-1">
-          {rootItems.length === 0 ? (
-            <div className="px-4 py-8 text-center text-[13px] text-muted-foreground/60">
-              <p className="mb-3">No workspaces yet</p>
-              <button onClick={createFolder} className="text-primary hover:underline">
-                Create your first workspace
+        <div className="px-2 pt-3 flex-1 min-h-0 flex flex-col">
+          <div className="flex items-center justify-between px-2 pb-1.5">
+            <span className="text-[12px] font-medium text-muted-foreground/40">Workspace</span>
+            <div className="flex items-center gap-0.5">
+              <button onClick={createFolder} className="p-0.5 rounded hover:bg-muted/60 text-muted-foreground/40 hover:text-foreground transition-colors" title="New folder">
+                <IconFolder size={14} />
+              </button>
+              <button onClick={() => createNote()} className="p-0.5 rounded hover:bg-muted/60 text-muted-foreground/40 hover:text-foreground transition-colors" title="New page">
+                <IconPlus size={14} />
               </button>
             </div>
-          ) : (
-            rootItems.map(i => renderItem(i))
-          )}
-        </nav>
+          </div>
+          <nav className="flex-1 overflow-auto pb-2">
+            {rootItems.length === 0 ? (
+              <div className="px-2 py-6 text-center">
+                <p className="text-[13px] text-muted-foreground/40 mb-2">No pages yet</p>
+                <button
+                  onClick={() => createNote()}
+                  className="text-[13px] text-primary/70 hover:text-primary transition-colors"
+                >
+                  Create a page
+                </button>
+              </div>
+            ) : (
+              rootItems.map(i => renderItem(i))
+            )}
+          </nav>
 
-        {/* Outline panel when note selected */}
-        {selected && (selected.type === "note" || selected.type === "daily") && (
-          <SdbOutline blocks={blocks} onFocusBlock={(idx) => {
-            // Scroll to block — trigger editing
-          }} />
-        )}
+          {/* New page button at bottom */}
+          <button
+            onClick={() => createNote()}
+            className="flex items-center gap-2 w-full px-2 py-2 border-t border-border/30 text-[13px] text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+          >
+            <IconPlus size={15} />
+            New page
+          </button>
+        </div>
       </aside>
 
-      {/* Main content area */}
-      <main className="flex-1 overflow-auto">
+      {/* ── Main content ──────────────────── */}
+      <main className="flex-1 overflow-auto flex flex-col">
         {!selected || selected.type === "folder" ? (
           <SdbHomeView
             items={items.filter(i => i.type !== "folder").map(i => ({
@@ -491,66 +543,119 @@ export function SdbConsumerPages({ db }: Props) {
             onSwitchGraph={() => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "graph" }))}
           />
         ) : (
-          /* Note editor */
-          <div className="max-w-2xl mx-auto px-8 py-8">
-            <input
-              value={noteTitle}
-              onChange={e => setNoteTitle(e.target.value)}
-              onBlur={saveNote}
-              placeholder="Untitled"
-              className="w-full text-[32px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/30 mb-6 leading-tight tracking-tight"
-            />
-
-            {/* Note properties */}
-            <SdbNoteProperties
-              edge={selected.edge}
-              blocks={blocks}
-              allEdges={allEdges}
-              noteId={selected.id}
-            />
-
-            {/* Block outliner */}
-            <SdbBlockEditor
-              blocks={blocks}
-              onChange={handleBlocksChange}
-              onWikiLinkClick={handleWikiLinkClick}
-              noteNames={noteNames}
-              getPreview={getPreview}
-            />
-
-            {/* Backlinks */}
-            <SdbBacklinks
-              currentNoteId={selected.id}
-              currentNoteTitle={noteTitle}
-              allEdges={allEdges}
-              onNavigate={async (noteId) => {
-                await saveNote();
-                navigateTo(noteId);
-              }}
-            />
-
-            {/* Local graph */}
-            <SdbLocalGraph
-              currentNoteId={selected.id}
-              currentNoteTitle={noteTitle}
-              allEdges={allEdges}
-              onNavigate={async (noteId) => {
-                await saveNote();
-                navigateTo(noteId);
-              }}
-            />
-
-            {/* Footer metadata */}
-            <div className="mt-6 pt-4 border-t border-border/30 flex items-center gap-3 text-[12px] text-muted-foreground/50 font-mono">
-              <span>{selected.edge.id.slice(0, 8)}</span>
-              <span>·</span>
-              <span>{blocks.length} blocks</span>
-              <span>·</span>
-              <span>{selected.edge.properties.updatedAt
-                ? new Date(Number(selected.edge.properties.updatedAt)).toLocaleString()
-                : "—"}</span>
+          <>
+            {/* ── Page top bar (breadcrumbs + actions) ── */}
+            <div className="flex items-center justify-between h-11 px-4 shrink-0 border-b border-border/20">
+              <div className="flex items-center gap-1 text-[13px] text-muted-foreground/60 min-w-0">
+                {breadcrumbs.map((crumb, i) => (
+                  <span key={crumb.id} className="flex items-center gap-1 min-w-0">
+                    {i > 0 && <IconChevronRight size={12} className="text-muted-foreground/30 shrink-0" />}
+                    <button
+                      onClick={() => setSelectedId(crumb.id)}
+                      className="flex items-center gap-1 hover:text-foreground transition-colors truncate"
+                    >
+                      <span className="text-[12px]">{crumb.icon}</span>
+                      <span className="truncate">{crumb.name}</span>
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => toggleFavorite(selected.id)}
+                  className="p-1.5 rounded hover:bg-muted/40 text-muted-foreground/40 hover:text-foreground transition-colors"
+                  title={favorites.has(selected.id) ? "Remove from favorites" : "Add to favorites"}
+                >
+                  {favorites.has(selected.id)
+                    ? <IconStarFilled size={15} className="text-amber-400" />
+                    : <IconStar size={15} />
+                  }
+                </button>
+                <button
+                  onClick={() => setShowProperties(p => !p)}
+                  className="p-1.5 rounded hover:bg-muted/40 text-muted-foreground/40 hover:text-foreground transition-colors"
+                  title="Page options"
+                >
+                  <IconDots size={15} />
+                </button>
+              </div>
             </div>
-          </div>
+
+            {/* ── Page content ── */}
+            <div className="flex-1 overflow-auto">
+              <div className="max-w-[720px] mx-auto px-16 py-12">
+                {/* Page icon */}
+                <div className="mb-2">
+                  <span className="text-[40px] cursor-default select-none">
+                    {selected.icon || PAGE_ICONS[selected.type] || "📄"}
+                  </span>
+                </div>
+
+                {/* Title */}
+                <input
+                  value={noteTitle}
+                  onChange={e => setNoteTitle(e.target.value)}
+                  onBlur={saveNote}
+                  placeholder="Untitled"
+                  className="w-full text-[40px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/20 mb-1 leading-tight tracking-tight"
+                />
+
+                {/* Properties (collapsible) */}
+                {showProperties && (
+                  <div className="mb-6">
+                    <SdbNoteProperties
+                      edge={selected.edge}
+                      blocks={blocks}
+                      allEdges={allEdges}
+                      noteId={selected.id}
+                    />
+                  </div>
+                )}
+
+                {/* Block editor */}
+                <div className="mt-4">
+                  <SdbBlockEditor
+                    blocks={blocks}
+                    onChange={handleBlocksChange}
+                    onWikiLinkClick={handleWikiLinkClick}
+                    noteNames={noteNames}
+                    getPreview={getPreview}
+                  />
+                </div>
+
+                {/* Backlinks */}
+                <SdbBacklinks
+                  currentNoteId={selected.id}
+                  currentNoteTitle={noteTitle}
+                  allEdges={allEdges}
+                  onNavigate={async (noteId) => {
+                    await saveNote();
+                    navigateTo(noteId);
+                  }}
+                />
+
+                {/* Local graph */}
+                <SdbLocalGraph
+                  currentNoteId={selected.id}
+                  currentNoteTitle={noteTitle}
+                  allEdges={allEdges}
+                  onNavigate={async (noteId) => {
+                    await saveNote();
+                    navigateTo(noteId);
+                  }}
+                />
+
+                {/* Footer metadata */}
+                <div className="mt-8 pt-4 border-t border-border/20 flex items-center gap-3 text-[12px] text-muted-foreground/40 font-mono">
+                  <span>{blocks.length} blocks</span>
+                  <span>·</span>
+                  <span>{selected.edge.properties.updatedAt
+                    ? new Date(Number(selected.edge.properties.updatedAt)).toLocaleString()
+                    : "—"}</span>
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </main>
     </div>

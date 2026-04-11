@@ -1,11 +1,12 @@
 /**
- * SdbHomeView — Rich home dashboard replacing the empty state.
- * Shows history, most-connected notes, discover tags, and Atlas teaser.
+ * SdbHomeView — Notion-style home dashboard.
+ * Shows quick actions, recent history, most-connected notes, and discover tags.
  */
 
 import { useMemo } from "react";
 import {
   IconClock, IconLink, IconHash, IconGraph, IconSun, IconPlus,
+  IconFile, IconTemplate,
 } from "@tabler/icons-react";
 import type { Hyperedge } from "../../hypergraph";
 
@@ -41,7 +42,6 @@ function relativeTime(ts: number): string {
 export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote, onCreateDaily, onSwitchGraph }: Props) {
   const notes = useMemo(() => items.filter(i => i.type === "note" || i.type === "daily"), [items]);
 
-  // Recent history
   const history = useMemo(() => {
     return recentIds
       .map(id => notes.find(n => n.id === id))
@@ -49,7 +49,6 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
       .slice(0, 8) as NoteItem[];
   }, [recentIds, notes]);
 
-  // Most connected (by inbound link count)
   const mostConnected = useMemo(() => {
     const linkEdges = allEdges.filter(e => e.label === "workspace:link");
     const inbound: Record<string, number> = {};
@@ -64,7 +63,6 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
       .slice(0, 6);
   }, [notes, allEdges]);
 
-  // Discover — top hashtags
   const topTags = useMemo(() => {
     const tagEdges = allEdges.filter(e => e.label === "workspace:tag");
     const counts: Record<string, number> = {};
@@ -81,63 +79,86 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
   const hasContent = history.length > 0 || mostConnected.length > 0 || topTags.length > 0;
 
   return (
-    <div className="max-w-2xl mx-auto px-8 py-12">
+    <div className="max-w-[720px] mx-auto px-16 py-16">
+      {/* Header */}
+      <h1 className="text-[28px] font-bold text-foreground mb-1 tracking-tight">Home</h1>
+      <p className="text-[15px] text-muted-foreground/50 mb-8">Your knowledge space</p>
+
       {/* Quick actions */}
       <div className="flex items-center gap-3 mb-10">
         <button
           onClick={onCreateDaily}
-          className="flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card text-[13px] font-medium text-foreground hover:bg-muted/50 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border/50 bg-card text-[14px] text-foreground hover:bg-muted/40 transition-colors"
         >
-          <IconSun size={15} className="text-amber-400" />
+          <IconSun size={16} className="text-amber-400" />
           Today's Note
         </button>
         <button
           onClick={onCreateNote}
-          className="flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card text-[13px] font-medium text-foreground hover:bg-muted/50 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border/50 bg-card text-[14px] text-foreground hover:bg-muted/40 transition-colors"
         >
-          <IconPlus size={15} className="text-muted-foreground" />
+          <IconPlus size={16} className="text-muted-foreground/60" />
           New Page
         </button>
-        <span className="text-[12px] text-muted-foreground/40 ml-auto font-mono">⌘K</span>
+        <button
+          onClick={onSwitchGraph}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border/50 bg-card text-[14px] text-foreground hover:bg-muted/40 transition-colors"
+        >
+          <IconGraph size={16} className="text-primary/60" />
+          Graph View
+        </button>
       </div>
 
       {!hasContent ? (
-        /* True empty state — clean and inviting */
-        <div className="text-center py-16">
-          <h2 className="text-[22px] font-semibold text-foreground mb-3 tracking-tight">
-            Your Knowledge Space
-          </h2>
-          <p className="text-[15px] text-muted-foreground/70 max-w-md mx-auto leading-relaxed mb-6">
-            Start with today's daily note, or create a new page. Link ideas with [[wiki-links]] — your thoughts connect automatically.
+        <div className="py-12">
+          <div className="grid grid-cols-2 gap-4 mb-10">
+            {[
+              { title: "Getting Started", desc: "Learn the basics of your knowledge workspace", icon: "🚀" },
+              { title: "Meeting Notes", desc: "Template for capturing meeting discussions", icon: "📝" },
+              { title: "Project Tracker", desc: "Organize tasks and milestones", icon: "📊" },
+              { title: "Reading List", desc: "Track articles and books to read", icon: "📚" },
+            ].map(tmpl => (
+              <button
+                key={tmpl.title}
+                onClick={onCreateNote}
+                className="flex items-start gap-3 p-4 rounded-xl border border-border/40 bg-card hover:bg-muted/30 transition-colors text-left group"
+              >
+                <span className="text-[24px] mt-0.5">{tmpl.icon}</span>
+                <div>
+                  <div className="text-[14px] font-medium text-foreground group-hover:text-primary transition-colors">{tmpl.title}</div>
+                  <div className="text-[13px] text-muted-foreground/50 mt-0.5">{tmpl.desc}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <p className="text-[14px] text-muted-foreground/40 text-center">
+            Create your first page or start with today's daily note.
+            <br />
+            Link ideas with <span className="font-mono text-primary/50">[[wiki-links]]</span> — your thoughts connect automatically.
           </p>
-          <button
-            onClick={onSwitchGraph}
-            className="inline-flex items-center gap-2 text-[13px] text-primary/70 hover:text-primary transition-colors"
-          >
-            <IconGraph size={15} />
-            Explore the Atlas Graph →
-          </button>
         </div>
       ) : (
         <div className="space-y-10">
-          {/* History */}
+          {/* Recent */}
           {history.length > 0 && (
             <section>
-              <div className="flex items-center gap-2 mb-4">
-                <IconClock size={14} className="text-muted-foreground/50" />
-                <h3 className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
-                  Your History
-                </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <IconClock size={15} className="text-muted-foreground/40" />
+                <h3 className="text-[13px] font-medium text-muted-foreground/50">Recently Visited</h3>
               </div>
               <div className="space-y-0.5">
                 {history.map(item => (
                   <button
                     key={item.id}
                     onClick={() => onSelect(item.id)}
-                    className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-left hover:bg-muted/40 transition-colors group"
+                    className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-left hover:bg-muted/30 transition-colors group"
                   >
-                    <span className="text-[14px] text-foreground/90 truncate">{item.name}</span>
-                    <span className="text-[11px] text-muted-foreground/40 font-mono shrink-0 ml-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <IconFile size={16} className="text-muted-foreground/30 shrink-0" />
+                      <span className="text-[14px] text-foreground/80 truncate group-hover:text-foreground transition-colors">{item.name}</span>
+                    </div>
+                    <span className="text-[12px] text-muted-foreground/30 font-mono shrink-0 ml-3">
                       {relativeTime(item.updatedAt)}
                     </span>
                   </button>
@@ -149,22 +170,23 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
           {/* Most Connected */}
           {mostConnected.length > 0 && (
             <section>
-              <div className="flex items-center gap-2 mb-4">
-                <IconLink size={14} className="text-muted-foreground/50" />
-                <h3 className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
-                  Most Connected
-                </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <IconLink size={15} className="text-muted-foreground/40" />
+                <h3 className="text-[13px] font-medium text-muted-foreground/50">Most Connected</h3>
               </div>
               <div className="space-y-0.5">
                 {mostConnected.map(item => (
                   <button
                     key={item.id}
                     onClick={() => onSelect(item.id)}
-                    className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-left hover:bg-muted/40 transition-colors"
+                    className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-left hover:bg-muted/30 transition-colors"
                   >
-                    <span className="text-[14px] text-foreground/90 truncate">{item.name}</span>
-                    <span className="flex items-center gap-1 text-[11px] text-primary/60 font-mono shrink-0 ml-3">
-                      <IconLink size={11} />
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <IconFile size={16} className="text-muted-foreground/30 shrink-0" />
+                      <span className="text-[14px] text-foreground/80 truncate">{item.name}</span>
+                    </div>
+                    <span className="flex items-center gap-1 text-[12px] text-primary/50 font-mono shrink-0 ml-3">
+                      <IconLink size={12} />
                       {item.links}
                     </span>
                   </button>
@@ -173,24 +195,22 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
             </section>
           )}
 
-          {/* Discover Tags */}
+          {/* Tags */}
           {topTags.length > 0 && (
             <section>
-              <div className="flex items-center gap-2 mb-4">
-                <IconHash size={14} className="text-muted-foreground/50" />
-                <h3 className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
-                  Discover
-                </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <IconHash size={15} className="text-muted-foreground/40" />
+                <h3 className="text-[13px] font-medium text-muted-foreground/50">Tags</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {topTags.map(({ tag, count }) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/30 text-[13px] text-foreground/70 border border-border/40"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/20 text-[13px] text-foreground/60 border border-border/30 hover:bg-muted/40 transition-colors cursor-default"
                   >
                     <span className="text-purple-400">#</span>
                     {tag}
-                    <span className="text-[10px] text-muted-foreground/40 font-mono ml-0.5">{count}</span>
+                    <span className="text-[11px] text-muted-foreground/30 font-mono">{count}</span>
                   </span>
                 ))}
               </div>
@@ -198,15 +218,13 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
           )}
 
           {/* Atlas teaser */}
-          <div className="pt-4">
-            <button
-              onClick={onSwitchGraph}
-              className="inline-flex items-center gap-2 text-[13px] text-primary/60 hover:text-primary transition-colors"
-            >
-              <IconGraph size={15} />
-              Explore the Ontological Graph →
-            </button>
-          </div>
+          <button
+            onClick={onSwitchGraph}
+            className="inline-flex items-center gap-2 text-[13px] text-primary/50 hover:text-primary transition-colors"
+          >
+            <IconGraph size={15} />
+            Explore the Ontological Graph →
+          </button>
         </div>
       )}
     </div>
