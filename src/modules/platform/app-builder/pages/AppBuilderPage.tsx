@@ -189,7 +189,7 @@ export default function AppBuilderPage() {
     if (!buildResult) { log("RUN", "No image built"); return; }
     try {
       const mod = await getContainerMod();
-      const container = await mod.createContainer({
+      const container = mod.createContainer({
         name: `${appName}-${Date.now().toString(36)}`,
         imageId: buildResult.image.canonicalId,
         env: { NODE_ENV: "production" },
