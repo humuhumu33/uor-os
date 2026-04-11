@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { hypergraph } from "../../hypergraph";
 import type { SovereignDB } from "../../sovereign-db";
+import { providerRegistry } from "../../persistence/provider-registry";
+import { partitionRouter } from "../../persistence/partition-router";
 
 interface Props {
   db: SovereignDB | null;
@@ -37,7 +39,15 @@ export function SdbStatusBar({ db, startTime }: Props) {
       <span>Uptime: <strong className="text-foreground">{uptime}</strong></span>
       {db && (
         <>
-          <span className="ml-auto">{db.backend}</span>
+          {partitionRouter.size > 0 && (
+            <>
+              <span className="w-px h-3 bg-border" />
+              <span>Partitions: <strong className="text-foreground">{partitionRouter.size}</strong></span>
+            </>
+          )}
+          <span className="ml-auto text-[10px]">
+            {providerRegistry.active()} · {providerRegistry.size} providers
+          </span>
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
         </>
       )}

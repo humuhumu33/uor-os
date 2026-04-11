@@ -128,7 +128,6 @@ export function edgesToCypher(edges: Hyperedge[]): string {
 }
 
 export async function importCypher(cypher: string): Promise<Hyperedge[]> {
-  // Parse MERGE statements to extract node-relationship patterns
   const created: Hyperedge[] = [];
   const nodeIds = new Set<string>();
 
@@ -144,10 +143,54 @@ export async function importCypher(cypher: string): Promise<Hyperedge[]> {
     const src = match[1];
     const label = match[2];
     const tgt = match[4];
-    // Look up real IDs from the node definitions
     const he = await hypergraph.addEdge([src, tgt], label);
     created.push(he);
   }
 
   return created;
+}
+
+// ── Streaming Import (large files) ──────────────────────────────────────────
+
+const CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB
+
+/**
+ * Import a large CSV file in chunks using File slicing.
+ * Prevents browser OOM on imports >10MB.
+ */
+export async function importCsvStreaming(
+  file: File,
+  onProgress?: (pct: number) => void,
+): Promise<number> {
+  const total = file.size;
+  let offset = 0;
+  let imported = 0;
+  let leftover = "";
+
+  while (offset < total) {
+    const end = Math.min(offset + CHUNK_SIZE, total);
+    const chunk = await file.slice(offset, end).text();
+    const text = leftover + chunk;
+    const lines = text.split("\n");
+
+    // Keep last incomplete line for next chunk
+    leftover = end < total ? (lines.pop() ?? "") : "";
+
+    for (const line of lines) {
+      if (!line.trim() || imported === 0) { imported++; continue; } // skip header
+      const parts = line.split(",");
+      if (parts.length < 4) continue;
+      const label = parts[1];
+      const nodes = parts[3].replace(/"/g, "").split(";").filter(Boolean);
+      const weight = parts[4] ? parseFloat(parts[4]) : 1.0;
+      const ttl = parts[6] ? parseInt(parts[6]) : undefined;
+      await hypergraph.addEdge(nodes, label, {}, weight, undefined, undefined, undefined, ttl);
+      imported++;
+    }
+
+    offset = end;
+    onProgress?.(Math.round((offset / total) * 100));
+  }
+
+  return imported;
 }
