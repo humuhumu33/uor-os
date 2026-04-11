@@ -84,15 +84,15 @@ export function SdbGraphControls({
           </button>
         )}
 
-        {/* 3D toggle */}
+        {/* 2D/3D toggle */}
         {onToggle3D && (
           <button
             onClick={onToggle3D}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[12px] font-medium transition-colors ${
-              show3D ? "bg-primary/10 border-primary/30 text-primary" : "bg-card/90 border-border text-muted-foreground hover:text-foreground"
+              !show3D ? "bg-primary/10 border-primary/30 text-primary" : "bg-card/90 border-border text-muted-foreground hover:text-foreground"
             } backdrop-blur-sm`}
           >
-            <Icon3dCubeSphere size={14} /> 3D
+            <Icon3dCubeSphere size={14} /> {show3D ? "2D" : "3D"}
           </button>
         )}
 
