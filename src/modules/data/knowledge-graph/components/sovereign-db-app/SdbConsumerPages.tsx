@@ -289,6 +289,15 @@ export function SdbConsumerPages({ db }: Props) {
     });
   };
 
+  // Command palette actions
+  const commands: CommandAction[] = useMemo(() => [
+    { id: "graph", label: "Switch to Graph View", icon: <IconGraph size={15} />, action: () => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "graph" })) },
+    { id: "canvas", label: "Open Canvas", icon: <IconLayoutBoard size={15} />, action: () => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "canvas" })) },
+    { id: "daily", label: "Create Daily Note", icon: <IconSun size={15} />, action: () => reloadDaily() },
+    { id: "folder", label: "New Folder", icon: <IconFolder size={15} />, action: createFolder },
+    { id: "note", label: "New Note", icon: <IconPlus size={15} />, action: () => createNote() },
+  ], [createFolder, createNote, reloadDaily]);
+
   // Quick finder items
   const finderItems: FinderItem[] = useMemo(() =>
     items.filter(i => i.type === "note" || i.type === "daily").map(i => ({
@@ -300,7 +309,7 @@ export function SdbConsumerPages({ db }: Props) {
     [items]
   );
 
-  // Build tree (folders + notes only, daily notes in separate section)
+  // Build tree
   const rootItems = items.filter(i => i.type !== "daily" && (!i.parentId || i.parentId === "ws:root"));
   const childrenOf = (parentId: string) => items.filter(i => i.parentId === parentId);
 
