@@ -67,9 +67,9 @@ function computeMetrics(
   edges: Hyperedge[],
 ): Pick<HypergraphPartition, "cutEdges" | "cutSize" | "balance" | "communicationVolume" | "parts"> {
   const parts: string[][] = Array.from({ length: k }, () => []);
-  for (const [node, part] of assignment) {
+  assignment.forEach((part, node) => {
     parts[part].push(node);
-  }
+  });
 
   const cutEdges: Hyperedge[] = [];
   let communicationVolume = 0;
@@ -191,7 +191,7 @@ function greedyFM(
       for (let p = 0; p < k; p++) {
         if (p === current) continue;
         // Check balance constraint
-        const targetSize = [...assignment.values()].filter(v => v === p).length;
+        const targetSize = Array.from(assignment.values()).filter(v => v === p).length;
         if (targetSize + 1 > maxPartSize) continue;
 
         const gain = moveGain(node, p);
@@ -312,8 +312,8 @@ function spectralPartition(
   const rightAssign = spectralPartition(right, edges, rightK);
 
   const assignment = new Map<string, number>();
-  for (const [nd, p] of leftAssign) assignment.set(nd, p);
-  for (const [nd, p] of rightAssign) assignment.set(nd, p + leftK);
+  leftAssign.forEach((p, nd) => assignment.set(nd, p));
+  rightAssign.forEach((p, nd) => assignment.set(nd, p + leftK));
 
   return assignment;
 }
