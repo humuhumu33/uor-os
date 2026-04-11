@@ -30,6 +30,10 @@ import { ingestAppAssets } from "./runtime/asset-ingestor";
 import type { IngestResult } from "./runtime/asset-ingestor";
 import { runApp } from "./runtime/wasm-loader";
 import type { WasmAppInstance } from "./runtime/wasm-loader";
+import { encodeAppToGraph } from "./runtime/graph-image";
+import type { GraphImage } from "./runtime/graph-image";
+import { pushGraph } from "./runtime/graph-registry";
+import type { GraphPushReceipt } from "./runtime/graph-registry";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -67,6 +71,8 @@ export interface DeployOptions {
   shieldLevel?: "standard" | "strict" | "paranoid";
   /** Progress callback. */
   onProgress?: DeployProgressCallback;
+  /** Image encoding: "graph" for graph-native, "classic" for layer-based. */
+  encoding?: "graph" | "classic";
 }
 
 /** Complete deployment result. all artifacts from every stage. */
@@ -83,6 +89,9 @@ export interface DeployResult {
   instance: WasmAppInstance;
   /** Total pipeline duration in ms. */
   durationMs: number;
+  /** Graph-native artifacts (when encoding = "graph"). */
+  graphImage?: GraphImage;
+  graphPushReceipt?: GraphPushReceipt;
 }
 
 // ── Deploy Pipeline ─────────────────────────────────────────────────────────
