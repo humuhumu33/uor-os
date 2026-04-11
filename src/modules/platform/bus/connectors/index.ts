@@ -18,6 +18,7 @@ import "./mqtt";
 import "./websocket";
 import "./redis";
 import "./grpc-web";
+import "./bolt";
 
 // Re-export types for convenience
 export type { ProtocolAdapter, Connection, ConnectionParams } from "./protocol-adapter";
