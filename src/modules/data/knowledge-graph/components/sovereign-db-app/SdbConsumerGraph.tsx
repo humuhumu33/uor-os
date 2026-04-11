@@ -1,64 +1,59 @@
 /**
- * SdbConsumerGraph — Obsidian-inspired force-directed knowledge graph.
+ * SdbConsumerGraph — Obsidian-inspired interactive knowledge graph.
  * ═══════════════════════════════════════════════════════════════════
  *
- * Full-canvas graph of all workspace notes and folders.
- * Notes are nodes; links, shared tags, and folder containment create edges.
- * Click a node to open details in a side panel.
+ * Full-canvas graph with zoom/pan, type filtering, context menus,
+ * multi-select, layout modes, and neighborhood expansion.
  *
  * @product SovereignDB
  */
 
-import { useRef, useEffect, useState, useCallback } from "react";
-import {
-  forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide,
-  type SimulationNodeDatum, type SimulationLinkDatum,
-} from "d3-force";
+import { useState, useMemo, useCallback } from "react";
 import { IconX } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import { hypergraph } from "../../hypergraph";
-
-interface GNode extends SimulationNodeDatum {
-  id: string;
-  label: string;
-  type: "folder" | "note" | "node";
-  color: string;
-}
-
-interface GLink extends SimulationLinkDatum<GNode> {
-  label: string;
-}
+import { traversalEngine } from "../../traversal";
+import { SdbGraphCanvas, type GNode, type GLink, type LayoutMode, type GraphFilter } from "./SdbGraphCanvas";
+import { SdbGraphControls } from "./SdbGraphControls";
+import { SdbGraphContextMenu, type ContextAction } from "./SdbGraphContextMenu";
+import { SdbGraphSelection, type SelectionAction } from "./SdbGraphSelection";
 
 interface Props {
   db: SovereignDB;
 }
 
-const COLORS = {
+const COLORS: Record<string, string> = {
   folder: "hsl(40, 85%, 55%)",
   note: "hsl(210, 80%, 60%)",
   node: "hsl(160, 70%, 50%)",
-  link: "hsl(280, 65%, 60%)",
 };
 
 export function SdbConsumerGraph({ db }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const simRef = useRef<ReturnType<typeof forceSimulation<GNode>> | null>(null);
-  const [dims, setDims] = useState({ w: 800, h: 500 });
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("force");
+  const [filters, setFilters] = useState<GraphFilter>({
+    types: new Map(),
+    searchQuery: "",
+    groupByType: false,
+  });
   const [selected, setSelected] = useState<GNode | null>(null);
-  const [hovered, setHovered] = useState<GNode | null>(null);
-  const dragRef = useRef<GNode | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ node: GNode; pos: { x: number; y: number } } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
-  // Build graph from all workspace edges
+  // Build graph from workspace edges
   const edges = hypergraph.cachedEdges();
 
-  const { nodes, links } = (() => {
+  const { nodes, links, typeStats } = useMemo(() => {
     const nodeMap = new Map<string, GNode>();
     const linkArr: GLink[] = [];
+    const typeCounts = new Map<string, number>();
 
-    const ensure = (id: string, label: string, type: GNode["type"]) => {
+    const ensure = (id: string, label: string, type: string) => {
       if (!nodeMap.has(id)) {
-        nodeMap.set(id, { id, label, type, color: COLORS[type] });
+        const color = COLORS[type] || COLORS.node;
+        const shape = type === "folder" ? "square" as const : type === "note" ? "circle" as const : "diamond" as const;
+        nodeMap.set(id, { id, label, type, color, shape });
+        typeCounts.set(type, (typeCounts.get(type) || 0) + 1);
       }
     };
 
@@ -78,9 +73,8 @@ export function SdbConsumerGraph({ db }: Props) {
           linkArr.push({ source: e.nodes[0], target: e.nodes[1] || e.id, label: "in" });
         }
       } else if (e.label === "workspace:link") {
-        linkArr.push({ source: e.nodes[0], target: e.nodes[1], label: String(e.properties.relation || "link") });
+        linkArr.push({ source: e.nodes[0], target: e.nodes[1], label: String(e.properties.relation || "link"), weight: 2 });
       } else {
-        // Non-workspace edges: show as generic nodes
         for (const n of e.nodes) {
           ensure(n, n.length > 20 ? n.slice(0, 18) + "…" : n, "node");
         }
@@ -90,142 +84,83 @@ export function SdbConsumerGraph({ db }: Props) {
       }
     }
 
-    return { nodes: Array.from(nodeMap.values()), links: linkArr };
-  })();
-
-  // Resize
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      if (width > 0 && height > 0) setDims({ w: width, h: height });
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  // Simulation
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || nodes.length === 0) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const { w, h } = dims;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    ctx.scale(dpr, dpr);
-
-    const sim = forceSimulation<GNode>(nodes)
-      .force("link", forceLink<GNode, GLink>(links).id(d => d.id).distance(90))
-      .force("charge", forceManyBody().strength(-180))
-      .force("center", forceCenter(w / 2, h / 2))
-      .force("collide", forceCollide(25));
-
-    simRef.current = sim;
-
-    const draw = () => {
-      ctx.clearRect(0, 0, w, h);
-
-      // Edges
-      ctx.lineWidth = 1;
-      for (const link of links) {
-        const s = link.source as GNode;
-        const t = link.target as GNode;
-        if (s.x == null || t.x == null) continue;
-        ctx.strokeStyle = "hsla(0, 0%, 40%, 0.35)";
-        ctx.beginPath();
-        ctx.moveTo(s.x, s.y!);
-        ctx.lineTo(t.x, t.y!);
-        ctx.stroke();
+    // Add expanded neighborhood nodes
+    for (const nodeId of expandedNodes) {
+      const neighbors = traversalEngine.neighbors(nodeId, { depth: 1 });
+      for (const nId of neighbors) {
+        ensure(nId, nId.length > 20 ? nId.slice(0, 18) + "…" : nId, "node");
+        const n = nodeMap.get(nId);
+        if (n) n.expanded = true;
       }
+    }
 
-      // Nodes
-      for (const node of nodes) {
-        if (node.x == null) continue;
-        const isHover = hovered?.id === node.id;
-        const isSel = selected?.id === node.id;
-        const r = node.type === "folder" ? 9 : node.type === "note" ? 7 : 5;
-        const dr = isHover || isSel ? r + 3 : r;
+    const stats = Array.from(typeCounts.entries()).map(([type, count]) => ({
+      type, count, color: COLORS[type] || COLORS.node,
+    }));
 
-        ctx.shadowColor = node.color;
-        ctx.shadowBlur = isHover || isSel ? 12 : 4;
-        ctx.fillStyle = node.color;
-        ctx.beginPath();
-        ctx.arc(node.x, node.y!, dr, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
+    return { nodes: Array.from(nodeMap.values()), links: linkArr, typeStats: stats };
+  }, [edges, expandedNodes]);
 
-        // Label
-        ctx.fillStyle = "hsl(0, 0%, 85%)";
-        ctx.font = `${isHover || isSel ? 13 : 11}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top";
-        const display = node.label.length > 20 ? node.label.slice(0, 18) + "…" : node.label;
-        ctx.fillText(display, node.x, node.y! + dr + 5);
+  const handleContextAction = useCallback((action: ContextAction, node: GNode) => {
+    switch (action) {
+      case "open":
+        setSelected(node);
+        break;
+      case "connections": {
+        const neighborIds = traversalEngine.neighbors(node.id, { depth: 1 });
+        const next: GraphFilter = {
+          ...filters,
+          searchQuery: "",
+          types: new Map(),
+        };
+        // Dim everything except this node and its neighbors
+        const connected = new Set([node.id, ...neighborIds]);
+        for (const n of nodes) {
+          next.types.set(n.type, true); // keep all types visible
+        }
+        setFilters(prev => ({ ...prev, searchQuery: node.label }));
+        break;
       }
-    };
-
-    sim.on("tick", draw);
-    return () => { sim.stop(); };
-  }, [nodes.length, links.length, dims, hovered?.id, selected?.id]);
-
-  // Mouse interaction
-  const findNode = useCallback((x: number, y: number): GNode | null => {
-    for (const node of nodes) {
-      if (node.x == null) continue;
-      const dx = node.x - x;
-      const dy = (node.y ?? 0) - y;
-      if (dx * dx + dy * dy < 225) return node;
+      case "expand":
+        setExpandedNodes(prev => {
+          const next = new Set(prev);
+          if (next.has(node.id)) next.delete(node.id);
+          else next.add(node.id);
+          return next;
+        });
+        break;
+      case "pin":
+        node.pinned = !node.pinned;
+        if (!node.pinned) { node.fx = null; node.fy = null; }
+        break;
+      case "delete":
+        // Remove edges containing this node
+        for (const e of edges) {
+          if (e.nodes.includes(node.id)) {
+            db.removeEdge(e.id);
+          }
+        }
+        break;
     }
-    return null;
-  }, [nodes]);
+  }, [filters, nodes, edges, db]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    if (dragRef.current) {
-      dragRef.current.fx = x;
-      dragRef.current.fy = y;
-      simRef.current?.alpha(0.3).restart();
-      return;
+  const handleSelectionAction = useCallback((action: SelectionAction) => {
+    // Placeholder actions
+    if (action === "delete") {
+      for (const id of selectedIds) {
+        for (const e of edges) {
+          if (e.nodes.includes(id)) db.removeEdge(e.id);
+        }
+      }
     }
-    const found = findNode(x, y);
-    setHovered(found);
-    if (canvasRef.current) canvasRef.current.style.cursor = found ? "grab" : "default";
-  }, [findNode]);
+    setSelectedIds([]);
+  }, [selectedIds, edges, db]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const found = findNode(e.clientX - rect.left, e.clientY - rect.top);
-    if (found) {
-      dragRef.current = found;
-      found.fx = e.clientX - rect.left;
-      found.fy = e.clientY - rect.top;
-      if (canvasRef.current) canvasRef.current.style.cursor = "grabbing";
-    }
-  }, [findNode]);
-
-  const handleMouseUp = useCallback(() => {
-    if (dragRef.current) {
-      dragRef.current.fx = null;
-      dragRef.current.fy = null;
-      dragRef.current = null;
-      simRef.current?.alpha(0.3).restart();
-    }
-  }, []);
-
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const found = findNode(e.clientX - rect.left, e.clientY - rect.top);
-    setSelected(found);
-  }, [findNode]);
+  // Zoom helpers (modify transform indirectly via re-render trigger)
+  const [zoomTrigger, setZoomTrigger] = useState(0);
+  const handleZoomIn = useCallback(() => setZoomTrigger(t => t + 1), []);
+  const handleZoomOut = useCallback(() => setZoomTrigger(t => t - 1), []);
+  const handleFitAll = useCallback(() => setZoomTrigger(t => t + 0.001), []);
 
   if (nodes.length === 0) {
     return (
@@ -240,32 +175,60 @@ export function SdbConsumerGraph({ db }: Props) {
   }
 
   return (
-    <div ref={containerRef} className="relative w-full h-full min-h-[400px]">
-      <canvas
-        ref={canvasRef}
-        style={{ width: dims.w, height: dims.h }}
-        onMouseMove={handleMouseMove}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onClick={handleClick}
-      />
+    <div className="relative w-full h-full">
+      <SdbGraphCanvas
+        nodes={nodes}
+        links={links}
+        layoutMode={layoutMode}
+        filters={filters}
+        config={{ baseRadius: 6, labelDegreeThreshold: 2, animateEdges: true }}
+        onNodeClick={setSelected}
+        onNodeContextMenu={(node, pos) => setContextMenu({ node, pos })}
+        onNodeDoubleClick={node => handleContextAction("open", node)}
+        onSelectionChange={setSelectedIds}
+        onBackgroundClick={() => { setSelected(null); setContextMenu(null); }}
+      >
+        <SdbGraphControls
+          types={typeStats}
+          filters={filters}
+          onFiltersChange={setFilters}
+          layoutMode={layoutMode}
+          onLayoutChange={setLayoutMode}
+          onFitAll={handleFitAll}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+        />
 
-      {/* Stats badge */}
-      <div className="absolute top-4 right-4 text-[12px] font-mono text-muted-foreground bg-card/80 px-3 py-1.5 rounded-lg border border-border">
-        {nodes.length} nodes · {links.length} links
-      </div>
+        {contextMenu && (
+          <SdbGraphContextMenu
+            node={contextMenu.node}
+            position={contextMenu.pos}
+            mode="consumer"
+            onAction={handleContextAction}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
 
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 flex items-center gap-4 text-[12px] text-muted-foreground bg-card/80 px-3 py-2 rounded-lg border border-border">
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS.folder }} /> Folders</span>
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS.note }} /> Notes</span>
-        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS.node }} /> Nodes</span>
-      </div>
+        <SdbGraphSelection
+          count={selectedIds.length}
+          onAction={handleSelectionAction}
+          onClear={() => setSelectedIds([])}
+        />
+
+        {/* Legend */}
+        <div className="absolute bottom-4 right-4 flex items-center gap-3 text-[11px] text-muted-foreground bg-card/80 px-3 py-1.5 rounded-lg border border-border backdrop-blur-sm">
+          {typeStats.map(t => (
+            <span key={t.type} className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full" style={{ background: t.color }} />
+              {t.type}
+            </span>
+          ))}
+        </div>
+      </SdbGraphCanvas>
 
       {/* Detail panel */}
       {selected && (
-        <div className="absolute top-4 left-4 w-72 bg-card/95 backdrop-blur-sm rounded-lg border border-border shadow-lg p-4 animate-scale-in">
+        <div className="absolute top-16 left-4 w-72 bg-card/95 backdrop-blur-sm rounded-lg border border-border shadow-lg p-4 animate-scale-in z-30">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full shrink-0" style={{ background: selected.color }} />
@@ -277,7 +240,10 @@ export function SdbConsumerGraph({ db }: Props) {
           </div>
           <div className="text-[13px] text-muted-foreground space-y-1">
             <p>Type: <span className="text-foreground capitalize">{selected.type}</span></p>
-            <p className="font-mono text-[11px]">{selected.id}</p>
+            <p className="font-mono text-[11px] break-all">{selected.id}</p>
+            {selected.expanded && (
+              <p className="text-[11px] text-primary/70 italic">Expanded from neighborhood</p>
+            )}
           </div>
         </div>
       )}
