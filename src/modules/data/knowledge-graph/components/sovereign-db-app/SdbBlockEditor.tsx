@@ -190,13 +190,10 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
         setFocusIdx(idx + 1);
       }
     }
-  }, [blocks, onChange, autocomplete, noteNames, updateBlock]);
+  }, [blocks, onChange, autocomplete, noteNames, updateBlock, acActiveIdx]);
 
-  const acFiltered = autocomplete
-    ? noteNames.filter(n => n.toLowerCase().includes(autocomplete.query.toLowerCase())).slice(0, 6)
-    : [];
-
-  const selectAutocomplete = useCallback((name: string) => {
+  // Shared autocomplete insert logic
+  const doAutocomplete = useCallback((name: string) => {
     if (!autocomplete) return;
     const block = blocks[autocomplete.idx];
     const text = block.text;
@@ -206,6 +203,11 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
     setAutocomplete(null);
     setEditing(autocomplete.idx);
   }, [autocomplete, blocks, updateBlock]);
+
+  const acFiltered = autocomplete
+    ? noteNames.filter(n => !autocomplete.query || n.toLowerCase().includes(autocomplete.query.toLowerCase())).slice(0, 8)
+    : [];
+  const acShowCreate = autocomplete?.query && !acFiltered.some(n => n.toLowerCase() === autocomplete.query.toLowerCase());
 
   return (
     <div className="space-y-0.5">
@@ -256,25 +258,44 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
             )}
 
             {/* Autocomplete dropdown */}
-            {autocomplete && autocomplete.idx === idx && acFiltered.length > 0 && (
-              <div className="absolute left-0 top-full z-50 w-56 bg-card border border-border rounded-lg shadow-lg py-1 mt-1 animate-scale-in">
-                {acFiltered.map(name => (
+            {autocomplete && autocomplete.idx === idx && (acFiltered.length > 0 || acShowCreate) && (
+              <div className="absolute left-0 top-full z-50 w-64 bg-card border border-border rounded-lg shadow-2xl py-1 mt-1 animate-scale-in">
+                <div className="px-3 py-1.5 flex items-center gap-2 border-b border-border/30 mb-1">
+                  <IconSearch size={12} className="text-muted-foreground/40" />
+                  <span className="text-[11px] text-muted-foreground/50">
+                    {autocomplete.query ? `Linking to "${autocomplete.query}"` : "Link to a page…"}
+                  </span>
+                </div>
+                {acFiltered.map((name, i) => (
                   <button
                     key={name}
-                    onMouseDown={e => { e.preventDefault(); selectAutocomplete(name); }}
-                    className="w-full px-3 py-2 text-left text-[13px] text-foreground hover:bg-muted/50 transition-colors truncate"
+                    onMouseDown={e => { e.preventDefault(); doAutocomplete(name); }}
+                    onMouseEnter={() => setAcActiveIdx(i)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[13px] transition-colors truncate ${
+                      i === acActiveIdx ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted/50"
+                    }`}
                   >
+                    <IconFile size={14} className="shrink-0 opacity-50" />
                     {name}
                   </button>
                 ))}
-                {autocomplete.query && !acFiltered.some(n => n.toLowerCase() === autocomplete.query.toLowerCase()) && (
+                {acShowCreate && (
                   <button
-                    onMouseDown={e => { e.preventDefault(); selectAutocomplete(autocomplete.query); }}
-                    className="w-full px-3 py-2 text-left text-[13px] text-primary hover:bg-muted/50 transition-colors"
+                    onMouseDown={e => { e.preventDefault(); doAutocomplete(autocomplete.query); }}
+                    onMouseEnter={() => setAcActiveIdx(acFiltered.length)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[13px] transition-colors ${
+                      acActiveIdx === acFiltered.length ? "bg-primary/10 text-primary" : "text-primary/70 hover:bg-muted/50"
+                    }`}
                   >
+                    <IconPlus size={14} className="shrink-0" />
                     Create "[[{autocomplete.query}]]"
                   </button>
                 )}
+                <div className="px-3 pt-1.5 pb-1 border-t border-border/30 mt-1 flex gap-3 text-[10px] text-muted-foreground/40">
+                  <span>↑↓ Navigate</span>
+                  <span>↵ Select</span>
+                  <span>Esc Close</span>
+                </div>
               </div>
             )}
           </div>
