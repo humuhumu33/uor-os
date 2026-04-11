@@ -16,8 +16,9 @@ import { CorrelationTool } from "@/modules/kernel/resolver/components/Correlatio
 import { EntitySearch } from "@/modules/kernel/resolver/components/entity-search/EntitySearch";
 
 const SovereignGraphExplorer = lazy(() => import("../components/SovereignGraphExplorer"));
+const DatabaseExplorer = lazy(() => import("../components/DatabaseExplorer"));
 
-type ViewMode = "data" | "explorer";
+type ViewMode = "data" | "explorer" | "database";
 
 const KnowledgeGraphPage = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("data");
@@ -143,6 +144,16 @@ const KnowledgeGraphPage = () => {
               >
                 Visual Explorer
               </button>
+              <button
+                onClick={() => setViewMode("database")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                  viewMode === "database"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted/40 text-muted-foreground border-border/50 hover:bg-muted/60"
+                }`}
+              >
+                Database Explorer
+              </button>
             </div>
           </div>
 
@@ -155,6 +166,18 @@ const KnowledgeGraphPage = () => {
                 </div>
               }>
                 <SovereignGraphExplorer />
+              </Suspense>
+            </div>
+          )}
+
+          {viewMode === "database" && (
+            <div className="rounded-xl border border-border bg-card overflow-hidden mb-8" style={{ height: "70vh" }}>
+              <Suspense fallback={
+                <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">
+                  Loading database explorer…
+                </div>
+              }>
+                <DatabaseExplorer />
               </Suspense>
             </div>
           )}
