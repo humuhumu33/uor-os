@@ -57,6 +57,7 @@ interface Props {
   onChange: (blocks: Block[]) => void;
   onWikiLinkClick?: (title: string) => void;
   noteNames?: string[];
+  getPreview?: (title: string) => string | null;
 }
 
 function genBlockId() {
