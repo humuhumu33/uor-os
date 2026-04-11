@@ -8,6 +8,7 @@ import { useState } from "react";
 import {
   IconFilter, IconLayoutGrid, IconFocus2, IconZoomIn, IconZoomOut,
   IconNetwork, IconHierarchy, IconCircleDot, IconSearch, IconAtom,
+  Icon3dCubeSphere,
 } from "@tabler/icons-react";
 import type { LayoutMode, GraphFilter } from "./SdbGraphCanvas";
 
@@ -22,6 +23,8 @@ interface Props {
   onZoomOut: () => void;
   showAtlasLayer?: boolean;
   onToggleAtlasLayer?: () => void;
+  show3D?: boolean;
+  onToggle3D?: () => void;
 }
 
 const LAYOUTS: { mode: LayoutMode; icon: typeof IconNetwork; label: string }[] = [
@@ -33,7 +36,7 @@ const LAYOUTS: { mode: LayoutMode; icon: typeof IconNetwork; label: string }[] =
 
 export function SdbGraphControls({
   types, filters, onFiltersChange, layoutMode, onLayoutChange, onFitAll, onZoomIn, onZoomOut,
-  showAtlasLayer, onToggleAtlasLayer,
+  showAtlasLayer, onToggleAtlasLayer, show3D, onToggle3D,
 }: Props) {
   const [showFilters, setShowFilters] = useState(false);
 
@@ -78,6 +81,18 @@ export function SdbGraphControls({
             } backdrop-blur-sm`}
           >
             <IconAtom size={14} /> Atlas
+          </button>
+        )}
+
+        {/* 3D toggle */}
+        {onToggle3D && (
+          <button
+            onClick={onToggle3D}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[12px] font-medium transition-colors ${
+              show3D ? "bg-primary/10 border-primary/30 text-primary" : "bg-card/90 border-border text-muted-foreground hover:text-foreground"
+            } backdrop-blur-sm`}
+          >
+            <Icon3dCubeSphere size={14} /> 3D
           </button>
         )}
 
