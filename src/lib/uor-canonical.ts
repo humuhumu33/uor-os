@@ -19,7 +19,7 @@
 // @ts-ignore. jsonld v8 types may not resolve perfectly in all configurations
 import jsonld from "jsonld";
 import { computeCid, computeUorAddress, canonicalJsonLd, computeIpv6Address } from "./uor-address";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256raw, toHex } from "@/lib/crypto";
 
 // ── UOR inline context for wrapping non-JSON-LD objects ─────────────────────
 // Inline to avoid network dependency. any agent can reproduce this locally.
@@ -329,13 +329,11 @@ export async function canonicalizeToNQuads(obj: unknown): Promise<string> {
 // ── SHA-256 helpers ─────────────────────────────────────────────────────────
 
 async function sha256Hash(bytes: Uint8Array): Promise<Uint8Array> {
-  return sha256(bytes);
+  return sha256raw(bytes);
 }
 
 function bytesToHex(bytes: Uint8Array): string {
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  return toHex(bytes);
 }
 
 // ── Single Proof Hash ──────────────────────────────────────────────────────
@@ -386,7 +384,7 @@ export async function singleProofHash(
   const canonicalBytes = new TextEncoder().encode(nquads);
 
   // Step 3: SHA-256. THE single hash
-  const hashBytes = await sha256(canonicalBytes);
+  const hashBytes = sha256raw(canonicalBytes);
   const hashHex = bytesToHex(hashBytes);
 
   // Step 4: Derive all four identity forms from ONE hash

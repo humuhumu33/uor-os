@@ -10,7 +10,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { singleProofHash } from "@/lib/uor-canonical";
-import { localGraphStore } from "@/modules/data/knowledge-graph/local-store";
+import { grafeoStore as localGraphStore } from "@/modules/data/knowledge-graph/grafeo-store";
 import { parseWikiLinks, hasWikiSyntax } from "@/modules/data/knowledge-graph/lib/wiki-links";
 import { invalidateBacklinks } from "@/modules/data/knowledge-graph/backlinks";
 import type { KGNode } from "@/modules/data/knowledge-graph/types";

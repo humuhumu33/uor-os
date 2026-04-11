@@ -9,8 +9,7 @@
  * @module knowledge-graph/hologram-file/codec
  */
 
-import { sha256 } from "@noble/hashes/sha2.js";
-import { bytesToHex } from "@noble/hashes/utils.js";
+import { sha256raw, toHex } from "@/lib/crypto";
 import { singleProofHash } from "@/lib/uor-canonical";
 import type {
   HologramFile,
@@ -55,8 +54,8 @@ function canonicalJson(obj: unknown): string {
 function computeSeal(graph: HologramQuad[]): string {
   const canonical = canonicalJson(graph);
   const bytes = new TextEncoder().encode(canonical);
-  const hash = sha256(bytes);
-  return bytesToHex(hash);
+  const hash = sha256raw(bytes);
+  return toHex(hash);
 }
 
 // ── Object → Quads ──────────────────────────────────────────────────────────

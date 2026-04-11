@@ -18,7 +18,7 @@
  */
 
 import type { AudioFeatureData } from "../types";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256raw } from "@/lib/crypto";
 
 // ── Frame type ──────────────────────────────────────────────────────────────
 
@@ -461,7 +461,7 @@ export class HarmonicLens {
       k: Math.round(frame.curvature * 10000),
     });
     const data = new TextEncoder().encode(canonical);
-    const hashBuffer = sha256(new Uint8Array(data));
+    const hashBuffer = sha256raw(new Uint8Array(data));
     const hashArray = new Uint8Array(hashBuffer);
     return Array.from(hashArray, (b) => b.toString(16).padStart(2, "0")).join("");
   }

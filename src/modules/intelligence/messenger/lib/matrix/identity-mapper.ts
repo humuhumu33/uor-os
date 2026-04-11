@@ -7,7 +7,7 @@
  * service to find existing Matrix users.
  */
 
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256raw } from "@/lib/crypto";
 import { supabase } from "@/integrations/supabase/client";
 import { parseBridgeUserId } from "./client";
 import type { UorIdentityMapping } from "../bridges/bridge-protocol";
@@ -187,7 +187,7 @@ export function buildIdentityTriples(
 export function generateCanonicalId(platform: string, externalId: string): string {
   const encoder = new TextEncoder();
   const input = `${platform}:${externalId}`;
-  const hashBytes = sha256(encoder.encode(input));
+  const hashBytes = sha256raw(encoder.encode(input));
   const hex = Array.from(hashBytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");

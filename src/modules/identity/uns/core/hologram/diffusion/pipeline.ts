@@ -29,7 +29,7 @@ import type {
 import { DEFAULT_DIFFUSION_CONFIG } from "./types";
 import type { HologramCompiledModel, HologramComputeNode, HologramTensorDescriptor } from "../whisper-compiler/types";
 import { OnnxDataType, DTYPE_BYTE_SIZE } from "../whisper-compiler/types";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256raw } from "@/lib/crypto";
 // CPU kernel imports removed. all ops route through GpuDispatch
 // which handles GPU→CPU fallback internally
 
@@ -113,7 +113,7 @@ class DiffusionInferenceCache {
   }
 
   async imageCid(imageData: ImageData): Promise<string> {
-    const hashBuf = sha256(new Uint8Array(imageData.data.buffer));
+    const hashBuf = sha256raw(new Uint8Array(imageData.data.buffer));
     const hashArr = new Uint8Array(hashBuf);
     const hex = Array.from(hashArr, b => b.toString(16).padStart(2, "0")).join("");
     return `bafy-img-${hex.slice(0, 32)}`;

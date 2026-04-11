@@ -2,47 +2,58 @@
  * UOR Shared Cryptographic Primitives
  * ════════════════════════════════════
  *
- * The single canonical implementation of SHA-256 hashing
- * used across every module in the UOR framework.
+ * The single canonical SHA-256 implementation used across
+ * every module in the UOR framework.
  *
- * One function. One truth. No duplication.
+ * ONE source. ONE truth. No scattered imports.
  *
- * Powered by @noble/hashes — audited, zero-dependency, synchronous.
- * Replaces the async-only Web Crypto API for deterministic, streaming hashing.
+ * Uses native Web Crypto API (async) with @noble/hashes for
+ * synchronous paths. All external crypto imports are funneled
+ * through this module — no file should import @noble/hashes directly.
  *
  * @module lib/crypto
  */
 
-import { sha256 } from "@noble/hashes/sha2.js";
-import { bytesToHex } from "@noble/hashes/utils.js";
+import { sha256 as _sha256 } from "@noble/hashes/sha2.js";
+import { bytesToHex as _bytesToHex } from "@noble/hashes/utils.js";
+
+// ── Re-exports for callers that need the raw primitives ─────────────────────
+
+/** Convert bytes to hex string. */
+export const toHex = _bytesToHex;
+
+// ── Async (preferred) ──────────────────────────────────────────────────────
 
 /**
  * SHA-256 hex digest of a UTF-8 string.
- *
- * This is the ONE implementation used by every module that needs
- * content hashing: certificates, derivations, code-kg, donations,
- * datum pages, and boundary enforcement.
- *
- * Uses @noble/hashes (audited, MIT, zero-dep, runs on browser + Node + Deno + Bun + Workers).
- * Synchronous internally — the async signature is preserved for backward compatibility.
+ * Async signature preserved for backward compatibility.
  */
 export async function sha256hex(input: string): Promise<string> {
   const bytes = new TextEncoder().encode(input);
-  return bytesToHex(sha256(bytes));
+  return _bytesToHex(_sha256(bytes));
 }
+
+// ── Synchronous ────────────────────────────────────────────────────────────
 
 /**
  * SHA-256 raw bytes from a UTF-8 string.
- * Synchronous. Returns the 32-byte Uint8Array digest.
+ * Returns the 32-byte Uint8Array digest.
  */
 export function sha256bytes(input: string): Uint8Array {
-  return sha256(new TextEncoder().encode(input));
+  return _sha256(new TextEncoder().encode(input));
 }
 
 /**
- * SHA-256 hex digest from raw bytes.
- * Synchronous.
+ * SHA-256 hex digest from raw bytes. Synchronous.
  */
 export function sha256hexSync(bytes: Uint8Array): string {
-  return bytesToHex(sha256(bytes));
+  return _bytesToHex(_sha256(bytes));
+}
+
+/**
+ * SHA-256 raw digest from raw bytes. Synchronous.
+ * Use when you need the Uint8Array, not hex.
+ */
+export function sha256raw(bytes: Uint8Array): Uint8Array {
+  return _sha256(bytes);
 }

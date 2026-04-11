@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256raw } from "@/lib/crypto";
 
 interface SearchResult {
   user_id: string;
@@ -57,7 +57,7 @@ export default function NewGroupDialog({ open, onClose, onCreated }: Props) {
     try {
       const participants = [user.id, ...selected.map(s => s.user_id)];
       const encoder = new TextEncoder();
-      const hashBytes = sha256(new Uint8Array(encoder.encode(`group:${user.id}:${participants.join(",")}:${Date.now()}`)));
+      const hashBytes = sha256raw(new Uint8Array(encoder.encode(`group:${user.id}:${participants.join(",")}:${Date.now()}`)));
       const sessionHash = Array.from(hashBytes).map(b => b.toString(16).padStart(2, "0")).join("");
 
       // Create session

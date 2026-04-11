@@ -8,8 +8,7 @@
  * No UOR involvement here — plain SHA-256 for audit trail.
  */
 
-import { sha256hex } from "@/lib/crypto";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256hex, sha256raw } from "@/lib/crypto";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -130,7 +129,7 @@ export const rawStore = {
     if (existing) return existing;
 
     // SHA-256 of raw bytes
-    const digest = sha256(new Uint8Array(params.buffer));
+    const digest = sha256raw(new Uint8Array(params.buffer));
     const rawHash = Array.from(new Uint8Array(digest))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");

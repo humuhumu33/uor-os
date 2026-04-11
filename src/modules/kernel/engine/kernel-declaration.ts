@@ -18,8 +18,7 @@
  */
 
 import { getEngine } from "./adapter";
-import { sha256 } from "@noble/hashes/sha2.js";
-import { bytesToHex } from "@noble/hashes/utils.js";
+import { sha256raw, toHex } from "@/lib/crypto";
 
 // ── Kernel Function Types ────────────────────────────────────────────────
 
@@ -177,8 +176,8 @@ export function verifyKernel(): {
 
   // SHA-256 via @noble/hashes (synchronous, cryptographic)
   const stateBytes = new TextEncoder().encode(stateString);
-  const digest = sha256(stateBytes);
-  const hash = bytesToHex(digest);
+  const digest = sha256raw(stateBytes);
+  const hash = toHex(digest);
 
   return { results, allPassed, hash };
 }
@@ -192,7 +191,7 @@ export async function computeKernelHashSha256(): Promise<string> {
   const { results } = verifyKernel();
   const stateString = results.map(r => `${r.name}:${r.fanoPoint}:${r.ok ? 1 : 0}`).join("|");
   const stateBytes = new TextEncoder().encode(stateString);
-  return bytesToHex(sha256(stateBytes));
+  return toHex(sha256raw(stateBytes));
 }
 
 /**

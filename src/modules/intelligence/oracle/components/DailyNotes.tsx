@@ -10,7 +10,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import SovereignEditor, { type SovereignEditorHandle } from "@/modules/platform/core/editor/SovereignEditor";
 import { format, subDays, addDays } from "date-fns";
 import { singleProofHash } from "@/lib/uor-canonical";
-import { localGraphStore } from "@/modules/data/knowledge-graph/local-store";
+import { grafeoStore as localGraphStore } from "@/modules/data/knowledge-graph/grafeo-store";
 import { parseWikiLinks, hasWikiSyntax } from "@/modules/data/knowledge-graph/lib/wiki-links";
 import { invalidateBacklinks } from "@/modules/data/knowledge-graph/backlinks";
 import LinkedReferencesSidebar from "./LinkedReferencesSidebar";

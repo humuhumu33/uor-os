@@ -11,12 +11,10 @@
  *   Permute = cyclic shift
  *   Similarity = normalized Hamming distance (via popcount/stratum)
  *
- * Pure functions. Zero dependencies beyond uor-ring.
+ * Pure functions. Zero dependencies. Maximum hot-path performance.
  *
- * @version 1.0.0
+ * @version 1.1.0
  */
-
-import { neg, bnot, xor } from "@/lib/uor-ring";
 
 /** Default hypervector dimension (number of R₈ components). */
 export const DEFAULT_DIM = 1024;
@@ -51,10 +49,12 @@ export function fromBytes(bytes: Uint8Array, dim = DEFAULT_DIM): Hypervector {
  * Bind: component-wise XOR. The "multiplication" of HDC.
  * bind(A, B) produces a vector dissimilar to both A and B.
  * Self-inverse: bind(bind(A, B), B) ≈ A.
+ *
+ * Inlined XOR (no function call overhead) for hot-path performance.
  */
 export function bind(a: Hypervector, b: Hypervector): Hypervector {
   const out = new Uint8Array(a.length);
-  for (let i = 0; i < a.length; i++) out[i] = xor(a[i], b[i]);
+  for (let i = 0; i < a.length; i++) out[i] = a[i] ^ b[i];
   return out;
 }
 
@@ -76,7 +76,7 @@ export function bundle(vectors: Hypervector[]): Hypervector {
       let ones = 0;
       for (const v of vectors) ones += (v[d] >> bit) & 1;
       if (ones * 2 > vectors.length) result |= (1 << bit);
-      // Tie-breaking: random (use first vector's bit)
+      // Tie-breaking: use first vector's bit
       else if (ones * 2 === vectors.length) result |= (vectors[0][d] >> bit) & 1 ? (1 << bit) : 0;
     }
     out[d] = result;

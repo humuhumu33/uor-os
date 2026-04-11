@@ -6,7 +6,8 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { localGraphStore, type KGNode, type KGEdge, type KGStats } from "../local-store";
+import { grafeoStore as localGraphStore } from "../grafeo-store";
+import type { KGNode, KGEdge, KGStats } from "../types";
 import { syncBridge, type SyncState } from "../sync-bridge";
 import {
   findSimilarNodes,

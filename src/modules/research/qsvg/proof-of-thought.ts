@@ -37,7 +37,7 @@ import {
 } from "./geometric-units";
 
 import { spectralGrade as computeSpectralGrade } from "./spectral-verification";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256raw } from "@/lib/crypto";
 
 // ══════════════════════════════════════════════════════════════════════════
 // Types
@@ -263,7 +263,7 @@ async function computeGeometricCID(
 
   const encoder = new TextEncoder();
   const data = encoder.encode(payload);
-  const hashBuffer = sha256(new Uint8Array(data));
+  const hashBuffer = sha256raw(new Uint8Array(data));
   const hashArray = new Uint8Array(hashBuffer);
 
   // Format as CIDv1-like hex string

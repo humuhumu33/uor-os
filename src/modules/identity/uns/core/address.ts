@@ -16,8 +16,7 @@
  * @see RFC 8200. Internet Protocol, Version 6 (IPv6) Specification
  */
 
-import { sha256 as nobleSha256 } from "@noble/hashes/sha2.js";
-import { bytesToHex as nobleHex } from "@noble/hashes/utils.js";
+import { sha256raw, sha256hexSync, toHex } from "@/lib/crypto";
 
 // ── UOR IPv6 Prefix ─────────────────────────────────────────────────────────
 
@@ -107,7 +106,7 @@ function encodeBase32Lower(bytes: Uint8Array): string {
  * Now synchronous internally using @noble/hashes.
  */
 export async function computeCid(canonicalBytes: Uint8Array): Promise<string> {
-  const digest = nobleSha256(canonicalBytes);
+  const digest = sha256raw(canonicalBytes);
 
   const multihash = new Uint8Array(2 + digest.length);
   multihash[0] = 0x12; // sha2-256
@@ -130,12 +129,12 @@ export async function computeCid(canonicalBytes: Uint8Array): Promise<string> {
  * Async signature preserved for backward compatibility.
  */
 export async function sha256(bytes: Uint8Array): Promise<Uint8Array> {
-  return nobleSha256(bytes);
+  return sha256raw(bytes);
 }
 
 /** Convert bytes to lowercase hex string. */
 export function bytesToHex(bytes: Uint8Array): string {
-  return nobleHex(bytes);
+  return toHex(bytes);
 }
 
 // ── Verification Helpers ────────────────────────────────────────────────────
@@ -159,7 +158,7 @@ export async function buildIdentity(
   hashBytes: Uint8Array,
   canonicalBytes: Uint8Array
 ): Promise<UorCanonicalIdentity> {
-  const hexHash = nobleHex(hashBytes);
+  const hexHash = toHex(hashBytes);
   const cid = await computeCid(canonicalBytes);
   const glyph = encodeGlyph(hashBytes);
   const ipv6 = formatIpv6(hashBytes);

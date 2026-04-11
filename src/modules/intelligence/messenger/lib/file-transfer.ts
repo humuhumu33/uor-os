@@ -9,15 +9,14 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
-import { sha256 } from "@noble/hashes/sha2.js";
-import { bytesToHex } from "@noble/hashes/utils.js";
+import { sha256raw, toHex } from "@/lib/crypto";
 import type { FileManifest, FileChunk } from "./types";
 
 const CHUNK_SIZE = 256 * 1024; // 256KB
 
 /** Hash bytes to hex CID. */
 function cidFromBytes(data: Uint8Array): string {
-  return `urn:uor:file:${bytesToHex(sha256(data))}`;
+  return `urn:uor:file:${toHex(sha256raw(data))}`;
 }
 
 /** Split a file into chunks. */

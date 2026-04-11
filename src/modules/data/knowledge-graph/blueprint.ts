@@ -17,7 +17,8 @@
  * @module knowledge-graph/blueprint
  */
 
-import { localGraphStore, type KGNode, type KGEdge } from "./local-store";
+import { grafeoStore as localGraphStore } from "./grafeo-store";
+import type { KGNode, KGEdge } from "./types";
 import { sha256, buildIdentity } from "@/modules/identity/uns/core/address";
 import { canonicalJsonLd } from "@/lib/uor-address";
 

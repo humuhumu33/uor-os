@@ -28,7 +28,7 @@ import type {
   CompileProgress,
 } from "./types";
 import { DTYPE_BYTE_SIZE } from "./types";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256raw } from "@/lib/crypto";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -214,7 +214,7 @@ function inferModelMeta(model: OnnxModel) {
 
 async function sha256Hex(data: string): Promise<string> {
   const encoded = new TextEncoder().encode(data);
-  const hash = sha256(new Uint8Array(encoded));
+  const hash = sha256raw(new Uint8Array(encoded));
   return Array.from(new Uint8Array(hash))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
