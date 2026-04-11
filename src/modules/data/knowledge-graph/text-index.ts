@@ -109,7 +109,7 @@ export const textIndexManager = {
 
     return ranked
       .map(([edgeId, { score, terms }]) => {
-        const edge = hypergraph.getEdgeSync(edgeId);
+        const edge = hypergraph.cachedEdges().find(e => e.id === edgeId);
         if (!edge) return null;
         return { edge, score, matchedTerms: terms };
       })
