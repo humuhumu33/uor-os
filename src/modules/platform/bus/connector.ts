@@ -351,6 +351,38 @@ export function registerUniversalConnector(): void {
           })),
         description: "List all registered protocol adapters with their operations and schemas",
       },
+
+      // ── Stripe-inspired: One-shot execute ─────────────────────────
+      execute: {
+        handler: async (params: any) => executeOneShot(params),
+        description: "One-shot execute: open ephemeral connection, run operation, close. No connection management needed.",
+        paramsSchema: {
+          type: "object",
+          properties: {
+            protocol: { type: "string" },
+            endpoint: { type: "string" },
+            auth: { type: "object" },
+            op: { type: "string" },
+            params: { type: "object" },
+            idempotencyKey: { type: "string", description: "Deduplication key for safe retries" },
+            sandbox: { type: "boolean", description: "Dry-run: return translated request without executing" },
+          },
+          required: ["protocol", "endpoint", "op"],
+        },
+      },
+
+      // ── Stripe-inspired: Event subscription ───────────────────────
+      subscribe: {
+        handler: async (params: any) => {
+          const conn = _connections.get(params?.connection ?? params?.id);
+          if (!conn) throw new ConnectorError("connection_not_found", "connect", false);
+          const adapter = _adapters.get(conn.protocol);
+          if (!adapter?.onEvent) throw new ConnectorError("push_not_supported", conn.protocol, false);
+          const unsub = adapter.onEvent(conn, params.handler ?? (() => {}));
+          return { ok: true, unsubscribe: unsub };
+        },
+        description: "Subscribe to push-based events (WebSocket, MQTT). Returns unsubscribe handle.",
+      },
     },
   });
 }
@@ -363,3 +395,4 @@ export function getActiveConnections(): ReadonlyMap<string, Connection> {
 
 // Re-export types for convenience
 export type { ProtocolAdapter, Connection, ConnectionParams } from "./connectors/protocol-adapter";
+export { ConnectorError } from "./connectors/protocol-adapter";
