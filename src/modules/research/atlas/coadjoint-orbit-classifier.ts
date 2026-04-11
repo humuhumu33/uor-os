@@ -213,11 +213,8 @@ function computeStabilizerDim(weight: number[]): number {
   const subsystemDim = stabRank > 0 ? stabRank * stabRank + stabRank : 0;
   return RANK + subsystemDim;
 }
- *
- * Neeb's Theorem: O_λ carries a Gibbs ensemble iff:
- *   1. The Laplace transform L(λ)(x) = Σ_α e^{-⟨α+λ, x⟩} converges
- *   2. Q̄: Ω_λ → conv(O_λ)° is a diffeomorphism
- *   3. Fisher-Rao is positive definite
+/**
+ * Test Neeb's integrability condition for a single orbit O_λ.
  */
 export function testIntegrability(orbit: CoadjointOrbit): IntegrabilityResult {
   // Use a test point deep in the positive Weyl chamber
