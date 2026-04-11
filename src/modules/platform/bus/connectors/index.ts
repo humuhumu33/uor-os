@@ -16,6 +16,7 @@ import "./neo4j";
 import "./s3";
 import "./mqtt";
 import "./websocket";
+import "./redis";
 
 // Re-export types for convenience
 export type { ProtocolAdapter, Connection, ConnectionParams } from "./protocol-adapter";
