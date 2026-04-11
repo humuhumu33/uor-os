@@ -25,7 +25,7 @@ async function seedGraph() {
 
 describe("Traversal Engine", () => {
   beforeEach(async () => {
-    hypergraph.clear();
+    hypergraph.clearIndex();
     await seedGraph();
   });
 
@@ -67,7 +67,7 @@ describe("Traversal Engine", () => {
 
 describe("Graph Algorithms", () => {
   beforeEach(async () => {
-    hypergraph.clear();
+    hypergraph.clearIndex();
     await seedGraph();
   });
 
@@ -104,7 +104,7 @@ describe("Graph Algorithms", () => {
 
 describe("Cypher Engine", () => {
   beforeEach(async () => {
-    hypergraph.clear();
+    hypergraph.clearIndex();
     await seedGraph();
   });
 
@@ -130,7 +130,7 @@ describe("Cypher Engine", () => {
 
 describe("Text Index", () => {
   beforeEach(async () => {
-    hypergraph.clear();
+    hypergraph.clearIndex();
     textIndexManager.clear();
     await seedGraph();
   });
