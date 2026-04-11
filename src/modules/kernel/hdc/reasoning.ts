@@ -10,9 +10,15 @@
  */
 
 import type { Hypervector } from "./hypervector";
-import { bind, bundle, similarity, distance } from "./hypervector";
+import { bind, unbind, bundle, similarity, distance } from "./hypervector";
 import { ItemMemory } from "./item-memory";
 import type { QueryResult } from "./item-memory";
+
+/** Result of multi-codebook factorization. */
+export interface FactorResult {
+  label: string;
+  similarity: number;
+}
 
 /** A reasoning query and its result. */
 export interface ReasoningResult {
@@ -102,6 +108,68 @@ export class ReasoningEngine {
    */
   nearest(target: Hypervector, k = 5): QueryResult[] {
     return this.memory.queryTopK(target, k);
+  }
+
+  /**
+   * Multi-codebook factorization via resonator network.
+   * Given a bundled HV encoding "role1⊗filler1 ⊕ role2⊗filler2 ⊕ ...",
+   * and codebooks mapping role→[(label, HV)], returns the best filler per role.
+   *
+   * This is the core of IBM's NVSA Raven solver.
+   */
+  factorize(
+    bundled: Hypervector,
+    codebooks: Map<string, [string, Hypervector][]>,
+    maxIter = 10,
+  ): Map<string, FactorResult> {
+    const roles = Array.from(codebooks.keys());
+    // Initialize estimates: first entry of each codebook
+    const estimates = new Map<string, Hypervector>();
+    for (const role of roles) {
+      const entries = codebooks.get(role)!;
+      estimates.set(role, entries[0][1]);
+    }
+
+    for (let iter = 0; iter < maxIter; iter++) {
+      let stable = true;
+      for (const role of roles) {
+        // Unbind all other estimates from the bundled vector
+        let residual = bundled;
+        for (const other of roles) {
+          if (other !== role) residual = unbind(residual, estimates.get(other)!);
+        }
+        // Find best match in this codebook
+        const entries = codebooks.get(role)!;
+        let bestSim = -Infinity;
+        let bestHV = entries[0][1];
+        let bestLabel = entries[0][0];
+        for (const [label, hv] of entries) {
+          const s = similarity(residual, hv);
+          if (s > bestSim) { bestSim = s; bestHV = hv; bestLabel = label; }
+        }
+        const prev = estimates.get(role)!;
+        if (prev !== bestHV) { stable = false; estimates.set(role, bestHV); }
+      }
+      if (stable) break;
+    }
+
+    // Build final results with similarity scores
+    const result = new Map<string, FactorResult>();
+    for (const role of roles) {
+      let residual = bundled;
+      for (const other of roles) {
+        if (other !== role) residual = unbind(residual, estimates.get(other)!);
+      }
+      const entries = codebooks.get(role)!;
+      let bestSim = -Infinity;
+      let bestLabel = entries[0][0];
+      for (const [label, hv] of entries) {
+        const s = similarity(residual, hv);
+        if (s > bestSim) { bestSim = s; bestLabel = label; }
+      }
+      result.set(role, { label: bestLabel, similarity: bestSim });
+    }
+    return result;
   }
 
   /**
