@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { getCachedSession } from "./messaging-protocol";
 import { sealMessage } from "@/modules/identity/uns/trust/messaging";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256raw } from "@/lib/crypto";
 import { enqueueMessage, flushQueue } from "./offline-queue";
 import type { MessageType, FileManifest } from "./types";
 
@@ -55,7 +55,7 @@ export function useSendMessage(sessionId: string | null, sessionHash?: string) {
         for (const b of bytes) bin += String.fromCharCode(b);
         ciphertext = btoa(bin);
 
-        const hashBytes = sha256(new Uint8Array(encoder.encode(plaintext + Date.now())));
+        const hashBytes = sha256raw(new Uint8Array(encoder.encode(plaintext + Date.now())));
         messageHash = Array.from(hashBytes).map(b => b.toString(16).padStart(2, "0")).join("");
         envelopeCid = `urn:ump:envelope:${messageHash.slice(0, 16)}`;
       }

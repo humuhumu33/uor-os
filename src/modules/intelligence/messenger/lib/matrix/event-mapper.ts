@@ -7,7 +7,7 @@
  * anchored to the Knowledge Graph via kg-anchoring.
  */
 
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256raw } from "@/lib/crypto";
 import type {
   DecryptedMessage,
   MessageType,
@@ -38,7 +38,7 @@ export function matrixEventToDecryptedMessage(
 
   // Generate a deterministic message hash from event ID
   const encoder = new TextEncoder();
-  const hashBytes = sha256(encoder.encode(event.eventId));
+  const hashBytes = sha256raw(encoder.encode(event.eventId));
   const messageHash = Array.from(hashBytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
@@ -212,7 +212,7 @@ function extractReplyToHash(content: Record<string, unknown>): string | null {
 
   // Hash the event ID to get our reply hash format
   const encoder = new TextEncoder();
-  const hashBytes = sha256(encoder.encode(inReplyTo.event_id as string));
+  const hashBytes = sha256raw(encoder.encode(inReplyTo.event_id as string));
   return Array.from(hashBytes)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
