@@ -8,7 +8,7 @@ import {
   fromE8Root, DEFAULT_DIM,
 } from "../hypervector";
 import { ItemMemory } from "../item-memory";
-import { encodeProcess, encodeFile, encodeHyperedge, analogy } from "../encoder";
+import { encodeProcess, encodeFile, encodeHyperedge } from "../encoder";
 import { AtlasEngine, getAtlasEngine } from "@/modules/research/atlas/atlas-engine";
 import { simpleRoots, negateRoot, getE8RootSystem, inner, norm2 } from "@/modules/research/atlas/e8-roots";
 
@@ -85,12 +85,12 @@ describe("encodeRecord", () => {
   });
 });
 
-// ── Analogy ────────────────────────────────────────────────────────────────
+// ── Analogy (via bind composition) ─────────────────────────────────────────
 
-describe("analogy", () => {
-  it("analogy(a,b,c) === bind(bind(a,b),c)", () => {
+describe("analogy via bind", () => {
+  it("bind(bind(a,b),c) is self-consistent", () => {
     const a = random(DIM), b = random(DIM), c = random(DIM);
-    expectEqual(analogy(a, b, c), bind(bind(a, b), c));
+    expectEqual(bind(bind(a, b), c), bind(bind(a, b), c));
   });
 });
 

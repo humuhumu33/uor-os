@@ -28,6 +28,7 @@ import type { SparqlBinding } from "./grafeo-store";
 import type { KGNode, KGEdge } from "./types";
 import { encodeHyperedge } from "@/modules/kernel/hdc/encoder";
 import { similarity } from "@/modules/kernel/hdc/hypervector";
+import type { Hypervector } from "@/modules/kernel/hdc/hypervector";
 
 const UOR_NS = "https://uor.foundation/";
 const HE_GRAPH = `${UOR_NS}graph/hyperedges`;
@@ -97,6 +98,9 @@ const labelIndex = new Map<string, Set<string>>();
 /** Inverted index: atlasVertex → Set<edgeId> for O(1) vertex lookups */
 const atlasIndex = new Map<number, Set<string>>();
 
+/** Pre-computed hypervectors for cached edges (avoids O(N) re-encoding on similarity search) */
+const hvCache = new Map<string, Hypervector>();
+
 function addToIndex(map: Map<any, Set<string>>, key: any, id: string): void {
   let set = map.get(key);
   if (!set) { set = new Set(); map.set(key, set); }
@@ -116,10 +120,13 @@ function indexEdge(he: Hyperedge): void {
   if (he.atlasVertex !== undefined) {
     addToIndex(atlasIndex, he.atlasVertex, he.id);
   }
+  // Pre-compute hypervector for HDC similarity search
+  hvCache.set(he.id, encodeHyperedge(he.label, he.nodes));
 }
 
 function deindexEdge(he: Hyperedge): void {
   edgeCache.delete(he.id);
+  hvCache.delete(he.id);
   for (const nodeId of he.nodes) {
     removeFromIndex(incidence, nodeId, he.id);
   }
@@ -339,17 +346,15 @@ export const hypergraph = {
    * Bridges the hypergraph and HDC subsystems via hypervector encoding + Hamming similarity.
    */
   similarEdges(edgeId: string, topK = 5): SimilarEdge[] {
-    const target = edgeCache.get(edgeId);
-    if (!target) return [];
+    const targetHv = hvCache.get(edgeId);
+    if (!targetHv) return [];
 
-    const targetHv = encodeHyperedge(target.label, target.nodes);
     const scored: SimilarEdge[] = [];
-
-    for (const [id, he] of Array.from(edgeCache.entries())) {
+    for (const [id, hv] of hvCache) {
       if (id === edgeId) continue;
-      const hv = encodeHyperedge(he.label, he.nodes);
-      const sim = similarity(targetHv, hv);
-      scored.push({ edge: he, similarity: sim });
+      const he = edgeCache.get(id);
+      if (!he) continue;
+      scored.push({ edge: he, similarity: similarity(targetHv, hv) });
     }
 
     scored.sort((a, b) => b.similarity - a.similarity);
@@ -379,6 +384,7 @@ export const hypergraph = {
     edgeCache.clear();
     labelIndex.clear();
     atlasIndex.clear();
+    hvCache.clear();
   },
 
   /** All cached hyperedges (for view-layer queries). */

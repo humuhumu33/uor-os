@@ -25,7 +25,7 @@ export type { MemoryItem, QueryResult } from "./item-memory";
 // OS object encoders
 export {
   encodeProcess, encodeFile, encodeAppGraph,
-  encodeHyperedge, analogy, getEncoderMemory,
+  encodeHyperedge, getEncoderMemory,
 } from "./encoder";
 
 // Reasoning engine

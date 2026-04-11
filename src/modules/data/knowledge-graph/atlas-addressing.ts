@@ -187,14 +187,19 @@ export const atlasAddressing = {
   },
 
   byAtlasVertex(vertex: number): Hyperedge[] {
-    return hypergraph.cachedEdges().filter(he => he.atlasVertex === vertex);
+    return hypergraph.byAtlasVertex(vertex);
   },
 
   bySignClass(signClass: number): Hyperedge[] {
     const engine = getAtlasEngine();
-    return hypergraph.cachedEdges().filter(he =>
-      he.atlasVertex !== undefined && engine.atlas.vertices[he.atlasVertex].signClass === signClass
-    );
+    // Collect edges from all atlas vertices in this sign class
+    const results: Hyperedge[] = [];
+    for (let v = 0; v < 96; v++) {
+      if (engine.atlas.vertices[v].signClass === signClass) {
+        results.push(...hypergraph.byAtlasVertex(v));
+      }
+    }
+    return results;
   },
 
   stats(): {
