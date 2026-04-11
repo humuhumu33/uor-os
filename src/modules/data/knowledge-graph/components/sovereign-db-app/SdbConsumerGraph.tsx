@@ -34,7 +34,17 @@ const COLORS: Record<string, string> = {
   node: "hsl(160, 70%, 50%)",
 };
 
-export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
+const SIGN_CLASS_LEGEND = [
+  { name: "SC₀", color: "hsl(210, 80%, 60%)" },
+  { name: "SC₁", color: "hsl(180, 70%, 50%)" },
+  { name: "SC₂", color: "hsl(150, 70%, 50%)" },
+  { name: "SC₃", color: "hsl(120, 60%, 55%)" },
+  { name: "SC₄", color: "hsl(40, 85%, 55%)" },
+  { name: "SC₅", color: "hsl(20, 85%, 55%)" },
+  { name: "SC₆", color: "hsl(340, 70%, 55%)" },
+  { name: "SC₇", color: "hsl(270, 60%, 60%)" },
+];
+
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("force");
   const [filters, setFilters] = useState<GraphFilter>({
     types: new Map(),
