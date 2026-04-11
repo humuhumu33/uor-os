@@ -1,10 +1,11 @@
 import { useState, useCallback } from "react";
 import { IconPlayerPlay } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
+import { SdbResultGraph } from "./SdbResultGraph";
 
 interface Props { db: SovereignDB }
 
-type ResultView = "table" | "json";
+type ResultView = "table" | "graph" | "json";
 
 export function SdbQueryPanel({ db }: Props) {
   const [lang, setLang] = useState<"cypher" | "sparql">("cypher");
@@ -88,7 +89,7 @@ export function SdbQueryPanel({ db }: Props) {
           <div className="flex flex-col h-full">
             {/* View toggle */}
             <div className="flex items-center gap-1 px-4 pt-3 pb-1">
-              {(["table", "json"] as const).map((v) => (
+              {(["table", "graph", "json"] as const).map((v) => (
                 <button
                   key={v}
                   onClick={() => setView(v)}
@@ -139,6 +140,10 @@ export function SdbQueryPanel({ db }: Props) {
             ) : view === "table" && columns.length === 0 ? (
               <div className="p-4 text-sm text-muted-foreground">
                 Query returned no tabular data.
+              </div>
+            ) : view === "graph" ? (
+              <div className="flex-1 min-h-[300px]">
+                <SdbResultGraph rows={rows} columns={columns} />
               </div>
             ) : (
               <pre className="flex-1 overflow-auto m-4 p-4 rounded-md bg-muted/50 text-[12px] font-mono leading-relaxed">
