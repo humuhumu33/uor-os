@@ -358,6 +358,34 @@ export const STATIC_BLUEPRINTS: AppBlueprint[] = [
     resources: { callBudget: { maxPerSecond: 30 } },
   },
 
+  // ── SOVEREIGN DB ─────────────────────────────────────────────────────
+
+  {
+    "@context": CTX,
+    "@type": TYPE,
+    name: "sovereign-db",
+    version: "1.0.0",
+    requires: [
+      "graph/query", "graph/insert", "graph/sparql", "graph/cypher",
+      "graph/traverse", "graph/algorithms",
+    ],
+    permissions: ["graph/"],
+    morphisms: [
+      { method: "graph/query", description: "Query the hypergraph database" },
+      { method: "graph/cypher", description: "Execute Cypher queries" },
+    ],
+    fastPath: ["graph/query", "graph/cypher"],
+    autoStart: false,
+    ui: { component: "@/modules/data/knowledge-graph/components/sovereign-db-app/SovereignDBApp", lazy: true },
+    defaultSize: { w: 1200, h: 800 },
+    color: "hsl(160 65% 45%)",
+    category: "OBSERVE",
+    description: "Full-featured hypergraph database explorer with Cypher, SPARQL, algorithms, and visual browsing",
+    keywords: ["database", "db", "sovereign", "hypergraph", "cypher", "sparql", "query", "graph", "neo4j", "explorer"],
+    iconName: "Network",
+    resources: { callBudget: { maxPerSecond: 200 } },
+  },
+
   // ── DOWNLOAD ──────────────────────────────────────────────────────────
 
   {

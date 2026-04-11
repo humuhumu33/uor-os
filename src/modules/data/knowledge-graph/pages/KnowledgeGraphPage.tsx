@@ -16,7 +16,7 @@ import { CorrelationTool } from "@/modules/kernel/resolver/components/Correlatio
 import { EntitySearch } from "@/modules/kernel/resolver/components/entity-search/EntitySearch";
 
 const SovereignGraphExplorer = lazy(() => import("../components/SovereignGraphExplorer"));
-const DatabaseExplorer = lazy(() => import("../components/DatabaseExplorer"));
+const DatabaseExplorer = lazy(() => import("../components/sovereign-db-app/SovereignDBApp"));
 
 type ViewMode = "data" | "explorer" | "database";
 

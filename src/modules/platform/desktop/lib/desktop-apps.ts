@@ -80,6 +80,7 @@ const COMPONENT_MAP: Record<string, React.LazyExoticComponent<ComponentType<any>
   "@/modules/research/canonical-compliance/pages/ComplianceDashboardPage": lazy(() => import("@/modules/research/canonical-compliance/pages/ComplianceDashboardPage")),
   "@/modules/platform/app-builder/pages/AppBuilderPage": lazy(() => import("@/modules/platform/app-builder/pages/AppBuilderPage")),
   "@/modules/platform/landing/pages/DownloadPage": lazy(() => import("@/modules/platform/landing/pages/DownloadPage")),
+  "@/modules/data/knowledge-graph/components/sovereign-db-app/SovereignDBApp": lazy(() => import("@/modules/data/knowledge-graph/components/sovereign-db-app/SovereignDBApp")),
 };
 
 // ── Blueprint → DesktopApp Derivation ─────────────────────────────────────
