@@ -78,7 +78,7 @@ export function uorCanonicalIdFromCid(cid: CID): string {
   if (multihash.code !== 0x12) {
     throw new Error(`CID uses hash code ${multihash.code}, expected 0x12 (sha2-256)`);
   }
-  const hex = bytesToHex(multihash.digest);
+  const hex = toHex(multihash.digest);
   return `urn:uor:derivation:sha256:${hex}`;
 }
 

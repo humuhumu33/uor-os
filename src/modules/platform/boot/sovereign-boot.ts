@@ -172,7 +172,7 @@ async function computeRingTableHash(): Promise<string> {
   }
   // Hash the result table
   const bytes = new TextEncoder().encode(Array.from(results).join(","));
-  const digest = sha256(new Uint8Array(bytes));
+  const digest = sha256raw(new Uint8Array(bytes));
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
@@ -188,7 +188,7 @@ async function computeWasmBinaryHash(): Promise<string> {
     const response = await fetch("/wasm/uor_wasm_shim_bg.wasm");
     if (response.ok) {
       const bytes = new Uint8Array(await response.arrayBuffer());
-      const digest = sha256(bytes);
+      const digest = sha256raw(bytes);
       return Array.from(new Uint8Array(digest))
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");

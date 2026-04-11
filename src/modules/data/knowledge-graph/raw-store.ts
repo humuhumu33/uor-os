@@ -129,7 +129,7 @@ export const rawStore = {
     if (existing) return existing;
 
     // SHA-256 of raw bytes
-    const digest = sha256(new Uint8Array(params.buffer));
+    const digest = sha256raw(new Uint8Array(params.buffer));
     const rawHash = Array.from(new Uint8Array(digest))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");

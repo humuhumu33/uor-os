@@ -106,7 +106,7 @@ function encodeBase32Lower(bytes: Uint8Array): string {
  * Now synchronous internally using @noble/hashes.
  */
 export async function computeCid(canonicalBytes: Uint8Array): Promise<string> {
-  const digest = nobleSha256(canonicalBytes);
+  const digest = sha256raw(canonicalBytes);
 
   const multihash = new Uint8Array(2 + digest.length);
   multihash[0] = 0x12; // sha2-256
@@ -158,7 +158,7 @@ export async function buildIdentity(
   hashBytes: Uint8Array,
   canonicalBytes: Uint8Array
 ): Promise<UorCanonicalIdentity> {
-  const hexHash = nobleHex(hashBytes);
+  const hexHash = toHex(hashBytes);
   const cid = await computeCid(canonicalBytes);
   const glyph = encodeGlyph(hashBytes);
   const ipv6 = formatIpv6(hashBytes);
