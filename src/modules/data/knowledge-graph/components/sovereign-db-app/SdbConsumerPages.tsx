@@ -75,6 +75,22 @@ export function SdbConsumerPages({ db }: Props) {
 
   useEffect(() => { reload(); }, [reload]);
 
+  // Rebuild text index after reload
+  useEffect(() => {
+    if (items.length > 0) {
+      textIndexManager.drop("workspace-notes");
+      textIndexManager.create("workspace-notes", ["title", "content", "name"]);
+    }
+  }, [items]);
+
+  // Search results
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim() || !searchOpen) return [];
+    try {
+      return textIndexManager.search("workspace-notes", searchQuery, { limit: 15 });
+    } catch { return []; }
+  }, [searchQuery, searchOpen, items]);
+
   const selected = items.find(i => i.id === selectedId);
 
   // Select a note and load its content
