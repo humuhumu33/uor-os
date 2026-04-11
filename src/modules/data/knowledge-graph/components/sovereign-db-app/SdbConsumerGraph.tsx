@@ -288,6 +288,21 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
         ))}
       </div>
 
+      {/* Sign class color legend (3D only, when Atlas layer visible) */}
+      {!show2D && showAtlasLayer && (
+        <div className="absolute bottom-14 right-4 bg-card/85 backdrop-blur-sm rounded-lg border border-border px-3 py-2.5 z-10">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 font-medium">Sign Classes</div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            {SIGN_CLASS_LEGEND.map(sc => (
+              <span key={sc.name} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: sc.color }} />
+                {sc.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Detail panel */}
       {selected && (
         <div className="absolute top-16 left-4 w-72 bg-card/95 backdrop-blur-sm rounded-lg border border-border shadow-lg p-4 animate-scale-in z-30">
