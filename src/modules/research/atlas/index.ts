@@ -1,9 +1,13 @@
 /**
  * Atlas Module. Public API
  *
- * The Atlas of Resonance Classes and its categorical unfolding into
- * the five exceptional Lie groups: G₂ ⊂ F₄ ⊂ E₆ ⊂ E₇ ⊂ E₈.
+ * The Atlas Engine is the canonical entry point for the E8 computational
+ * substrate. From the 96-vertex seed, every application or model becomes
+ * a projection within the E8 space.
  */
+
+// ═══ Atlas Engine (primary API) ═══════════════════════════════════════════
+export { AtlasEngine, getAtlasEngine } from "./atlas-engine";
 
 // Atlas construction
 export { Atlas, getAtlas, ATLAS_VERTEX_COUNT, ATLAS_EDGE_COUNT_EXPECTED } from "./atlas";
@@ -13,6 +17,7 @@ export type { AtlasLabel, AtlasVertex } from "./atlas";
 export {
   getE8RootSystem, getE8Roots, norm2, inner, reflect,
   byteToE8Vector, isByteE8Root, findRootIndex,
+  simpleRoots, negateRoot, signClass, countSignClasses, signClassRepresentative,
 } from "./e8-roots";
 export type { E8RootSystem } from "./e8-roots";
 

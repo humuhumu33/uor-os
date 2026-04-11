@@ -97,6 +97,7 @@ export const hypergraph = {
     label: string,
     properties: Record<string, unknown> = {},
     weight = 1.0,
+    atlasVertex?: number,
   ): Promise<Hyperedge> {
     const id = await hyperedgeId(nodes, label);
     const he: Hyperedge = {
@@ -106,6 +107,7 @@ export const hypergraph = {
       arity: nodes.length,
       properties,
       weight,
+      atlasVertex,
       createdAt: Date.now(),
     };
 
