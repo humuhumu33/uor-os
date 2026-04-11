@@ -9,6 +9,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash,
+  IconGraph, IconSun, IconLayoutBoard, IconTerminal2,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
@@ -17,7 +18,10 @@ import { textIndexManager } from "../../text-index";
 import { SdbBlockEditor, type Block } from "./SdbBlockEditor";
 import { SdbBacklinks } from "./SdbBacklinks";
 import { SdbDailyNoteSection, useDailyNotes } from "./SdbDailyNote";
-import { SdbQuickFinder, type FinderItem } from "./SdbQuickFinder";
+import { SdbQuickFinder, type FinderItem, type CommandAction } from "./SdbQuickFinder";
+import { SdbLocalGraph } from "./SdbLocalGraph";
+import { SdbNoteProperties } from "./SdbNoteProperties";
+import { SdbOutline } from "./SdbOutline";
 
 interface Props {
   db: SovereignDB;
