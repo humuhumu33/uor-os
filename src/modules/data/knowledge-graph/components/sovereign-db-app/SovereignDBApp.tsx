@@ -148,26 +148,29 @@ const SovereignDBApp = () => {
   return (
     <div className="flex flex-col h-full w-full bg-background text-foreground overflow-hidden">
       {/* ── Header ───────────────────────────── */}
-      <header className="flex items-center justify-between h-11 px-5 border-b border-border bg-card shrink-0">
-        <button
-          onClick={() => setShowPulse(true)}
-          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          title="Back to HyperGraph Pulse"
-        >
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[14px] font-semibold tracking-tight">SovereignDB</span>
-          <span className="text-[12px] text-muted-foreground/50 font-mono ml-1">{db.name}</span>
-        </button>
+      {/* Header — minimal in consumer, full in developer */}
+      {mode === "developer" && (
+        <header className="flex items-center justify-between h-11 px-5 border-b border-border bg-card shrink-0">
+          <button
+            onClick={() => setShowPulse(true)}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            title="Back to HyperGraph Pulse"
+          >
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[14px] font-semibold tracking-tight">SovereignDB</span>
+            <span className="text-[12px] text-muted-foreground/50 font-mono ml-1">{db.name}</span>
+          </button>
 
-        <SdbModeSwitch
-          mode={mode}
-          view={view}
-          onModeChange={handleModeChange}
-          onViewChange={handleViewChange}
-        />
+          <SdbModeSwitch
+            mode={mode}
+            view={view}
+            onModeChange={handleModeChange}
+            onViewChange={handleViewChange}
+          />
 
-        <div className="w-32" />
-      </header>
+          <div className="w-32" />
+        </header>
+      )}
 
       {/* ── Body ─────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
