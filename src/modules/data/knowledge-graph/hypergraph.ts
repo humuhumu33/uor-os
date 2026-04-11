@@ -242,6 +242,11 @@ export const hypergraph = {
     edgeCache.clear();
   },
 
+  /** All cached hyperedges (for view-layer queries). */
+  cachedEdges(): Hyperedge[] {
+    return Array.from(edgeCache.values());
+  },
+
   // ── Internal ────────────────────────────────────────────────
 
   async _incidentFromGraph(nodeId: string): Promise<IncidenceResult> {
