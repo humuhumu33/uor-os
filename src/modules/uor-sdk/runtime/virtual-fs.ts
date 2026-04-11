@@ -3,52 +3,47 @@
  *
  * A POSIX-like filesystem backed entirely by the Sovereign Knowledge Graph
  * via GrafeoDB. Every file is a content-addressed KGNode. Every mutation
- * produces a new node (append-only, fully auditable) and a content-addressed
- * delta via the Delta Engine.
+ * produces a content-addressed delta via the Delta Engine, forming an
+ * append-only morphism chain.
  *
  * This replaces traditional filesystem calls inside the WASM sandbox:
  *   read(path)  → SPARQL query → KGNode → bytes
- *   write(path) → content-address → KGNode → grafeoStore.putNode()
+ *   write(path) → content-address → KGNode → grafeoStore.putNode() → delta
  *   stat(path)  → node metadata from graph
  *   readdir(/)  → graph query for children
  *
  * All operations are deterministic and reproducible from the graph.
+ * The full mutation history is replayable via the delta chain.
  *
  * @see sovereign-runtime.ts — boots the virtual OS
  * @see graph-image.ts — app encoding that populates this FS
+ * @see delta-engine.ts — content-addressed morphism chains
  */
 
 import { sha256hex } from "@/lib/crypto";
 import { grafeoStore } from "@/modules/data/knowledge-graph";
 import type { KGNode } from "@/modules/data/knowledge-graph/types";
 import type { GraphNode } from "./graph-image";
+import { DeltaChain } from "@/lib/delta-engine";
+import type { Delta } from "@/lib/delta-engine";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
 const UOR_NS = "https://uor.foundation/";
 const FS_GRAPH = (ns: string) => `${UOR_NS}graph/runtime/fs/${ns}`;
 const FS_NODE_TYPE = "sovereign:file";
-const FS_DIR_TYPE = "sovereign:directory";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 /** File stat result (POSIX-inspired). */
 export interface VirtualStat {
-  /** Canonical ID of the backing graph node */
   canonicalId: string;
-  /** File path */
   path: string;
-  /** Is this a directory? */
   isDirectory: boolean;
-  /** File size in bytes */
   size: number;
-  /** MIME type */
   mimeType: string;
-  /** Creation time (ISO) */
   createdAt: string;
-  /** Last modified (ISO) — always equals createdAt (append-only) */
   modifiedAt: string;
-  /** Content hash */
   contentHash: string;
 }
 
@@ -67,18 +62,22 @@ export interface FsMutation {
   newNodeId: string;
   timestamp: string;
   bytesDelta: number;
+  /** Delta ID from the delta engine */
+  deltaId?: string;
 }
 
 // ── Virtual Filesystem ─────────────────────────────────────────────────────
 
 /**
- * Graph-backed virtual filesystem.
+ * Graph-backed virtual filesystem with delta-producing mutations.
  *
  * All file data lives in GrafeoDB as KGNodes within a named graph.
  * Reads resolve via the in-memory index (populated from graph on boot).
- * Writes go to GrafeoDB first, then update the local index.
+ * Writes go to GrafeoDB first, produce a content-addressed delta,
+ * then update the local index.
  *
  * The in-memory index is a read cache — GrafeoDB is the source of truth.
+ * The delta chain is the audit trail — every mutation is a morphism.
  */
 export class VirtualFileSystem {
   /** Path → GraphNode read cache (populated from GrafeoDB) */
@@ -91,11 +90,14 @@ export class VirtualFileSystem {
   private readonly mountPoint: string;
   /** Graph namespace for this FS instance */
   private readonly namespace: string;
+  /** Content-addressed delta chain */
+  private readonly deltaChain: DeltaChain;
 
   constructor(mountPoint = "/app", namespace = "default") {
     this.mountPoint = mountPoint;
     this.namespace = namespace;
     this.directories.add(mountPoint);
+    this.deltaChain = new DeltaChain(`fs:${namespace}`);
   }
 
   // ── Initialization ──────────────────────────────────────────
@@ -132,12 +134,8 @@ export class VirtualFileSystem {
   read(path: string): Uint8Array {
     const fullPath = this.resolve(path);
     const node = this.nodeCache.get(fullPath);
-    if (!node) {
-      throw new Error(`ENOENT: no such file: ${path}`);
-    }
-    if (!node.contentBase64) {
-      throw new Error(`ENODATA: file has no content: ${path}`);
-    }
+    if (!node) throw new Error(`ENOENT: no such file: ${path}`);
+    if (!node.contentBase64) throw new Error(`ENODATA: file has no content: ${path}`);
     const binary = atob(node.contentBase64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
@@ -169,9 +167,7 @@ export class VirtualFileSystem {
     }
 
     const node = this.nodeCache.get(fullPath);
-    if (!node) {
-      throw new Error(`ENOENT: no such file or directory: ${path}`);
-    }
+    if (!node) throw new Error(`ENOENT: no such file or directory: ${path}`);
 
     return {
       canonicalId: node.canonicalId,
@@ -216,11 +212,11 @@ export class VirtualFileSystem {
     return entries.sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  // ── Write Operations ────────────────────────────────────────
+  // ── Write Operations (delta-producing) ─────────────────────
 
   /**
-   * Write file contents. Creates a new content-addressed node in GrafeoDB.
-   * The previous node is preserved (append-only graph).
+   * Write file contents. Creates a new content-addressed node in GrafeoDB
+   * and produces a content-addressed delta in the morphism chain.
    */
   async write(path: string, content: Uint8Array): Promise<GraphNode> {
     const fullPath = this.resolve(path);
@@ -249,6 +245,14 @@ export class VirtualFileSystem {
     const kgNode = this.graphNodeToKGNode(newNode, fullPath);
     await grafeoStore.putNode(kgNode);
 
+    // Produce content-addressed delta
+    const delta = await this.deltaChain.append(
+      "fs:write",
+      previousNode?.canonicalId ?? "",
+      contentHash,
+      { path: fullPath, byteLength: content.length, mimeType: newNode.mimeType },
+    );
+
     // Update local cache
     this.nodeCache.set(fullPath, newNode);
 
@@ -258,7 +262,7 @@ export class VirtualFileSystem {
       this.directories.add(parts.slice(0, i).join("/") || "/");
     }
 
-    // Record mutation
+    // Record mutation with delta ID
     const mutation: FsMutation = {
       operation: "write",
       path: fullPath,
@@ -266,6 +270,7 @@ export class VirtualFileSystem {
       newNodeId: newNode.canonicalId,
       timestamp: new Date().toISOString(),
       bytesDelta: content.length - (previousNode?.byteLength ?? 0),
+      deltaId: delta.deltaId,
     };
     this.mutations.push(mutation);
 
@@ -275,16 +280,22 @@ export class VirtualFileSystem {
     return newNode;
   }
 
-  /** Delete a file. Records the deletion in both graph and mutation log. */
+  /** Delete a file. Records deletion in graph, mutation log, and delta chain. */
   async delete(path: string): Promise<void> {
     const fullPath = this.resolve(path);
     const node = this.nodeCache.get(fullPath);
-    if (!node) {
-      throw new Error(`ENOENT: no such file: ${path}`);
-    }
+    if (!node) throw new Error(`ENOENT: no such file: ${path}`);
 
     // Remove from GrafeoDB
     await grafeoStore.removeNode(this.deriveIri(fullPath));
+
+    // Produce content-addressed delta
+    const delta = await this.deltaChain.append(
+      "fs:delete",
+      node.canonicalId,
+      "",
+      { path: fullPath },
+    );
 
     // Remove from cache
     this.nodeCache.delete(fullPath);
@@ -296,6 +307,7 @@ export class VirtualFileSystem {
       newNodeId: "",
       timestamp: new Date().toISOString(),
       bytesDelta: -node.byteLength,
+      deltaId: delta.deltaId,
     };
     this.mutations.push(mutation);
     await this.persistMutation(mutation);
@@ -303,33 +315,21 @@ export class VirtualFileSystem {
 
   // ── Introspection ───────────────────────────────────────────
 
-  /** Get all graph nodes in the filesystem. */
-  getAllNodes(): GraphNode[] {
-    return Array.from(this.nodeCache.values());
-  }
+  getAllNodes(): GraphNode[] { return Array.from(this.nodeCache.values()); }
+  getMutations(): FsMutation[] { return [...this.mutations]; }
+  getDeltaChain(): DeltaChain { return this.deltaChain; }
+  getDeltas(): Delta[] { return this.deltaChain.getDeltas(); }
 
-  /** Get the mutation audit log. */
-  getMutations(): FsMutation[] {
-    return [...this.mutations];
-  }
-
-  /** Total byte count of all files. */
   totalBytes(): number {
     let total = 0;
-    for (const node of this.nodeCache.values()) {
-      total += node.byteLength;
-    }
+    for (const node of this.nodeCache.values()) total += node.byteLength;
     return total;
   }
 
-  /** Total file count. */
-  fileCount(): number {
-    return this.nodeCache.size;
-  }
+  fileCount(): number { return this.nodeCache.size; }
 
   // ── Graph Mapping ───────────────────────────────────────────
 
-  /** Convert a GraphNode to a KGNode for GrafeoDB storage. */
   private graphNodeToKGNode(node: GraphNode, fullPath: string): KGNode {
     const now = Date.now();
     return {
@@ -354,7 +354,6 @@ export class VirtualFileSystem {
     };
   }
 
-  /** Persist a mutation record as a KGNode for auditability. */
   private async persistMutation(mutation: FsMutation): Promise<void> {
     const iri = `${UOR_NS}fs/mutation/${this.namespace}/${Date.now().toString(36)}`;
     const kgNode: KGNode = {
@@ -368,6 +367,7 @@ export class VirtualFileSystem {
         previousNodeId: mutation.previousNodeId,
         newNodeId: mutation.newNodeId,
         bytesDelta: mutation.bytesDelta,
+        deltaId: mutation.deltaId,
         fsNamespace: this.namespace,
         graphIri: FS_GRAPH(this.namespace),
       },
@@ -378,7 +378,6 @@ export class VirtualFileSystem {
     await grafeoStore.putNode(kgNode);
   }
 
-  /** Derive a deterministic IRI for a file path. */
   private deriveIri(fullPath: string): string {
     return `${UOR_NS}fs/${this.namespace}${fullPath}`;
   }
