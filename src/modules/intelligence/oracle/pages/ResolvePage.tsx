@@ -2049,15 +2049,7 @@ const SearchPage = () => {
             />
           )}
 
-          {/* ══════════════ LOADING STATE — Window opened with query ══════════════ */}
-          {!result && !aiMode && inWindow && windowInitialQuery && (
-            <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                <p className="text-sm text-muted-foreground/50 font-mono tracking-wide">Resolving…</p>
-              </div>
-            </div>
-          )}
+          {/* ══════════════ LOADING STATE — Window opened with query (no spinner, results appear in-place) ══════════════ */}
 
           {/* ══════════════ AI MODE — Oracle ══════════════ */}
           {!result && aiMode && (
