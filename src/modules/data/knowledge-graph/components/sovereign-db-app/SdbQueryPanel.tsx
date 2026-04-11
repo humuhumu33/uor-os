@@ -1,7 +1,9 @@
 import { useState, useCallback } from "react";
-import { IconPlayerPlay } from "@tabler/icons-react";
+import { IconPlayerPlay, IconHistory } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import { SdbResultGraph } from "./SdbResultGraph";
+import { SdbQueryHistory, pushHistory } from "./SdbQueryHistory";
+import type { HistoryEntry } from "./SdbQueryHistory";
 
 interface Props { db: SovereignDB }
 
@@ -14,8 +16,10 @@ export function SdbQueryPanel({ db }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [view, setView] = useState<ResultView>("table");
+  const [showHistory, setShowHistory] = useState(false);
 
   const run = useCallback(async () => {
+    if (!query.trim()) return;
     setError(null);
     setResult(null);
     const t0 = performance.now();
@@ -27,11 +31,19 @@ export function SdbQueryPanel({ db }: Props) {
         const r = await db.sparql(query);
         setResult(r);
       }
+      pushHistory({ query: query.trim(), lang });
     } catch (e) {
       setError(String(e));
+      pushHistory({ query: query.trim(), lang });
     }
     setElapsed(Math.round(performance.now() - t0));
   }, [db, query, lang]);
+
+  const handleHistorySelect = useCallback((entry: HistoryEntry) => {
+    setLang(entry.lang);
+    setQuery(entry.query);
+    setShowHistory(false);
+  }, []);
 
   const rows: Record<string, unknown>[] = Array.isArray(result)
     ? result
@@ -58,10 +70,24 @@ export function SdbQueryPanel({ db }: Props) {
             <IconPlayerPlay size={14} />
             Execute
           </button>
+          <button
+            onClick={() => setShowHistory(h => !h)}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md border text-[13px] transition-colors ${
+              showHistory
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+            }`}
+            title="Query history"
+          >
+            <IconHistory size={14} />
+          </button>
           {elapsed !== null && (
             <span className="text-xs text-muted-foreground ml-auto font-mono">{elapsed} ms</span>
           )}
         </div>
+        {showHistory && (
+          <SdbQueryHistory onSelect={handleHistorySelect} onClose={() => setShowHistory(false)} />
+        )}
         <textarea
           value={query}
           onChange={(e) => setQuery(e.target.value)}
