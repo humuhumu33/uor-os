@@ -18,6 +18,7 @@ import { SdbSchemaPanel } from "./SdbSchemaPanel";
 import { SdbAlgoPanel } from "./SdbAlgoPanel";
 import { SdbImportPanel } from "./SdbImportPanel";
 import { SdbStatsPanel } from "./SdbStatsPanel";
+import { SdbStoragePanel } from "./SdbStoragePanel";
 import { SdbStatusBar } from "./SdbStatusBar";
 
 const SovereignDBApp = () => {
@@ -90,6 +91,7 @@ const SovereignDBApp = () => {
               {section === "algo" && <SdbAlgoPanel db={db} />}
               {section === "import" && <SdbImportPanel db={db} />}
               {section === "stats" && <SdbStatsPanel db={db} />}
+              {section === "storage" && <SdbStoragePanel db={db} />}
             </>
           )}
         </main>
