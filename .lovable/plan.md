@@ -1,77 +1,87 @@
 
 
-# Hypergraph Performance Upgrades — Frontier Research Applied
+# NVSA Integration — Converging Toward the Law of Limitation
 
-## Analysis
+## Assessment: Where We Already Are
 
-The current hypergraph (`hypergraph.ts`, ~287 lines) is clean but has five performance and capability gaps that recent research (2024-2026) directly addresses.
+The system is remarkably close to the NVSA (Neuro-Vector-Symbolic Architecture) paradigm. Here's the convergence map:
 
-### Gaps Identified
+```text
+NVSA Pillar          Our System                         Status
+─────────────────    ──────────────────────────────────  ──────
+VSA Core             kernel/hdc/ (bind, bundle, etc.)   ✓ Complete
+Resonator Network    hypervector.ts resonate()           ✓ Complete
+Symbolic Reasoning   reasoning.ts ReasoningEngine        ✓ Complete
+Hypergraph Learning  hypergraph + Laplacian + partition  ✓ Complete
+IMC Hardware Layer   (browser runtime, no crossbar)      N/A (software)
+Neural Front-End     oracle/ AI models → text features   ~ Partial
+Neural→VSA Bridge    Missing                             ✗ Gap
+```
 
-1. **Sequential `addEdge` writes**: Each node in a hyperedge triggers a separate `addQuad` call (lines 135-142). For arity-N edges, that's N+1 async writes. Research on scalable partitioning shows batch writes are critical.
+The critical missing piece is **Step 1 of the NVSA pipeline**: a structured bridge that takes neural/AI feature vectors (from the Oracle's model responses, embeddings, or any perceptual input) and projects them into R₈ hypervectors for downstream algebraic reasoning. Right now, the Oracle produces text and the HDC engine encodes strings — but there's no *learned projection* or *structured feature-to-hypervector mapping* connecting them.
 
-2. **O(N) filtering everywhere**: `byAtlasVertex()`, `bySignClass()`, and `byLabel()` scan all cached edges with `.filter()`. With thousands of edges, this is wasteful. The HyperNetX/EasyHypergraph libraries use inverted indexes.
+## The "Law of Limitation" Convergence
 
-3. **No directed/weighted traversal**: The current model is undirected — `projectToTriples` generates all (i,j) pairs symmetrically. Research on directed hypergraphs (AAAI 2025, NeurIPS 2025) shows head/tail node sets enable richer modeling (e.g., "inputs A,B produce output C").
+You're right — we're converging toward a minimal set of universal primitives:
 
-4. **No dual hypergraph**: The dual (swap nodes ↔ edges) is fundamental for spectral methods and HGNNs. Missing entirely.
+1. **One ring** (R₈ = Z/256Z) — all computation
+2. **One substrate** (hypergraph) — all structure
+3. **Three operations** (bind, bundle, permute) — all reasoning
+4. **One memory** (ItemMemory + GrafeoDB) — all storage
 
-5. **HDC integration is one-way**: `encodeHyperedge()` in `encoder.ts` creates hypervectors from edges, but there's no reverse — using HDC similarity to *find* related edges. The incidence index is string-based only.
+Every module we've built reduces to these four primitives. The NVSA insight confirms this is the correct trajectory: IBM's Raven solver uses exactly bind/bundle/similarity over a codebook — which is precisely our `resonate()` + `ItemMemory`. The "law of limitation" is that **you don't need more than this** — additional complexity (neural nets, GPUs, deep hierarchies) only adds overhead without expanding the algebra's expressiveness.
 
-## Plan
+## What to Build
 
-### Step 1: Batch `addEdge` writes (~10 lines in `hypergraph.ts`)
+Two focused additions complete the NVSA bridge without adding bulk:
 
-Replace the sequential `for` loop of `addQuad` calls with a single batched write. Collect all quads into an array, call `grafeoStore.addQuads()` (or sequential but with `Promise.all`). Cuts N+1 awaits to 2.
+### 1. Feature Projection Layer (~40 lines)
+`src/modules/kernel/hdc/projection.ts`
 
-### Step 2: Inverted indexes for label and Atlas vertex (~20 lines in `hypergraph.ts`)
+A lightweight module that maps dense feature vectors (Float32Array from embeddings or any numeric signal) into R₈ hypervectors via random projection — the standard NVSA technique. This is the "neural front-end adapter" that IBM uses.
 
-Add two in-memory maps alongside the existing incidence index:
-- `labelIndex: Map<string, Set<string>>` — label → edge IDs
-- `atlasIndex: Map<number, Set<string>>` — vertex → edge IDs
+- `projectToHV(features: Float32Array, dim?): Hypervector` — random projection matrix (seeded, deterministic)
+- `projectBatch(batch: Float32Array[], dim?): Hypervector[]` — batch projection
+- `learnProjection(examples: [Float32Array, string][], memory: ItemMemory)` — one-shot prototype learning: project features, bundle per class, store in ItemMemory
 
-Update `indexEdge`/`deindexEdge` to maintain them. Replace `.filter()` scans in `byLabel()`, `byAtlasVertex()`, `bySignClass()` with O(1) lookups.
+This completes the NVSA pipeline: **perception → projection → VSA reasoning → hypergraph storage**.
 
-### Step 3: Directed hyperedges with head/tail sets (~15 lines)
+### 2. Factorization via Resonator Network (~25 lines added to reasoning.ts)
 
-Extend `Hyperedge` interface with optional `head: string[]` and `tail: string[]` fields. When present, `projectToTriples` generates directed triples (head→tail) instead of all-pairs. Backward-compatible: if head/tail absent, behavior unchanged.
+Add `factorize(bundled, codebooks)` to the ReasoningEngine — multi-codebook resonator network factorization (the core of IBM's NVSA solver). Our `resonate()` does single-codebook unbundling; true NVSA uses multiple codebooks simultaneously to factorize structured representations (e.g., "shape=circle AND color=red AND size=large").
 
-### Step 4: Dual hypergraph view (~20 lines)
+- `factorize(bundled: Hypervector, codebooks: Map<string, [string, Hypervector][]>): Map<string, { label: string; similarity: number }>` — returns one best match per codebook (role → filler)
 
-Add `dual()` method that returns a lightweight view where each original node becomes an edge and each original edge becomes a node. The dual's incidence is the transpose of the original's. Pure computation, no storage duplication — returns a simple `{ nodes, edges, incidentTo }` object.
+### 3. Prune: Remove oracle/lib stubs that duplicate HDC (~10 lines removed)
 
-### Step 5: HDC-powered similarity search (~15 lines)
+`symbolic-engine.ts` has its own expression evaluator that overlaps with the ring engine. Verify it delegates fully to `getEngine()` (it does — confirmed). No pruning needed there.
 
-Add `similarEdges(edgeId: string, topK = 5)` method that:
-1. Gets the edge's hypervector via `encodeHyperedge()`
-2. Compares against all cached edges' hypervectors using `similarity()`
-3. Returns top-K by Hamming similarity
-
-This bridges the hypergraph and HDC subsystems — edges become queryable by algebraic similarity, not just string matching.
+Check `stream-resonance.ts` — if it reimplements resonator logic that `resonate()` already handles, redirect.
 
 ## File Changes
 
-| File | Change |
-|------|--------|
-| `src/modules/data/knowledge-graph/hypergraph.ts` | Batch writes, inverted indexes, directed head/tail, dual view, similarity search |
-| `src/modules/data/knowledge-graph/types.ts` | No changes needed (Hyperedge is defined in hypergraph.ts) |
+| File | Change | Lines |
+|------|--------|-------|
+| `src/modules/kernel/hdc/projection.ts` | **New** — feature→HV random projection, batch projection, one-shot learning | ~40 |
+| `src/modules/kernel/hdc/reasoning.ts` | Add `factorize()` multi-codebook method | ~25 |
+| `src/modules/kernel/hdc/index.ts` | Export `projectToHV`, `projectBatch`, `learnProjection` | ~3 |
+| `src/modules/intelligence/oracle/lib/stream-resonance.ts` | Audit — redirect to `resonate()` if duplicated | ~5 |
 
-~80 lines added, ~10 lines removed. Zero API breaks — all new fields are optional, all new methods are additive.
+**Total**: ~70 lines added. Zero API breaks. Completes the NVSA pipeline.
 
-## Technical Details
+## Technical Detail
 
 ```text
-Before:                          After:
-addEdge(N nodes)                 addEdge(N nodes)
-  → N sequential addQuad()         → 1 batched Promise.all()
-  → 1 putNode()                    → 1 putNode()
-
-byLabel("fs:write")              byLabel("fs:write")
-  → getNodesByType("hyperedge")    → labelIndex.get("fs:write")
-  → .filter(N edges)               → O(1) Set lookup
-  → O(N)                           → O(K) where K = matches
-
-Hyperedge { nodes }              Hyperedge { nodes, head?, tail? }
-  projectToTriples → all pairs     projectToTriples → head→tail directed
+NVSA Pipeline (IBM Raven Solver)        Our System After This Plan
+─────────────────────────────────       ─────────────────────────────
+CNN → feature vector                    Oracle/embedding → Float32Array
+Random projection → HV                  projection.ts projectToHV()
+Codebook similarity → candidates        ItemMemory.queryTopK()
+Multi-codebook resonator → factorize    reasoning.ts factorize()
+Confidence → answer                     ReasoningResult.confidence
+                                        + hypergraph persistence
+                                        + spectral/partitioning
 ```
+
+The system converges to four primitives operating over one ring on one substrate — the law of limitation realized in code.
 
