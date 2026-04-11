@@ -1,10 +1,11 @@
 import { useState, useCallback } from "react";
 import { IconPlayerPlay } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
+import { SdbResultGraph } from "./SdbResultGraph";
 
 interface Props { db: SovereignDB }
 
-type ResultView = "table" | "json";
+type ResultView = "table" | "graph" | "json";
 
 export function SdbQueryPanel({ db }: Props) {
   const [lang, setLang] = useState<"cypher" | "sparql">("cypher");
@@ -88,7 +89,7 @@ export function SdbQueryPanel({ db }: Props) {
           <div className="flex flex-col h-full">
             {/* View toggle */}
             <div className="flex items-center gap-1 px-4 pt-3 pb-1">
-              {(["table", "json"] as const).map((v) => (
+              {(["table", "graph", "json"] as const).map((v) => (
                 <button
                   key={v}
                   onClick={() => setView(v)}
