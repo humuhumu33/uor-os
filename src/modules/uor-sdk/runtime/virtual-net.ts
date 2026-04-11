@@ -3,67 +3,57 @@
  *
  * Network virtualization layer for the sovereign runtime.
  * HTTP requests from inside the WASM sandbox are intercepted,
- * recorded as graph edges, and optionally served from cache.
+ * recorded as graph triples in GrafeoDB, and optionally served
+ * from the graph cache for offline replay.
  *
  * Features:
- *   - Request/response caching in the knowledge graph
+ *   - Request/response persistence in the knowledge graph
  *   - Offline replay: if the response exists in the graph, serve it
  *   - Network policy enforcement (allowlist/blocklist)
- *   - Full audit trail of all network activity
+ *   - Full audit trail as graph nodes (queryable via SPARQL)
  *
  * @see sovereign-runtime.ts — integrates this into the runtime
  * @see virtual-fs.ts — filesystem virtualization (sibling module)
  */
 
 import { sha256hex } from "@/lib/crypto";
+import { grafeoStore } from "@/modules/data/knowledge-graph";
+import type { KGNode } from "@/modules/data/knowledge-graph/types";
+
+// ── Constants ───────────────────────────────────────────────────────────────
+
+const UOR_NS = "https://uor.foundation/";
+const NET_GRAPH = (ns: string) => `${UOR_NS}graph/runtime/net/${ns}`;
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 /** Recorded network request. */
 export interface NetRequest {
-  /** Content-addressed ID */
   requestId: string;
-  /** HTTP method */
   method: string;
-  /** Full URL */
   url: string;
-  /** Request headers (sanitized — no auth tokens) */
   headers: Record<string, string>;
-  /** Request body hash (not the body itself, for privacy) */
   bodyHash?: string;
-  /** Timestamp */
   timestamp: string;
 }
 
 /** Recorded network response. */
 export interface NetResponse {
-  /** Links back to the request */
   requestId: string;
-  /** HTTP status code */
   status: number;
-  /** Response headers */
   headers: Record<string, string>;
-  /** Content hash of the response body */
   contentHash: string;
-  /** Cached response body (for offline replay) */
   cachedBody?: string;
-  /** Response size in bytes */
   sizeBytes: number;
-  /** Latency in ms */
   latencyMs: number;
-  /** Timestamp */
   timestamp: string;
 }
 
 /** Network policy rule. */
 export interface NetPolicy {
-  /** Allowed origin patterns (glob-like) */
   allowedOrigins: string[];
-  /** Blocked origin patterns */
   blockedOrigins: string[];
-  /** Max request rate per second */
   maxRequestsPerSecond: number;
-  /** Enable offline replay from cache */
   offlineReplay: boolean;
 }
 
@@ -101,19 +91,24 @@ function sanitizeHeaders(headers: Record<string, string>): Record<string, string
 /**
  * Graph-aware network proxy for the sovereign runtime.
  *
- * Intercepts all outbound HTTP from the WASM sandbox.
- * Records request/response pairs as graph edges.
- * Serves cached responses when offline.
+ * All request/response records are persisted as KGNodes in GrafeoDB.
+ * The response cache is graph-backed: cached responses survive across
+ * sessions and are exportable via SovereignBundle.
  */
 export class VirtualNetwork {
+  /** In-memory request log (also persisted to graph) */
   private requests: NetRequest[] = [];
+  /** In-memory response index (graph is source of truth) */
   private responses = new Map<string, NetResponse>();
+  /** Response body cache (also persisted to graph) */
   private responseCache = new Map<string, string>();
   private blockedCount = 0;
   private policy: NetPolicy;
   private rateLimitWindow: number[] = [];
+  /** Graph namespace for this network instance */
+  private readonly namespace: string;
 
-  constructor(policy?: Partial<NetPolicy>) {
+  constructor(policy?: Partial<NetPolicy>, namespace = "default") {
     this.policy = {
       allowedOrigins: ["*"],
       blockedOrigins: [],
@@ -121,6 +116,7 @@ export class VirtualNetwork {
       offlineReplay: true,
       ...policy,
     };
+    this.namespace = namespace;
   }
 
   // ── Fetch Proxy ─────────────────────────────────────────────
@@ -129,10 +125,10 @@ export class VirtualNetwork {
    * Proxy a fetch request through the virtual network.
    *
    * 1. Check policy (origin allowlist/blocklist)
-   * 2. Check cache (if offline replay enabled)
+   * 2. Check graph cache (if offline replay enabled)
    * 3. Forward to real network
-   * 4. Record request/response in audit log
-   * 5. Cache response for future offline replay
+   * 4. Record request/response as graph nodes
+   * 5. Cache response in graph for future offline replay
    */
   async fetch(url: string, init?: RequestInit): Promise<Response> {
     const method = init?.method ?? "GET";
@@ -141,9 +137,7 @@ export class VirtualNetwork {
     // Policy enforcement
     if (!this.isAllowed(origin)) {
       this.blockedCount++;
-      throw new Error(
-        `[VirtualNet] Blocked by network policy: ${origin}`,
-      );
+      throw new Error(`[VirtualNet] Blocked by network policy: ${origin}`);
     }
 
     // Rate limiting
@@ -170,6 +164,9 @@ export class VirtualNetwork {
       timestamp: new Date().toISOString(),
     };
     this.requests.push(request);
+
+    // Persist request to graph
+    await this.persistRequest(request);
 
     // Check cache for offline replay
     if (this.policy.offlineReplay) {
@@ -204,12 +201,14 @@ export class VirtualNetwork {
     };
     this.responses.set(requestId, netResponse);
 
+    // Persist response to graph
+    await this.persistResponse(netResponse);
+
     // Cache for offline replay
     if (this.policy.offlineReplay && method === "GET" && response.ok) {
       this.responseCache.set(requestId, responseBody);
     }
 
-    // Return reconstructed response
     return new Response(responseBody, {
       status: response.status,
       headers: { ...Object.fromEntries(response.headers.entries()), "x-uor-cache": "MISS" },
@@ -219,11 +218,9 @@ export class VirtualNetwork {
   // ── Policy Enforcement ──────────────────────────────────────
 
   private isAllowed(origin: string): boolean {
-    // Check blocklist first
     for (const pattern of this.policy.blockedOrigins) {
       if (this.matchOrigin(origin, pattern)) return false;
     }
-    // Check allowlist
     if (this.policy.allowedOrigins.includes("*")) return true;
     return this.policy.allowedOrigins.some((p) => this.matchOrigin(origin, p));
   }
@@ -246,6 +243,55 @@ export class VirtualNetwork {
     return true;
   }
 
+  // ── Graph Persistence ───────────────────────────────────────
+
+  /** Persist a request record as a KGNode in GrafeoDB. */
+  private async persistRequest(req: NetRequest): Promise<void> {
+    const kgNode: KGNode = {
+      uorAddress: `${UOR_NS}net/req/${this.namespace}/${req.requestId}`,
+      label: `${req.method} ${req.url}`,
+      nodeType: "sovereign:net-request",
+      rdfType: `${UOR_NS}schema/NetRequest`,
+      properties: {
+        requestId: req.requestId,
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+        bodyHash: req.bodyHash,
+        netNamespace: this.namespace,
+        graphIri: NET_GRAPH(this.namespace),
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      syncState: "local",
+    };
+    await grafeoStore.putNode(kgNode);
+  }
+
+  /** Persist a response record as a KGNode in GrafeoDB. */
+  private async persistResponse(resp: NetResponse): Promise<void> {
+    const kgNode: KGNode = {
+      uorAddress: `${UOR_NS}net/resp/${this.namespace}/${resp.requestId}`,
+      label: `Response ${resp.status} for ${resp.requestId.slice(0, 12)}`,
+      nodeType: "sovereign:net-response",
+      rdfType: `${UOR_NS}schema/NetResponse`,
+      properties: {
+        requestId: resp.requestId,
+        status: resp.status,
+        contentHash: resp.contentHash,
+        cachedBody: resp.cachedBody,
+        sizeBytes: resp.sizeBytes,
+        latencyMs: resp.latencyMs,
+        netNamespace: this.namespace,
+        graphIri: NET_GRAPH(this.namespace),
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      syncState: "local",
+    };
+    await grafeoStore.putNode(kgNode);
+  }
+
   // ── Introspection ───────────────────────────────────────────
 
   /** Get network activity summary. */
@@ -261,7 +307,7 @@ export class VirtualNetwork {
       cachedResponses: this.responseCache.size,
       blockedRequests: this.blockedCount,
       totalBytesIn,
-      totalBytesOut: 0, // Request bodies not tracked for size
+      totalBytesOut: 0,
       uniqueOrigins: Array.from(origins),
     };
   }

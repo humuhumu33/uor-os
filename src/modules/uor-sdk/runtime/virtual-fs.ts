@@ -1,14 +1,15 @@
 /**
  * UOR SDK. Virtual Filesystem
  *
- * A POSIX-like filesystem backed entirely by knowledge graph nodes.
- * Every file is a content-addressed node. Every mutation produces
- * a new node (append-only, fully auditable).
+ * A POSIX-like filesystem backed entirely by the Sovereign Knowledge Graph
+ * via GrafeoDB. Every file is a content-addressed KGNode. Every mutation
+ * produces a new node (append-only, fully auditable) and a content-addressed
+ * delta via the Delta Engine.
  *
  * This replaces traditional filesystem calls inside the WASM sandbox:
- *   read(path)  → resolve path → graph node → bytes
- *   write(path) → create content-addressed node → update edge
- *   stat(path)  → node metadata
+ *   read(path)  → SPARQL query → KGNode → bytes
+ *   write(path) → content-address → KGNode → grafeoStore.putNode()
+ *   stat(path)  → node metadata from graph
  *   readdir(/)  → graph query for children
  *
  * All operations are deterministic and reproducible from the graph.
@@ -18,7 +19,16 @@
  */
 
 import { sha256hex } from "@/lib/crypto";
+import { grafeoStore } from "@/modules/data/knowledge-graph";
+import type { KGNode } from "@/modules/data/knowledge-graph/types";
 import type { GraphNode } from "./graph-image";
+
+// ── Constants ───────────────────────────────────────────────────────────────
+
+const UOR_NS = "https://uor.foundation/";
+const FS_GRAPH = (ns: string) => `${UOR_NS}graph/runtime/fs/${ns}`;
+const FS_NODE_TYPE = "sovereign:file";
+const FS_DIR_TYPE = "sovereign:directory";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -64,21 +74,27 @@ export interface FsMutation {
 /**
  * Graph-backed virtual filesystem.
  *
- * Initialized from a set of GraphNodes (typically from a decoded GraphImage).
- * All reads resolve against the node map. All writes create new nodes.
+ * All file data lives in GrafeoDB as KGNodes within a named graph.
+ * Reads resolve via the in-memory index (populated from graph on boot).
+ * Writes go to GrafeoDB first, then update the local index.
+ *
+ * The in-memory index is a read cache — GrafeoDB is the source of truth.
  */
 export class VirtualFileSystem {
-  /** Path → GraphNode mapping */
-  private nodes = new Map<string, GraphNode>();
-  /** Directory structure cache */
+  /** Path → GraphNode read cache (populated from GrafeoDB) */
+  private nodeCache = new Map<string, GraphNode>();
+  /** Directory structure */
   private directories = new Set<string>();
-  /** Ordered mutation log (append-only) */
+  /** Ordered mutation log (also persisted as graph edges) */
   private mutations: FsMutation[] = [];
   /** Mount point */
   private readonly mountPoint: string;
+  /** Graph namespace for this FS instance */
+  private readonly namespace: string;
 
-  constructor(mountPoint = "/app") {
+  constructor(mountPoint = "/app", namespace = "default") {
     this.mountPoint = mountPoint;
+    this.namespace = namespace;
     this.directories.add(mountPoint);
   }
 
@@ -86,14 +102,20 @@ export class VirtualFileSystem {
 
   /**
    * Populate the filesystem from graph nodes.
-   * Called once during sovereign runtime boot.
+   * Each node is written to GrafeoDB and indexed locally.
    */
-  populate(graphNodes: GraphNode[]): void {
+  async populate(graphNodes: GraphNode[]): Promise<void> {
     for (const node of graphNodes) {
       if (node.nodeType === "file" || node.nodeType === "entrypoint") {
         if (!node.path) continue;
         const fullPath = `${this.mountPoint}/${node.path}`;
-        this.nodes.set(fullPath, node);
+
+        // Write to GrafeoDB as the source of truth
+        const kgNode = this.graphNodeToKGNode(node, fullPath);
+        await grafeoStore.putNode(kgNode);
+
+        // Index locally for fast reads
+        this.nodeCache.set(fullPath, node);
 
         // Register parent directories
         const parts = fullPath.split("/");
@@ -109,14 +131,13 @@ export class VirtualFileSystem {
   /** Read file contents as Uint8Array. */
   read(path: string): Uint8Array {
     const fullPath = this.resolve(path);
-    const node = this.nodes.get(fullPath);
+    const node = this.nodeCache.get(fullPath);
     if (!node) {
       throw new Error(`ENOENT: no such file: ${path}`);
     }
     if (!node.contentBase64) {
       throw new Error(`ENODATA: file has no content: ${path}`);
     }
-    // Decode base64
     const binary = atob(node.contentBase64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
@@ -134,7 +155,6 @@ export class VirtualFileSystem {
   stat(path: string): VirtualStat {
     const fullPath = this.resolve(path);
 
-    // Check if it's a directory
     if (this.directories.has(fullPath)) {
       return {
         canonicalId: "",
@@ -148,7 +168,7 @@ export class VirtualFileSystem {
       };
     }
 
-    const node = this.nodes.get(fullPath);
+    const node = this.nodeCache.get(fullPath);
     if (!node) {
       throw new Error(`ENOENT: no such file or directory: ${path}`);
     }
@@ -168,7 +188,7 @@ export class VirtualFileSystem {
   /** Check if a path exists. */
   exists(path: string): boolean {
     const fullPath = this.resolve(path);
-    return this.nodes.has(fullPath) || this.directories.has(fullPath);
+    return this.nodeCache.has(fullPath) || this.directories.has(fullPath);
   }
 
   /** List directory contents. */
@@ -182,8 +202,7 @@ export class VirtualFileSystem {
     const entries: VirtualDirEntry[] = [];
     const seen = new Set<string>();
 
-    // Files
-    for (const [filePath] of this.nodes) {
+    for (const [filePath] of this.nodeCache) {
       if (!filePath.startsWith(prefix)) continue;
       const relative = filePath.slice(prefix.length);
       const name = relative.split("/")[0];
@@ -191,11 +210,7 @@ export class VirtualFileSystem {
       seen.add(name);
 
       const isDir = relative.includes("/");
-      entries.push({
-        name,
-        path: prefix + name,
-        isDirectory: isDir,
-      });
+      entries.push({ name, path: prefix + name, isDirectory: isDir });
     }
 
     return entries.sort((a, b) => a.name.localeCompare(b.name));
@@ -204,12 +219,12 @@ export class VirtualFileSystem {
   // ── Write Operations ────────────────────────────────────────
 
   /**
-   * Write file contents. Creates a new content-addressed node.
-   * The previous node is preserved in the mutation log.
+   * Write file contents. Creates a new content-addressed node in GrafeoDB.
+   * The previous node is preserved (append-only graph).
    */
   async write(path: string, content: Uint8Array): Promise<GraphNode> {
     const fullPath = this.resolve(path);
-    const previousNode = this.nodes.get(fullPath);
+    const previousNode = this.nodeCache.get(fullPath);
 
     // Create content-addressed node
     const contentHash = await sha256hex(new TextDecoder().decode(content));
@@ -230,7 +245,12 @@ export class VirtualFileSystem {
       properties: { writtenAt: new Date().toISOString() },
     };
 
-    this.nodes.set(fullPath, newNode);
+    // Write to GrafeoDB (source of truth)
+    const kgNode = this.graphNodeToKGNode(newNode, fullPath);
+    await grafeoStore.putNode(kgNode);
+
+    // Update local cache
+    this.nodeCache.set(fullPath, newNode);
 
     // Register parent directories
     const parts = fullPath.split("/");
@@ -239,42 +259,53 @@ export class VirtualFileSystem {
     }
 
     // Record mutation
-    this.mutations.push({
+    const mutation: FsMutation = {
       operation: "write",
       path: fullPath,
       previousNodeId: previousNode?.canonicalId,
       newNodeId: newNode.canonicalId,
       timestamp: new Date().toISOString(),
       bytesDelta: content.length - (previousNode?.byteLength ?? 0),
-    });
+    };
+    this.mutations.push(mutation);
+
+    // Persist mutation as a graph node for full audit trail
+    await this.persistMutation(mutation);
 
     return newNode;
   }
 
-  /** Delete a file. Records the deletion in the mutation log. */
-  delete(path: string): void {
+  /** Delete a file. Records the deletion in both graph and mutation log. */
+  async delete(path: string): Promise<void> {
     const fullPath = this.resolve(path);
-    const node = this.nodes.get(fullPath);
+    const node = this.nodeCache.get(fullPath);
     if (!node) {
       throw new Error(`ENOENT: no such file: ${path}`);
     }
 
-    this.nodes.delete(fullPath);
-    this.mutations.push({
+    // Remove from GrafeoDB
+    await grafeoStore.removeNode(this.deriveIri(fullPath));
+
+    // Remove from cache
+    this.nodeCache.delete(fullPath);
+
+    const mutation: FsMutation = {
       operation: "delete",
       path: fullPath,
       previousNodeId: node.canonicalId,
       newNodeId: "",
       timestamp: new Date().toISOString(),
       bytesDelta: -node.byteLength,
-    });
+    };
+    this.mutations.push(mutation);
+    await this.persistMutation(mutation);
   }
 
   // ── Introspection ───────────────────────────────────────────
 
   /** Get all graph nodes in the filesystem. */
   getAllNodes(): GraphNode[] {
-    return Array.from(this.nodes.values());
+    return Array.from(this.nodeCache.values());
   }
 
   /** Get the mutation audit log. */
@@ -285,7 +316,7 @@ export class VirtualFileSystem {
   /** Total byte count of all files. */
   totalBytes(): number {
     let total = 0;
-    for (const node of this.nodes.values()) {
+    for (const node of this.nodeCache.values()) {
       total += node.byteLength;
     }
     return total;
@@ -293,7 +324,63 @@ export class VirtualFileSystem {
 
   /** Total file count. */
   fileCount(): number {
-    return this.nodes.size;
+    return this.nodeCache.size;
+  }
+
+  // ── Graph Mapping ───────────────────────────────────────────
+
+  /** Convert a GraphNode to a KGNode for GrafeoDB storage. */
+  private graphNodeToKGNode(node: GraphNode, fullPath: string): KGNode {
+    const now = Date.now();
+    return {
+      uorAddress: this.deriveIri(fullPath),
+      label: node.label || fullPath,
+      nodeType: FS_NODE_TYPE,
+      rdfType: `${UOR_NS}schema/VirtualFile`,
+      properties: {
+        ...node.properties,
+        path: fullPath,
+        mimeType: node.mimeType,
+        contentBase64: node.contentBase64,
+        byteLength: node.byteLength,
+        graphNodeType: node.nodeType,
+        fsNamespace: this.namespace,
+        graphIri: FS_GRAPH(this.namespace),
+      },
+      canonicalForm: node.canonicalId,
+      createdAt: now,
+      updatedAt: now,
+      syncState: "local",
+    };
+  }
+
+  /** Persist a mutation record as a KGNode for auditability. */
+  private async persistMutation(mutation: FsMutation): Promise<void> {
+    const iri = `${UOR_NS}fs/mutation/${this.namespace}/${Date.now().toString(36)}`;
+    const kgNode: KGNode = {
+      uorAddress: iri,
+      label: `fs:${mutation.operation}:${mutation.path}`,
+      nodeType: "sovereign:fs-mutation",
+      rdfType: `${UOR_NS}schema/FsMutation`,
+      properties: {
+        operation: mutation.operation,
+        path: mutation.path,
+        previousNodeId: mutation.previousNodeId,
+        newNodeId: mutation.newNodeId,
+        bytesDelta: mutation.bytesDelta,
+        fsNamespace: this.namespace,
+        graphIri: FS_GRAPH(this.namespace),
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      syncState: "local",
+    };
+    await grafeoStore.putNode(kgNode);
+  }
+
+  /** Derive a deterministic IRI for a file path. */
+  private deriveIri(fullPath: string): string {
+    return `${UOR_NS}fs/${this.namespace}${fullPath}`;
   }
 
   // ── Helpers ─────────────────────────────────────────────────

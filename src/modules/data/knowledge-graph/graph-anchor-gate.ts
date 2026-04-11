@@ -39,6 +39,7 @@ const REQUIRED_ANCHORED_MODULES = [
   "sovereign-vault",
   "takeout",
   "community",
+  "sovereign-runtime",
 ] as const;
 
 // ── Exempt Modules (algebraic primitives, infrastructure) ────────────────────

@@ -1,98 +1,174 @@
 /**
  * UOR SDK. Graph-Native Registry
  *
- * Content-addressed push/pull for graph images. Replaces the
- * layer-based registry with structural deduplication: shared
- * nodes across apps are stored once.
+ * Content-addressed push/pull for graph images, persisted in GrafeoDB.
+ * Replaces volatile in-memory Maps with graph-backed storage:
+ * blobs, manifests, and tags are all KGNodes in a named graph.
  *
  * Storage model:
- *   - Each GraphNode is stored by its canonical ID
- *   - GraphImage metadata (edges, seal) stored as a manifest blob
- *   - Pull resolves manifest → fetches only missing nodes
+ *   - Each GraphNode is stored by its canonical ID as a KGNode
+ *   - GraphImage manifests stored as KGNodes with full metadata
+ *   - Tags stored as KGNodes linking tag → image canonical ID
  *   - Deduplication is automatic: same file in 100 apps = 1 node
- *
- * Local cache: IndexedDB via GrafeoDB (already in-process)
- * Remote: Edge CDN or IPFS (pluggable via RegistryBackend)
+ *   - All data survives across sessions (IndexedDB via GrafeoDB)
+ *   - Everything is queryable via SPARQL and exportable via SovereignBundle
  *
  * @see graph-image.ts — encoding/decoding
  * @see registry-ship.ts — classic layer-based registry (backward compat)
  */
 
-import { sha256hex } from "@/lib/crypto";
+import { grafeoStore } from "@/modules/data/knowledge-graph";
+import type { KGNode } from "@/modules/data/knowledge-graph/types";
 import type { GraphImage, GraphNode, GraphDelta } from "./graph-image";
+
+// ── Constants ───────────────────────────────────────────────────────────────
+
+const UOR_NS = "https://uor.foundation/";
+const REG_GRAPH = `${UOR_NS}graph/registry`;
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 /** Receipt returned after pushing a graph image. */
 export interface GraphPushReceipt {
-  /** Canonical ID of the pushed image */
   imageCanonicalId: string;
-  /** Number of new nodes stored (vs already-present) */
   newNodes: number;
-  /** Number of deduplicated (already-present) nodes */
   deduplicatedNodes: number;
-  /** Total bytes transferred */
   bytesTransferred: number;
-  /** Registry URL */
   registryUrl: string;
-  /** Tags applied */
   tags: string[];
-  /** Push timestamp */
   pushedAt: string;
 }
 
 /** Result of pulling a graph image. */
 export interface GraphPullResult {
-  /** The rehydrated graph image */
   image: GraphImage;
-  /** Number of nodes fetched from remote */
   fetchedNodes: number;
-  /** Number of nodes served from local cache */
   cachedNodes: number;
-  /** Pull duration in ms */
   durationMs: number;
 }
 
 /** Pluggable backend for remote storage. */
 export interface RegistryBackend {
-  /** Store a blob by content address */
   putBlob(key: string, data: Uint8Array): Promise<void>;
-  /** Retrieve a blob by content address (null if missing) */
   getBlob(key: string): Promise<Uint8Array | null>;
-  /** Check if a blob exists */
   hasBlob(key: string): Promise<boolean>;
-  /** Store image manifest */
   putManifest(imageId: string, manifest: string): Promise<void>;
-  /** Retrieve image manifest */
   getManifest(imageId: string): Promise<string | null>;
-  /** Resolve a tag to an image canonical ID */
   resolveTag(tag: string): Promise<string | null>;
-  /** Apply a tag to an image */
   applyTag(tag: string, imageId: string): Promise<void>;
 }
 
-// ── In-Memory Backend (default) ─────────────────────────────────────────────
+// ── GrafeoDB-Backed Registry Backend ────────────────────────────────────────
 
-const memoryBlobs = new Map<string, Uint8Array>();
-const memoryManifests = new Map<string, string>();
-const memoryTags = new Map<string, string>();
+/**
+ * Default registry backend that persists everything in GrafeoDB.
+ * Blobs, manifests, and tags are all KGNodes in the registry graph.
+ */
+const grafeoBackend: RegistryBackend = {
+  async putBlob(key, data) {
+    const kgNode: KGNode = {
+      uorAddress: `${UOR_NS}registry/blob/${key}`,
+      label: `blob:${key.slice(0, 16)}`,
+      nodeType: "sovereign:registry-blob",
+      rdfType: `${UOR_NS}schema/RegistryBlob`,
+      properties: {
+        blobKey: key,
+        dataBase64: uint8ToBase64(data),
+        sizeBytes: data.length,
+        graphIri: REG_GRAPH,
+      },
+      canonicalForm: key,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      syncState: "local",
+    };
+    await grafeoStore.putNode(kgNode);
+  },
 
-/** Default in-memory registry backend. Production would use edge CDN/IPFS. */
-export const memoryBackend: RegistryBackend = {
-  async putBlob(key, data) { memoryBlobs.set(key, data); },
-  async getBlob(key) { return memoryBlobs.get(key) ?? null; },
-  async hasBlob(key) { return memoryBlobs.has(key); },
-  async putManifest(id, manifest) { memoryManifests.set(id, manifest); },
-  async getManifest(id) { return memoryManifests.get(id) ?? null; },
-  async resolveTag(tag) { return memoryTags.get(tag) ?? null; },
-  async applyTag(tag, id) { memoryTags.set(tag, id); },
+  async getBlob(key) {
+    const node = await grafeoStore.getNode(`${UOR_NS}registry/blob/${key}`);
+    if (!node) return null;
+    const b64 = node.properties.dataBase64 as string | undefined;
+    if (!b64) return null;
+    return base64ToUint8(b64);
+  },
+
+  async hasBlob(key) {
+    const node = await grafeoStore.getNode(`${UOR_NS}registry/blob/${key}`);
+    return node !== undefined;
+  },
+
+  async putManifest(id, manifest) {
+    const kgNode: KGNode = {
+      uorAddress: `${UOR_NS}registry/manifest/${id}`,
+      label: `manifest:${id.slice(0, 16)}`,
+      nodeType: "sovereign:registry-manifest",
+      rdfType: `${UOR_NS}schema/RegistryManifest`,
+      properties: {
+        imageId: id,
+        manifestJson: manifest,
+        graphIri: REG_GRAPH,
+      },
+      canonicalForm: id,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      syncState: "local",
+    };
+    await grafeoStore.putNode(kgNode);
+  },
+
+  async getManifest(id) {
+    const node = await grafeoStore.getNode(`${UOR_NS}registry/manifest/${id}`);
+    if (!node) return null;
+    return (node.properties.manifestJson as string) ?? null;
+  },
+
+  async resolveTag(tag) {
+    const node = await grafeoStore.getNode(`${UOR_NS}registry/tag/${encodeURIComponent(tag)}`);
+    if (!node) return null;
+    return (node.properties.imageId as string) ?? null;
+  },
+
+  async applyTag(tag, id) {
+    const kgNode: KGNode = {
+      uorAddress: `${UOR_NS}registry/tag/${encodeURIComponent(tag)}`,
+      label: `tag:${tag}`,
+      nodeType: "sovereign:registry-tag",
+      rdfType: `${UOR_NS}schema/RegistryTag`,
+      properties: {
+        tag,
+        imageId: id,
+        graphIri: REG_GRAPH,
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      syncState: "local",
+    };
+    await grafeoStore.putNode(kgNode);
+  },
 };
+
+// ── Base64 Helpers ──────────────────────────────────────────────────────────
+
+function uint8ToBase64(data: Uint8Array): string {
+  const binary = Array.from(data, (b) => String.fromCharCode(b)).join("");
+  return btoa(binary);
+}
+
+function base64ToUint8(b64: string): Uint8Array {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
 
 // ── Registry State ──────────────────────────────────────────────────────────
 
-let activeBackend: RegistryBackend = memoryBackend;
+let activeBackend: RegistryBackend = grafeoBackend;
 
-/** Configure the registry backend. */
+/** Configure the registry backend. Default is GrafeoDB-backed. */
 export function setRegistryBackend(backend: RegistryBackend): void {
   activeBackend = backend;
 }
@@ -101,10 +177,7 @@ export function setRegistryBackend(backend: RegistryBackend): void {
 
 /**
  * Push a graph image to the registry.
- *
- * Only new nodes are stored — nodes with the same canonical ID
- * are deduplicated automatically. This is the structural advantage:
- * a shared React library used by 50 apps is stored exactly once.
+ * Nodes with the same canonical ID are deduplicated automatically.
  */
 export async function pushGraph(
   image: GraphImage,
@@ -114,7 +187,6 @@ export async function pushGraph(
   let deduplicatedNodes = 0;
   let bytesTransferred = 0;
 
-  // Store individual nodes by canonical ID
   for (const node of image.nodes) {
     const exists = await activeBackend.hasBlob(node.canonicalId);
     if (exists) {
@@ -128,7 +200,6 @@ export async function pushGraph(
     newNodes++;
   }
 
-  // Store image manifest (edges + metadata, no node content)
   const manifest = JSON.stringify({
     graphIri: image.graphIri,
     canonicalId: image.canonicalId,
@@ -143,7 +214,6 @@ export async function pushGraph(
   });
   await activeBackend.putManifest(image.canonicalId, manifest);
 
-  // Apply tags
   const appliedTags = tags ?? [
     `${image.appName}:${image.version}`,
     `${image.appName}:latest`,
@@ -167,14 +237,10 @@ export async function pushGraph(
 
 /**
  * Pull a graph image from the registry by canonical ID or tag.
- *
- * Resolves the manifest, then fetches each node by its canonical ID.
- * Nodes already in local cache are not re-fetched.
  */
 export async function pullGraph(ref: string): Promise<GraphPullResult> {
   const startTime = performance.now();
 
-  // Resolve tag to canonical ID if needed
   let imageId = ref;
   if (!ref.startsWith("uor:") && ref.includes(":")) {
     const resolved = await activeBackend.resolveTag(ref);
@@ -184,7 +250,6 @@ export async function pullGraph(ref: string): Promise<GraphPullResult> {
     imageId = resolved;
   }
 
-  // Fetch manifest
   const manifestJson = await activeBackend.getManifest(imageId);
   if (!manifestJson) {
     throw new Error(`[GraphRegistry] Image not found: ${imageId}`);
@@ -203,9 +268,8 @@ export async function pullGraph(ref: string): Promise<GraphPullResult> {
     tech: string[];
   };
 
-  // Fetch nodes
   let fetchedNodes = 0;
-  let cachedNodes = 0;
+  const cachedNodes = 0;
   const nodes: GraphNode[] = [];
 
   for (const nodeId of manifest.nodeIds) {
@@ -243,7 +307,6 @@ export async function pullGraph(ref: string): Promise<GraphPullResult> {
 
 /**
  * Push only the delta between two graph images.
- * Transfers only added nodes — removed nodes are tracked in the manifest.
  */
 export async function pushGraphDelta(
   delta: GraphDelta,
@@ -252,7 +315,6 @@ export async function pushGraphDelta(
 ): Promise<GraphPushReceipt> {
   let bytesTransferred = 0;
 
-  // Store only new nodes
   for (const node of delta.addedNodes) {
     const exists = await activeBackend.hasBlob(node.canonicalId);
     if (exists) continue;
@@ -262,7 +324,6 @@ export async function pushGraphDelta(
     bytesTransferred += nodeData.length;
   }
 
-  // Store full manifest for the target image
   const manifest = JSON.stringify({
     graphIri: targetImage.graphIri,
     canonicalId: targetImage.canonicalId,
@@ -298,14 +359,13 @@ export async function pushGraphDelta(
 
 // ── Utilities ───────────────────────────────────────────────────────────────
 
-/** List all tags in the registry. */
+/** List all tags in the registry (queries GrafeoDB). */
 export async function listTags(): Promise<Array<{ tag: string; imageId: string }>> {
-  // Memory backend only — production backends would query the index
-  const entries: Array<{ tag: string; imageId: string }> = [];
-  for (const [tag, imageId] of memoryTags.entries()) {
-    entries.push({ tag, imageId });
-  }
-  return entries;
+  const nodes = await grafeoStore.getNodesByType("sovereign:registry-tag");
+  return nodes.map((n) => ({
+    tag: (n.properties.tag as string) ?? n.label,
+    imageId: (n.properties.imageId as string) ?? "",
+  }));
 }
 
 /** Check if an image exists in the registry. */

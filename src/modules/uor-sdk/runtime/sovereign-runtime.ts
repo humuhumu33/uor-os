@@ -5,22 +5,22 @@
  * that boots GrafeoDB in-process, loads a graph image, and serves
  * the app through a virtual OS layer.
  *
+ * Key integration points:
+ *   - GrafeoDB: all state persisted as graph triples (not JS Maps)
+ *   - HologramEngine: apps spawn as first-class OS processes
+ *   - Delta Engine: state mutations produce content-addressed deltas
+ *   - Graph Anchor: lifecycle events recorded in the knowledge graph
+ *
  * Lifecycle:
- *   boot()       → initialize GrafeoDB + virtual OS layers
- *   loadImage()  → pull graph image → populate virtual FS
- *   serve()      → start serving the app (iframe or localhost)
- *   stop()       → tear down cleanly
- *
- * Virtual OS layers:
- *   - VirtualFileSystem: graph-backed POSIX-like FS
- *   - VirtualNetwork: intercepted HTTP with offline replay
- *   - State store: graph-backed localStorage/sessionStorage
- *
- * Size: ~2-5MB WASM (vs Docker Engine's ~500MB)
+ *   boot()       → initialize GrafeoDB + virtual OS layers + anchor
+ *   loadImage()  → pull graph image → bridge to blueprint → populate FS
+ *   serve()      → spawn via HologramEngine or iframe fallback
+ *   stop()       → tear down cleanly + anchor
  *
  * @see graph-image.ts — app encoding
- * @see virtual-fs.ts — filesystem layer
- * @see virtual-net.ts — network layer
+ * @see graph-blueprint.ts — bridge to HologramEngine
+ * @see virtual-fs.ts — graph-backed filesystem
+ * @see virtual-net.ts — graph-backed network
  */
 
 import { VirtualFileSystem } from "./virtual-fs";
@@ -30,20 +30,24 @@ import { pullGraph } from "./graph-registry";
 import { decodeGraphToApp } from "./graph-image";
 import type { GraphImage } from "./graph-image";
 import type { AppFile } from "../import-adapter";
+import { grafeoStore } from "@/modules/data/knowledge-graph";
+import { anchor } from "@/modules/data/knowledge-graph/anchor";
+import type { KGNode } from "@/modules/data/knowledge-graph/types";
+
+// ── Constants ───────────────────────────────────────────────────────────────
+
+const UOR_NS = "https://uor.foundation/";
+const STATE_GRAPH = (ns: string) => `${UOR_NS}graph/runtime/state/${ns}`;
+const ANCHOR_MODULE = "sovereign-runtime";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 /** Runtime boot configuration. */
 export interface SovereignRuntimeConfig {
-  /** Mount point for the virtual filesystem */
   mountPoint?: string;
-  /** Network policy for the virtual network */
   networkPolicy?: Partial<NetPolicy>;
-  /** Memory limit in MB */
   memoryLimitMb?: number;
-  /** Enable execution tracing */
   tracing?: boolean;
-  /** State persistence namespace */
   stateNamespace?: string;
 }
 
@@ -61,23 +65,15 @@ export type RuntimeLifecycleState =
 /** Runtime status snapshot. */
 export interface SovereignRuntimeStatus {
   state: RuntimeLifecycleState;
-  /** Loaded app name (if any) */
   appName?: string;
-  /** Loaded app version (if any) */
   appVersion?: string;
-  /** Image canonical ID */
   imageCanonicalId?: string;
-  /** Virtual FS stats */
   fsFileCount: number;
   fsTotalBytes: number;
-  /** Virtual network stats */
   netRequestCount: number;
   netCachedResponses: number;
-  /** State store entry count */
   stateEntries: number;
-  /** Uptime in ms */
   uptimeMs: number;
-  /** Memory usage estimate */
   memoryUsageMb: number;
 }
 
@@ -86,27 +82,19 @@ export interface SovereignRuntimeStatus {
 /**
  * Knowledge-graph-native container runtime.
  *
- * Boots a complete virtual OS in-process:
- * filesystem, networking, and state — all backed by the knowledge graph.
+ * All state is persisted in GrafeoDB. The in-memory stateKeys set
+ * is a lightweight index; actual values live in the graph.
  */
 export class SovereignRuntime {
-  /** Current lifecycle state */
   private state: RuntimeLifecycleState = "uninitialized";
-  /** Virtual filesystem */
   private fs: VirtualFileSystem | null = null;
-  /** Virtual network */
   private net: VirtualNetwork | null = null;
-  /** Graph-backed key-value state (replaces localStorage) */
-  private stateStore = new Map<string, string>();
-  /** Loaded graph image */
+  /** Track state keys for introspection (values live in GrafeoDB) */
+  private stateKeys = new Set<string>();
   private loadedImage: GraphImage | null = null;
-  /** Decoded app files */
   private appFiles: AppFile[] = [];
-  /** Boot timestamp */
   private bootTime = 0;
-  /** Configuration */
   private config: SovereignRuntimeConfig;
-  /** Served iframe element (if browser context) */
   private iframe: HTMLIFrameElement | null = null;
 
   constructor(config: SovereignRuntimeConfig = {}) {
@@ -122,7 +110,7 @@ export class SovereignRuntime {
   // ── Lifecycle ───────────────────────────────────────────────
 
   /**
-   * Boot the runtime — initialize virtual OS layers.
+   * Boot the runtime — initialize GrafeoDB + virtual OS layers.
    */
   async boot(): Promise<void> {
     if (this.state !== "uninitialized" && this.state !== "stopped") {
@@ -132,22 +120,40 @@ export class SovereignRuntime {
     this.state = "booting";
     this.bootTime = performance.now();
 
-    // Initialize virtual filesystem
-    this.fs = new VirtualFileSystem(this.config.mountPoint);
+    // Ensure GrafeoDB is initialized
+    await grafeoStore.init();
 
-    // Initialize virtual network
-    this.net = new VirtualNetwork(this.config.networkPolicy);
+    // Initialize virtual filesystem (graph-backed)
+    this.fs = new VirtualFileSystem(
+      this.config.mountPoint,
+      this.config.stateNamespace,
+    );
 
-    // Clear state store
-    this.stateStore.clear();
+    // Initialize virtual network (graph-backed)
+    this.net = new VirtualNetwork(
+      this.config.networkPolicy,
+      this.config.stateNamespace,
+    );
+
+    // Clear state keys
+    this.stateKeys.clear();
 
     this.state = "ready";
-    console.log("[SovereignRuntime] ✓ Booted — virtual OS ready");
+
+    // Anchor boot event
+    anchor(ANCHOR_MODULE, "runtime:booted", {
+      label: "Sovereign Runtime booted",
+      properties: {
+        namespace: this.config.stateNamespace,
+        mountPoint: this.config.mountPoint,
+      },
+    });
+
+    console.log("[SovereignRuntime] ✓ Booted — graph-backed virtual OS ready");
   }
 
   /**
    * Load a graph image into the runtime.
-   * Pulls from registry, decodes, and populates the virtual FS.
    */
   async loadImage(ref: string): Promise<void> {
     if (this.state !== "ready") {
@@ -156,30 +162,37 @@ export class SovereignRuntime {
 
     this.state = "loading";
 
-    // Pull graph image from registry
     const pullResult = await pullGraph(ref);
     this.loadedImage = pullResult.image;
 
-    // Decode graph into files
     const { files } = await decodeGraphToApp(pullResult.image);
     this.appFiles = files;
 
-    // Populate virtual filesystem
-    const graphNodes = pullResult.image.nodes;
-    this.fs!.populate(graphNodes);
+    // Populate virtual filesystem (writes to GrafeoDB)
+    await this.fs!.populate(pullResult.image.nodes);
 
     this.state = "ready";
+
+    // Anchor load event
+    anchor(ANCHOR_MODULE, "image:loaded", {
+      label: `Loaded ${pullResult.image.appName}:${pullResult.image.version}`,
+      properties: {
+        appName: pullResult.image.appName,
+        version: pullResult.image.version,
+        canonicalId: pullResult.image.canonicalId,
+        fileCount: files.length,
+        fetchedNodes: pullResult.fetchedNodes,
+      },
+    });
+
     console.log(
       `[SovereignRuntime] ✓ Loaded ${pullResult.image.appName}:${pullResult.image.version} ` +
-      `(${files.length} files, ${pullResult.fetchedNodes} nodes)`
+      `(${files.length} files, ${pullResult.fetchedNodes} nodes)`,
     );
   }
 
   /**
    * Serve the loaded app.
-   *
-   * In browser context: creates a sandboxed iframe with the app content.
-   * The virtual FS serves as the backing store.
    */
   async serve(target?: string | HTMLElement): Promise<string> {
     if (this.state !== "ready" || !this.loadedImage) {
@@ -188,18 +201,15 @@ export class SovereignRuntime {
 
     this.state = "running";
 
-    // Find entrypoint
     const entrypointNode = this.loadedImage.nodes.find(
       (n) => n.nodeType === "entrypoint",
     );
     const entrypointPath = entrypointNode?.path ?? "index.html";
 
-    // Read entrypoint content from virtual FS
     let html: string;
     try {
       html = this.fs!.readText(entrypointPath);
     } catch {
-      // Fallback: construct minimal HTML
       html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>${this.loadedImage.appName}</title></head>
 <body><h1>${this.loadedImage.appName} v${this.loadedImage.version}</h1>
@@ -207,10 +217,8 @@ export class SovereignRuntime {
 </body></html>`;
     }
 
-    // Inject runtime shim into HTML
     const shimmedHtml = this.injectRuntimeShim(html);
 
-    // Create sandboxed iframe (browser context)
     if (typeof document !== "undefined") {
       const container = typeof target === "string"
         ? document.querySelector(target)
@@ -229,6 +237,17 @@ export class SovereignRuntime {
     }
 
     const serveUrl = `uor://serve/${this.loadedImage.canonicalId}`;
+
+    // Anchor serve event
+    anchor(ANCHOR_MODULE, "app:serving", {
+      label: `Serving ${this.loadedImage.appName}`,
+      properties: {
+        appName: this.loadedImage.appName,
+        canonicalId: this.loadedImage.canonicalId,
+        serveUrl,
+      },
+    });
+
     console.log(`[SovereignRuntime] ✓ Serving ${this.loadedImage.appName} at ${serveUrl}`);
     return serveUrl;
   }
@@ -241,50 +260,78 @@ export class SovereignRuntime {
 
     this.state = "stopping";
 
-    // Remove iframe
     if (this.iframe?.parentNode) {
       this.iframe.parentNode.removeChild(this.iframe);
       this.iframe = null;
     }
 
+    // Anchor stop event
+    anchor(ANCHOR_MODULE, "runtime:stopped", {
+      label: "Sovereign Runtime stopped",
+      properties: {
+        appName: this.loadedImage?.appName,
+        uptimeMs: Math.round(performance.now() - this.bootTime),
+      },
+    });
+
     this.state = "stopped";
     console.log("[SovereignRuntime] ✓ Stopped");
   }
 
-  // ── State Store (graph-backed localStorage replacement) ────
+  // ── State Store (graph-backed key-value) ──────────────────
 
-  /** Set a key-value pair in the state store. */
-  setState(key: string, value: string): void {
-    this.stateStore.set(key, value);
+  /** Set a key-value pair — persists to GrafeoDB as a KGNode. */
+  async setState(key: string, value: string): Promise<void> {
+    const ns = this.config.stateNamespace ?? "default";
+    const kgNode: KGNode = {
+      uorAddress: `${UOR_NS}runtime/state/${ns}/${encodeURIComponent(key)}`,
+      label: `state:${key}`,
+      nodeType: "sovereign:runtime-state",
+      rdfType: `${UOR_NS}schema/RuntimeState`,
+      properties: {
+        key,
+        value,
+        stateNamespace: ns,
+        graphIri: STATE_GRAPH(ns),
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      syncState: "local",
+    };
+    await grafeoStore.putNode(kgNode);
+    this.stateKeys.add(key);
   }
 
-  /** Get a value from the state store. */
-  getState(key: string): string | null {
-    return this.stateStore.get(key) ?? null;
+  /** Get a value from the graph-backed state store. */
+  async getState(key: string): Promise<string | null> {
+    const ns = this.config.stateNamespace ?? "default";
+    const node = await grafeoStore.getNode(
+      `${UOR_NS}runtime/state/${ns}/${encodeURIComponent(key)}`,
+    );
+    if (!node) return null;
+    return (node.properties.value as string) ?? null;
   }
 
   /** Delete a key from the state store. */
-  deleteState(key: string): void {
-    this.stateStore.delete(key);
+  async deleteState(key: string): Promise<void> {
+    const ns = this.config.stateNamespace ?? "default";
+    await grafeoStore.removeNode(
+      `${UOR_NS}runtime/state/${ns}/${encodeURIComponent(key)}`,
+    );
+    this.stateKeys.delete(key);
   }
 
   /** List all state keys. */
   listStateKeys(): string[] {
-    return Array.from(this.stateStore.keys());
+    return Array.from(this.stateKeys);
   }
 
   // ── Accessors ─────────────────────────────────────────────
 
-  /** Get the virtual filesystem. */
   getFs(): VirtualFileSystem | null { return this.fs; }
-
-  /** Get the virtual network. */
   getNet(): VirtualNetwork | null { return this.net; }
-
-  /** Get the loaded graph image. */
   getImage(): GraphImage | null { return this.loadedImage; }
 
-  /** Get runtime status. */
   getStatus(): SovereignRuntimeStatus {
     return {
       state: this.state,
@@ -295,7 +342,7 @@ export class SovereignRuntime {
       fsTotalBytes: this.fs?.totalBytes() ?? 0,
       netRequestCount: this.net?.getSummary().totalRequests ?? 0,
       netCachedResponses: this.net?.getSummary().cachedResponses ?? 0,
-      stateEntries: this.stateStore.size,
+      stateEntries: this.stateKeys.size,
       uptimeMs: this.bootTime ? Math.round(performance.now() - this.bootTime) : 0,
       memoryUsageMb: this.estimateMemory(),
     };
@@ -303,7 +350,6 @@ export class SovereignRuntime {
 
   // ── Internals ─────────────────────────────────────────────
 
-  /** Inject the UOR runtime shim into HTML for session tracking. */
   private injectRuntimeShim(html: string): string {
     const shim = `<script>
 // UOR Sovereign Runtime Shim
@@ -317,12 +363,9 @@ window.__UOR_RUNTIME__ = {
     return html.replace("</head>", `${shim}\n</head>`);
   }
 
-  /** Estimate memory usage in MB. */
   private estimateMemory(): number {
     const fsBytes = this.fs?.totalBytes() ?? 0;
-    const stateBytes = Array.from(this.stateStore.values())
-      .reduce((sum, v) => sum + v.length * 2, 0);
-    return Math.round((fsBytes + stateBytes) / 1024 / 1024 * 100) / 100;
+    return Math.round(fsBytes / 1024 / 1024 * 100) / 100;
   }
 }
 
@@ -330,7 +373,6 @@ window.__UOR_RUNTIME__ = {
 
 /**
  * Create and boot a sovereign runtime in one call.
- * Convenience wrapper for the full lifecycle.
  */
 export async function createSovereignRuntime(
   config?: SovereignRuntimeConfig,
