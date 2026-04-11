@@ -3,7 +3,8 @@
  * ═══════════════════════════════════════════════════════════════════
  *
  * Full-canvas graph with zoom/pan, type filtering, context menus,
- * multi-select, layout modes, and neighborhood expansion.
+ * multi-select, layout modes, neighborhood expansion, and Atlas
+ * "State Zero" substrate visualization.
  *
  * @product SovereignDB
  */
@@ -17,6 +18,9 @@ import { SdbGraphCanvas, type GNode, type GLink, type LayoutMode, type GraphFilt
 import { SdbGraphControls } from "./SdbGraphControls";
 import { SdbGraphContextMenu, type ContextAction } from "./SdbGraphContextMenu";
 import { SdbGraphSelection, type SelectionAction } from "./SdbGraphSelection";
+import { useAtlasSeedData, SdbAtlasOverlay } from "./SdbAtlasSeed";
+import { getAtlas } from "@/modules/research/atlas/atlas";
+import { decodeTriality } from "@/modules/research/atlas/triality";
 
 interface Props {
   db: SovereignDB;
@@ -41,11 +45,15 @@ export function SdbConsumerGraph({ db }: Props) {
   const [contextMenu, setContextMenu] = useState<{ node: GNode; pos: { x: number; y: number } } | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [showAtlasLayer, setShowAtlasLayer] = useState(true);
+
+  // Atlas seed data
+  const atlasSeed = useAtlasSeedData();
 
   // Build graph from workspace edges
   const edges = hypergraph.cachedEdges();
 
-  const { nodes, links, typeStats } = useMemo(() => {
+  const { nodes, links, typeStats, hasWorkspaceNodes } = useMemo(() => {
     const nodeMap = new Map<string, GNode>();
     const linkArr: GLink[] = [];
     const typeCounts = new Map<string, number>();
@@ -107,8 +115,27 @@ export function SdbConsumerGraph({ db }: Props) {
       type, count, color: COLORS[type] || COLORS.node,
     }));
 
-    return { nodes: Array.from(nodeMap.values()), links: linkArr, typeStats: stats };
+    return {
+      nodes: Array.from(nodeMap.values()),
+      links: linkArr,
+      typeStats: stats,
+      hasWorkspaceNodes: nodeMap.size > 0,
+    };
   }, [edges, expandedNodes]);
+
+  // Merge Atlas + workspace data
+  const { mergedNodes, mergedLinks, mergedTypeStats } = useMemo(() => {
+    if (!showAtlasLayer) {
+      return { mergedNodes: nodes, mergedLinks: links, mergedTypeStats: typeStats };
+    }
+
+    // When showing Atlas layer, combine both
+    const allNodes = [...atlasSeed.nodes, ...nodes];
+    const allLinks = [...atlasSeed.links, ...atlasSeed.mirrorLinks, ...links];
+    const allStats = [...atlasSeed.typeStats, ...typeStats];
+
+    return { mergedNodes: allNodes, mergedLinks: allLinks, mergedTypeStats: allStats };
+  }, [showAtlasLayer, atlasSeed, nodes, links, typeStats]);
 
   const handleContextAction = useCallback((action: ContextAction, node: GNode) => {
     switch (action) {
@@ -117,16 +144,6 @@ export function SdbConsumerGraph({ db }: Props) {
         break;
       case "connections": {
         const neighborIds = traversalEngine.neighbors(node.id, { depth: 1 });
-        const next: GraphFilter = {
-          ...filters,
-          searchQuery: "",
-          types: new Map(),
-        };
-        // Dim everything except this node and its neighbors
-        const connected = new Set([node.id, ...neighborIds]);
-        for (const n of nodes) {
-          next.types.set(n.type, true); // keep all types visible
-        }
         setFilters(prev => ({ ...prev, searchQuery: node.label }));
         break;
       }
@@ -143,7 +160,6 @@ export function SdbConsumerGraph({ db }: Props) {
         if (!node.pinned) { node.fx = null; node.fy = null; }
         break;
       case "delete":
-        // Remove edges containing this node
         for (const e of edges) {
           if (e.nodes.includes(node.id)) {
             db.removeEdge(e.id);
@@ -151,10 +167,9 @@ export function SdbConsumerGraph({ db }: Props) {
         }
         break;
     }
-  }, [filters, nodes, edges, db]);
+  }, [edges, db]);
 
   const handleSelectionAction = useCallback((action: SelectionAction) => {
-    // Placeholder actions
     if (action === "delete") {
       for (const id of selectedIds) {
         for (const e of edges) {
@@ -165,32 +180,30 @@ export function SdbConsumerGraph({ db }: Props) {
     setSelectedIds([]);
   }, [selectedIds, edges, db]);
 
-  // Zoom helpers (modify transform indirectly via re-render trigger)
   const [zoomTrigger, setZoomTrigger] = useState(0);
   const handleZoomIn = useCallback(() => setZoomTrigger(t => t + 1), []);
   const handleZoomOut = useCallback(() => setZoomTrigger(t => t - 1), []);
   const handleFitAll = useCallback(() => setZoomTrigger(t => t + 0.001), []);
 
-  if (nodes.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
-        <h2 className="text-[20px] font-semibold text-foreground">Your Knowledge Graph</h2>
-        <p className="text-[15px] text-muted-foreground max-w-md">
-          Create notes and link them together to see your knowledge graph come alive.
-          Switch to Pages view to get started.
-        </p>
-      </div>
-    );
-  }
+  // Atlas vertex detail for selected atlas node
+  const atlasVertexDetail = useMemo(() => {
+    if (!selected || !selected.id.startsWith("atlas:")) return null;
+    const idx = parseInt(selected.id.replace("atlas:", ""), 10);
+    const atlas = getAtlas();
+    const v = atlas.vertices[idx];
+    if (!v) return null;
+    const coord = decodeTriality(idx);
+    return { vertex: v, coord };
+  }, [selected]);
 
   return (
     <div className="relative w-full h-full">
       <SdbGraphCanvas
-        nodes={nodes}
-        links={links}
-        layoutMode={layoutMode}
+        nodes={mergedNodes}
+        links={mergedLinks}
+        layoutMode={showAtlasLayer && !hasWorkspaceNodes ? "force" : layoutMode}
         filters={filters}
-        config={{ baseRadius: 6, labelDegreeThreshold: 2, animateEdges: true }}
+        config={{ baseRadius: 5, labelDegreeThreshold: 2, animateEdges: true }}
         onNodeClick={setSelected}
         onNodeContextMenu={(node, pos) => setContextMenu({ node, pos })}
         onNodeDoubleClick={node => handleContextAction("open", node)}
@@ -198,7 +211,7 @@ export function SdbConsumerGraph({ db }: Props) {
         onBackgroundClick={() => { setSelected(null); setContextMenu(null); }}
       >
         <SdbGraphControls
-          types={typeStats}
+          types={mergedTypeStats}
           filters={filters}
           onFiltersChange={setFilters}
           layoutMode={layoutMode}
@@ -206,6 +219,8 @@ export function SdbConsumerGraph({ db }: Props) {
           onFitAll={handleFitAll}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
+          showAtlasLayer={showAtlasLayer}
+          onToggleAtlasLayer={() => setShowAtlasLayer(v => !v)}
         />
 
         {contextMenu && (
@@ -224,9 +239,14 @@ export function SdbConsumerGraph({ db }: Props) {
           onClear={() => setSelectedIds([])}
         />
 
+        {/* Atlas overlay info */}
+        {showAtlasLayer && !hasWorkspaceNodes && (
+          <SdbAtlasOverlay stats={atlasSeed.stats} />
+        )}
+
         {/* Legend */}
         <div className="absolute bottom-4 right-4 flex items-center gap-3 text-[11px] text-muted-foreground bg-card/80 px-3 py-1.5 rounded-lg border border-border backdrop-blur-sm">
-          {typeStats.map(t => (
+          {mergedTypeStats.slice(0, 10).map(t => (
             <span key={t.type} className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full" style={{ background: t.color }} />
               {t.type}
@@ -247,13 +267,34 @@ export function SdbConsumerGraph({ db }: Props) {
               <IconX size={14} />
             </button>
           </div>
-          <div className="text-[13px] text-muted-foreground space-y-1">
-            <p>Type: <span className="text-foreground capitalize">{selected.type}</span></p>
-            <p className="font-mono text-[11px] break-all">{selected.id}</p>
-            {selected.expanded && (
-              <p className="text-[11px] text-primary/70 italic">Expanded from neighborhood</p>
-            )}
-          </div>
+
+          {atlasVertexDetail ? (
+            <div className="text-[12px] text-muted-foreground space-y-1.5">
+              <p>Sign Class: <span className="text-foreground font-medium">{atlasVertexDetail.vertex.signClass}</span></p>
+              <p>Degree: <span className="text-foreground">{atlasVertexDetail.vertex.degree}</span></p>
+              <p>Label: <span className="text-foreground font-mono text-[11px]">
+                ({atlasVertexDetail.vertex.label.e1},{atlasVertexDetail.vertex.label.e2},{atlasVertexDetail.vertex.label.e3},{atlasVertexDetail.vertex.label.d45},{atlasVertexDetail.vertex.label.e6},{atlasVertexDetail.vertex.label.e7})
+              </span></p>
+              <p>Triality: <span className="text-foreground font-mono text-[11px]">
+                h₂={atlasVertexDetail.coord.quadrant} d={atlasVertexDetail.coord.modality} ℓ={atlasVertexDetail.coord.slot}
+              </span></p>
+              <p>Mirror: <span className="text-foreground">v{atlasVertexDetail.vertex.mirrorPair}</span></p>
+              <p>Neighbors: <span className="text-foreground text-[11px]">
+                {atlasVertexDetail.vertex.neighbors.map(n => `v${n}`).join(", ")}
+              </span></p>
+              {atlasVertexDetail.vertex.isUnity && (
+                <p className="text-primary text-[11px] font-medium">★ Unity position</p>
+              )}
+            </div>
+          ) : (
+            <div className="text-[13px] text-muted-foreground space-y-1">
+              <p>Type: <span className="text-foreground capitalize">{selected.type}</span></p>
+              <p className="font-mono text-[11px] break-all">{selected.id}</p>
+              {selected.expanded && (
+                <p className="text-[11px] text-primary/70 italic">Expanded from neighborhood</p>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
