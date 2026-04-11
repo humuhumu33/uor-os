@@ -125,6 +125,36 @@ export default function Neo4jMigrationWizard() {
               />
             </div>
           </div>
+          <div>
+            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Transport</label>
+            <div className="flex gap-2 mt-1">
+              <button
+                onClick={() => setConn({ ...conn, transport: "http" })}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                  (conn.transport ?? "http") === "http"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted/40 text-muted-foreground border-border hover:bg-muted/60"
+                }`}
+              >
+                HTTP (port 7474)
+              </button>
+              <button
+                onClick={() => setConn({ ...conn, transport: "bolt" })}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                  conn.transport === "bolt"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted/40 text-muted-foreground border-border hover:bg-muted/60"
+                }`}
+              >
+                Bolt/WebSocket (port 7687)
+              </button>
+            </div>
+            {conn.transport === "bolt" && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Binary protocol — faster for large datasets. Requires neo4j-driver package.
+              </p>
+            )}
+          </div>
           {connError && (
             <p className="text-xs text-destructive font-mono">{connError}</p>
           )}

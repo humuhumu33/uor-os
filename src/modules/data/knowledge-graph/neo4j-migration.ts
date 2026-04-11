@@ -27,6 +27,10 @@ export interface Neo4jConnection {
   username?: string;
   /** Basic auth password */
   password?: string;
+  /** Transport protocol: "http" (default) or "bolt" (WebSocket, better for large datasets) */
+  transport?: "http" | "bolt";
+  /** Bolt URI override (e.g. "bolt://localhost:7687"). Auto-derived from endpoint if omitted. */
+  boltUri?: string;
 }
 
 export interface Neo4jSchema {
