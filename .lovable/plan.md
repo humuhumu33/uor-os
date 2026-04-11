@@ -1,129 +1,57 @@
 
 
-# Repo Presentation Overhaul — "The Tauri Effect"
+# Fix Build Error + README Overhaul (Tauri Clone)
 
-## What Tauri Does Right
+## Two tasks to complete
 
-Tauri's README is deceptively simple. Here's the formula:
+### Task 1: Fix the ENOENT build error
 
-1. **Hero splash image** — A full-width branded banner (`/.github/splash.png`) that immediately communicates identity
-2. **Badge row** — Status, license, CI, chat, website, sponsor — all on one line, all clickable
-3. **Two-paragraph intro** — What it is, one sentence. How it works, two more.
-4. **One-command quickstart** — `npm create tauri-app@latest`. That's it.
-5. **Feature bullets** — Short, scannable, no jargon
-6. **Platform support table** — Clean, at-a-glance
-7. **Contributing** — Brief, links to a separate `CONTRIBUTING.md`
-8. **Partners/sponsors section** — Visual logos, not text
-9. **Clean root directory** — Config files are minimal; the folder list itself tells a story
+**Root cause**: Lines 92-100 in `src/modules/identity/uns/index.ts` import from `"./build/container"`, but Vite's PWA plugin cannot resolve this path during production builds (same issue that caused all the other build stubs to be inlined in that same file).
 
-The overall effect: a developer lands on the page and within 10 seconds knows what it is, whether it supports their platform, and how to start. The current UOR OS README is thorough but reads like internal documentation — six layer descriptions, deep architecture, and no visual hook.
+**Fix**: Inline the container exports as stubs directly in `uns/index.ts` — exactly matching the pattern already used for Uorfile, Docker compat, Registry, Compose, Secrets, and Snapshot stubs (lines 102-226). Remove the `./build/container` import lines (92-100) and replace with inlined type definitions and stub functions copied from `build/container.ts`.
 
-## Current Gaps
+**Files changed**:
+- `src/modules/identity/uns/index.ts` — Replace lines 91-100 with inlined stubs
 
-| Area | Tauri | UOR OS |
-|------|-------|--------|
-| Hero image | Full-width branded splash | None |
-| Badges | 8 shields (status, CI, license, chat, website) | None |
-| Intro length | 2 paragraphs | 2 paragraphs + 6 layer deep-dives |
-| Quickstart | 1 command | 3 lines + caveats |
-| Visual appeal | Splash + sponsor logos | Plain text only |
-| Community files | CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md, issue/PR templates | Only workflows/ |
-| Root cleanliness | Config files hidden in subdirs or dotfiles | Same (good) |
+### Task 2: Rewrite README.md to clone Tauri's exact structure
 
-## The Plan
-
-### 1. Create a Hero Banner
-
-Design and add `.github/splash.png` — a branded banner image for UOR OS. This is the single highest-impact change. It should show:
-- The UOR OS logo/wordmark
-- A tagline: "Sovereign OS. Browser to Desktop."
-- Optionally a screenshot of the desktop shell
-
-### 2. Rewrite README.md — Tauri Structure
-
-New structure:
+Based on the raw Tauri README I fetched, the structure is:
 
 ```text
-![UOR OS](.github/splash.png)              ← hero banner
-
-[badges: status, license, CI, website, discord/chat]
-
-## What is UOR OS?
-  2-3 sentences. No jargon.
-
-## Quick Start
-  npm install && npm run dev              ← web
-  npm run tauri:build                     ← desktop (one extra line)
-
-## Features
-  - bullet list, 6-8 items, scannable
-
-## Platform Support
-  | Platform | Status |
-  macOS, Windows, Linux — simple table
-
-## Architecture
-  One paragraph + link to ARCHITECTURE.md
-  (Move ALL layer details out of README)
-
-## Contributing
-  Link to .github/CONTRIBUTING.md
-
-## Tech Stack
-  Keep the existing table (it's good)
-
-## License
-  One line
+1. Hero splash image (full-width, no centering wrapper)
+2. Badge row (8 shields, no line breaks between them)
+3. ## Introduction (2 short paragraphs + link to ARCHITECTURE.md)
+4. ## Getting Started (1 command quickstart)
+5. ## Features (bullet list, 6-8 items)
+6. ### Platforms (table inside Features)
+7. ## Contributing (short paragraph + link to .github/CONTRIBUTING.md)
+8. ### Documentation (sub-section)
+9. ## Partners (logo table)
+10. ## Organization (1 paragraph about governance)
+11. ## Licenses (copyright + attribution)
 ```
 
-Key changes vs current README:
-- Remove the 6 layer deep-dives (move to ARCHITECTURE.md, which already exists)
-- Remove the "Why" philosophical section (move to website/docs)
-- Remove the Project Structure tree (it's in ARCHITECTURE.md)
-- Remove Configuration section (move to docs or CONTRIBUTING.md)
-- Add badges and hero image
-- Shorten Quick Start to the absolute minimum
+Key differences from our current README:
+- Tauri uses a plain `![img]()` for the splash (not centered `<p>` tags) — but centered looks better on GitHub, so we keep that
+- Tauri puts badges on separate lines with no HTML wrapper — just raw markdown badge links
+- Tauri has "Introduction" not "What is UOR OS?" — we'll use "Introduction" to match
+- Tauri has a "Partners" and "Organization" section — we'll add equivalent sections
+- Tauri does NOT have a "Tech Stack" table in its README — we'll keep ours since it adds value
+- Badge style: Tauri uses default rounded shields, not `flat-square` — we'll match
 
-### 3. Add Community Health Files
+**UOR OS-specific content** (not leading with Tauri):
+- Introduction focuses on WHY (sovereignty, privacy), HOW (content-addressing, algebraic verification), WHAT (browser OS + desktop app)
+- Tauri mentioned only as a tech stack component, not in the intro
 
-Create these under `.github/`:
-- `CONTRIBUTING.md` — Prerequisites, dev setup, PR process, coding conventions (absorb the "Contributing" and "Configuration" sections from current README)
-- `CODE_OF_CONDUCT.md` — Standard Contributor Covenant
-- `SECURITY.md` — Responsible disclosure process
-- `ISSUE_TEMPLATE/bug_report.md` — Structured bug template
-- `ISSUE_TEMPLATE/feature_request.md` — Feature request template
-- `PULL_REQUEST_TEMPLATE.md` — PR checklist
+**Files changed**:
+- `README.md` — Complete rewrite matching Tauri's structure
+- Splash image already exists at `.github/splash.png`
+- Community files already exist (CODE_OF_CONDUCT, CONTRIBUTING, SECURITY, issue/PR templates)
 
-### 4. Add Shields.io Badges
+### Summary of all file changes
 
-Add a row of badges at the top:
-- Build status (link to GitHub Actions)
-- License (Apache 2.0)
-- Version/release
-- Website link (uor-os.lovable.app)
-- Platform support badge
-
-### 5. Create a One-Command Dev Experience (stretch)
-
-Consider adding an `npx create-uor-app` or at minimum ensuring `npm install && npm run dev` works with zero configuration and no `.env` file required for the basic shell experience. If Supabase credentials are optional for the core desktop demo, document that clearly.
-
-## Files to Create/Modify
-
-| File | Action |
+| File | Change |
 |------|--------|
-| `.github/splash.png` | Create — hero banner image |
-| `README.md` | Rewrite — Tauri-style concise format |
-| `ARCHITECTURE.md` | Expand — absorb layer details from README |
-| `.github/CONTRIBUTING.md` | Create — dev setup, conventions, PR process |
-| `.github/CODE_OF_CONDUCT.md` | Create — Contributor Covenant |
-| `.github/SECURITY.md` | Create — disclosure policy |
-| `.github/ISSUE_TEMPLATE/bug_report.md` | Create |
-| `.github/ISSUE_TEMPLATE/feature_request.md` | Create |
-| `.github/PULL_REQUEST_TEMPLATE.md` | Create |
-
-## What This Does NOT Change
-
-- No code changes. This is purely repo presentation.
-- The build error (container module) is a separate task tracked in the approved plan.
-- No changes to the actual application, Tauri config, or CI workflow.
+| `src/modules/identity/uns/index.ts` | Inline container stubs, remove `./build/container` import |
+| `README.md` | Rewrite to match Tauri README structure exactly |
 
