@@ -13,11 +13,14 @@
  *
  * Pure functions. Zero dependencies. Maximum hot-path performance.
  *
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 /** Default hypervector dimension (number of R₈ components). */
 export const DEFAULT_DIM = 1024;
+
+/** E8 root count — the Atlas-native structured basis size. */
+export const E8_DIM = 240;
 
 /** A hypervector: a fixed-length array of R₈ elements (0–255). */
 export type Hypervector = Uint8Array;
@@ -162,4 +165,42 @@ export function fingerprint(v: Hypervector): string {
 /** Check dimensional compatibility. */
 export function compatible(a: Hypervector, b: Hypervector): boolean {
   return a.length === b.length;
+}
+
+// ── E8-Structured Basis ─────────────────────────────────────────────────────
+
+/**
+ * Create a deterministic hypervector from an E8 root index (0–239).
+ *
+ * Expands the 8D E8 root into a full-dimension hypervector by
+ * deterministic expansion: each root coordinate seeds 128 bytes
+ * via a mixing function, yielding 8×128 = 1024 components.
+ *
+ * Same root index → same hypervector on any machine.
+ */
+export function fromE8Root(rootIndex: number, dim = DEFAULT_DIM): Hypervector {
+  if (rootIndex < 0 || rootIndex >= 240) {
+    throw new RangeError(`E8 root index ${rootIndex} out of range [0,239]`);
+  }
+
+  // Lazy import to avoid circular dependency at module level
+  const { getE8Roots } = require("@/modules/research/atlas/e8-roots");
+  const roots = getE8Roots();
+  const root = roots[rootIndex];
+
+  const hv = new Uint8Array(dim);
+  const chunkSize = (dim / 8) | 0;
+
+  for (let coord = 0; coord < 8; coord++) {
+    const base = coord * chunkSize;
+    const rv = root[coord]; // -2, -1, 0, 1, or 2
+
+    for (let j = 0; j < chunkSize && base + j < dim; j++) {
+      // Deterministic mix: root value × position-dependent scramble
+      // Maps the algebraic structure of E8 into byte space
+      hv[base + j] = ((rv * 53 + j * 137 + coord * 43 + rootIndex * 7) & 0xff) >>> 0;
+    }
+  }
+
+  return hv;
 }

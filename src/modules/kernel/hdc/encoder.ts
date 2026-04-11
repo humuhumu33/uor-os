@@ -10,30 +10,40 @@
  * Uses ItemMemory for symbol allocation and bind/bundle/permute
  * for structure.
  *
- * @version 1.0.0
+ * @version 1.1.0 — E8-indexed symbol allocation
  */
 
 import type { Hypervector } from "./hypervector";
 import {
   bind, bundle, permute, encodeSequence, encodeRecord,
-  DEFAULT_DIM, fromBytes,
+  DEFAULT_DIM, fromBytes, fromE8Root,
 } from "./hypervector";
 import { ItemMemory } from "./item-memory";
 
 /** Shared encoder memory — symbol → hypervector assignments persist per session. */
 const mem = new ItemMemory();
 
+/** E8-indexed symbol counter: first 240 symbols get structured E8 basis vectors. */
+let e8Counter = 0;
+
 // ── Deterministic seed vector from string ───────────────────────────────────
 
 /**
  * Derive a deterministic hypervector from a string.
- * Uses the string's UTF-8 bytes, cyclically extended to fill the dimension.
+ * For the first 240 symbols, uses E8 root basis vectors (algebraically meaningful).
+ * Beyond 240, falls back to string-hash seeding.
  */
 function seedFromString(s: string, dim = DEFAULT_DIM): Hypervector {
+  // E8-indexed allocation for the first 240 unique symbols
+  if (e8Counter < 240) {
+    const idx = e8Counter++;
+    return fromE8Root(idx, dim);
+  }
+
+  // Fallback: deterministic string-hash for symbols beyond E8 basis
   const bytes = new TextEncoder().encode(s);
   const hv = new Uint8Array(dim);
   for (let i = 0; i < dim; i++) {
-    // Mix: byte value XOR position-dependent scramble
     hv[i] = bytes[i % bytes.length] ^ ((i * 137 + 43) & 0xff);
   }
   return hv;

@@ -230,6 +230,8 @@ export function constructExceptionalChain(): ExceptionalGroupChain {
 
 // ── R₈ ↔ E₈ Root Structure Analysis ───────────────────────────────────────
 
+import { getE8RootSystem } from "./e8-roots";
+
 export interface E8RootAnalysis {
   /** 112 integer roots: ±eᵢ ± eⱼ (i < j) */
   integerRoots: number;
@@ -248,24 +250,22 @@ export interface E8RootAnalysis {
 }
 
 /**
- * Analyze the E₈ root structure and its correspondence to R₈.
- *
- * Key discovery: 128 half-integer roots correspond to our exterior element 128.
- * The half-integer roots have coordinates ±1/2 with even parity. matching
- * the bnot (XOR 0xFF) even-parity constraint.
+ * Analyze the E₈ root structure using the canonical root system.
+ * Derives counts from actual data rather than hardcoded constants.
  */
 export function analyzeE8RootStructure(): E8RootAnalysis {
-  const integerRoots = 112;       // C(8,2) × 4 = 28 × 4
-  const halfIntegerRoots = 128;   // 2⁸ / 2 = 256 / 2
-  const totalRoots = integerRoots + halfIntegerRoots;
+  const sys = getE8RootSystem();
+  const integerRoots = sys.typeI.length;
+  const halfIntegerRoots = sys.typeII.length;
+  const totalRoots = sys.roots.length;
 
   return {
     integerRoots,
     halfIntegerRoots,
     totalRoots,
-    halfIntegerEqualsExterior: halfIntegerRoots === 128, // Our Ext element!
+    halfIntegerEqualsExterior: halfIntegerRoots === 128,
     integerFromCombinatorics: integerRoots === (8 * 7 / 2) * 4,
     sumCorrect: totalRoots === 240,
-    fiberDecomposition: 96 * 128 === 12288,
+    fiberDecomposition: 96 * halfIntegerRoots === 12288,
   };
 }
