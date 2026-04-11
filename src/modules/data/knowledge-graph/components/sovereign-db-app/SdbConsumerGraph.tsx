@@ -19,6 +19,8 @@ import { SdbGraphControls } from "./SdbGraphControls";
 import { SdbGraphContextMenu, type ContextAction } from "./SdbGraphContextMenu";
 import { SdbGraphSelection, type SelectionAction } from "./SdbGraphSelection";
 import { useAtlasSeedData, SdbAtlasOverlay } from "./SdbAtlasSeed";
+import { getAtlas } from "@/modules/research/atlas/atlas";
+import { decodeTriality } from "@/modules/research/atlas/triality";
 
 interface Props {
   db: SovereignDB;
