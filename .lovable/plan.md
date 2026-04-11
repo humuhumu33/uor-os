@@ -1,108 +1,67 @@
 
 
-# Sovereign Hypergraph Consolidation — Tightening Plan
+# E8 Computational Substrate + Redundancy Pruning
 
-## Goal
+## Overview
 
-Eliminate redundant code, consolidate scattered crypto imports into the canonical `@/lib/crypto`, remove unused imports in the HDC engine, and ensure everything flows through the hypergraph substrate cleanly. Optimize for sovereignty (minimal external deps), speed, and clarity.
+Create a canonical E8 root system module, wire it into the HDC engine as a structured basis, and eliminate the 3 scattered duplicate E8 root constructions across `boundary.ts`, `coadjoint-orbit-classifier.ts`, and `groups.ts`.
 
-## Findings
+## What Gets Built
 
-### 1. Scattered SHA-256 Imports (25 files)
-25 files import `sha256` directly from `@noble/hashes/sha2.js` instead of using the canonical `@/lib/crypto` module. The whole point of `lib/crypto.ts` is "one function, one truth, no duplication." These direct imports bypass the canonical layer.
+### 1. Canonical E8 Root System — `src/modules/research/atlas/e8-roots.ts`
 
-### 2. HDC Hypervector Imports Unused Ring Functions
-`hypervector.ts` imports `neg` and `bnot` from `uor-ring` but never uses them — only `xor` is used, and it's a trivial `x ^ y` that doesn't need the ring module at all. The bind operation should use raw `^` for maximum performance (avoiding function call overhead in hot loops).
+Single source of truth for all 240 E8 roots. Exact integer arithmetic (2× scaling to avoid floats). Replaces the private `constructE8Roots()` in `boundary.ts` and `generateE8RootProjections()` in `coadjoint-orbit-classifier.ts`.
 
-### 3. Deprecated `local-store.ts` Still Has Consumers
-`local-store.ts` is marked `@deprecated` and re-exports `grafeoStore`, but 5 files still import from it. These should import directly from `grafeo-store.ts`.
+- Generate 112 Type I roots (±eᵢ ± eⱼ, i < j) and 128 Type II roots (±1 coordinates, even parity)
+- Inner product computation (exact integers)
+- Root system axiom verification (240 count, all norm² = 8 in doubled rep, closure under reflections)
+- `byteToE8Root(b: number): number[] | null` — maps R₈ elements to E8 roots (128 of 256 bytes are roots)
+- Export `E8_ROOTS: readonly number[][]` as frozen singleton
 
-### 4. `lib/crypto.ts` Can Use Web Crypto Natively
-`@noble/hashes` is excellent but unnecessary for SHA-256 — the Web Crypto API (`crypto.subtle.digest`) is built into every target environment (browser, Node 15+, Deno, Bun, Workers). Replacing noble/hashes for SHA-256 removes the largest external crypto dependency. `@noble/post-quantum` is still needed for ML-KEM/ML-DSA (no native equivalent) and should stay.
+### 2. Certified Atlas → E8 Embedding — `src/modules/research/atlas/embedding.ts`
 
-### 5. `jsonld` Library (200KB+) Used in Only 2 Files
-`jsonld` is a heavy dependency used only in `uor-canonical.ts` and `canonicalize.ts` for JSON-LD canonicalization (URDNA2015). This is a legitimate need for RDF canonicalization but worth noting — it cannot easily be replaced.
+Maps the 96 Atlas vertices into the 240-root E8 system. Each Atlas label `(e₁,e₂,e₃,d₄₅,e₆,e₇)` extends to an 8D vector satisfying the E8 root constraints.
 
-### 6. `multiformats` Used in Only 1 File
-`cid-codec.ts` uses `multiformats` for CID computation. Could be replaced with a ~30-line implementation using Web Crypto, but the CID spec compliance matters. Keep for now.
+- `embedVertex(index: number): number[]` — Atlas vertex → E8 root (8D integer vector)
+- Adjacency preservation check: v ~ w in Atlas ⟺ ⟨φ(v), φ(w)⟩ = -4 (in doubled rep)
+- Self-verifying on construction
 
----
+### 3. E8-Structured HDC Basis — Modify `hypervector.ts` + `encoder.ts`
 
-## Implementation Plan
+Replace ad-hoc `seedFromString` with E8-rooted basis vectors. The 240 E8 roots become the structured codebook. Symbols map to E8 coordinates first, then extend to full hypervectors via deterministic expansion.
 
-### Step 1: Make `lib/crypto.ts` Sovereign (Drop `@noble/hashes` for SHA-256)
-Replace `@noble/hashes/sha2` with native Web Crypto API. This removes the external dependency for the most-used crypto primitive.
+- Add `fromE8Root(rootIndex: number): Hypervector` — expand an 8D E8 root into a 1024-dim hypervector deterministically
+- Modify `encoder.ts` `sym()` to use E8-derived seeds for the first 240 symbols, falling back to the current string-hash method beyond that
+- The encoder's item memory becomes E8-indexed: symbols 0–95 map to Atlas vertices, 96–239 map to remaining E8 roots
 
-```typescript
-// New lib/crypto.ts — zero dependencies
-export async function sha256hex(input: string): Promise<string> {
-  const bytes = new TextEncoder().encode(input);
-  const hash = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, "0")).join("");
-}
+### 4. Prune Redundant E8 Constructions
 
-export function sha256hexSync(input: Uint8Array): string {
-  // For sync contexts, use a minimal pure-JS fallback (~50 lines)
-  // or keep @noble/hashes as internal-only for sync path
-}
-```
-
-**Decision point**: Several files need *synchronous* SHA-256 (e.g., hologram compiler, audio segment cache). Web Crypto is async-only. Two options:
-- **Option A**: Keep `@noble/hashes` as the internal implementation but funnel ALL imports through `lib/crypto.ts` (eliminates 25 scattered imports, keeps sync support)
-- **Option B**: Replace with Web Crypto async + a tiny pure-JS sync fallback
-
-**Recommendation**: Option A — consolidate all 25 direct `@noble/hashes` imports through `lib/crypto.ts`. This achieves the "one truth" goal without breaking sync callers. `@noble/hashes` is audited, zero-dep, and tiny (4KB). The real win is eliminating the 25 scattered direct imports.
-
-### Step 2: Clean HDC Hypervector — Inline XOR, Remove Dead Imports
-Remove `neg` and `bnot` imports (unused). Inline XOR as raw `^` operator for hot-path performance.
-
-**File**: `src/modules/kernel/hdc/hypervector.ts`
-- Remove: `import { neg, bnot, xor } from "@/lib/uor-ring"`
-- Change `bind()` to use raw `a[i] ^ b[i]` (saves function call per component × 1024 dimensions)
-
-### Step 3: Consolidate 25 Direct `@noble/hashes` Imports
-Route all SHA-256 usage through `@/lib/crypto`. Add a `sha256raw` export for files that need the raw `Uint8Array → Uint8Array` path.
-
-**Files to update** (~20 files): All files currently importing directly from `@noble/hashes/sha2.js` will import from `@/lib/crypto` instead.
-
-Add to `lib/crypto.ts`:
-```typescript
-export function sha256raw(bytes: Uint8Array): Uint8Array { ... }
-export function sha256hexFromBytes(bytes: Uint8Array): string { ... }
-```
-
-### Step 4: Eliminate Deprecated `local-store.ts` Consumers
-Update 5 files to import from `grafeo-store` directly:
-- `graph-compute.ts`
-- `backlinks.ts`
-- `blueprint.ts`
-- `hooks/useKnowledgeGraph.ts`
-- `intelligence/oracle/lib/resurfacing.ts`
-
-Then delete `local-store.ts`.
-
-### Step 5: Remove `d3-force` Dependency
-No files import `d3-force` — it's an unused dependency. Remove from `package.json`.
-
----
+| File | Change |
+|------|--------|
+| `boundary.ts` | Remove private `constructE8Roots()`, `byteToVector()`, `isByteE8Root()` — import from `e8-roots.ts` |
+| `coadjoint-orbit-classifier.ts` | Remove private `generateE8RootProjections()` and `E8_ROOTS` constant — import from `e8-roots.ts` |
+| `groups.ts` `analyzeE8RootStructure()` | Use actual root counts from `e8-roots.ts` instead of hardcoded `112`/`128` |
+| `index.ts` (atlas barrel) | Export new `e8-roots` and `embedding` modules |
+| `hdc/index.ts` | Export `fromE8Root` |
 
 ## File Summary
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/lib/crypto.ts` | Modify | Add `sha256raw`, `sha256hexFromBytes` exports; become the ONLY SHA-256 source |
-| `src/modules/kernel/hdc/hypervector.ts` | Modify | Remove unused `neg`/`bnot` imports, inline XOR for performance |
-| ~20 files with `@noble/hashes` imports | Modify | Route through `@/lib/crypto` |
-| 5 files with `local-store` imports | Modify | Point to `grafeo-store` directly |
-| `src/modules/data/knowledge-graph/local-store.ts` | Delete | Deprecated shim no longer needed |
-| `package.json` | Modify | Remove `d3-force` (unused) |
+| File | Action |
+|------|--------|
+| `src/modules/research/atlas/e8-roots.ts` | **Create** — Canonical 240 E8 roots, exact integer arithmetic |
+| `src/modules/research/atlas/embedding.ts` | **Create** — 96 Atlas vertices → E8 certified map |
+| `src/modules/kernel/hdc/hypervector.ts` | **Modify** — Add `fromE8Root()` constructor |
+| `src/modules/kernel/hdc/encoder.ts` | **Modify** — E8-indexed symbol allocation |
+| `src/modules/research/atlas/boundary.ts` | **Modify** — Remove duplicate E8 root code, import canonical |
+| `src/modules/research/atlas/coadjoint-orbit-classifier.ts` | **Modify** — Remove duplicate E8 root code, import canonical |
+| `src/modules/research/atlas/groups.ts` | **Modify** — Use live E8 root data instead of hardcoded counts |
+| `src/modules/research/atlas/index.ts` | **Modify** — Export new modules |
+| `src/modules/kernel/hdc/index.ts` | **Modify** — Export `fromE8Root` |
 
 ## Outcome
 
-- **25 scattered crypto imports → 1 canonical source** (`lib/crypto.ts`)
-- **HDC hot path 2× faster** (inline XOR vs function call overhead)
-- **1 deprecated file removed** (`local-store.ts`)
-- **1 unused dependency removed** (`d3-force`)
-- Every SHA-256 hash in the system flows through a single auditable choke point
-- The hypergraph substrate remains the canonical store — no changes to GrafeoDB, hypergraph.ts, or the HDC engine architecture
+- **3 duplicate E8 root constructions → 1 canonical source** (`e8-roots.ts`)
+- **HDC symbols rooted in E8 geometry** — first 240 symbols have algebraic meaning from exceptional Lie theory
+- **Atlas → E8 embedding verified** — adjacency preservation proven at construction time
+- **Same seed, same lattice, same OS** — deterministic reconstruction on any machine from first principles
 
