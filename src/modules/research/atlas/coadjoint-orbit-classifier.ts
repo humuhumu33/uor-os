@@ -150,8 +150,69 @@ function getE8RootProjections(): readonly (readonly number[])[] {
 
 const E8_ROOTS = getE8RootProjections();
 
+// ── Orbit Generation ──────────────────────────────────────────────────────
+
 /**
- * Test Neeb's integrability condition for a single orbit O_λ.
+ * Generate a catalog of representative coadjoint orbits for E₈.
+ */
+export function generateOrbitCatalog(): CoadjointOrbit[] {
+  const orbits: CoadjointOrbit[] = [];
+  let idx = 0;
+
+  orbits.push(makeOrbit(idx++, Array(RANK).fill(0), "zero"));
+
+  for (let i = 0; i < RANK; i++) {
+    const w = Array(RANK).fill(0);
+    w[i] = 1;
+    orbits.push(makeOrbit(idx++, w, "minimal"));
+  }
+
+  const subregPairs = [
+    [0, 1], [0, 7], [1, 2], [2, 3], [2, 7], [3, 4], [4, 5], [5, 6], [4, 7],
+  ];
+  for (const [i, j] of subregPairs) {
+    const w = Array(RANK).fill(0);
+    w[i] = 1; w[j] = 1;
+    orbits.push(makeOrbit(idx++, w, "subregular"));
+  }
+
+  orbits.push(makeOrbit(idx++, [1, 1, 1, 1, 1, 1, 1, 1], "regular"));
+  orbits.push(makeOrbit(idx++, [2, 1, 1, 1, 1, 1, 1, 1], "regular"));
+  orbits.push(makeOrbit(idx++, [1, 1, 2, 1, 1, 1, 1, 1], "regular"));
+
+  for (const i of [0, 2, 4, 7]) {
+    const w = Array(RANK).fill(0);
+    w[i] = 3;
+    orbits.push(makeOrbit(idx++, w, "singular"));
+  }
+
+  orbits.push(makeOrbit(idx++, [2, 0, 1, 0, 0, 0, 0, 1], "singular"));
+  orbits.push(makeOrbit(idx++, [0, 0, 0, 1, 0, 1, 0, 0], "singular"));
+  orbits.push(makeOrbit(idx++, [1, 0, 0, 0, 1, 0, 0, 1], "singular"));
+
+  return orbits;
+}
+
+function makeOrbit(index: number, weight: number[], type: OrbitType): CoadjointOrbit {
+  const isZero = weight.every(n => n === 0);
+  const stabilizerDim = isZero ? DIM_E8 : computeStabilizerDim(weight);
+  const dimension = DIM_E8 - stabilizerDim;
+  const label = isZero
+    ? "O₀"
+    : "O_{" + weight.map((n, i) => n > 0 ? (n > 1 ? `${n}ω${sub(i + 1)}` : `ω${sub(i + 1)}`) : "").filter(Boolean).join("+") + "}";
+  return { index, label, weight, type, dimension, stabilizerDim };
+}
+
+function sub(n: number): string {
+  return String.fromCharCode(0x2080 + n);
+}
+
+function computeStabilizerDim(weight: number[]): number {
+  const zeroCount = weight.filter(n => n === 0).length;
+  const stabRank = zeroCount;
+  const subsystemDim = stabRank > 0 ? stabRank * stabRank + stabRank : 0;
+  return RANK + subsystemDim;
+}
  *
  * Neeb's Theorem: O_λ carries a Gibbs ensemble iff:
  *   1. The Laplace transform L(λ)(x) = Σ_α e^{-⟨α+λ, x⟩} converges
