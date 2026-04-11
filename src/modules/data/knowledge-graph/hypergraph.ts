@@ -472,6 +472,41 @@ export const hypergraph = {
   },
 };
 
+// ── Scheduled Reaper ────────────────────────────────────────────────────────
+
+let reaperTimer: ReturnType<typeof setInterval> | null = null;
+let reaperCallback: ((reaped: number) => void) | null = null;
+
+export const hyperedgeReaper = {
+  /**
+   * Start automatic garbage-collection of expired hyperedges.
+   * @param intervalMs  How often to sweep (default 60 000 ms = 1 min)
+   * @param onReap      Optional callback invoked after each sweep with count of reaped edges
+   */
+  start(intervalMs = 60_000, onReap?: (reaped: number) => void): void {
+    this.stop();
+    reaperCallback = onReap ?? null;
+    reaperTimer = setInterval(async () => {
+      const n = await sovereignHypergraph.reapExpired();
+      if (n > 0 && reaperCallback) reaperCallback(n);
+    }, intervalMs);
+  },
+
+  /** Stop the scheduled reaper. */
+  stop(): void {
+    if (reaperTimer !== null) {
+      clearInterval(reaperTimer);
+      reaperTimer = null;
+    }
+    reaperCallback = null;
+  },
+
+  /** Whether the reaper is currently running. */
+  get active(): boolean {
+    return reaperTimer !== null;
+  },
+};
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function kgNodeToHyperedge(node: KGNode, id: string): Hyperedge {
