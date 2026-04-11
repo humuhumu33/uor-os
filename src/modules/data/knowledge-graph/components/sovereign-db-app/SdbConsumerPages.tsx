@@ -146,6 +146,15 @@ export function SdbConsumerPages({ db }: Props) {
     [items]
   );
 
+  // Get preview text for a note title (for hover preview)
+  const getPreview = useCallback((title: string): string | null => {
+    const item = items.find(
+      i => (i.type === "note" || i.type === "daily") && i.name.toLowerCase() === title.toLowerCase()
+    );
+    if (!item) return null;
+    return String(item.edge.properties.content || "").slice(0, 150) || null;
+  }, [items]);
+
   // Extract [[wiki links]] from blocks
   const parseWikiLinks = useCallback((blockArr: Block[]): string[] => {
     const text = blockArr.map(b => b.text).join("\n");
