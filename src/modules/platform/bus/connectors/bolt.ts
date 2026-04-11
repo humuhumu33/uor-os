@@ -49,9 +49,17 @@ const sessions = new Map<string, any>();
 async function getDriver(conn: Connection): Promise<any> {
   if (drivers.has(conn.id)) return drivers.get(conn.id);
 
-  // Dynamic import — neo4j-driver's browser build uses WebSocket transport
-  const neo4j = await import("neo4j-driver");
-  const driver = neo4j.default ?? neo4j;
+  // Dynamic import — neo4j-driver is an optional peer dependency.
+  // Its browser build uses WebSocket transport automatically.
+  let neo4jMod: any;
+  try {
+    neo4jMod = await import(/* @vite-ignore */ "neo4j-driver");
+  } catch {
+    throw new Error(
+      "neo4j-driver is not installed. Run: npm install neo4j-driver"
+    );
+  }
+  const driver = neo4jMod.default ?? neo4jMod;
 
   const boltUri = conn.config.boltUri as string ?? conn.endpoint.replace(/^http/, "bolt").replace(/:7474/, ":7687");
   const username = conn.config.username as string ?? "neo4j";
