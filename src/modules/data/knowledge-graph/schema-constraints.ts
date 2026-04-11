@@ -20,6 +20,8 @@ export interface PropertyConstraint {
   max?: number;
   /** For strings: regex pattern */
   pattern?: string;
+  /** Enforce uniqueness across all edges of the same label */
+  unique?: boolean;
 }
 
 export interface SchemaDefinition {
@@ -63,8 +65,11 @@ export const schemaRegistry = {
     return new Map(schemas);
   },
 
-  /** Validate properties against a registered schema. */
-  validate(label: string, properties: Record<string, unknown>): ValidationError[] {
+  /**
+   * Validate properties against a registered schema.
+   * @param existingEdges — pass existing edges of same label for uniqueness checks.
+   */
+  validate(label: string, properties: Record<string, unknown>, existingEdges?: Array<Record<string, unknown>>): ValidationError[] {
     const schema = schemas.get(label);
     if (!schema) return [];
 
@@ -101,6 +106,14 @@ export const schemaRegistry = {
       if (constraint.type === "string" && typeof val === "string" && constraint.pattern) {
         if (!new RegExp(constraint.pattern).test(val)) {
           errors.push({ field: key, message: `"${key}" must match pattern ${constraint.pattern}` });
+        }
+      }
+
+      // Uniqueness check
+      if (constraint.unique && existingEdges) {
+        const duplicate = existingEdges.some(e => e[key] === val);
+        if (duplicate) {
+          errors.push({ field: key, message: `"${key}" must be unique — value "${val}" already exists` });
         }
       }
     }

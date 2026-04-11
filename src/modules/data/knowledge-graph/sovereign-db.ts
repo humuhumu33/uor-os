@@ -6,7 +6,7 @@
  * Runs identically in browser, desktop, mobile, edge, server.
  *
  * @product SovereignDB
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 import { hypergraph, hyperedgeReaper, hyperedgeEvents } from "./hypergraph";
@@ -19,8 +19,15 @@ import { QueryBuilder } from "./query-builder";
 import { SovereignTransaction } from "./transaction";
 import { schemaRegistry } from "./schema-constraints";
 import { indexManager } from "./index-manager";
+import { traversalEngine } from "./traversal";
+import { graphAlgorithms } from "./algorithms";
+import { cypherEngine } from "./cypher-engine";
+import { textIndexManager } from "./text-index";
 import type { SchemaDefinition, ValidationError } from "./schema-constraints";
 import type { IndexInfo } from "./index-manager";
+import type { TraversalOptions, TraversalResult, PathResult } from "./traversal";
+import type { PageRankResult, ComponentResult, DegreeResult, CommunityResult } from "./algorithms";
+import type { CypherResult } from "./cypher-engine";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -96,17 +103,26 @@ export class SovereignDB {
     // Schema validation if a schema is registered for this label
     const schema = schemaRegistry.get(label);
     if (schema) {
-      const errors = schemaRegistry.validate(label, properties);
+      // For uniqueness checks, gather existing edges of the same label
+      const existingEdges = schema.properties
+        ? (await this.byLabel(label)).map(e => e.properties)
+        : undefined;
+      const errors = schemaRegistry.validate(label, properties, existingEdges);
       if (errors.length > 0) {
         throw new Error(`Schema validation failed for "${label}": ${errors.map(e => e.message).join("; ")}`);
       }
     }
 
-    return hypergraph.addEdge(
+    const edge = await hypergraph.addEdge(
       nodes, label, properties,
       options?.weight, options?.atlasVertex,
       options?.head, options?.tail, options?.ttl,
     );
+
+    // Update text indexes
+    textIndexManager.onEdgeAdded(edge);
+
+    return edge;
   }
 
   /** Remove a hyperedge by ID. */
@@ -205,6 +221,80 @@ export class SovereignDB {
   /** List all indexes. */
   indexes(): IndexInfo[] {
     return indexManager.list();
+  }
+
+  // ── Traversal ────────────────────────────────────────────────
+
+  /** Get neighbors of a node. */
+  neighbors(nodeId: string, options?: { depth?: number; direction?: "outgoing" | "incoming" | "both"; labels?: string[] }): string[] {
+    this.ensureOpen();
+    return traversalEngine.neighbors(nodeId, options);
+  }
+
+  /** BFS shortest path. */
+  shortestPath(from: string, to: string, options?: { labels?: string[]; direction?: "outgoing" | "incoming" | "both" }): PathResult | null {
+    this.ensureOpen();
+    return traversalEngine.shortestPath(from, to, options);
+  }
+
+  /** General BFS/DFS traversal. */
+  traverse(startNode: string, options?: TraversalOptions): TraversalResult {
+    this.ensureOpen();
+    return traversalEngine.traverse(startNode, options);
+  }
+
+  /** All paths between two nodes. */
+  pathsBetween(from: string, to: string, options?: { maxDepth?: number; labels?: string[] }): PathResult[] {
+    this.ensureOpen();
+    return traversalEngine.pathsBetween(from, to, options);
+  }
+
+  // ── Graph Algorithms ────────────────────────────────────────
+
+  /** Compute PageRank. */
+  pageRank(options?: { damping?: number; maxIterations?: number; tolerance?: number }): PageRankResult {
+    this.ensureOpen();
+    return graphAlgorithms.pageRank(options);
+  }
+
+  /** Find connected components. */
+  connectedComponents(): ComponentResult {
+    this.ensureOpen();
+    return graphAlgorithms.connectedComponents();
+  }
+
+  /** Degree centrality. */
+  degreeCentrality(): DegreeResult {
+    this.ensureOpen();
+    return graphAlgorithms.degreeCentrality();
+  }
+
+  /** Community detection via label propagation. */
+  communities(options?: { maxIterations?: number }): CommunityResult {
+    this.ensureOpen();
+    return graphAlgorithms.labelPropagation(options);
+  }
+
+  // ── Cypher ──────────────────────────────────────────────────
+
+  /** Execute a Cypher query. */
+  async cypher(query: string): Promise<CypherResult> {
+    this.ensureOpen();
+    return cypherEngine.execute(query);
+  }
+
+  // ── Full-Text Search ────────────────────────────────────────
+
+  /** Create a full-text search index. */
+  createTextIndex(name: string, fields: string[]): void {
+    this.ensureOpen();
+    textIndexManager.create(name, fields);
+  }
+
+  /** Search a text index. */
+  textSearch(indexName: string, query: string, options?: { limit?: number }): import("./text-index").TextSearchResult[] {
+    this.ensureOpen();
+    return textIndexManager.search(indexName, query, options);
   }
 
   // ── Events ──────────────────────────────────────────────────

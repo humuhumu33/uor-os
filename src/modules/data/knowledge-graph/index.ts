@@ -136,30 +136,20 @@ export { schemaRegistry } from "./schema-constraints";
 export type { SchemaDefinition, PropertyConstraint, ValidationError } from "./schema-constraints";
 export { indexManager } from "./index-manager";
 export type { IndexInfo } from "./index-manager";
+export { traversalEngine } from "./traversal";
+export type { TraversalOptions, TraversalResult, PathResult } from "./traversal";
+export { graphAlgorithms } from "./algorithms";
+export type { PageRankResult, ComponentResult, DegreeResult, CommunityResult } from "./algorithms";
+export { cypherEngine } from "./cypher-engine";
+export type { CypherResult } from "./cypher-engine";
+export { textIndexManager } from "./text-index";
+export type { TextSearchResult } from "./text-index";
 export {
   edgesToJsonLd, importJsonLd,
   edgesToCsv, importCsv,
   edgesToNQuads,
   edgesToCypher, importCypher,
 } from "./io-adapters";
-
-// ── Neo4j Migration ─────────────────────────────────────────────────────────
-
-export {
-  testConnection as testNeo4jConnection,
-  introspectSchema as introspectNeo4jSchema,
-  migrateFromNeo4j,
-  fetchNodes as fetchNeo4jNodes,
-  fetchRelationships as fetchNeo4jRelationships,
-} from "./neo4j-migration";
-export type {
-  Neo4jConnection,
-  Neo4jSchema,
-  Neo4jNode,
-  Neo4jRelationship,
-  MigrationProgress,
-  MigrationResult,
-} from "./neo4j-migration";
 
 // ── Persistence Provider Layer ──────────────────────────────────────────────
 
