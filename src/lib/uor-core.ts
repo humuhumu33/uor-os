@@ -8,11 +8,15 @@
  *   2. distance(a, b)   → fidelity [0..1]   (a mapping)
  *   3. classify(byte)   → partition class    (a mapping)
  *
- * All duplicate popcount, hexToBytes, hammingDistance implementations
- * across the codebase are consolidated here. ONE definition each.
+ * All duplicate popcount, hexToBytes, bytesToHex, hammingDistance,
+ * and sha256hex implementations are consolidated here.
+ * ONE definition each.
  *
  * @module lib/uor-core
  */
+
+import { sha256 as _sha256 } from "@noble/hashes/sha2.js";
+import { bytesToHex as _bytesToHex } from "@noble/hashes/utils.js";
 
 // ── Popcount: the atomic distance primitive ─────────────────────────────────
 
@@ -31,6 +35,19 @@ export function popcount16(x: number): number {
   return (x + (x >> 8)) & 0x1f;
 }
 
+/** Count set bits in a 32-bit integer (Kernighan's method). */
+export function popcount32(x: number): number {
+  let v = x >>> 0;
+  let count = 0;
+  while (v) { v &= v - 1; count++; }
+  return count;
+}
+
+// ── Hex encoding: the address serialization primitive ───────────────────────
+
+/** Convert bytes to lowercase hex string. Canonical bytesToHex. */
+export const toHex: (bytes: Uint8Array) => string = _bytesToHex;
+
 // ── Hex parsing: the address deserialization primitive ───────────────────────
 
 /**
@@ -44,6 +61,23 @@ export function hexToBytes(hex: string): Uint8Array {
     bytes[i] = parseInt(clean.substring(i * 2, i * 2 + 2), 16);
   }
   return bytes;
+}
+
+// ── SHA-256: the content-addressing primitive ───────────────────────────────
+
+/** SHA-256 raw digest from raw bytes. Synchronous. */
+export function sha256raw(bytes: Uint8Array): Uint8Array {
+  return _sha256(bytes);
+}
+
+/** SHA-256 hex digest of a UTF-8 string. Synchronous. */
+export function sha256hexSync(input: string): string {
+  return _bytesToHex(_sha256(new TextEncoder().encode(input)));
+}
+
+/** SHA-256 hex digest of raw bytes. Synchronous. */
+export function sha256hexBytes(bytes: Uint8Array): string {
+  return _bytesToHex(_sha256(bytes));
 }
 
 // ── Hamming distance: the universal distance metric ─────────────────────────
