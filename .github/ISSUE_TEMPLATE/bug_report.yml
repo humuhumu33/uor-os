@@ -1,0 +1,59 @@
+name: Bug Report
+title: '[bug] '
+description: Report a bug
+labels: ['type: bug', 'status: needs triage']
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before you begin
+        1. Search [existing issues](https://github.com/nicholasgriffintn/uor-os/issues?q=is%3Aissue) first.
+        2. Make sure all packages are up to date.
+        3. Confirm the issue is with UOR OS, not a dependency.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear description of the bug. Include screenshots if applicable.
+      placeholder: Bug description
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Steps to reproduce the behavior, or a link to a minimal reproduction.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: 'Browser, OS, and UOR OS version'
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Stack trace
+      render: text
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Any other relevant information.

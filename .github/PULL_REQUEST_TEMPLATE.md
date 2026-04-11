@@ -1,18 +1,20 @@
-## What
+## Description
 
-Brief description of the change.
+<!-- A clear description of what this PR does. -->
 
-## Why
+## Type of change
 
-Motivation and context.
-
-## How
-
-Implementation approach (if non-obvious).
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
+- [ ] Refactor
 
 ## Checklist
 
+- [ ] I have read the [Contributing Guide](.github/CONTRIBUTING.md)
 - [ ] `npm run build` passes
 - [ ] Types are correct (`tsc --noEmit`)
+- [ ] I have added tests that prove my fix or feature works
+- [ ] I have updated documentation where necessary
 - [ ] No circular dependencies introduced
-- [ ] Barrel exports updated (if new public API)
