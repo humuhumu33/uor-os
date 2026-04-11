@@ -377,6 +377,7 @@ export function SdbConsumerPages({ db }: Props) {
         recentIds={recentIds}
         onSelect={id => { setSelectedId(id); }}
         onCreate={title => createNote("ws:root", title)}
+        commands={commands}
       />
 
       {/* Sidebar */}
