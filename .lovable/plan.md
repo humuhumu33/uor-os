@@ -1,67 +1,143 @@
 
 
-# E8 Computational Substrate + Redundancy Pruning
+# Mapping-as-Computation: System-Wide Redundancy Analysis
 
-## Overview
+## The Core Insight
 
-Create a canonical E8 root system module, wire it into the HDC engine as a structured basis, and eliminate the 3 scattered duplicate E8 root constructions across `boundary.ts`, `coadjoint-orbit-classifier.ts`, and `groups.ts`.
+Every operation in this system ultimately reduces to one of three primitives:
+1. **Address** — content → canonical ID (a mapping)
+2. **Distance** — two addresses → similarity score (a mapping)
+3. **Classify** — address → partition/category (a mapping)
 
-## What Gets Built
+These three primitives are currently reimplemented dozens of times across the codebase. The mapping-as-computation paradigm means we can collapse them into a single addressing kernel that everything else derives from.
 
-### 1. Canonical E8 Root System — `src/modules/research/atlas/e8-roots.ts`
+## Discovered Redundancies
 
-Single source of truth for all 240 E8 roots. Exact integer arithmetic (2× scaling to avoid floats). Replaces the private `constructE8Roots()` in `boundary.ts` and `generateE8RootProjections()` in `coadjoint-orbit-classifier.ts`.
+### 1. `popcount8` — Duplicated 4 Times
+Identical 5-line function in:
+- `kernel/resolver/correlate-engine.ts`
+- `kernel/resolver/entity-resolver.ts`
+- `intelligence/audio/lenses/harmonic-lens.ts`
+- `kernel/hdc/hypervector.ts`
 
-- Generate 112 Type I roots (±eᵢ ± eⱼ, i < j) and 128 Type II roots (±1 coordinates, even parity)
-- Inner product computation (exact integers)
-- Root system axiom verification (240 count, all norm² = 8 in doubled rep, closure under reflections)
-- `byteToE8Root(b: number): number[] | null` — maps R₈ elements to E8 roots (128 of 256 bytes are roots)
-- Export `E8_ROOTS: readonly number[][]` as frozen singleton
+This is the atomic distance primitive — it should exist exactly once.
 
-### 2. Certified Atlas → E8 Embedding — `src/modules/research/atlas/embedding.ts`
+### 2. `hexToBytes` — Duplicated 3 Times
+Nearly identical in:
+- `kernel/resolver/correlate-engine.ts`
+- `kernel/resolver/entity-resolver.ts`
+- `identity/qr-cartridge/decoder.ts`
 
-Maps the 96 Atlas vertices into the 240-root E8 system. Each Atlas label `(e₁,e₂,e₃,d₄₅,e₆,e₇)` extends to an 8D vector satisfying the E8 root constraints.
+This is an address parsing primitive — should exist once.
 
-- `embedVertex(index: number): number[]` — Atlas vertex → E8 root (8D integer vector)
-- Adjacency preservation check: v ~ w in Atlas ⟺ ⟨φ(v), φ(w)⟩ = -4 (in doubled rep)
-- Self-verifying on construction
+### 3. `hammingDistance` / `hammingDistanceBytes` / `hammingDistHex` — Duplicated 4+ Times
+All just `popcount8(a[i] ^ b[i])` in a loop. Different names, same operation. Found in correlate-engine, entity-resolver, hdc/hypervector, reasoning.ts, and webgpu-compute.ts.
 
-### 3. E8-Structured HDC Basis — Modify `hypervector.ts` + `encoder.ts`
+### 4. `classifyByteQ0` Duplicates `classifyByte`
+`entity-resolver.ts` has its own `classifyByteQ0()` (lines 44-49) that reimplements `classifyByte` from `lib/uor-ring.ts` with different return strings ("partition:ExteriorSet" vs "EXTERIOR"). Same logic, different labels.
 
-Replace ad-hoc `seedFromString` with E8-rooted basis vectors. The 240 E8 roots become the structured codebook. Symbols map to E8 coordinates first, then extend to full hypervectors via deterministic expansion.
+### 5. Two Entity Resolvers Doing the Same Thing
+- `resolver/entity-resolver.ts` — DihedralFactorizationResolver (UTF-8 → bytes → factorize → hash → graph search)
+- `resolver/entity-linker.ts` — Semantic entity linker (mention → index lookup → fuzzy match)
 
-- Add `fromE8Root(rootIndex: number): Hypervector` — expand an 8D E8 root into a 1024-dim hypervector deterministically
-- Modify `encoder.ts` `sym()` to use E8-derived seeds for the first 240 symbols, falling back to the current string-hash method beyond that
-- The encoder's item memory becomes E8-indexed: symbols 0–95 map to Atlas vertices, 96–239 map to remaining E8 roots
+Both resolve text → canonical IRI. Both use Hamming distance for fuzzy matching. The entity-linker is a simpler version of entity-resolver.
 
-### 4. Prune Redundant E8 Constructions
+### 6. Two Correlation Systems
+- `resolver/correlation.ts` — Ring-based: `correlate(ring, a, b)` → fidelity via XOR + popcount
+- `resolver/correlate-engine.ts` — Hash-based: `correlateIds(hashA, hashB)` → fidelity via Hamming
 
-| File | Change |
-|------|--------|
-| `boundary.ts` | Remove private `constructE8Roots()`, `byteToVector()`, `isByteE8Root()` — import from `e8-roots.ts` |
-| `coadjoint-orbit-classifier.ts` | Remove private `generateE8RootProjections()` and `E8_ROOTS` constant — import from `e8-roots.ts` |
-| `groups.ts` `analyzeE8RootStructure()` | Use actual root counts from `e8-roots.ts` instead of hardcoded `112`/`128` |
-| `index.ts` (atlas barrel) | Export new `e8-roots` and `embedding` modules |
-| `hdc/index.ts` | Export `fromE8Root` |
+Both compute `1 - (hammingDistance / maxBits)`. Same formula, different input types. One works on ring values, the other on content hashes. In the mapping-as-computation paradigm, these are the same operation — distance between two addresses.
 
-## File Summary
+### 7. `singleProofHash` Imported from Two Sources
+- `@/lib/uor-canonical` (12+ files)
+- `@/modules/identity/uns/core/identity` (20+ files)
 
-| File | Action |
-|------|--------|
-| `src/modules/research/atlas/e8-roots.ts` | **Create** — Canonical 240 E8 roots, exact integer arithmetic |
-| `src/modules/research/atlas/embedding.ts` | **Create** — 96 Atlas vertices → E8 certified map |
-| `src/modules/kernel/hdc/hypervector.ts` | **Modify** — Add `fromE8Root()` constructor |
-| `src/modules/kernel/hdc/encoder.ts` | **Modify** — E8-indexed symbol allocation |
-| `src/modules/research/atlas/boundary.ts` | **Modify** — Remove duplicate E8 root code, import canonical |
-| `src/modules/research/atlas/coadjoint-orbit-classifier.ts` | **Modify** — Remove duplicate E8 root code, import canonical |
-| `src/modules/research/atlas/groups.ts` | **Modify** — Use live E8 root data instead of hardcoded counts |
-| `src/modules/research/atlas/index.ts` | **Modify** — Export new modules |
-| `src/modules/kernel/hdc/index.ts` | **Modify** — Export `fromE8Root` |
+Two import paths for the same canonical addressing function. This is the **single most important function in the system** — it should have exactly one canonical import.
 
-## Outcome
+### 8. Semantic Similarity Outside the Ring
+`ring-core/semantic-similarity.ts` uses trigram cosine similarity — a completely separate distance metric from the ring's Hamming-based fidelity. In a content-addressable system, text similarity should flow through the same addressing pipeline: hash the text, measure Hamming distance between addresses. The trigram engine is useful for cache matching but should be recognized as a shortcut, not a parallel system.
 
-- **3 duplicate E8 root constructions → 1 canonical source** (`e8-roots.ts`)
-- **HDC symbols rooted in E8 geometry** — first 240 symbols have algebraic meaning from exceptional Lie theory
-- **Atlas → E8 embedding verified** — adjacency preservation proven at construction time
-- **Same seed, same lattice, same OS** — deterministic reconstruction on any machine from first principles
+## The Unified Architecture
+
+All of the above collapses into a single **Addressing Kernel** with three exported primitives:
+
+```text
+┌─────────────────────────────────────────────────┐
+│            Addressing Kernel (lib/uor-core.ts)  │
+│                                                 │
+│  address(content) → CID                         │
+│  distance(a, b)   → fidelity [0..1]             │
+│  classify(addr)   → partition class             │
+│                                                 │
+│  Internals:                                     │
+│    popcount8, hexToBytes, hammingBytes           │
+│    (each exists ONCE, nowhere else)              │
+└─────────────────────────────────────────────────┘
+          │
+          ├── resolver/ uses distance() for correlation + entity resolution
+          ├── hdc/ uses distance() for hypervector similarity
+          ├── verify/ uses address() for trace/receipt content-addressing
+          ├── observable/ uses classify() for geometry
+          └── audio/ uses distance() for harmonic analysis
+```
+
+## Implementation Plan
+
+### Step 1: Create `src/lib/uor-core.ts` — The Three Primitives
+
+Extract and consolidate all duplicated functions into one canonical file:
+- `popcount8(byte)` — single definition
+- `hexToBytes(hex)` — single definition
+- `hammingBytes(a, b)` — single definition (replaces 4+ variants)
+- `distance(a, b)` — fidelity between two byte arrays: `1 - hamming/maxBits`
+- `classify(byte, bits)` — delegates to existing `classifyByte` (single source)
+
+~60 lines total. Every other file imports from here.
+
+### Step 2: Unify `singleProofHash` Import Path
+
+Create `src/lib/uor-canonical.ts` as the ONE canonical re-export (it may already exist — verify and consolidate). Update `identity/uns/core/identity.ts` to re-export from the same source. All 122+ call sites should import from one path.
+
+### Step 3: Merge `correlation.ts` and `correlate-engine.ts`
+
+Both compute `1 - hamming/maxBits`. Merge into a single `correlation.ts` that:
+- Works on ring values: `correlatValues(ring, a, b)`
+- Works on content hashes: `correlateHashes(hashA, hashB)`
+- Both call `distance()` from `uor-core.ts`
+
+Delete `correlate-engine.ts` as a separate file; fold its SKOS classification into the unified correlation module.
+
+### Step 4: Merge `entity-resolver.ts` and `entity-linker.ts`
+
+Entity-linker is a subset of entity-resolver. Merge into one `entity-resolver.ts` that handles:
+- Exact lookup (from entity-linker)
+- Dihedral factorization (from entity-resolver)
+- Fuzzy matching via `distance()` (shared)
+
+Remove the duplicate `classifyByteQ0` — use `classify()` from `uor-core.ts`.
+
+### Step 5: Remove All Duplicate `popcount8` / `hexToBytes` / `hamming*`
+
+After step 1, grep for remaining duplicates and replace with imports from `uor-core.ts`. Affects:
+- `hdc/hypervector.ts`
+- `audio/lenses/harmonic-lens.ts`
+- `identity/qr-cartridge/decoder.ts`
+
+### Step 6: Update barrel exports
+
+Update `kernel/resolver/index.ts` to reflect the merged modules. Remove duplicate export aliases (e.g., `resolveEntitySemantic` is just `resolveEntity` from entity-linker).
+
+## Impact
+
+| Metric | Before | After |
+|--------|--------|-------|
+| `popcount8` definitions | 4 | 1 |
+| `hexToBytes` definitions | 3 | 1 |
+| `hammingDistance` variants | 5+ | 1 |
+| Correlation modules | 2 | 1 |
+| Entity resolvers | 2 | 1 |
+| `singleProofHash` import paths | 2 | 1 |
+| Estimated lines removed | ~250 | — |
+
+The result: every distance measurement, every classification, every content-addressing operation flows through the same three primitives. The entire system becomes a composition of pure mappings — exactly the categorical computation model the architecture demands.
 
