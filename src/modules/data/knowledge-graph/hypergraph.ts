@@ -147,6 +147,45 @@ async function hyperedgeId(nodes: string[], label: string): Promise<string> {
   return sha256hex(canonical);
 }
 
+// ── Temporal Event Stream ───────────────────────────────────────────────────
+
+export type HyperedgeEventType = "created" | "expired" | "reaped" | "removed";
+
+export interface HyperedgeEvent {
+  type: HyperedgeEventType;
+  edgeId: string;
+  label: string;
+  timestamp: number;
+  edge?: Hyperedge;
+}
+
+type HyperedgeEventListener = (event: HyperedgeEvent) => void;
+
+const eventListeners = new Set<HyperedgeEventListener>();
+
+export const hyperedgeEvents = {
+  /** Subscribe to hyperedge lifecycle events. Returns an unsubscribe function. */
+  on(listener: HyperedgeEventListener): () => void {
+    eventListeners.add(listener);
+    return () => { eventListeners.delete(listener); };
+  },
+
+  /** Subscribe to a specific event type only. */
+  onType(type: HyperedgeEventType, listener: (event: HyperedgeEvent) => void): () => void {
+    const wrapped: HyperedgeEventListener = (e) => { if (e.type === type) listener(e); };
+    eventListeners.add(wrapped);
+    return () => { eventListeners.delete(wrapped); };
+  },
+
+  /** Remove all listeners. */
+  clear(): void { eventListeners.clear(); },
+};
+
+function emitEvent(type: HyperedgeEventType, he: Hyperedge): void {
+  const event: HyperedgeEvent = { type, edgeId: he.id, label: he.label, timestamp: Date.now(), edge: he };
+  eventListeners.forEach(fn => { try { fn(event); } catch { /* listener errors don't break the pipeline */ } });
+}
+
 // ── Public API ──────────────────────────────────────────────────────────────
 
 export const hypergraph = {
@@ -214,6 +253,7 @@ export const hypergraph = {
     );
 
     indexEdge(he);
+    emitEvent("created", he);
     return he;
   },
 
@@ -222,7 +262,7 @@ export const hypergraph = {
    */
   async removeEdge(id: string): Promise<void> {
     const he = edgeCache.get(id);
-    if (he) deindexEdge(he);
+    if (he) { deindexEdge(he); emitEvent("removed", he); }
     await grafeoStore.removeNode(`${UOR_NS}hyperedge/${id}`);
   },
 
@@ -418,6 +458,7 @@ export const hypergraph = {
       he => he.expiresAt !== undefined && he.expiresAt <= now,
     );
     for (const he of expired) {
+      emitEvent("reaped", he);
       deindexEdge(he);
       await grafeoStore.removeNode(`${UOR_NS}hyperedge/${he.id}`);
     }
