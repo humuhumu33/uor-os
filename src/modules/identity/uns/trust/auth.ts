@@ -13,7 +13,7 @@
  */
 
 import { singleProofHash } from "../core/identity";
-import { sha256 } from "../core/address";
+import { sha256raw, toHex } from "@/lib/uor-core";
 import type { UnsKeypair, SignatureBlock } from "../core/keypair";
 // @ts-ignore. noble/post-quantum uses .js exports
 import { ml_dsa65 } from "@noble/post-quantum/ml-dsa.js";
@@ -71,7 +71,7 @@ async function computeChallengeBytes(
   const combined = new Uint8Array(nonce.length + idBytes.length);
   combined.set(nonce);
   combined.set(idBytes, nonce.length);
-  return sha256(combined);
+  return sha256raw(combined);
 }
 
 // ── Auth Server ─────────────────────────────────────────────────────────────
@@ -182,7 +182,7 @@ export class UnsAuthServer {
   private async createSession(identityCanonicalId: string): Promise<UnsSession> {
     const now = new Date();
     const sessionPayload = {
-      sessionId: bytesToHex(randomBytes(16)),
+      sessionId: toHex(randomBytes(16)),
       identityCanonicalId,
       issuedAt: now.toISOString(),
       expiresAt: new Date(now.getTime() + DEFAULT_SESSION_TTL_MS).toISOString(),
@@ -210,11 +210,7 @@ export class UnsAuthServer {
   }
 }
 
-// ── Utility ─────────────────────────────────────────────────────────────────
-
-function bytesToHex(b: Uint8Array): string {
-  return Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
-}
+// bytesToHex consolidated into @/lib/uor-core as toHex
 
 /** Sign challenge bytes with a client keypair. used by authenticating clients. */
 export async function signChallenge(

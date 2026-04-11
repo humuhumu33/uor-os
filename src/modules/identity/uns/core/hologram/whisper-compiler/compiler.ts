@@ -210,14 +210,12 @@ function inferModelMeta(model: OnnxModel) {
   };
 }
 
-// ── SHA-256 for manifest CID ───────────────────────────────────────────────
+// ── SHA-256 for manifest CID (consolidated via uor-core) ──────────────────
+
+import { sha256hexSync } from "@/lib/uor-core";
 
 async function sha256Hex(data: string): Promise<string> {
-  const encoded = new TextEncoder().encode(data);
-  const hash = sha256raw(new Uint8Array(encoded));
-  return Array.from(new Uint8Array(hash))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  return sha256hexSync(data);
 }
 
 // ── Compiler ───────────────────────────────────────────────────────────────

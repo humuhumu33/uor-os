@@ -326,15 +326,13 @@ export async function canonicalizeToNQuads(obj: unknown): Promise<string> {
   return nquads;
 }
 
-// ── SHA-256 helpers ─────────────────────────────────────────────────────────
+// ── SHA-256 helpers (delegating to uor-core) ───────────────────────────────
 
 async function sha256Hash(bytes: Uint8Array): Promise<Uint8Array> {
   return sha256raw(bytes);
 }
 
-function bytesToHex(bytes: Uint8Array): string {
-  return toHex(bytes);
-}
+// bytesToHex already available as toHex from @/lib/crypto import
 
 // ── Single Proof Hash ──────────────────────────────────────────────────────
 
@@ -385,7 +383,7 @@ export async function singleProofHash(
 
   // Step 3: SHA-256. THE single hash
   const hashBytes = sha256raw(canonicalBytes);
-  const hashHex = bytesToHex(hashBytes);
+  const hashHex = toHex(hashBytes);
 
   // Step 4: Derive all four identity forms from ONE hash
   //   derivation_id. from hex
