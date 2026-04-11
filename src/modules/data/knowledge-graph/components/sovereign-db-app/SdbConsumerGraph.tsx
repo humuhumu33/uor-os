@@ -22,8 +22,11 @@ import { useAtlasSeedData, SdbAtlasOverlay } from "./SdbAtlasSeed";
 import { getAtlas } from "@/modules/research/atlas/atlas";
 import { decodeTriality } from "@/modules/research/atlas/triality";
 
+import type { AppSection } from "./SovereignDBApp";
+
 interface Props {
   db: SovereignDB;
+  onNavigateSection?: (section: AppSection) => void;
 }
 
 const COLORS: Record<string, string> = {
@@ -34,7 +37,7 @@ const COLORS: Record<string, string> = {
   node: "hsl(160, 70%, 50%)",
 };
 
-export function SdbConsumerGraph({ db }: Props) {
+export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("force");
   const [filters, setFilters] = useState<GraphFilter>({
     types: new Map(),
