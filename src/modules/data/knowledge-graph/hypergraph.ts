@@ -122,6 +122,7 @@ export const hypergraph = {
         heLabel: label,
         arity: nodes.length,
         weight,
+        ...(atlasVertex !== undefined ? { atlasVertex } : {}),
         ...properties,
       },
       createdAt: he.createdAt,
@@ -242,6 +243,11 @@ export const hypergraph = {
     edgeCache.clear();
   },
 
+  /** All cached hyperedges (for view-layer queries). */
+  cachedEdges(): Hyperedge[] {
+    return Array.from(edgeCache.values());
+  },
+
   // ── Internal ────────────────────────────────────────────────
 
   async _incidentFromGraph(nodeId: string): Promise<IncidenceResult> {
@@ -267,7 +273,7 @@ export const hypergraph = {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function kgNodeToHyperedge(node: KGNode, id: string): Hyperedge {
-  const { nodes, heLabel, arity, weight, ...rest } = node.properties as any;
+  const { nodes, heLabel, arity, weight, atlasVertex, ...rest } = node.properties as any;
   return {
     id,
     nodes: nodes ?? [],
@@ -275,6 +281,7 @@ function kgNodeToHyperedge(node: KGNode, id: string): Hyperedge {
     arity: arity ?? 0,
     properties: rest,
     weight: weight ?? 1.0,
+    atlasVertex: atlasVertex ?? undefined,
     createdAt: node.createdAt,
   };
 }
