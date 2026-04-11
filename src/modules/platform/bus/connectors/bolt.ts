@@ -53,7 +53,9 @@ async function getDriver(conn: Connection): Promise<any> {
   // Its browser build uses WebSocket transport automatically.
   let neo4jMod: any;
   try {
-    neo4jMod = await import(/* @vite-ignore */ "neo4j-driver");
+    // Optional peer dep — dynamic require avoids hard TS coupling
+    const modName = "neo4j-driver";
+    neo4jMod = await (Function("m", "return import(m)")(modName));
   } catch {
     throw new Error(
       "neo4j-driver is not installed. Run: npm install neo4j-driver"
