@@ -7,19 +7,24 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nicholasgriffintn/uor-os/actions"><img src="https://img.shields.io/github/actions/workflow/status/nicholasgriffintn/uor-os/ci.yml?style=flat-square&label=CI" alt="CI"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square" alt="License"></a>
-  <a href="https://uor-os.lovable.app"><img src="https://img.shields.io/badge/demo-live-brightgreen?style=flat-square" alt="Live Demo"></a>
-  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Web-lightgrey?style=flat-square" alt="Platforms">
+  <a href="https://github.com/nicholasgriffintn/uor-os/actions"><img src="https://img.shields.io/github/actions/workflow/status/nicholasgriffintn/uor-os/ci.yml?label=CI" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License"></a>
+  <a href="https://uor-os.lovable.app"><img src="https://img.shields.io/badge/demo-live-brightgreen" alt="Live Demo"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Web-lightgrey" alt="Platforms">
+  <a href=".github/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa" alt="Contributor Covenant"></a>
 </p>
 
 ---
 
-## What is UOR OS?
+## Introduction
 
-UOR OS is a local-first, privacy-preserving operating system that runs in the browser and ships as a native desktop app via [Tauri](https://tauri.app). Every object — files, messages, identities, computation traces — gets a deterministic, content-addressed identity. Your data is portable, verifiable, and yours by default.
+UOR OS is a **local-first, privacy-preserving operating system** that runs in the browser and ships as a native desktop app via [Tauri](https://tauri.app). Every object — files, messages, identities, computation traces — gets a deterministic, content-addressed identity. Your data is portable, verifiable, and yours by default.
 
-## Quick Start
+The _why_: you should own your computation and your data. The _how_: algebraic verification (Ring R₈), content-addressing (SHA-256 → CID → IPv6), and post-quantum encryption (ML-KEM). The _what_: a windowed desktop shell with an AI oracle, encrypted messenger, container runtime, and knowledge graph — all running locally, all sovereign.
+
+For a deep dive into the architecture and layer system, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## Getting Started
 
 ```bash
 npm install
@@ -28,7 +33,7 @@ npm run dev
 
 Open **http://localhost:8080** — the OS shell loads immediately.
 
-To build a native desktop app:
+For a native desktop build:
 
 ```bash
 npm run tauri:build
@@ -38,7 +43,7 @@ npm run tauri:build
 
 ## Features
 
-- 🖥️ **Windowed Desktop Shell** — Dock, spotlight search, theme engine
+- 🖥️ **Windowed Desktop Shell** — Dock, spotlight search, theme engine, multi-window management
 - 🔐 **Encrypted by Default** — AES-256-GCM at rest, post-quantum (ML-KEM) in transit
 - 🧮 **Algebraic Computation** — Every result is independently verifiable via Ring R₈
 - 🌐 **Content Addressing** — SHA-256 → CID → IPv6 → Unicode glyph for every object
@@ -47,7 +52,7 @@ npm run tauri:build
 - 📦 **Container Runtime** — Docker-compatible build/run/ship pipeline
 - 🔗 **Knowledge Graph** — RDF-compatible triples with SPARQL queries, stored locally
 
-## Platform Support
+### Platforms
 
 | Platform | Status |
 |----------|--------|
@@ -56,11 +61,24 @@ npm run tauri:build
 | Windows 10/11 | ✅ Supported |
 | Linux (Ubuntu, Fedora, Arch) | ✅ Supported |
 
-## Architecture
+## Contributing
 
-UOR OS is organized into six layers — from algebraic kernel to experimental research modules. Each layer enforces strict downward-only imports: intelligence → data → kernel, never upward.
+We welcome contributions from everyone! Please read our [Contributing Guide](.github/CONTRIBUTING.md) for prerequisites, dev setup, coding conventions, and the PR process.
 
-👉 **[Read the full architecture guide →](ARCHITECTURE.md)**
+Please note that all interactions in this project are governed by our [Code of Conduct](.github/CODE_OF_CONDUCT.md).
+
+### Security
+
+If you discover a security vulnerability, please follow our [Security Policy](.github/SECURITY.md) for responsible disclosure.
+
+### Documentation
+
+| Resource | Link |
+|----------|------|
+| Architecture Guide | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Contributing Guide | [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) |
+| Security Policy | [.github/SECURITY.md](.github/SECURITY.md) |
+| Code of Conduct | [.github/CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md) |
 
 ## Tech Stack
 
@@ -74,10 +92,20 @@ UOR OS is organized into six layers — from algebraic kernel to experimental re
 | AI | Multi-model gateway (OpenAI, Gemini) |
 | Backend | Supabase (Edge Functions, Postgres, Storage) |
 
-## Contributing
+## Organization
 
-We welcome contributions! Please read the **[Contributing Guide](.github/CONTRIBUTING.md)** for setup instructions, coding conventions, and the PR process.
+UOR OS is an open-source project maintained by the community. Decisions are made through open discussion in issues and pull requests. Major architectural changes go through the RFC process documented in [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
-## License
+## Licenses
 
-[Apache License, Version 2.0](LICENSE)
+UOR OS is licensed under [Apache License, Version 2.0](LICENSE).
+
+```
+Copyright 2024-2026 UOR OS Contributors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+```

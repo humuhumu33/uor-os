@@ -88,16 +88,72 @@ export type {
   OrbitRouteAnnouncement, UnsNodeConfig, ServiceStatus, HealthResponse,
 } from "./mesh";
 
-// ── Container runtime ──────────────────────────────────────────────────────
-export {
-  createContainer,
-  listContainers,
-  startContainer,
-  stopContainer,
-  removeContainer,
-  inspectContainer,
-} from "./build/container";
-export type { UorContainer, ContainerInspection, ContainerState } from "./build/container";
+// ── Container runtime (inlined stubs — same pattern as build stubs below) ──
+
+export type ContainerState = "created" | "running" | "paused" | "stopped" | "exited";
+
+export interface UorContainer {
+  id: string;
+  imageId: string;
+  name: string;
+  state: ContainerState;
+}
+
+export interface ContainerInspection {
+  container: UorContainer;
+  state: ContainerState;
+  createdAt: number;
+  startedAt?: number;
+  stoppedAt?: number;
+  exitCode?: number;
+  env: Record<string, string>;
+  ports: Array<{ hostPort: number; containerPort: number; protocol: string }>;
+  mounts: Array<{ source: string; target: string; readonly: boolean }>;
+}
+
+interface CreateContainerOpts {
+  name: string;
+  imageId: string;
+  env?: Record<string, string>;
+  ports?: Array<{ hostPort: number; containerPort: number; protocol: string }>;
+}
+
+const _containers = new Map<string, { container: UorContainer; opts: CreateContainerOpts; createdAt: number; startedAt?: number; stoppedAt?: number }>();
+
+export function createContainer(opts: CreateContainerOpts): UorContainer {
+  const id = crypto.randomUUID();
+  const container: UorContainer = { id, imageId: opts.imageId, name: opts.name, state: "created" };
+  _containers.set(id, { container, opts, createdAt: Date.now() });
+  return container;
+}
+
+export function listContainers(): UorContainer[] {
+  return Array.from(_containers.values()).map((e) => e.container);
+}
+
+export function startContainer(id: string): void {
+  const entry = _containers.get(id);
+  if (entry) { entry.container.state = "running"; entry.startedAt = Date.now(); }
+}
+
+export function stopContainer(id: string): void {
+  const entry = _containers.get(id);
+  if (entry) { entry.container.state = "stopped"; entry.stoppedAt = Date.now(); }
+}
+
+export function removeContainer(id: string): void {
+  _containers.delete(id);
+}
+
+export function inspectContainer(id: string): ContainerInspection {
+  const entry = _containers.get(id);
+  if (!entry) throw new Error(`Container ${id} not found`);
+  return {
+    container: entry.container, state: entry.container.state, createdAt: entry.createdAt,
+    startedAt: entry.startedAt, stoppedAt: entry.stoppedAt,
+    env: entry.opts.env ?? {}, ports: entry.opts.ports ?? [], mounts: [],
+  };
+}
 
 // ── Build stubs (inlined to avoid PWA IIFE resolution issues) ──────────────
 
