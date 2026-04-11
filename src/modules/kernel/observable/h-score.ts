@@ -13,26 +13,8 @@
  * @see spec/src/namespaces/state.rs. observer state model
  */
 
-// ── popcount ────────────────────────────────────────────────────────────────
-
-/**
- * Count the number of set bits (Hamming weight) in an integer.
- *
- * Uses the standard bit-counting algorithm (Kernighan's method).
- * Works for 0 ≤ x ≤ 0xFFFFFFFF (32-bit unsigned).
- *
- * @param x  Non-negative integer.
- * @returns  Number of set bits.
- */
-export function popcount(x: number): number {
-  let count = 0;
-  let v = x >>> 0; // Ensure unsigned 32-bit
-  while (v) {
-    v &= v - 1; // Clear lowest set bit
-    count++;
-  }
-  return count;
-}
+// popcount consolidated into the addressing kernel
+import { popcount32 as popcount } from "@/lib/uor-core";
 
 // ── hScore ──────────────────────────────────────────────────────────────────
 

@@ -15,7 +15,7 @@
 
 import type { OnnxTensor, HologramTensorDescriptor } from "./types";
 import { DTYPE_NAME } from "./types";
-import { sha256raw } from "@/lib/crypto";
+import { sha256raw, sha256hexBytes } from "@/lib/uor-core";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -85,18 +85,10 @@ function idbDelete(db: IDBDatabase, store: string, key: string): Promise<void> {
   });
 }
 
-// ── SHA-256 Content Addressing ─────────────────────────────────────────────
+// ── SHA-256 Content Addressing (consolidated via uor-core) ────────────────
 
-/**
- * Compute the SHA-256 hex hash of raw bytes.
- * This is the Content Identifier (CID) for the tensor.
- */
 async function sha256Hex(data: Uint8Array): Promise<string> {
-  const hashBuffer = sha256raw(new Uint8Array(data as Uint8Array<ArrayBuffer>));
-  const hashArray = new Uint8Array(hashBuffer);
-  return Array.from(hashArray)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  return sha256hexBytes(new Uint8Array(data as Uint8Array<ArrayBuffer>));
 }
 
 // ── HologramWeightStore ────────────────────────────────────────────────────

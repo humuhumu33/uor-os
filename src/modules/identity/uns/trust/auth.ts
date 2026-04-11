@@ -13,7 +13,8 @@
  */
 
 import { singleProofHash } from "../core/identity";
-import { sha256 } from "../core/address";
+import { sha256raw } from "@/lib/uor-core";
+import { toHex } from "@/lib/uor-core";
 import type { UnsKeypair, SignatureBlock } from "../core/keypair";
 // @ts-ignore. noble/post-quantum uses .js exports
 import { ml_dsa65 } from "@noble/post-quantum/ml-dsa.js";
@@ -210,11 +211,7 @@ export class UnsAuthServer {
   }
 }
 
-// ── Utility ─────────────────────────────────────────────────────────────────
-
-function bytesToHex(b: Uint8Array): string {
-  return Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
-}
+// bytesToHex consolidated into @/lib/uor-core as toHex
 
 /** Sign challenge bytes with a client keypair. used by authenticating clients. */
 export async function signChallenge(

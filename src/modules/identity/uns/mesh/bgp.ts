@@ -41,9 +41,8 @@ function extractHashBytes(canonicalId: string): Uint8Array {
   return bytes;
 }
 
-function bytesToHex(b: Uint8Array): string {
-  return Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
-}
+// bytesToHex consolidated into @/lib/uor-core as toHex
+import { toHex as bytesToHex } from "@/lib/uor-core";
 
 // ── Public API ──────────────────────────────────────────────────────────────
 

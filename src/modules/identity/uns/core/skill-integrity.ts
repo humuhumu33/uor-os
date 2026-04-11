@@ -13,7 +13,7 @@
 
 import { project } from "./hologram";
 import type { ProjectionInput } from "./hologram";
-import { sha256raw } from "@/lib/crypto";
+import { sha256raw, sha256hexBytes } from "@/lib/uor-core";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -73,11 +73,10 @@ export function parseSkillMd(raw: string): SkillDescriptor {
 
 // ── Raw-byte integrity ────────────────────────────────────────────────────
 
-async function sha256hex(text: string): Promise<{ hex: string; bytes: Uint8Array }> {
+function sha256hex(text: string): { hex: string; bytes: Uint8Array } {
   const data = new TextEncoder().encode(text);
-  const buf = sha256raw(new Uint8Array(data));
-  const bytes = new Uint8Array(buf);
-  const hex = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+  const bytes = sha256raw(new Uint8Array(data));
+  const hex = sha256hexBytes(bytes);
   return { hex, bytes };
 }
 

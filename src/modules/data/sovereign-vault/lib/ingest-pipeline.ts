@@ -57,20 +57,19 @@ export interface PipelineResult {
   metadata: Record<string, string>;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────
+// ── Helpers (consolidated via uor-core) ───────────────────────────────
 
-/** SHA-256 hex digest of an ArrayBuffer (streaming-compatible). */
+import { sha256hexBytes } from "@/lib/uor-core";
+
+/** SHA-256 hex digest of an ArrayBuffer. */
 async function sha256ArrayBuffer(buffer: ArrayBuffer): Promise<string> {
-  const digest = sha256raw(new Uint8Array(buffer));
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  return sha256hexBytes(new Uint8Array(buffer));
 }
 
 /** SHA-256 hex digest of a string. */
 async function sha256String(text: string): Promise<string> {
   const bytes = new TextEncoder().encode(text);
-  return sha256ArrayBuffer(bytes.buffer as ArrayBuffer);
+  return sha256hexBytes(bytes);
 }
 
 function addLineage(lineage: LineageEntry[], stage: string, detail?: string) {
