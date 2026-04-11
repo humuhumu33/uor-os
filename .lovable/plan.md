@@ -1,87 +1,99 @@
 
 
-# NVSA Integration — Converging Toward the Law of Limitation
+# SovereignDB Explorer — Standalone Application UI
 
-## Assessment: Where We Already Are
+## Vision
 
-The system is remarkably close to the NVSA (Neuro-Vector-Symbolic Architecture) paradigm. Here's the convergence map:
+Replace the current minimal `DatabaseExplorer.tsx` (3 simple tabs) with a professional, full-screen database application that feels immediately familiar to Neo4j Browser/Bloom users while maintaining SovereignDB's unique identity. This becomes the primary visual entry point — a standalone app within the hypergraph OS.
 
-```text
-NVSA Pillar          Our System                         Status
-─────────────────    ──────────────────────────────────  ──────
-VSA Core             kernel/hdc/ (bind, bundle, etc.)   ✓ Complete
-Resonator Network    hypervector.ts resonate()           ✓ Complete
-Symbolic Reasoning   reasoning.ts ReasoningEngine        ✓ Complete
-Hypergraph Learning  hypergraph + Laplacian + partition  ✓ Complete
-IMC Hardware Layer   (browser runtime, no crossbar)      N/A (software)
-Neural Front-End     oracle/ AI models → text features   ~ Partial
-Neural→VSA Bridge    Missing                             ✗ Gap
-```
-
-The critical missing piece is **Step 1 of the NVSA pipeline**: a structured bridge that takes neural/AI feature vectors (from the Oracle's model responses, embeddings, or any perceptual input) and projects them into R₈ hypervectors for downstream algebraic reasoning. Right now, the Oracle produces text and the HDC engine encodes strings — but there's no *learned projection* or *structured feature-to-hypervector mapping* connecting them.
-
-## The "Law of Limitation" Convergence
-
-You're right — we're converging toward a minimal set of universal primitives:
-
-1. **One ring** (R₈ = Z/256Z) — all computation
-2. **One substrate** (hypergraph) — all structure
-3. **Three operations** (bind, bundle, permute) — all reasoning
-4. **One memory** (ItemMemory + GrafeoDB) — all storage
-
-Every module we've built reduces to these four primitives. The NVSA insight confirms this is the correct trajectory: IBM's Raven solver uses exactly bind/bundle/similarity over a codebook — which is precisely our `resonate()` + `ItemMemory`. The "law of limitation" is that **you don't need more than this** — additional complexity (neural nets, GPUs, deep hierarchies) only adds overhead without expanding the algebra's expressiveness.
-
-## What to Build
-
-Two focused additions complete the NVSA bridge without adding bulk:
-
-### 1. Feature Projection Layer (~40 lines)
-`src/modules/kernel/hdc/projection.ts`
-
-A lightweight module that maps dense feature vectors (Float32Array from embeddings or any numeric signal) into R₈ hypervectors via random projection — the standard NVSA technique. This is the "neural front-end adapter" that IBM uses.
-
-- `projectToHV(features: Float32Array, dim?): Hypervector` — random projection matrix (seeded, deterministic)
-- `projectBatch(batch: Float32Array[], dim?): Hypervector[]` — batch projection
-- `learnProjection(examples: [Float32Array, string][], memory: ItemMemory)` — one-shot prototype learning: project features, bundle per class, store in ItemMemory
-
-This completes the NVSA pipeline: **perception → projection → VSA reasoning → hypergraph storage**.
-
-### 2. Factorization via Resonator Network (~25 lines added to reasoning.ts)
-
-Add `factorize(bundled, codebooks)` to the ReasoningEngine — multi-codebook resonator network factorization (the core of IBM's NVSA solver). Our `resonate()` does single-codebook unbundling; true NVSA uses multiple codebooks simultaneously to factorize structured representations (e.g., "shape=circle AND color=red AND size=large").
-
-- `factorize(bundled: Hypervector, codebooks: Map<string, [string, Hypervector][]>): Map<string, { label: string; similarity: number }>` — returns one best match per codebook (role → filler)
-
-### 3. Prune: Remove oracle/lib stubs that duplicate HDC (~10 lines removed)
-
-`symbolic-engine.ts` has its own expression evaluator that overlaps with the ring engine. Verify it delegates fully to `getEngine()` (it does — confirmed). No pruning needed there.
-
-Check `stream-resonance.ts` — if it reimplements resonator logic that `resonate()` already handles, redirect.
-
-## File Changes
-
-| File | Change | Lines |
-|------|--------|-------|
-| `src/modules/kernel/hdc/projection.ts` | **New** — feature→HV random projection, batch projection, one-shot learning | ~40 |
-| `src/modules/kernel/hdc/reasoning.ts` | Add `factorize()` multi-codebook method | ~25 |
-| `src/modules/kernel/hdc/index.ts` | Export `projectToHV`, `projectBatch`, `learnProjection` | ~3 |
-| `src/modules/intelligence/oracle/lib/stream-resonance.ts` | Audit — redirect to `resonate()` if duplicated | ~5 |
-
-**Total**: ~70 lines added. Zero API breaks. Completes the NVSA pipeline.
-
-## Technical Detail
+## Layout — Neo4j-Inspired Single Screen
 
 ```text
-NVSA Pipeline (IBM Raven Solver)        Our System After This Plan
-─────────────────────────────────       ─────────────────────────────
-CNN → feature vector                    Oracle/embedding → Float32Array
-Random projection → HV                  projection.ts projectToHV()
-Codebook similarity → candidates        ItemMemory.queryTopK()
-Multi-codebook resonator → factorize    reasoning.ts factorize()
-Confidence → answer                     ReasoningResult.confidence
-                                        + hypergraph persistence
-                                        + spectral/partitioning
+┌──────────────────────────────────────────────────────────────────────┐
+│  ■ SovereignDB              [db-name]   ⟐ Connected  ☰ Settings    │
+├────────┬─────────────────────────────────────────────────────────────┤
+│        │                                                             │
+│  NAV   │   QUERY EDITOR  (Cypher / SPARQL)            [▶ Execute]   │
+│        │   ─────────────────────────────────────────────────────     │
+│ Query  │                                                             │
+│ Edges  │   RESULTS AREA                                              │
+│ Schema │   ┌─────────────────────────────────────────────────────┐   │
+│ Algo   │   │  Table View  │  Graph View  │  JSON View           │   │
+│ Import │   │                                                     │   │
+│ Stats  │   │  (force-directed viz OR tabular results OR raw)     │   │
+│        │   │                                                     │   │
+│        │   └─────────────────────────────────────────────────────┘   │
+│        │                                                             │
+├────────┴─────────────────────────────────────────────────────────────┤
+│  Edges: 1,234  │  Nodes: 567  │  Labels: 12  │  Uptime: 3m 22s     │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-The system converges to four primitives operating over one ring on one substrate — the law of limitation realized in code.
+## Key Design Principles
+
+- **Single screen** — no page navigation, everything in view
+- **Large readable text** — 14px base, 13px mono for code, generous padding
+- **Collapsible sidebar** — icon-only mode for more workspace
+- **Neo4j familiarity** — query editor at top, results below, sidebar for navigation
+- **Dark-first** — uses existing theme tokens, high contrast
+- **Balanced whitespace** — no noise, every element earns its place
+
+## Sidebar Sections (6 panels)
+
+1. **Query** — default view, the Cypher/SPARQL editor + results
+2. **Edges** — browse/filter/sort all edges, click to inspect
+3. **Schema** — view registered schemas, indexes, constraints (including uniqueness)
+4. **Algorithms** — run PageRank, Components, Centrality, Communities with one click
+5. **Import/Export** — CSV, JSON-LD, Cypher dump, Neo4j migration shortcut
+6. **Stats** — live dashboard with counts, arity distribution, label breakdown
+
+## Result Views (3 modes)
+
+- **Table** — columnar display of query results, sortable
+- **Graph** — force-directed node-link diagram using Sigma.js (already in project)
+- **JSON** — raw formatted output
+
+## Technical Plan
+
+### Files to Create
+
+| File | Purpose |
+|------|---------|
+| `knowledge-graph/components/sovereign-db-app/SovereignDBApp.tsx` | Root component — layout shell with sidebar + content |
+| `knowledge-graph/components/sovereign-db-app/SdbSidebar.tsx` | Collapsible nav sidebar with 6 sections |
+| `knowledge-graph/components/sovereign-db-app/SdbQueryPanel.tsx` | Query editor + execute + result tabs (table/graph/json) |
+| `knowledge-graph/components/sovereign-db-app/SdbEdgePanel.tsx` | Edge browser with filter, sort, detail expand |
+| `knowledge-graph/components/sovereign-db-app/SdbSchemaPanel.tsx` | Schema/index/constraint viewer |
+| `knowledge-graph/components/sovereign-db-app/SdbAlgoPanel.tsx` | One-click algorithm runner with result display |
+| `knowledge-graph/components/sovereign-db-app/SdbImportPanel.tsx` | Import/export controls |
+| `knowledge-graph/components/sovereign-db-app/SdbStatsPanel.tsx` | Live stats dashboard |
+| `knowledge-graph/components/sovereign-db-app/SdbStatusBar.tsx` | Bottom status bar with live metrics |
+| `knowledge-graph/components/sovereign-db-app/SdbResultGraph.tsx` | Force-directed graph visualization of query results |
+
+### Files to Edit
+
+| File | Change |
+|------|--------|
+| `static-blueprints.ts` | Add `sovereign-db` blueprint entry |
+| `desktop-apps.ts` | Add component mapping + `Database` icon |
+| `KnowledgeGraphPage.tsx` | Point "Database Explorer" tab to new `SovereignDBApp` |
+| `index.ts` | Export new component |
+
+### Registration as OS App
+
+The app registers via the existing blueprint system — a new `AppBlueprint` in `static-blueprints.ts` with:
+- `name: "sovereign-db"`, `iconName: "Database"`, `category: "OBSERVE"`
+- `requires: ["graph/query", "graph/insert", "graph/sparql", "graph/cypher", "graph/traverse", "graph/algorithms"]`
+- Component: `@/modules/data/knowledge-graph/components/sovereign-db-app/SovereignDBApp`
+- `defaultSize: { w: 1200, h: 800 }`
+
+This makes SovereignDB launchable from the desktop dock, Spotlight search, and the app hub — a true standalone application within the hypergraph OS.
+
+### Atlas Engine Integration
+
+The `SovereignDBApp` root component will call `SovereignDB.open()` on mount, which already initializes the hypergraph, persistence provider, and reaper. The status bar will show the Atlas engine state (vertex count, backend type). This demonstrates the "app compiled and running inside the hypergraph" paradigm — the app itself is a node in the graph it manages.
+
+### Estimated Scope
+
+~600 lines across 10 new component files + ~30 lines of edits to 4 existing files. The old `DatabaseExplorer.tsx` is preserved but the new app supersedes it.
 
