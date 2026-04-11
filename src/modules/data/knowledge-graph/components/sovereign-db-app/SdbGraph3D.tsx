@@ -26,6 +26,8 @@ interface Props {
   width: number;
   height: number;
   gpuAvailable?: boolean;
+  /** When set, dims all nodes except those matching this sign class index */
+  highlightSignClass?: number | null;
 }
 
 /* ── helpers ──────────────────────────────────────────────────── */
@@ -55,7 +57,7 @@ function buildDegreeMap(links: GLink[]): Map<string, number> {
 
 export function SdbGraph3D({
   nodes, links, layoutMode, onNodeClick, onNodeRightClick, onBackgroundClick,
-  width, height, gpuAvailable,
+  width, height, gpuAvailable, highlightSignClass,
 }: Props) {
   const fgRef = useRef<any>(null);
   const [hovered, setHovered] = useState<string | null>(null);
