@@ -243,7 +243,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
   const acShowCreate = autocomplete?.query && !acFiltered.some(n => n.toLowerCase() === autocomplete.query.toLowerCase());
 
   return (
-    <div className="space-y-0.5">
+    <div className="space-y-1">
       {blocks.map((block, idx) => (
         <div key={block.id} className="relative group flex items-start" style={{ paddingLeft: `${block.indent * 24}px` }}>
           {/* Indent guides */}
@@ -271,7 +271,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
                 onKeyDown={e => handleKeyDown(e, idx)}
                 onBlur={() => { if (!autocomplete) setEditing(null); }}
                 rows={1}
-                className="w-full text-[15px] leading-relaxed text-foreground bg-transparent border-none outline-none resize-none py-1"
+                className="w-full text-[15px] leading-[1.75] text-foreground bg-transparent border-none outline-none resize-none py-1.5"
                 style={{ minHeight: "28px", height: "auto" }}
                 onInput={e => {
                   const t = e.currentTarget;
@@ -282,7 +282,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
             ) : (
               <div
                 onClick={() => { setEditing(idx); setFocusIdx(idx); }}
-                className="text-[15px] leading-relaxed text-foreground/90 py-1 cursor-text min-h-[28px] whitespace-pre-wrap break-words"
+                className="text-[15px] leading-[1.75] text-foreground/90 py-1.5 cursor-text min-h-[32px] whitespace-pre-wrap break-words"
               >
                 {block.text
                   ? renderBlockText(block.text, onWikiLinkClick, noteNames, getPreview)

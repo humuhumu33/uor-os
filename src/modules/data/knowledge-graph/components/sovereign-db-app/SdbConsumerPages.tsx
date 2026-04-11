@@ -22,6 +22,7 @@ import { SdbQuickFinder, type FinderItem, type CommandAction } from "./SdbQuickF
 import { SdbLocalGraph } from "./SdbLocalGraph";
 import { SdbNoteProperties } from "./SdbNoteProperties";
 import { SdbOutline } from "./SdbOutline";
+import { SdbHomeView } from "./SdbHomeView";
 
 interface Props {
   db: SovereignDB;
@@ -390,19 +391,21 @@ export function SdbConsumerPages({ db }: Props) {
       />
 
       {/* Sidebar */}
-      <aside className="w-60 shrink-0 border-r border-border bg-card/50 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <span className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider">
+      <aside className="w-64 shrink-0 border-r border-border bg-card/50 flex flex-col overflow-hidden">
+        {/* Search trigger */}
+        <button
+          onClick={() => setFinderOpen(true)}
+          className="flex items-center gap-2.5 mx-3 mt-3 mb-2 px-3 py-2 rounded-lg border border-border/50 bg-muted/20 text-[13px] text-muted-foreground/50 hover:bg-muted/40 hover:text-muted-foreground transition-colors"
+        >
+          <span className="text-[13px]">⌘K</span>
+          <span>Search…</span>
+        </button>
+
+        <div className="flex items-center justify-between px-4 py-2">
+          <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
             Workspace
           </span>
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => setFinderOpen(true)}
-              className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
-              title="Find or create (⌘K)"
-            >
-              <span className="text-[11px] font-mono">⌘K</span>
-            </button>
             <button onClick={createFolder} className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors" title="New folder">
               <IconFolder size={15} />
             </button>
@@ -412,11 +415,44 @@ export function SdbConsumerPages({ db }: Props) {
           </div>
         </div>
 
-        {/* Daily Notes Section */}
+        {/* Daily Notes */}
+        <div className="px-4 pt-3 pb-1">
+          <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/40">Daily</span>
+        </div>
         <SdbDailyNoteSection db={db} onSelectDaily={navigateTo} selectedId={selectedId} />
 
+        {/* Recent history in sidebar */}
+        {recentIds.length > 0 && (
+          <>
+            <div className="px-4 pt-3 pb-1">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/40">History</span>
+            </div>
+            <div className="px-1 pb-1">
+              {recentIds.slice(0, 5).map(id => {
+                const item = items.find(i => i.id === id);
+                if (!item || item.type === "folder") return null;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setSelectedId(id)}
+                    className={`flex items-center gap-2 w-full px-3 py-2 text-[13px] transition-colors rounded-md mx-1 ${
+                      selectedId === id ? "bg-primary/10 text-primary" : "text-foreground/60 hover:bg-muted/50 hover:text-foreground/80"
+                    }`}
+                  >
+                    <IconFile size={14} className="text-muted-foreground/40 shrink-0" />
+                    <span className="truncate">{item.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+
         {/* Workspace tree */}
-        <nav className="flex-1 overflow-auto py-2">
+        <div className="px-4 pt-3 pb-1">
+          <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/40">Workspace</span>
+        </div>
+        <nav className="flex-1 overflow-auto py-1">
           {rootItems.length === 0 ? (
             <div className="px-4 py-8 text-center text-[13px] text-muted-foreground/60">
               <p className="mb-3">No workspaces yet</p>
@@ -440,33 +476,20 @@ export function SdbConsumerPages({ db }: Props) {
       {/* Main content area */}
       <main className="flex-1 overflow-auto">
         {!selected || selected.type === "folder" ? (
-          <div className="flex flex-col items-center justify-center h-full gap-5 text-center px-8">
-            <h2 className="text-[20px] font-semibold text-foreground">
-              {items.length === 0 ? "Welcome to your Knowledge Space" : "Select a note"}
-            </h2>
-            <p className="text-[15px] text-muted-foreground max-w-md">
-              {items.length === 0
-                ? "Start with today's daily note, or create pages and link them with [[wiki-links]]. Your thoughts connect automatically."
-                : "Choose a note from the sidebar, or press ⌘K to find or create a page."}
-            </p>
-            <div className="flex items-center gap-3 mt-3">
-              <button
-                onClick={createFolder}
-                className="px-5 py-2.5 rounded-lg border border-border bg-card text-[14px] font-medium text-foreground hover:bg-muted/50 transition-colors"
-              >
-                + Folder
-              </button>
-              <button
-                onClick={() => createNote()}
-                className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-[14px] font-medium hover:bg-primary/90 transition-colors"
-              >
-                + Note
-              </button>
-            </div>
-            <p className="text-[12px] text-muted-foreground/40 mt-2">
-              Press <kbd className="px-1.5 py-0.5 bg-muted/30 rounded text-[11px] font-mono">⌘K</kbd> to search
-            </p>
-          </div>
+          <SdbHomeView
+            items={items.filter(i => i.type !== "folder").map(i => ({
+              id: i.id,
+              name: i.name,
+              type: i.type as "note" | "daily",
+              updatedAt: Number(i.edge.properties.updatedAt || i.edge.properties.createdAt || 0),
+            }))}
+            allEdges={allEdges}
+            recentIds={recentIds}
+            onSelect={id => setSelectedId(id)}
+            onCreateNote={() => createNote()}
+            onCreateDaily={reloadDaily}
+            onSwitchGraph={() => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "graph" }))}
+          />
         ) : (
           /* Note editor */
           <div className="max-w-2xl mx-auto px-8 py-8">
@@ -475,7 +498,7 @@ export function SdbConsumerPages({ db }: Props) {
               onChange={e => setNoteTitle(e.target.value)}
               onBlur={saveNote}
               placeholder="Untitled"
-              className="w-full text-[28px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/30 mb-4"
+              className="w-full text-[32px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/30 mb-6 leading-tight tracking-tight"
             />
 
             {/* Note properties */}

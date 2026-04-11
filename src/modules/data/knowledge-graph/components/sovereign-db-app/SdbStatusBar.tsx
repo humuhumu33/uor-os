@@ -30,17 +30,20 @@ export function SdbStatusBar({ db, startTime, mode = "developer" }: Props) {
   const nodeSet = new Set(edges.flatMap((e) => e.nodes));
   const labels = new Set(edges.map((e) => e.label));
 
-  // Consumer mode: count workspace items
-  const wsItems = edges.filter(e => e.label.startsWith("workspace:"));
-  const wsFolders = edges.filter(e => e.label === "workspace:folder");
+  // Consumer mode: count notes, connections, tags
+  const wsNotes = edges.filter(e => e.label === "workspace:note" || e.label === "workspace:daily");
+  const wsLinks = edges.filter(e => e.label === "workspace:link");
+  const wsTags = new Set(edges.filter(e => e.label === "workspace:tag").map(e => String(e.properties.tag || "")));
 
   return (
     <footer className="flex items-center gap-4 h-8 px-5 border-t border-border bg-card text-[12px] text-muted-foreground shrink-0 font-mono">
       {mode === "consumer" ? (
         <>
-          <span>{wsItems.length} items</span>
+          <span>{wsNotes.length} notes</span>
           <span className="w-px h-3 bg-border" />
-          <span>{wsFolders.length} workspaces</span>
+          <span>{wsLinks.length} connections</span>
+          <span className="w-px h-3 bg-border" />
+          <span>{wsTags.size} tags</span>
         </>
       ) : (
         <>
@@ -61,10 +64,12 @@ export function SdbStatusBar({ db, startTime, mode = "developer" }: Props) {
               <span>Partitions: <strong className="text-foreground">{partitionRouter.size}</strong></span>
             </>
           )}
-          <span className="ml-auto text-[11px]">
-            {providerRegistry.active()} · {providerRegistry.size} providers
+          <span className="ml-auto flex items-center gap-2 text-[11px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="text-muted-foreground/60">{db.backend}</span>
+            <span className="text-muted-foreground/40">·</span>
+            <span className="text-muted-foreground/60">{providerRegistry.size} providers</span>
           </span>
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
         </>
       )}
     </footer>
