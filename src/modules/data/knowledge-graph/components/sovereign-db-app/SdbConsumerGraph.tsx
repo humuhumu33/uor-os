@@ -37,6 +37,7 @@ const SIGN_CLASS_LEGEND = [
   { name: "SC₇ Purple", color: "hsl(270, 60%, 60%)" },
 ];
 
+const COLORS: Record<string, string> = {
   folder: "hsl(40, 85%, 55%)",
   note: "hsl(210, 80%, 60%)",
   daily: "hsl(30, 85%, 55%)",
