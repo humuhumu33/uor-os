@@ -9,7 +9,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect, type KeyboardEvent } from "react";
-import { IconSearch } from "@tabler/icons-react";
+import { IconSearch, IconFile, IconPlus } from "@tabler/icons-react";
 
 export interface Block {
   id: string;
