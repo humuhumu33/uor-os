@@ -116,31 +116,70 @@ function getConnection(id: string): Connection | undefined {
  * Execute an operation through the translate → fetch → parse pipeline.
  * This is the ONLY code path for ALL external protocol calls.
  */
-async function execute(
+async function executePipeline(
   connectionId: string,
   op: string,
   params: Record<string, unknown> = {},
+  opts: { idempotencyKey?: string; sandbox?: boolean } = {},
 ): Promise<unknown> {
+  // Idempotency: return cached result if key matches
+  if (opts.idempotencyKey) {
+    const cached = _idempotencyCache.get(opts.idempotencyKey);
+    if (cached && cached.expiry > Date.now()) return cached.result;
+  }
+
   const conn = _connections.get(connectionId);
-  if (!conn) throw new Error(`[connect] No active connection: "${connectionId}"`);
+  if (!conn) throw new ConnectorError("connection_not_found", connectionId, false, { connectionId });
 
   const adapter = _adapters.get(conn.protocol);
-  if (!adapter) throw new Error(`[connect] Adapter not found: "${conn.protocol}"`);
+  if (!adapter) throw new ConnectorError("adapter_not_found", conn.protocol, false);
 
   // 1. Translate: logical operation → HTTP request
-  const { url, init } = adapter.translate(op, params, conn);
+  const translated = adapter.translate(op, params, conn);
 
-  // 2. Inject auth headers
-  const headers = new Headers(init.headers);
+  // 2. Sandbox mode: return the translated request without executing
+  if (opts.sandbox) return { sandbox: true, ...translated };
+
+  // 3. Inject auth headers
+  const headers = new Headers(translated.init.headers);
   for (const [k, v] of Object.entries(conn.auth)) {
     if (!headers.has(k)) headers.set(k, v);
   }
 
-  // 3. Fetch: execute the HTTP request
-  const response = await runtime.fetch(url, { ...init, headers });
+  // 4. Fetch
+  const response = await runtime.fetch(translated.url, { ...translated.init, headers });
 
-  // 4. Parse: HTTP response → domain data
-  return adapter.parse(response, op);
+  // 5. Parse
+  const result = await adapter.parse(response, op);
+
+  // 6. Cache if idempotency key provided
+  if (opts.idempotencyKey) {
+    _idempotencyCache.set(opts.idempotencyKey, { result, expiry: Date.now() + IDEMPOTENCY_TTL });
+  }
+
+  return result;
+}
+
+/**
+ * One-shot execute: open ephemeral connection → run → close.
+ * The Stripe-style single-call entry point.
+ */
+async function executeOneShot(params: ConnectionParams & {
+  op: string;
+  params?: Record<string, unknown>;
+  idempotencyKey?: string;
+  sandbox?: boolean;
+}): Promise<unknown> {
+  const id = `_ephemeral_${params.protocol}_${Date.now()}`;
+  const conn = openConnection({ ...params, id });
+  try {
+    return await executePipeline(id, params.op, params.params ?? {}, {
+      idempotencyKey: params.idempotencyKey,
+      sandbox: params.sandbox,
+    });
+  } finally {
+    closeConnection(id);
+  }
 }
 
 /** Ping a specific connection. */
