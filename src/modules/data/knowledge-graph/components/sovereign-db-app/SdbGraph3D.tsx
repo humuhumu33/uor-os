@@ -3,13 +3,18 @@
  * ══════════════════════════════════════════════════════════════════════════
  * Full 3D space: orbit, zoom, fly through. Nodes form geometric clusters.
  * Atlas torus nodes pulse with emissive glow.
+ * WebGPU acceleration when available: GPU force layout + bloom post-processing.
  * @product SovereignDB
  */
 
 import { useRef, useCallback, useEffect, useMemo, useState } from "react";
 import ForceGraph3D from "react-force-graph-3d";
 import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import type { GNode, GLink, LayoutMode } from "./SdbGraphCanvas";
+import { getGpuForceLayout, type GpuForceNode, type GpuForceLink } from "./SdbGpuForceLayout";
 
 interface Props {
   nodes: GNode[];
@@ -20,13 +25,13 @@ interface Props {
   onBackgroundClick?: () => void;
   width: number;
   height: number;
+  gpuAvailable?: boolean;
 }
 
 /* ── helpers ──────────────────────────────────────────────────── */
 
 const BG_COLOR = "hsl(222, 47%, 6%)";
 
-/** Map layout mode to ForceGraph3D dagMode */
 function dagModeFor(mode: LayoutMode): "td" | "bu" | "lr" | "rl" | "zout" | "zin" | "radialout" | "radialin" | null {
   switch (mode) {
     case "radial": return "radialout";
@@ -35,7 +40,6 @@ function dagModeFor(mode: LayoutMode): "td" | "bu" | "lr" | "rl" | "zout" | "zin
   }
 }
 
-/* degree cache for sizing */
 function buildDegreeMap(links: GLink[]): Map<string, number> {
   const m = new Map<string, number>();
   for (const l of links) {
@@ -51,14 +55,15 @@ function buildDegreeMap(links: GLink[]): Map<string, number> {
 
 export function SdbGraph3D({
   nodes, links, layoutMode, onNodeClick, onNodeRightClick, onBackgroundClick,
-  width, height,
+  width, height, gpuAvailable,
 }: Props) {
   const fgRef = useRef<any>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+  const composerRef = useRef<EffectComposer | null>(null);
+  const bloomSetup = useRef(false);
 
   const degreeMap = useMemo(() => buildDegreeMap(links), [links]);
 
-  // Graph data in the format ForceGraph3D expects
   const graphData = useMemo(() => ({
     nodes: nodes.map(n => ({ ...n })),
     links: links.map(l => ({
@@ -69,7 +74,62 @@ export function SdbGraph3D({
     })),
   }), [nodes, links]);
 
-  // Auto-rotate when idle
+  // ── Bloom post-processing setup ─────────────────────────────
+  useEffect(() => {
+    const fg = fgRef.current;
+    if (!fg || bloomSetup.current) return;
+
+    // Delay to ensure renderer is ready
+    const t = setTimeout(() => {
+      try {
+        const renderer = fg.renderer?.();
+        const scene = fg.scene?.();
+        const camera = fg.camera?.();
+        if (!renderer || !scene || !camera) return;
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+
+        const bloom = new UnrealBloomPass(
+          new THREE.Vector2(width, height),
+          0.6,   // strength
+          0.4,   // radius
+          0.85,  // threshold
+        );
+        composer.addPass(bloom);
+        composerRef.current = composer;
+        bloomSetup.current = true;
+
+        // Override the render loop to use the composer
+        const origAnimate = fg._animationCycle;
+        if (origAnimate) {
+          fg._animationCycle = () => {
+            origAnimate.call(fg);
+            composer.render();
+          };
+        }
+      } catch {
+        // Bloom setup failed — fallback to default rendering
+      }
+    }, 1500);
+
+    return () => clearTimeout(t);
+  }, [width, height]);
+
+  // ── Fog for depth perception ────────────────────────────────
+  useEffect(() => {
+    const fg = fgRef.current;
+    if (!fg) return;
+    const t = setTimeout(() => {
+      const scene = fg.scene?.();
+      if (scene) {
+        scene.fog = new THREE.FogExp2(0x0a1628, 0.003);
+      }
+    }, 800);
+    return () => clearTimeout(t);
+  }, []);
+
+  // ── Auto-rotate when idle ──────────────────────────────────
   useEffect(() => {
     const fg = fgRef.current;
     if (!fg) return;
@@ -80,7 +140,7 @@ export function SdbGraph3D({
     }
   }, []);
 
-  // Fit to view on first load
+  // ── Fit to view ────────────────────────────────────────────
   useEffect(() => {
     const t = setTimeout(() => {
       fgRef.current?.zoomToFit(600, 60);
@@ -88,7 +148,76 @@ export function SdbGraph3D({
     return () => clearTimeout(t);
   }, []);
 
-  /* ── Custom node rendering ─────────────────────────────────── */
+  // ── GPU force layout integration ──────────────────────────
+  useEffect(() => {
+    if (!gpuAvailable) return;
+
+    const gpu = getGpuForceLayout();
+    let running = true;
+
+    const runGpuTicks = async () => {
+      const ok = await gpu.init();
+      if (!ok || !running) return;
+
+      const fg = fgRef.current;
+      if (!fg) return;
+
+      // Build index map
+      const graphNodes = fg.graphData?.()?.nodes;
+      if (!graphNodes || graphNodes.length === 0) return;
+
+      const idxMap = new Map<string, number>();
+      graphNodes.forEach((n: any, i: number) => idxMap.set(n.id, i));
+
+      const gpuNodes: GpuForceNode[] = graphNodes.map((n: any) => ({
+        x: n.x ?? Math.random() * 100 - 50,
+        y: n.y ?? Math.random() * 100 - 50,
+        z: n.z ?? Math.random() * 100 - 50,
+        vx: n.vx ?? 0, vy: n.vy ?? 0, vz: n.vz ?? 0,
+        mass: 1,
+      }));
+
+      const graphLinks = fg.graphData?.()?.links ?? [];
+      const gpuLinks: GpuForceLink[] = graphLinks
+        .map((l: any) => {
+          const sId = typeof l.source === "string" ? l.source : l.source?.id;
+          const tId = typeof l.target === "string" ? l.target : l.target?.id;
+          const si = idxMap.get(sId);
+          const ti = idxMap.get(tId);
+          return si !== undefined && ti !== undefined ? { sourceIdx: si, targetIdx: ti } : null;
+        })
+        .filter(Boolean) as GpuForceLink[];
+
+      // Run a batch of GPU ticks
+      for (let tick = 0; tick < 60 && running; tick++) {
+        const result = await gpu.tick(gpuNodes, gpuLinks);
+        if (!result || !running) break;
+        // Update positions
+        for (let i = 0; i < result.length; i++) {
+          gpuNodes[i] = result[i];
+          const gn = graphNodes[i];
+          if (gn) {
+            gn.x = result[i].x;
+            gn.y = result[i].y;
+            gn.z = result[i].z;
+            gn.vx = result[i].vx;
+            gn.vy = result[i].vy;
+            gn.vz = result[i].vz;
+          }
+        }
+        fg.refresh?.();
+      }
+    };
+
+    // Start GPU ticks after initial CPU layout settles
+    const delay = setTimeout(runGpuTicks, 3000);
+    return () => {
+      running = false;
+      clearTimeout(delay);
+    };
+  }, [gpuAvailable, nodes.length]);
+
+  /* ── Custom node rendering with instancing hints ──────────── */
 
   const nodeThreeObject = useCallback((node: any) => {
     const isAtlas = node.id?.startsWith("atlas:");
@@ -103,7 +232,8 @@ export function SdbGraph3D({
     const color = new THREE.Color(node.color || "hsl(210, 80%, 60%)");
     const mat = new THREE.MeshPhongMaterial({
       color,
-      emissive: isAtlas ? color.clone().multiplyScalar(0.35) : new THREE.Color(0x000000),
+      emissive: isAtlas ? color.clone().multiplyScalar(0.5) : new THREE.Color(0x000000),
+      emissiveIntensity: isAtlas ? 1.2 : 0,
       transparent: true,
       opacity: isHovered ? 1 : (isAtlas ? 0.85 : 0.92),
       shininess: 60,
@@ -120,17 +250,16 @@ export function SdbGraph3D({
         opacity: 0.4,
         side: THREE.DoubleSide,
       });
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      group.add(ring);
+      group.add(new THREE.Mesh(ringGeo, ringMat));
     }
 
-    // Atlas nodes: outer glow sphere
+    // Atlas nodes: outer glow sphere (enhanced for bloom)
     if (isAtlas) {
-      const glowGeo = new THREE.SphereGeometry(baseSize * 1.6, 12, 12);
+      const glowGeo = new THREE.SphereGeometry(baseSize * 2.0, 12, 12);
       const glowMat = new THREE.MeshBasicMaterial({
         color,
         transparent: true,
-        opacity: 0.08,
+        opacity: 0.12,
       });
       group.add(new THREE.Mesh(glowGeo, glowMat));
     }
@@ -146,7 +275,6 @@ export function SdbGraph3D({
     if (hovered && (sourceId === hovered || targetId === hovered)) {
       return "rgba(147, 197, 253, 0.6)";
     }
-    // Atlas links dimmer
     if (sourceId?.startsWith("atlas:") || targetId?.startsWith("atlas:")) {
       return "rgba(100, 130, 200, 0.12)";
     }
@@ -160,11 +288,20 @@ export function SdbGraph3D({
     return link.weight ? Math.min(link.weight * 0.4, 2) : 0.3;
   }, [hovered]);
 
+  /* ── Link particles for connected edges ────────────────────── */
+
+  const linkDirectionalParticles = useCallback((link: any) => {
+    const sourceId = typeof link.source === "string" ? link.source : link.source?.id;
+    const targetId = typeof link.target === "string" ? link.target : link.target?.id;
+    if (hovered && (sourceId === hovered || targetId === hovered)) return 3;
+    if (sourceId?.startsWith("atlas:") || targetId?.startsWith("atlas:")) return 1;
+    return 0;
+  }, [hovered]);
+
   /* ── Events ────────────────────────────────────────────────── */
 
   const handleNodeClick = useCallback((node: any) => {
     onNodeClick?.(node as GNode);
-    // Zoom camera toward clicked node
     const fg = fgRef.current;
     if (fg && node.x !== undefined) {
       const dist = 80;
@@ -184,7 +321,6 @@ export function SdbGraph3D({
 
   const handleNodeHover = useCallback((node: any) => {
     setHovered(node?.id || null);
-    // Pause auto-rotate on hover
     const controls = fgRef.current?.controls?.();
     if (controls) controls.autoRotate = !node;
   }, []);
@@ -203,6 +339,10 @@ export function SdbGraph3D({
       linkColor={linkColor}
       linkWidth={linkWidth}
       linkOpacity={0.6}
+      linkDirectionalParticles={linkDirectionalParticles}
+      linkDirectionalParticleSpeed={0.004}
+      linkDirectionalParticleWidth={1.2}
+      linkDirectionalParticleColor={() => "rgba(147, 197, 253, 0.5)"}
       onNodeClick={handleNodeClick}
       onNodeRightClick={handleNodeRightClick}
       onNodeHover={handleNodeHover}
