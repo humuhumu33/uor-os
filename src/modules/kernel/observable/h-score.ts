@@ -14,9 +14,8 @@
  */
 
 // popcount consolidated into the addressing kernel
-import { popcount32 } from "@/lib/uor-core";
+import { popcount32 as popcount } from "@/lib/uor-core";
 export { popcount32 as popcount } from "@/lib/uor-core";
-const popcount = popcount32;
 
 // ── hScore ──────────────────────────────────────────────────────────────────
 

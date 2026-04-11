@@ -125,20 +125,7 @@ export function encodeHyperedge(
   return bind(labelVec, bundle(nodeVecs));
 }
 
-// ── Analogy ─────────────────────────────────────────────────────────────────
-
-/**
- * Algebraic analogy: "A is to B as C is to ?"
- * Result ≈ bind(unbind(A, B), C) = bind(bind(A, B), C)
- * (since XOR-bind is self-inverse)
- */
-export function analogy(
-  a: Hypervector,
-  b: Hypervector,
-  c: Hypervector,
-): Hypervector {
-  return bind(bind(a, b), c);
-}
+// analogy(a,b,c) is just bind(bind(a,b),c) — use bind directly.
 
 /** Access the encoder's item memory for external queries. */
 export function getEncoderMemory(): ItemMemory {
