@@ -27,9 +27,15 @@ import type {
   ConnectionParams,
   TranslatedRequest,
 } from "./connectors/protocol-adapter";
+import { ConnectorError } from "./connectors/protocol-adapter";
 import type { ModuleRegistration, OperationDescriptor } from "./types";
 import { register } from "./registry";
 import { runtime } from "./adapter";
+
+// ── Idempotency Cache ─────────────────────────────────────────────────────
+
+const _idempotencyCache = new Map<string, { result: unknown; expiry: number }>();
+const IDEMPOTENCY_TTL = 300_000; // 5 minutes
 
 // ── Adapter Registry ──────────────────────────────────────────────────────
 
@@ -110,31 +116,70 @@ function getConnection(id: string): Connection | undefined {
  * Execute an operation through the translate → fetch → parse pipeline.
  * This is the ONLY code path for ALL external protocol calls.
  */
-async function execute(
+async function executePipeline(
   connectionId: string,
   op: string,
   params: Record<string, unknown> = {},
+  opts: { idempotencyKey?: string; sandbox?: boolean } = {},
 ): Promise<unknown> {
+  // Idempotency: return cached result if key matches
+  if (opts.idempotencyKey) {
+    const cached = _idempotencyCache.get(opts.idempotencyKey);
+    if (cached && cached.expiry > Date.now()) return cached.result;
+  }
+
   const conn = _connections.get(connectionId);
-  if (!conn) throw new Error(`[connect] No active connection: "${connectionId}"`);
+  if (!conn) throw new ConnectorError("connection_not_found", connectionId, false, { connectionId });
 
   const adapter = _adapters.get(conn.protocol);
-  if (!adapter) throw new Error(`[connect] Adapter not found: "${conn.protocol}"`);
+  if (!adapter) throw new ConnectorError("adapter_not_found", conn.protocol, false);
 
   // 1. Translate: logical operation → HTTP request
-  const { url, init } = adapter.translate(op, params, conn);
+  const translated = adapter.translate(op, params, conn);
 
-  // 2. Inject auth headers
-  const headers = new Headers(init.headers);
+  // 2. Sandbox mode: return the translated request without executing
+  if (opts.sandbox) return { sandbox: true, ...translated };
+
+  // 3. Inject auth headers
+  const headers = new Headers(translated.init.headers);
   for (const [k, v] of Object.entries(conn.auth)) {
     if (!headers.has(k)) headers.set(k, v);
   }
 
-  // 3. Fetch: execute the HTTP request
-  const response = await runtime.fetch(url, { ...init, headers });
+  // 4. Fetch
+  const response = await runtime.fetch(translated.url, { ...translated.init, headers });
 
-  // 4. Parse: HTTP response → domain data
-  return adapter.parse(response, op);
+  // 5. Parse
+  const result = await adapter.parse(response, op);
+
+  // 6. Cache if idempotency key provided
+  if (opts.idempotencyKey) {
+    _idempotencyCache.set(opts.idempotencyKey, { result, expiry: Date.now() + IDEMPOTENCY_TTL });
+  }
+
+  return result;
+}
+
+/**
+ * One-shot execute: open ephemeral connection → run → close.
+ * The Stripe-style single-call entry point.
+ */
+async function executeOneShot(params: ConnectionParams & {
+  op: string;
+  params?: Record<string, unknown>;
+  idempotencyKey?: string;
+  sandbox?: boolean;
+}): Promise<unknown> {
+  const id = `_ephemeral_${params.protocol}_${Date.now()}`;
+  const conn = openConnection({ ...params, id });
+  try {
+    return await executePipeline(id, params.op, params.params ?? {}, {
+      idempotencyKey: params.idempotencyKey,
+      sandbox: params.sandbox,
+    });
+  } finally {
+    closeConnection(id);
+  }
 }
 
 /** Ping a specific connection. */
@@ -187,7 +232,7 @@ function registerShorthands(connId: string, adapter: ProtocolAdapter, conn: Conn
 
   for (const [opName, meta] of Object.entries(adapter.operations)) {
     ops[opName] = {
-      handler: async (params: any) => execute(connId, opName, params ?? {}),
+      handler: async (params: any) => executePipeline(connId, opName, params ?? {}),
       description: meta.description,
       paramsSchema: meta.paramsSchema,
     };
@@ -251,7 +296,7 @@ export function registerUniversalConnector(): void {
         handler: async (params: any) => {
           const { connection, op, ...rest } = params ?? {};
           const connId = connection ?? rest.protocol;
-          return execute(connId, op, rest.params ?? rest);
+          return executePipeline(connId, op, rest.params ?? rest);
         },
         description: "Execute an operation through a connection",
         paramsSchema: {
@@ -306,6 +351,38 @@ export function registerUniversalConnector(): void {
           })),
         description: "List all registered protocol adapters with their operations and schemas",
       },
+
+      // ── Stripe-inspired: One-shot execute ─────────────────────────
+      execute: {
+        handler: async (params: any) => executeOneShot(params),
+        description: "One-shot execute: open ephemeral connection, run operation, close. No connection management needed.",
+        paramsSchema: {
+          type: "object",
+          properties: {
+            protocol: { type: "string" },
+            endpoint: { type: "string" },
+            auth: { type: "object" },
+            op: { type: "string" },
+            params: { type: "object" },
+            idempotencyKey: { type: "string", description: "Deduplication key for safe retries" },
+            sandbox: { type: "boolean", description: "Dry-run: return translated request without executing" },
+          },
+          required: ["protocol", "endpoint", "op"],
+        },
+      },
+
+      // ── Stripe-inspired: Event subscription ───────────────────────
+      subscribe: {
+        handler: async (params: any) => {
+          const conn = _connections.get(params?.connection ?? params?.id);
+          if (!conn) throw new ConnectorError("connection_not_found", "connect", false);
+          const adapter = _adapters.get(conn.protocol);
+          if (!adapter?.onEvent) throw new ConnectorError("push_not_supported", conn.protocol, false);
+          const unsub = adapter.onEvent(conn, params.handler ?? (() => {}));
+          return { ok: true, unsubscribe: unsub };
+        },
+        description: "Subscribe to push-based events (WebSocket, MQTT). Returns unsubscribe handle.",
+      },
     },
   });
 }
@@ -318,3 +395,4 @@ export function getActiveConnections(): ReadonlyMap<string, Connection> {
 
 // Re-export types for convenience
 export type { ProtocolAdapter, Connection, ConnectionParams } from "./connectors/protocol-adapter";
+export { ConnectorError } from "./connectors/protocol-adapter";

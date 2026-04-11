@@ -55,6 +55,8 @@ export interface ConnectionParams {
   };
   /** Protocol-specific config passed through to the adapter. */
   config?: Record<string, unknown>;
+  /** Sandbox mode: dry-run without executing network requests. */
+  sandbox?: boolean;
 }
 
 /** The result of translate(): a fully-formed fetch request. */
@@ -103,4 +105,25 @@ export interface ProtocolAdapter {
     description: string;
     paramsSchema?: Record<string, unknown>;
   }>;
+
+  /**
+   * Subscribe to push-based events (WebSocket, MQTT, SSE).
+   * Returns an unsubscribe function. Request/response protocols omit this.
+   */
+  onEvent?(conn: Connection, handler: (event: unknown) => void): () => void;
+}
+
+// ── Structured Errors ─────────────────────────────────────────────────────
+
+/** Stripe-style typed error with protocol-specific codes. */
+export class ConnectorError extends Error {
+  constructor(
+    public readonly code: string,
+    public readonly protocol: string,
+    public readonly retriable: boolean,
+    public readonly detail?: unknown,
+  ) {
+    super(`[${protocol}] ${code}`);
+    this.name = "ConnectorError";
+  }
 }

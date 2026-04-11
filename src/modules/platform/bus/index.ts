@@ -32,7 +32,7 @@ export { defineFacet, registerFacet } from "./facet";
 export type { ModuleFacet } from "./facet";
 
 // Re-export Universal Connector
-export { registerAdapter, getAdapter, listAdapters, registerUniversalConnector, getActiveConnections } from "./connector";
+export { registerAdapter, getAdapter, listAdapters, registerUniversalConnector, getActiveConnections, ConnectorError } from "./connector";
 export type { ProtocolAdapter, Connection, ConnectionParams } from "./connector";
 
 // Re-export introspection
