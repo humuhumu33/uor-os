@@ -26,7 +26,17 @@ interface Props {
   onNavigateSection?: (section: AppSection) => void;
 }
 
-const COLORS: Record<string, string> = {
+const SIGN_CLASS_LEGEND = [
+  { name: "SC₀ Blue",   color: "hsl(210, 80%, 60%)" },
+  { name: "SC₁ Teal",   color: "hsl(180, 70%, 50%)" },
+  { name: "SC₂ Green",  color: "hsl(150, 70%, 50%)" },
+  { name: "SC₃ Lime",   color: "hsl(120, 60%, 55%)" },
+  { name: "SC₄ Amber",  color: "hsl(40, 85%, 55%)" },
+  { name: "SC₅ Orange", color: "hsl(20, 85%, 55%)" },
+  { name: "SC₆ Rose",   color: "hsl(340, 70%, 55%)" },
+  { name: "SC₇ Purple", color: "hsl(270, 60%, 60%)" },
+];
+
   folder: "hsl(40, 85%, 55%)",
   note: "hsl(210, 80%, 60%)",
   daily: "hsl(30, 85%, 55%)",
