@@ -475,7 +475,7 @@ export const hypergraph = {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function kgNodeToHyperedge(node: KGNode, id: string): Hyperedge {
-  const { nodes, heLabel, arity, weight, atlasVertex, head, tail, ...rest } = node.properties as any;
+  const { nodes, heLabel, arity, weight, atlasVertex, head, tail, ttl, expiresAt, ...rest } = node.properties as any;
   return {
     id,
     nodes: nodes ?? [],
@@ -487,5 +487,7 @@ function kgNodeToHyperedge(node: KGNode, id: string): Hyperedge {
     head: head ?? undefined,
     tail: tail ?? undefined,
     createdAt: node.createdAt,
+    ttl: ttl ?? undefined,
+    expiresAt: expiresAt ?? undefined,
   };
 }
