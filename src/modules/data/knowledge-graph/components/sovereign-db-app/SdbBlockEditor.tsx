@@ -11,6 +11,40 @@
 import { useState, useCallback, useRef, useEffect, type KeyboardEvent } from "react";
 import { IconSearch, IconFile, IconPlus } from "@tabler/icons-react";
 
+/** Hover preview for [[wiki-links]] */
+function LinkWithPreview({ title, onClick, noteNames, getPreview }: {
+  title: string;
+  onClick: (t: string) => void;
+  noteNames: string[];
+  getPreview?: (title: string) => string | null;
+}) {
+  const [showPreview, setShowPreview] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const preview = getPreview?.(title);
+  const exists = noteNames.some(n => n.toLowerCase() === title.toLowerCase());
+
+  return (
+    <span
+      className="relative inline-block"
+      onMouseEnter={() => { timerRef.current = setTimeout(() => setShowPreview(true), 300); }}
+      onMouseLeave={() => { clearTimeout(timerRef.current); setShowPreview(false); }}
+    >
+      <button
+        onClick={(e) => { e.stopPropagation(); onClick(title); }}
+        className={`font-medium cursor-pointer ${exists ? "text-primary hover:underline" : "text-primary/50 hover:underline"}`}
+      >
+        {title}
+      </button>
+      {showPreview && preview && (
+        <div className="absolute left-0 top-full z-50 w-56 bg-card border border-border rounded-lg shadow-2xl p-3 mt-1 animate-in fade-in duration-150 pointer-events-none">
+          <p className="text-[12px] font-semibold text-foreground mb-1 truncate">{title}</p>
+          <p className="text-[11px] text-muted-foreground/70 leading-relaxed line-clamp-3">{preview}</p>
+        </div>
+      )}
+    </span>
+  );
+}
+
 export interface Block {
   id: string;
   text: string;
