@@ -1,158 +1,124 @@
 
 
-# SovereignDB — Interactive Graph View Overhaul
+# SovereignDB — Obsidian-Inspired Experience Enhancements
 
-## Vision
+## Obsidian Analysis: Why Users Love It
 
-Transform both Consumer and Developer graph views from basic force-directed displays into rich, interactive exploration spaces inspired by Obsidian's graph view, Neo4j Browser, and Gephi — while maintaining the Algebrica minimal aesthetic.
+After thorough research, Obsidian's appeal comes down to six pillars:
 
-## Current State
+1. **Local Graph View per note** — not just a global graph, but a focused view showing only a note's immediate neighborhood. This is the "aha" moment for most users.
+2. **Canvas (infinite whiteboard)** — spatial thinking: drag notes, images, and text cards onto an infinite canvas, connect them with arrows. This is Obsidian's most differentiated feature.
+3. **Properties / Frontmatter** — structured metadata on notes (type, tags, date, status) that can be queried, filtered, and displayed.
+4. **Split panes & link previews** — hover over a `[[link]]` to see a floating preview; click to open side-by-side. No context switching.
+5. **Command Palette depth** — not just find pages, but run any action (toggle checkbox, insert template, change theme).
+6. **Outline panel** — table-of-contents for the current note's headings, always visible in sidebar.
 
-Both graph views are bare canvas renderings with d3-force: nodes as circles, straight-line edges, hover labels, drag, and a basic detail panel. No zoom/pan, no filtering by type, no context menus, no actions from graph, no visual hierarchy.
+## What We Already Have vs. What's Missing
 
-## What We're Adding
+| Obsidian Feature | SovereignDB Status | Gap |
+|---|---|---|
+| Global graph view | Done (SdbConsumerGraph) | — |
+| Local graph per note | Missing | High impact |
+| Canvas / whiteboard | Missing | High impact |
+| Link hover preview | Missing | Medium impact |
+| Properties panel | Missing | Medium impact |
+| Command palette | Partial (Cmd+K finds pages only) | Extend to actions |
+| Outline / TOC | Missing | Low-medium |
+| Split panes | Missing | Medium |
+| Starred / bookmarks | Missing | Low |
 
-### 1. Camera Controls — Zoom, Pan, Fit
+## What We're Adding (High-Signal, No Noise)
 
-- Mouse wheel zoom with smooth interpolation (transform matrix on canvas)
-- Click-drag on empty space to pan
-- Double-click a node to zoom-to-fit around its neighborhood
-- "Fit all" button to reset view
-- Minimap in bottom-right corner showing full graph with viewport rectangle
+### 1. Local Graph View — Per-Note Neighborhood
 
-### 2. Type-Based Visual Filtering (Obsidian-style)
+A small, embedded graph panel at the bottom or side of each note showing only its direct connections (1-hop). This is Obsidian's most beloved graph feature — it makes backlinks visual.
 
-- Floating filter panel (top-left) listing all label types with colored dots and toggle switches
-- Toggle types on/off to show/hide nodes of that type
-- "Group by type" toggle: clusters same-type nodes together using forceX/forceY grouping forces
-- Opacity slider for de-emphasized (filtered-out) nodes rather than hiding them completely
-- Search field to highlight nodes matching a query (others dim)
+- Renders inline below the backlinks panel (or toggleable sidebar)
+- Shows the current note at center, linked notes as satellites
+- Click a satellite to navigate to it
+- Reuses `SdbGraphCanvas` in a compact "local" mode with fixed radial layout
+- ~80 lines in a new `SdbLocalGraph.tsx`
 
-### 3. Rich Node Rendering
+### 2. Canvas — Infinite Spatial Workspace
 
-- **Size by degree**: nodes scale by connection count (4px → 24px)
-- **Type shapes**: folders = rounded square, notes = circle, generic = diamond (drawn via canvas paths)
-- **Ring indicators**: outer ring showing stratum/quality score when available
-- **Pulse animation**: newly created nodes pulse briefly
-- **Label rendering**: always show labels for high-degree nodes, show on hover for others; truncate with ellipsis; background pill for readability
-- **Connection count badge**: small number badge on high-degree nodes
+An infinite whiteboard where users drag note cards, text cards, and connections onto a 2D canvas. This maps directly to the hypergraph — each card is a node, each arrow is a hyperedge.
 
-### 4. Rich Edge Rendering
+- New view mode: Pages | Graph | **Canvas**
+- Pan/zoom canvas (reuses transform logic from SdbGraphCanvas)
+- Double-click empty space → create text card
+- Drag a note from sidebar → add note card (shows title + first block)
+- Draw connections between cards (creates `workspace:canvas-link` edges)
+- Cards are resizable, colored by type
+- Canvas state stored as a `workspace:canvas` hyperedge with positions/sizes
+- ~250 lines in `SdbCanvas.tsx` + ~30 lines wiring in `SovereignDBApp.tsx`
 
-- **Curved edges** between nodes sharing the same endpoints (avoid overlap)
-- **Animated flow**: subtle dash animation on edges to show directionality
-- **Edge labels** on hover (show relation type)
-- **Edge thickness** proportional to weight
-- **Directional arrows** at target end
+### 3. Link Hover Preview
 
-### 5. Context Menu (Right-Click on Node)
+Hovering over any `[[wiki-link]]` in the block editor shows a floating preview card with the linked note's title and first few blocks. No click needed — instant context.
 
-A radial or dropdown menu appearing on right-click:
+- Tooltip-style popover appears after 300ms hover delay
+- Shows note title, first 3 blocks of content, and connection count
+- Click the preview to navigate; Cmd+Click to open in split (future)
+- ~60 lines added to `SdbBlockEditor.tsx`
 
-**Consumer mode actions:**
-- Open note → switches to Pages view and opens the note
-- View connections → highlights 1-hop neighborhood, dims everything else
-- Create link → starts a "link mode" where clicking another node creates a `workspace:link` edge
-- Add tag → quick tag input
-- Delete → soft-delete with confirmation
+### 4. Note Properties Panel
 
-**Developer mode actions:**
-- Inspect properties → opens detail panel
-- Run query from here → pre-populates query panel with `MATCH (n {id: "..."})-->(m) RETURN m`
-- Expand neighborhood → loads N-hop neighbors (traversal engine)
-- Pin/unpin position
-- Copy IRI
+A collapsible metadata header on each note showing structured properties: tags, creation date, last modified, word count, link count. Editable inline.
 
-### 6. Neighborhood Expansion (Progressive Disclosure)
+- Rendered above the block editor content
+- Properties stored in the note's hyperedge properties
+- Add custom properties (key-value pairs)
+- Filters in graph view can use these properties
+- ~70 lines in `SdbNoteProperties.tsx`
 
-- Click "expand" on a node to fetch its 1-hop neighbors from traversal engine and add them to the visible graph with animated entry
-- Collapse back to remove expanded nodes
-- Depth slider: expand 1, 2, or 3 hops
-- Expanded nodes have a subtle dashed border to distinguish them from primary results
+### 5. Extended Command Palette
 
-### 7. Selection & Multi-Select
+Upgrade Cmd+K from page-finder to full command palette: find pages, run actions, switch views, create daily note, toggle graph.
 
-- Click to select (highlight ring)
-- Shift+click to multi-select
-- Drag a selection rectangle on empty space
-- Selected nodes can be: grouped, tagged, deleted, exported
-- Selection toolbar appears at bottom when nodes are selected
+- When input starts with `>`, show actions instead of pages
+- Actions: "Switch to Graph", "New Daily Note", "Toggle Dark Mode", "New Folder", "Open Canvas"
+- Fuzzy matching on action names
+- ~40 lines of edits to `SdbQuickFinder.tsx`
 
-### 8. Layout Modes (Toggle)
+### 6. Outline Panel (Table of Contents)
 
-- **Force-directed** (default) — organic clustering
-- **Radial** — selected node at center, neighbors in concentric rings by hop distance
-- **Hierarchical** — top-down tree layout for folder/workspace structures (consumer mode)
-- **Grid** — alphabetical/type grid for large datasets
+A sidebar section showing the current note's block hierarchy as a clickable outline. Since blocks have indent levels, this is natural.
 
-### 9. Performance for Large Graphs
-
-- WebGL rendering path when node count > 200 (fallback to canvas for small graphs)
-- Viewport culling: only render nodes within the visible viewport
-- Level-of-detail: at far zoom, nodes become simple dots; at close zoom, full labels and shapes
-- Quadtree for O(log n) hit testing instead of linear scan
+- Shows in the sidebar when a note is selected
+- Each top-level block is a heading; indented blocks shown nested
+- Click to scroll/focus that block in the editor
+- ~50 lines in `SdbOutline.tsx`
 
 ## Technical Plan
 
 ### New Files
 
 | File | Purpose | ~Lines |
-|------|---------|--------|
-| `SdbGraphCanvas.tsx` | Shared canvas engine with zoom/pan transform, hit testing, render loop | 250 |
-| `SdbGraphControls.tsx` | Filter panel, layout selector, zoom buttons, minimap | 120 |
-| `SdbGraphContextMenu.tsx` | Right-click radial/dropdown menu with mode-aware actions | 100 |
-| `SdbGraphSelection.tsx` | Multi-select toolbar (tag, group, delete, export) | 60 |
+|---|---|---|
+| `SdbLocalGraph.tsx` | Compact radial graph showing current note's 1-hop neighborhood | 80 |
+| `SdbCanvas.tsx` | Infinite whiteboard with draggable note/text cards and connections | 250 |
+| `SdbNoteProperties.tsx` | Structured metadata panel for notes | 70 |
+| `SdbOutline.tsx` | Block hierarchy outline in sidebar | 50 |
 
 ### Modified Files
 
 | File | Change |
-|------|--------|
-| `SdbConsumerGraph.tsx` | Replace inline canvas logic with `SdbGraphCanvas` + consumer-specific data extraction and context menu actions |
-| `SdbDeveloperGraph.tsx` | Replace inline canvas logic with `SdbGraphCanvas` + developer-specific actions and property inspector |
+|---|---|
+| `SdbBlockEditor.tsx` | Add link hover preview popover (~60 lines) |
+| `SdbQuickFinder.tsx` | Extend to command palette with `>` prefix for actions (~40 lines) |
+| `SdbConsumerPages.tsx` | Wire local graph, properties panel, outline; integrate canvas into view switcher |
+| `SovereignDBApp.tsx` | Add "canvas" as third view mode alongside pages/graph |
+| `SdbModeSwitch.tsx` | Add Canvas tab to consumer mode view switcher |
 
-### Shared Canvas Engine (`SdbGraphCanvas`)
-
-The core reusable component that both Consumer and Developer graph views use:
-
-```text
-Props:
-  nodes: GNode[]        — positioned by caller or internal simulation
-  links: GLink[]        — edges
-  onNodeClick            — single click handler
-  onNodeContextMenu      — right-click handler
-  onNodeDoubleClick      — zoom-to-fit
-  onSelectionChange      — multi-select callback
-  onExpandRequest        — neighborhood expansion
-  layoutMode             — force | radial | hierarchical | grid
-  filters                — active type filters
-  renderConfig           — shape/size/color rules per node type
-```
-
-Internally manages:
-- Transform matrix (zoom, panX, panY)
-- d3-force simulation with configurable forces per layout mode
-- Quadtree for hit testing
-- Render loop with LOD
-- Minimap overlay
-
-### Data Flow
+### Data Model
 
 ```text
-hypergraph.cachedEdges()
-    │
-    ▼
-Mode-specific extractor (consumer: workspace edges → notes/folders;
-                          developer: all edges → raw nodes)
-    │
-    ▼
-SdbGraphCanvas (layout + render + interaction)
-    │
-    ├── SdbGraphControls (filter/layout/zoom UI)
-    ├── SdbGraphContextMenu (actions)
-    └── SdbGraphSelection (multi-select toolbar)
+Canvas:     { label: "workspace:canvas", nodes: ["ws:root", "canvas:main"], properties: { cards: [...], connections: [...] } }
+Card:       { id, type: "text"|"note", noteId?, text?, x, y, width, height, color }
+Connection: { from: cardId, to: cardId, label? }
 ```
 
-## Estimated Scope
+### Estimated Scope
 
-~530 lines in 4 new files + ~160 lines of edits to 2 existing files. No new dependencies — all canvas-based, using existing d3-force.
+~510 lines across 4 new files + ~170 lines editing 5 existing files. No new dependencies.
 
