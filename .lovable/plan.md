@@ -1,87 +1,72 @@
 
 
-# SovereignDB — Fully Immersive 3D Graph View
+# WebGPU-Enhanced 3D Graph View
 
-## Vision
+## Context
 
-Replace the 2D canvas graph with a full 3D force-directed graph as the **default** Graph section experience. All nodes float in 3D space, you can orbit, zoom, and fly through the graph. The Atlas torus remains as a structural substrate. Workspace nodes (notes, folders, tags) orbit around it. The result: graphs naturally form geometric clusters you can rotate and inspect from any angle.
+The current 3D graph uses `react-force-graph-3d` which runs d3-force-3d physics on the **CPU main thread**. For large graphs (hundreds/thousands of nodes), this becomes a bottleneck — the force simulation blocks the UI thread, causing frame drops during layout convergence.
 
-## Library Choice
+The project already has a full WebGPU compute layer (`webgpu-compute.ts`) with device init, shader pipeline, and CPU fallback. We can extend this to accelerate the graph.
 
-**`react-force-graph-3d`** (by vasturiano, MIT, ~1.3K stars) — purpose-built for exactly this. It wraps Three.js with d3-force-3d physics, supports node/link customization, orbit controls, zoom, click/hover events, and works on mobile via touch gestures. Lightweight (tree-shakes well), battle-tested, and already compatible with our React 18 + Three.js setup.
+## What WebGPU Enables
 
-Alternative considered: building from scratch with r3f — too much work to replicate force layout, hit testing, camera controls, and LOD that `react-force-graph-3d` gives out of the box.
+1. **GPU-Accelerated Force Layout** — Move the N-body force simulation (repulsion, attraction, centering) to a compute shader. O(N²) pairwise repulsion becomes massively parallel on GPU.
 
-## What Changes
+2. **Instanced Node Rendering** — Replace per-node `THREE.Group` creation (current: new geometry + material per node per frame on hover change) with a single `InstancedMesh` draw call. GPU renders all nodes in one pass.
 
-### 1. Install `react-force-graph-3d` (~1.3MB min)
+3. **GPU Edge Bundling** — Compute edge curves/bundling on GPU for cleaner visual grouping of dense link clusters.
 
-### 2. New component: `SdbGraph3D.tsx`
+4. **Bloom Post-Processing** — Add UnrealBloomPass to the Three.js renderer for Atlas node glow — real GPU bloom instead of transparent overlay spheres.
 
-Wraps `ForceGraph3D` with our data pipeline:
+## Implementation
 
-- Converts `GNode[]` + `GLink[]` into the `{ nodes, links }` format the library expects
-- Custom node rendering: colored spheres sized by degree, with emissive glow for Atlas nodes
-- Custom link rendering: semi-transparent lines, thicker for stronger weights
-- Dark background matching the app theme (`hsl(222, 47%, 6%)`)
-- Node click → opens detail panel (same panel as current 2D view)
-- Node right-click → context menu
-- Double-click → navigate to Workspace for that note
-- Hover → highlight node + connected edges
-- Atlas nodes get a subtle pulsing glow to distinguish structural substrate from user content
-- Camera auto-rotates slowly when idle, stops on interaction
+### 1. `SdbGpuForceLayout.ts` — GPU Force Compute (new file)
 
-### 3. Update `SdbConsumerGraph.tsx`
-
-- Make 3D the **default** view (remove `show3D` toggle logic — 3D is now primary)
-- Keep a "2D" fallback button for users who prefer flat view
-- Pass merged nodes/links (Atlas + workspace) into `SdbGraph3D`
-- Overlay controls (search, filters, type toggles) remain as absolute-positioned HTML on top of the 3D canvas
-- Detail panel stays as HTML overlay (same as current)
-
-### 4. Update `SdbGraphControls.tsx`
-
-- Replace "3D" toggle with "2D" toggle (inverted — 3D is default now)
-- Keep all existing filter/layout controls; layout modes become 3D force config presets:
-  - "Force" → standard 3D force-directed
-  - "Radial" → `dagMode: 'radial'`
-  - "Tree" → `dagMode: 'td'` (top-down DAG)
-  - "Grid" → disable force, position on 3D grid
-
-### 5. Mobile Compatibility
-
-`react-force-graph-3d` uses Three.js OrbitControls which support touch:
-- Pinch to zoom
-- One-finger drag to orbit
-- Two-finger drag to pan
-- Tap to select node
-
-## Technical Details
+WGSL compute shader that runs the force-directed layout tick:
+- Reads node positions from a storage buffer
+- Computes repulsion (Barnes-Hut approximation or brute N² for <1000 nodes)
+- Computes link attraction forces
+- Writes updated positions back
+- Falls back to d3-force-3d on CPU when WebGPU unavailable
 
 ```text
-┌──────────────────────────────────────────┐
-│  SdbConsumerGraph                        │
-│  ┌────────────────────────────────────┐  │
-│  │  SdbGraph3D (ForceGraph3D)        │  │
-│  │  - 3D force-directed layout       │  │
-│  │  - Custom sphere nodes            │  │
-│  │  - Orbit/zoom/pan controls        │  │
-│  │  - Auto-rotate when idle          │  │
-│  └────────────────────────────────────┘  │
-│  [Search] [Filters] [Layout] [2D]       │  ← HTML overlays
-│  [Detail Panel]  [Legend]                │
-└──────────────────────────────────────────┘
+GPU Pipeline:
+  [positions buffer] → compute shader → [updated positions]
+       ↑                                        ↓
+  JS reads back via mapAsync            ForceGraph3D renders
 ```
 
-### Files
+### 2. `SdbGraph3D.tsx` — Instanced Rendering + Bloom
+
+- Replace `nodeThreeObject` (creates new THREE.Group per node) with `InstancedMesh` for all non-Atlas nodes — single draw call for hundreds of spheres
+- Atlas nodes get a dedicated `InstancedMesh` with emissive material
+- Add `UnrealBloomPass` via Three.js `EffectComposer` for real glow on Atlas nodes
+- Detect WebGPU availability via existing `isGpuAvailable()` — enable/disable GPU features gracefully
+
+### 3. `SdbGraph3D.tsx` — GPU Force Integration
+
+- When WebGPU available: run force ticks on GPU, read back positions each frame, feed to ForceGraph3D via `d3AlphaDecay=1` (disable built-in sim) + manual position updates
+- When unavailable: current d3-force-3d CPU behavior (no change)
+
+### 4. Visual Enhancements (GPU-powered)
+
+- **Particle edges**: Replace solid lines with animated particle streams along edges (GPU instanced particles)
+- **Depth fog**: Already supported by Three.js — add exponential fog for depth perception
+- **Ambient occlusion**: SSAO via Three.js postprocessing for spatial depth cues
+
+## Files
 
 | File | Change |
 |---|---|
-| `package.json` | Add `react-force-graph-3d` |
-| `SdbGraph3D.tsx` | **New** — wraps ForceGraph3D with our node/link data, custom rendering, event handlers (~150 lines) |
-| `SdbConsumerGraph.tsx` | Default to 3D, render `SdbGraph3D` as primary view, keep 2D as fallback (~80 lines changed) |
-| `SdbGraphControls.tsx` | Flip toggle to "2D", map layout modes to 3D presets (~15 lines changed) |
+| `SdbGpuForceLayout.ts` | **New** — WGSL force simulation compute shader + JS orchestration (~200 lines) |
+| `SdbGraph3D.tsx` | Instanced rendering, bloom postprocessing, GPU force integration, fog (~120 lines changed) |
+| `SdbConsumerGraph.tsx` | Pass GPU availability flag, add "GPU" indicator badge (~10 lines) |
 
-### Estimated Scope
-~150 new lines + ~100 lines of edits. One new dependency.
+## Fallback Strategy
+
+WebGPU is not available in the sandbox preview browser. All GPU paths check `isGpuAvailable()` first and fall back to the current CPU rendering. The visual result is identical — GPU just makes it faster and adds bloom/particles when available. Users see a subtle "GPU" badge when acceleration is active.
+
+## Estimated Scope
+
+~200 new lines (shader + orchestration) + ~130 lines of edits. No new dependencies (Three.js postprocessing is already available via three/examples).
 
