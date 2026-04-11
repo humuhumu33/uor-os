@@ -122,6 +122,7 @@ export const hypergraph = {
         heLabel: label,
         arity: nodes.length,
         weight,
+        ...(atlasVertex !== undefined ? { atlasVertex } : {}),
         ...properties,
       },
       createdAt: he.createdAt,

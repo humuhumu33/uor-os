@@ -14,6 +14,10 @@ export { sparqlQuery, sparqlUpdate } from "./grafeo-store";
 export { hypergraph } from "./hypergraph";
 export type { Hyperedge, IncidenceResult } from "./hypergraph";
 
+// ── Atlas-Addressed Hypergraph ──────────────────────────────────────────────
+export { atlasAddressing } from "./atlas-addressing";
+export type { AtlasRelationType } from "./atlas-addressing";
+
 export { ingestBridge } from "./ingest-bridge";
 
 export { getBacklinks, getBacklinkCount, invalidateBacklinks } from "./backlinks";
