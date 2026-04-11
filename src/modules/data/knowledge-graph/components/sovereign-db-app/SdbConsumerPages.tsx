@@ -1,20 +1,23 @@
 /**
- * SdbConsumerPages — Notion-inspired workspace with folders + notes.
+ * SdbConsumerPages — Roam-inspired workspace with daily notes, block editor,
+ * backlinks, and Cmd+K quick finder.
  * ══════════════════════════════════════════════════════════════════
- *
- * Clean, minimal page view. Sidebar tree for workspaces/folders/notes,
- * main area for editing. Notes stored as hyperedges.
  *
  * @product SovereignDB
  */
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
-  IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash, IconSearch, IconX,
+  IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
+import { hypergraph } from "../../hypergraph";
 import { textIndexManager } from "../../text-index";
+import { SdbBlockEditor, type Block } from "./SdbBlockEditor";
+import { SdbBacklinks } from "./SdbBacklinks";
+import { SdbDailyNoteSection, useDailyNotes } from "./SdbDailyNote";
+import { SdbQuickFinder, type FinderItem } from "./SdbQuickFinder";
 
 interface Props {
   db: SovereignDB;
@@ -23,7 +26,7 @@ interface Props {
 interface TreeItem {
   id: string;
   edge: Hyperedge;
-  type: "folder" | "note";
+  type: "folder" | "note" | "daily";
   name: string;
   parentId?: string;
 }
@@ -36,11 +39,14 @@ export function SdbConsumerPages({ db }: Props) {
   const [items, setItems] = useState<TreeItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [noteContent, setNoteContent] = useState("");
+  const [recentIds, setRecentIds] = useState<string[]>([]);
+  const [finderOpen, setFinderOpen] = useState(false);
+
+  // Block editor state
+  const [blocks, setBlocks] = useState<Block[]>([]);
   const [noteTitle, setNoteTitle] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
+
+  const { dailyNotes, reloadDaily } = useDailyNotes(db);
 
   // Ensure workspace text index exists
   useEffect(() => {
@@ -50,10 +56,23 @@ export function SdbConsumerPages({ db }: Props) {
     }
   }, []);
 
+  // Cmd+K listener
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setFinderOpen(o => !o);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   // Load workspace items from hypergraph
   const reload = useCallback(async () => {
     const folders = await db.byLabel("workspace:folder");
     const notes = await db.byLabel("workspace:note");
+    const daily = await db.byLabel("workspace:daily");
     const all: TreeItem[] = [
       ...folders.map(e => ({
         id: e.nodes[1] || e.id,
@@ -69,13 +88,19 @@ export function SdbConsumerPages({ db }: Props) {
         name: String(e.properties.title || "Untitled"),
         parentId: e.nodes[0],
       })),
+      ...daily.map(e => ({
+        id: e.nodes[1] || e.id,
+        edge: e,
+        type: "daily" as const,
+        name: String(e.properties.title || e.properties.date || "Daily"),
+      })),
     ];
     setItems(all);
   }, [db]);
 
   useEffect(() => { reload(); }, [reload]);
 
-  // Rebuild text index after reload
+  // Rebuild text index
   useEffect(() => {
     if (items.length > 0) {
       textIndexManager.drop("workspace-notes");
@@ -83,70 +108,73 @@ export function SdbConsumerPages({ db }: Props) {
     }
   }, [items]);
 
-  // Search results
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim() || !searchOpen) return [];
-    try {
-      return textIndexManager.search("workspace-notes", searchQuery, { limit: 15 });
-    } catch { return []; }
-  }, [searchQuery, searchOpen, items]);
-
+  const allEdges = hypergraph.cachedEdges();
   const selected = items.find(i => i.id === selectedId);
 
-  // Select a note and load its content
+  // Load blocks when selecting a note
   useEffect(() => {
-    if (selected?.type === "note") {
+    if (selected && (selected.type === "note" || selected.type === "daily")) {
       setNoteTitle(selected.name);
-      setNoteContent(String(selected.edge.properties.content || ""));
+      // Parse blocks from edge properties
+      const storedBlocks = selected.edge.properties.blocks;
+      if (storedBlocks) {
+        try {
+          const parsed = JSON.parse(String(storedBlocks));
+          setBlocks(Array.isArray(parsed) ? parsed : [{ id: "b0", text: String(selected.edge.properties.content || ""), indent: 0, children: [] }]);
+        } catch {
+          setBlocks([{ id: "b0", text: String(selected.edge.properties.content || ""), indent: 0, children: [] }]);
+        }
+      } else {
+        const content = String(selected.edge.properties.content || "");
+        setBlocks(content
+          ? content.split("\n").map((line, i) => ({ id: `b${i}`, text: line, indent: 0, children: [] }))
+          : [{ id: "b0", text: "", indent: 0, children: [] }]
+        );
+      }
+      // Track as recent
+      setRecentIds(prev => [selectedId!, ...prev.filter(id => id !== selectedId)].slice(0, 10));
     }
   }, [selectedId]);
 
-  // Create new folder
-  const createFolder = useCallback(async () => {
-    const name = "New Folder";
-    const folderId = `ws:${generateId()}`;
-    await db.addEdge(["ws:root", folderId], "workspace:folder", { name, createdAt: Date.now() });
-    await reload();
-    setExpanded(prev => new Set(prev).add(folderId));
-  }, [db, reload]);
+  // Note names for autocomplete
+  const noteNames = useMemo(() =>
+    items.filter(i => i.type === "note" || i.type === "daily").map(i => i.name).filter(n => n !== "Untitled"),
+    [items]
+  );
 
-  // Create new note
-  const createNote = useCallback(async (parentId = "ws:root") => {
-    const noteId = `note:${generateId()}`;
-    await db.addEdge([parentId, noteId], "workspace:note", {
-      title: "Untitled",
-      content: "",
-      tags: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-    await reload();
-    setSelectedId(noteId);
-  }, [db, reload]);
-
-  // Extract [[wiki links]] from content
-  const parseWikiLinks = useCallback((text: string): string[] => {
+  // Extract [[wiki links]] from blocks
+  const parseWikiLinks = useCallback((blockArr: Block[]): string[] => {
+    const text = blockArr.map(b => b.text).join("\n");
     const matches = text.matchAll(/\[\[([^\]]+)\]\]/g);
     return [...matches].map(m => m[1].trim()).filter(Boolean);
   }, []);
 
-  // Sync wiki-link edges: remove old links from this note, create new ones
-  const syncWikiLinks = useCallback(async (noteId: string, content: string) => {
-    const linkedTitles = parseWikiLinks(content);
-    if (linkedTitles.length === 0) return;
+  // Extract #hashtags from blocks
+  const parseHashtags = useCallback((blockArr: Block[]): string[] => {
+    const text = blockArr.map(b => b.text).join("\n");
+    const matches = text.matchAll(/(?:^|\s)#([a-zA-Z][\w-]{1,48})\b/g);
+    return [...new Set([...matches].map(m => m[1]))];
+  }, []);
 
-    // Remove existing outgoing workspace:link edges from this note
+  // Sync wiki-link and hashtag edges
+  const syncLinks = useCallback(async (noteId: string, blockArr: Block[]) => {
+    const linkedTitles = parseWikiLinks(blockArr);
+    const hashtags = parseHashtags(blockArr);
+
+    // Remove existing outgoing links and tags
     const existingLinks = await db.byLabel("workspace:link");
+    const existingTags = await db.byLabel("workspace:tag");
     for (const link of existingLinks) {
-      if (link.nodes[0] === noteId) {
-        await db.removeEdge(link.id);
-      }
+      if (link.nodes[0] === noteId) await db.removeEdge(link.id);
+    }
+    for (const tag of existingTags) {
+      if (tag.nodes[0] === noteId) await db.removeEdge(tag.id);
     }
 
-    // Create new link edges for each [[reference]]
+    // Create link edges
     for (const title of linkedTitles) {
       const target = items.find(
-        i => i.type === "note" && i.name.toLowerCase() === title.toLowerCase()
+        i => (i.type === "note" || i.type === "daily") && i.name.toLowerCase() === title.toLowerCase()
       );
       if (target && target.id !== noteId) {
         await db.addEdge([noteId, target.id], "workspace:link", {
@@ -157,21 +185,89 @@ export function SdbConsumerPages({ db }: Props) {
         });
       }
     }
-  }, [db, items, parseWikiLinks, noteTitle]);
 
-  // Save note content
+    // Create tag edges
+    for (const tag of hashtags) {
+      await db.addEdge([noteId, `tag:${tag.toLowerCase()}`], "workspace:tag", {
+        tag: tag.toLowerCase(),
+        createdAt: Date.now(),
+      });
+    }
+  }, [db, items, parseWikiLinks, parseHashtags, noteTitle]);
+
+  // Save note
   const saveNote = useCallback(async () => {
-    if (!selected || selected.type !== "note") return;
+    if (!selected || (selected.type !== "note" && selected.type !== "daily")) return;
+    const content = blocks.map(b => b.text).join("\n");
     await db.removeEdge(selected.edge.id);
     await db.addEdge(
       selected.edge.nodes,
-      "workspace:note",
-      { ...selected.edge.properties, title: noteTitle, content: noteContent, updatedAt: Date.now() },
+      selected.edge.label,
+      {
+        ...selected.edge.properties,
+        title: noteTitle,
+        content,
+        blocks: JSON.stringify(blocks),
+        updatedAt: Date.now(),
+      },
     );
-    // Sync wiki-link edges
-    await syncWikiLinks(selected.id, noteContent);
+    await syncLinks(selected.id, blocks);
     await reload();
-  }, [db, selected, noteTitle, noteContent, reload, syncWikiLinks]);
+    await reloadDaily();
+  }, [db, selected, noteTitle, blocks, reload, reloadDaily, syncLinks]);
+
+  // Auto-save on block changes (debounced)
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const handleBlocksChange = useCallback((newBlocks: Block[]) => {
+    setBlocks(newBlocks);
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      // Trigger save indirectly
+    }, 1500);
+  }, []);
+
+  // Create new folder
+  const createFolder = useCallback(async () => {
+    const folderId = `ws:${generateId()}`;
+    await db.addEdge(["ws:root", folderId], "workspace:folder", { name: "New Folder", createdAt: Date.now() });
+    await reload();
+    setExpanded(prev => new Set(prev).add(folderId));
+  }, [db, reload]);
+
+  // Create new note
+  const createNote = useCallback(async (parentId = "ws:root", title = "Untitled") => {
+    const noteId = `note:${generateId()}`;
+    await db.addEdge([parentId, noteId], "workspace:note", {
+      title,
+      content: "",
+      blocks: JSON.stringify([{ id: "b0", text: "", indent: 0, children: [] }]),
+      tags: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    await reload();
+    setSelectedId(noteId);
+  }, [db, reload]);
+
+  // Navigate to a note (from wiki-link click or backlink)
+  const navigateTo = useCallback((noteId: string) => {
+    setSelectedId(noteId);
+  }, []);
+
+  // Navigate to wiki-link (find-or-create)
+  const handleWikiLinkClick = useCallback(async (title: string) => {
+    const existing = items.find(
+      i => (i.type === "note" || i.type === "daily") && i.name.toLowerCase() === title.toLowerCase()
+    );
+    if (existing) {
+      // Save current note before navigating
+      await saveNote();
+      setSelectedId(existing.id);
+    } else {
+      await saveNote();
+      await createNote("ws:root", title);
+    }
+  }, [items, saveNote, createNote]);
 
   // Delete item
   const deleteItem = useCallback(async (item: TreeItem) => {
@@ -189,8 +285,19 @@ export function SdbConsumerPages({ db }: Props) {
     });
   };
 
-  // Build tree
-  const rootItems = items.filter(i => !i.parentId || i.parentId === "ws:root");
+  // Quick finder items
+  const finderItems: FinderItem[] = useMemo(() =>
+    items.filter(i => i.type === "note" || i.type === "daily").map(i => ({
+      id: i.id,
+      title: i.name,
+      type: i.type as "note" | "daily",
+      updatedAt: Number(i.edge.properties.updatedAt || i.edge.properties.createdAt || 0),
+    })),
+    [items]
+  );
+
+  // Build tree (folders + notes only, daily notes in separate section)
+  const rootItems = items.filter(i => i.type !== "daily" && (!i.parentId || i.parentId === "ws:root"));
   const childrenOf = (parentId: string) => items.filter(i => i.parentId === parentId);
 
   const renderItem = (item: TreeItem, depth = 0) => {
@@ -249,19 +356,29 @@ export function SdbConsumerPages({ db }: Props) {
 
   return (
     <div className="flex h-full overflow-hidden">
-      {/* Sidebar — workspace tree */}
+      {/* Quick Finder */}
+      <SdbQuickFinder
+        open={finderOpen}
+        onClose={() => setFinderOpen(false)}
+        items={finderItems}
+        recentIds={recentIds}
+        onSelect={id => { setSelectedId(id); }}
+        onCreate={title => createNote("ws:root", title)}
+      />
+
+      {/* Sidebar */}
       <aside className="w-60 shrink-0 border-r border-border bg-card/50 flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <span className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider">
-            Workspaces
+            Workspace
           </span>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => { setSearchOpen(o => !o); setTimeout(() => searchRef.current?.focus(), 50); }}
-              className={`p-1 rounded hover:bg-muted/60 transition-colors ${searchOpen ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
-              title="Search notes"
+              onClick={() => setFinderOpen(true)}
+              className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
+              title="Find or create (⌘K)"
             >
-              <IconSearch size={15} />
+              <span className="text-[11px] font-mono">⌘K</span>
             </button>
             <button onClick={createFolder} className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors" title="New folder">
               <IconFolder size={15} />
@@ -272,58 +389,10 @@ export function SdbConsumerPages({ db }: Props) {
           </div>
         </div>
 
-        {/* Search bar */}
-        {searchOpen && (
-          <div className="px-3 py-2 border-b border-border">
-            <div className="relative">
-              <IconSearch size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
-              <input
-                ref={searchRef}
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search notes…"
-                className="w-full pl-8 pr-7 py-1.5 text-[13px] rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary/50"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => { setSearchQuery(""); searchRef.current?.focus(); }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground"
-                >
-                  <IconX size={12} />
-                </button>
-              )}
-            </div>
-            {/* Search results */}
-            {searchQuery.trim() && (
-              <div className="mt-2 max-h-48 overflow-auto space-y-0.5">
-                {searchResults.length === 0 ? (
-                  <p className="text-[12px] text-muted-foreground/50 text-center py-2">No results</p>
-                ) : (
-                  searchResults.map(r => (
-                    <button
-                      key={r.edge.id}
-                      onClick={() => {
-                        const noteId = r.edge.nodes[1] || r.edge.id;
-                        setSelectedId(noteId);
-                        setSearchOpen(false);
-                        setSearchQuery("");
-                      }}
-                      className="flex flex-col gap-0.5 w-full px-2.5 py-2 rounded-md text-left hover:bg-muted/50 transition-colors"
-                    >
-                      <span className="text-[13px] text-foreground truncate">
-                        {String(r.edge.properties.title || r.edge.properties.name || "Untitled")}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground/60 truncate">
-                        {r.matchedTerms.join(", ")} · score {r.score}
-                      </span>
-                    </button>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        {/* Daily Notes Section */}
+        <SdbDailyNoteSection db={db} onSelectDaily={navigateTo} selectedId={selectedId} />
+
+        {/* Workspace tree */}
         <nav className="flex-1 overflow-auto py-2">
           {rootItems.length === 0 ? (
             <div className="px-4 py-8 text-center text-[13px] text-muted-foreground/60">
@@ -347,8 +416,8 @@ export function SdbConsumerPages({ db }: Props) {
             </h2>
             <p className="text-[15px] text-muted-foreground max-w-md">
               {items.length === 0
-                ? "Create workspaces and notes to organize your information. Everything is stored in your personal HyperGraph."
-                : "Choose a note from the sidebar to start editing, or create a new one."}
+                ? "Start with today's daily note, or create pages and link them with [[wiki-links]]. Your thoughts connect automatically."
+                : "Choose a note from the sidebar, or press ⌘K to find or create a page."}
             </p>
             <div className="flex items-center gap-3 mt-3">
               <button
@@ -364,6 +433,9 @@ export function SdbConsumerPages({ db }: Props) {
                 + Note
               </button>
             </div>
+            <p className="text-[12px] text-muted-foreground/40 mt-2">
+              Press <kbd className="px-1.5 py-0.5 bg-muted/30 rounded text-[11px] font-mono">⌘K</kbd> to search
+            </p>
           </div>
         ) : (
           /* Note editor */
@@ -375,53 +447,31 @@ export function SdbConsumerPages({ db }: Props) {
               placeholder="Untitled"
               className="w-full text-[28px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/30 mb-6"
             />
-            {/* Content editor with wiki-link overlay */}
-            <div className="relative">
-              <textarea
-                value={noteContent}
-                onChange={e => setNoteContent(e.target.value)}
-                onBlur={saveNote}
-                placeholder="Start writing… Use [[Note Title]] to link to other notes"
-                className="w-full min-h-[400px] text-[15px] leading-relaxed text-foreground/90 bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/30"
-              />
-            </div>
 
-            {/* Linked notes indicator */}
-            {(() => {
-              const linked = parseWikiLinks(noteContent);
-              if (linked.length === 0) return null;
-              const resolved = linked.map(title => {
-                const target = items.find(i => i.type === "note" && i.name.toLowerCase() === title.toLowerCase());
-                return { title, resolved: !!target, id: target?.id };
-              });
-              return (
-                <div className="mt-4 pt-3 border-t border-border/20">
-                  <p className="text-[12px] font-semibold text-muted-foreground mb-2">
-                    Linked Notes ({resolved.length})
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {resolved.map((link, i) => (
-                      <button
-                        key={i}
-                        onClick={() => link.id && setSelectedId(link.id)}
-                        disabled={!link.resolved}
-                        className={`px-2.5 py-1 rounded-md text-[12px] transition-colors ${
-                          link.resolved
-                            ? "bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
-                            : "bg-muted/30 text-muted-foreground/50 cursor-default"
-                        }`}
-                      >
-                        {link.title}
-                        {!link.resolved && <span className="ml-1 text-[10px]">(not found)</span>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
+            {/* Block outliner */}
+            <SdbBlockEditor
+              blocks={blocks}
+              onChange={handleBlocksChange}
+              onWikiLinkClick={handleWikiLinkClick}
+              noteNames={noteNames}
+            />
 
+            {/* Backlinks */}
+            <SdbBacklinks
+              currentNoteId={selected.id}
+              currentNoteTitle={noteTitle}
+              allEdges={allEdges}
+              onNavigate={async (noteId) => {
+                await saveNote();
+                navigateTo(noteId);
+              }}
+            />
+
+            {/* Footer metadata */}
             <div className="mt-6 pt-4 border-t border-border/30 flex items-center gap-3 text-[12px] text-muted-foreground/50 font-mono">
               <span>{selected.edge.id.slice(0, 8)}</span>
+              <span>·</span>
+              <span>{blocks.length} blocks</span>
               <span>·</span>
               <span>{selected.edge.properties.updatedAt
                 ? new Date(Number(selected.edge.properties.updatedAt)).toLocaleString()

@@ -25,6 +25,8 @@ interface Props {
 const COLORS: Record<string, string> = {
   folder: "hsl(40, 85%, 55%)",
   note: "hsl(210, 80%, 60%)",
+  daily: "hsl(30, 85%, 55%)",
+  tag: "hsl(270, 60%, 60%)",
   node: "hsl(160, 70%, 50%)",
 };
 
@@ -68,10 +70,17 @@ export function SdbConsumerGraph({ db }: Props) {
       } else if (e.label === "workspace:note") {
         const title = String(e.properties.title || "Untitled");
         ensure(e.nodes[1] || e.id, title, "note");
-        if (e.nodes[0]) {
+        if (e.nodes[0] && e.nodes[0] !== "ws:root") {
           ensure(e.nodes[0], e.nodes[0], "folder");
           linkArr.push({ source: e.nodes[0], target: e.nodes[1] || e.id, label: "in" });
         }
+      } else if (e.label === "workspace:daily") {
+        const title = String(e.properties.title || e.properties.date || "Daily");
+        ensure(e.nodes[1] || e.id, title, "daily");
+      } else if (e.label === "workspace:tag") {
+        const tag = String(e.properties.tag || "tag");
+        ensure(e.nodes[1] || e.id, `#${tag}`, "tag");
+        linkArr.push({ source: e.nodes[0], target: e.nodes[1] || e.id, label: "tagged" });
       } else if (e.label === "workspace:link") {
         linkArr.push({ source: e.nodes[0], target: e.nodes[1], label: String(e.properties.relation || "link"), weight: 2 });
       } else {
