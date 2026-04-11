@@ -25,6 +25,8 @@ export interface E8RootSystem {
   readonly typeI: readonly number[];
   /** Type II root indices (128 half-integer-type roots) */
   readonly typeII: readonly number[];
+  /** Negation table: negationTable[i] = index of -root[i], O(1) lookup */
+  readonly negationTable: readonly number[];
   /** Dimension = 8 */
   readonly rank: 8;
 }
@@ -88,12 +90,26 @@ function buildRoots(): E8RootSystem {
     }
   }
 
+  // Build negation table: negationTable[i] = index of -root[i]
+  const negationTable = new Array<number>(240);
+  for (let i = 0; i < 240; i++) {
+    const neg = roots[i].map(x => -x);
+    for (let j = 0; j < 240; j++) {
+      let match = true;
+      for (let k = 0; k < 8; k++) {
+        if (roots[j][k] !== neg[k]) { match = false; break; }
+      }
+      if (match) { negationTable[i] = j; break; }
+    }
+  }
+
   // Freeze for immutability
   const frozen = roots.map(r => Object.freeze(r));
   return Object.freeze({
     roots: Object.freeze(frozen),
     typeI: Object.freeze(typeI),
     typeII: Object.freeze(typeII),
+    negationTable: Object.freeze(negationTable),
     rank: 8,
   });
 }
