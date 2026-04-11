@@ -39,6 +39,8 @@ export interface Hyperedge {
   properties: Record<string, unknown>;
   /** Weight (default 1.0) for weighted hypergraph algorithms */
   weight: number;
+  /** Atlas vertex index (0–95) if this relation maps to the Atlas seed, else undefined */
+  atlasVertex?: number;
   /** Timestamp */
   createdAt: number;
 }

@@ -3,38 +3,38 @@
  * ═══════════════════════════════════════════
  *
  * Deterministic encoding of sovereign OS objects into hypervectors.
- * Enables one-shot similarity comparison between processes, files,
- * and entire applications.
+ * Uses the Atlas Engine for structured symbol allocation:
+ *   - Symbols 0–95:  Atlas vertex basis vectors (96-vertex seed)
+ *   - Symbols 96–239: remaining E8 root basis vectors
+ *   - Symbols 240+:  string-hash fallback
  *
  * All encodings are deterministic: same input → same hypervector.
- * Uses ItemMemory for symbol allocation and bind/bundle/permute
- * for structure.
  *
- * @version 1.1.0 — E8-indexed symbol allocation
+ * @version 1.2.0 — Atlas Engine integration
  */
 
 import type { Hypervector } from "./hypervector";
 import {
   bind, bundle, permute, encodeSequence, encodeRecord,
-  DEFAULT_DIM, fromBytes, fromE8Root,
+  DEFAULT_DIM, fromE8Root,
 } from "./hypervector";
 import { ItemMemory } from "./item-memory";
 
 /** Shared encoder memory — symbol → hypervector assignments persist per session. */
 const mem = new ItemMemory();
 
-/** E8-indexed symbol counter: first 240 symbols get structured E8 basis vectors. */
+/** Atlas-aware symbol counter: first 240 symbols get E8 basis vectors. */
 let e8Counter = 0;
 
 // ── Deterministic seed vector from string ───────────────────────────────────
 
 /**
  * Derive a deterministic hypervector from a string.
- * For the first 240 symbols, uses E8 root basis vectors (algebraically meaningful).
- * Beyond 240, falls back to string-hash seeding.
+ * - Symbols 0–95: Atlas vertex basis vectors (the 96-vertex seed)
+ * - Symbols 96–239: remaining E8 root basis vectors
+ * - Symbols 240+: string-hash fallback
  */
 function seedFromString(s: string, dim = DEFAULT_DIM): Hypervector {
-  // E8-indexed allocation for the first 240 unique symbols
   if (e8Counter < 240) {
     const idx = e8Counter++;
     return fromE8Root(idx, dim);
