@@ -207,7 +207,6 @@ export async function deployApp(opts: DeployOptions): Promise<DeployResult> {
     progress("run", "Booting Sovereign Runtime from knowledge graph...");
 
     sovereignRuntime = await createSovereignRuntime({
-      mountTarget: opts.mountTarget,
       memoryLimitMb: 256,
       stateNamespace: appName,
     });
@@ -220,13 +219,20 @@ export async function deployApp(opts: DeployOptions): Promise<DeployResult> {
     );
 
     // Create a WasmAppInstance-compatible wrapper for the result type
+    const witness = new RuntimeWitness(buildResult.image.canonicalId);
     instance = {
-      imageRef: buildResult.image.canonicalId,
+      instanceId: graphImage.canonicalId,
+      imageCanonicalId: buildResult.image.canonicalId,
       sourceUrl: serveUrl,
+      ipv6: "",
+      liveUrl: serveUrl,
       status: "running" as const,
+      witness,
       startedAt: new Date().toISOString(),
-      stop: async () => { await sovereignRuntime!.stop(); },
-    } as WasmAppInstance;
+      stop: () => { sovereignRuntime!.stop(); },
+      getTraces: async () => witness.getTraces(),
+      getFrame: () => null,
+    };
   } else {
     // Classic path: iframe from URL
     progress("run", "Starting WASM runtime...");
