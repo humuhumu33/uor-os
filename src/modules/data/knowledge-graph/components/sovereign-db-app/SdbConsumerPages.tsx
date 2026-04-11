@@ -492,6 +492,7 @@ export function SdbConsumerPages({ db }: Props) {
               onChange={handleBlocksChange}
               onWikiLinkClick={handleWikiLinkClick}
               noteNames={noteNames}
+              getPreview={getPreview}
             />
 
             {/* Backlinks */}
