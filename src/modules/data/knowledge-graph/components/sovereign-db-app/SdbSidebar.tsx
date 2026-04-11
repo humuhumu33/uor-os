@@ -1,18 +1,18 @@
 import {
   IconTerminal2, IconBinaryTree, IconSchema, IconChartDots, IconFileImport, IconChartBar,
-  IconDatabase,
+  IconDatabase, IconLayoutDashboard,
   IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand,
 } from "@tabler/icons-react";
 
 export type SdbSection = "query" | "edges" | "schema" | "algo" | "import" | "stats" | "storage";
 
 const NAV: { id: SdbSection; label: string; icon: typeof IconTerminal2 }[] = [
-  { id: "query", label: "Query", icon: IconTerminal2 },
-  { id: "edges", label: "Edges", icon: IconBinaryTree },
-  { id: "schema", label: "Schema", icon: IconSchema },
+  { id: "query", label: "Query Console", icon: IconTerminal2 },
+  { id: "edges", label: "Edge Explorer", icon: IconBinaryTree },
+  { id: "schema", label: "Schema Manager", icon: IconSchema },
   { id: "algo", label: "Algorithms", icon: IconChartDots },
   { id: "import", label: "Import / Export", icon: IconFileImport },
-  { id: "stats", label: "Statistics", icon: IconChartBar },
+  { id: "stats", label: "Monitoring", icon: IconChartBar },
   { id: "storage", label: "Storage", icon: IconDatabase },
 ];
 
@@ -21,28 +21,58 @@ interface Props {
   onSelect: (s: SdbSection) => void;
   collapsed: boolean;
   onToggle: () => void;
+  showDashboard?: boolean;
+  onDashboard?: () => void;
+  isDashboard?: boolean;
 }
 
-export function SdbSidebar({ active, onSelect, collapsed, onToggle }: Props) {
+export function SdbSidebar({ active, onSelect, collapsed, onToggle, showDashboard, onDashboard, isDashboard }: Props) {
   return (
     <aside
       className={`shrink-0 border-r border-border bg-card flex flex-col transition-all duration-200 ${
-        collapsed ? "w-12" : "w-48"
+        collapsed ? "w-14" : "w-52"
       }`}
     >
-      <nav className="flex-1 py-2">
+      {!collapsed && (
+        <div className="px-4 py-3 border-b border-border">
+          <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/60">
+            Services
+          </span>
+        </div>
+      )}
+
+      <nav className="flex-1 py-2 space-y-0.5">
+        {/* Dashboard button */}
+        {showDashboard && (
+          <>
+            <button
+              onClick={onDashboard}
+              title="Dashboard"
+              className={`flex items-center gap-3 w-full px-4 py-2.5 text-[14px] font-medium transition-colors ${
+                isDashboard
+                  ? "bg-primary/10 text-primary border-r-2 border-primary"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              }`}
+            >
+              <IconLayoutDashboard size={18} stroke={1.5} className="shrink-0" />
+              {!collapsed && <span className="truncate">Dashboard</span>}
+            </button>
+            <div className="mx-3 my-1 border-t border-border/40" />
+          </>
+        )}
+
         {NAV.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => onSelect(id)}
             title={label}
-            className={`flex items-center gap-2.5 w-full px-3 py-2.5 text-[13px] font-medium transition-colors ${
-              active === id
+            className={`flex items-center gap-3 w-full px-4 py-2.5 text-[14px] font-medium transition-colors ${
+              active === id && !isDashboard
                 ? "bg-primary/10 text-primary border-r-2 border-primary"
                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             }`}
           >
-            <Icon size={18} stroke={1.6} className="shrink-0" />
+            <Icon size={18} stroke={1.5} className="shrink-0" />
             {!collapsed && <span className="truncate">{label}</span>}
           </button>
         ))}
@@ -54,8 +84,8 @@ export function SdbSidebar({ active, onSelect, collapsed, onToggle }: Props) {
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         {collapsed
-          ? <IconLayoutSidebarLeftExpand size={16} stroke={1.6} />
-          : <IconLayoutSidebarLeftCollapse size={16} stroke={1.6} />}
+          ? <IconLayoutSidebarLeftExpand size={16} stroke={1.5} />
+          : <IconLayoutSidebarLeftCollapse size={16} stroke={1.5} />}
       </button>
     </aside>
   );
