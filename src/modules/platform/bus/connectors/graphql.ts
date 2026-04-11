@@ -1,88 +1,70 @@
 /**
- * Universal Connector — GraphQL.
- * @ontology uor:ServiceMesh
- * ═════════════════════════════════════════════════════════════════
+ * GraphQL Protocol Adapter — Query Wrapping.
+ * ═════════════════════════════════════════════
  *
- *   bus.call("graphql/query",  { query, variables })
- *   bus.call("graphql/mutate", { mutation, variables })
+ * GraphQL is POST with { query, variables } body. That's the
+ * entire translation. Errors come back in the response body.
  *
- * @version 1.0.0
+ * @version 2.0.0
  */
 
-import { registerConnector } from "../connector";
-import { runtime } from "../adapter";
+import type { ProtocolAdapter, Connection } from "./protocol-adapter";
+import { registerAdapter } from "../connector";
 
-let _endpoint = "";
-let _headers: Record<string, string> = {};
-
-async function gql(body: Record<string, unknown>) {
-  if (!_endpoint) throw new Error("[graphql] Not connected — call graphql/connect first");
-  const resp = await runtime.fetch(_endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ..._headers },
-    body: JSON.stringify(body),
-  });
-  const json = await resp.json();
-  if (json.errors?.length) throw new Error(json.errors[0].message);
-  return json.data;
-}
-
-registerConnector({
-  protocol: "graphql",
+export const graphqlAdapter: ProtocolAdapter = {
+  name: "graphql",
   label: "GraphQL",
-  layer: 2,
-  configSchema: {
-    type: "object",
-    properties: {
-      endpoint: { type: "string", description: "GraphQL endpoint URL" },
-      headers: { type: "object", description: "Auth headers" },
-    },
-    required: ["endpoint"],
+
+  translate(op, params, conn) {
+    const query = (params.query as string) ?? (params.mutation as string) ?? "";
+    return {
+      url: conn.endpoint,
+      init: {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, variables: params.variables ?? {} }),
+      },
+    };
   },
 
-  connect: async (config) => {
-    _endpoint = config.endpoint as string;
-    _headers = (config.headers as Record<string, string>) ?? {};
+  async parse(response) {
+    const json = await response.json();
+    if (json.errors?.length) throw new Error(json.errors[0].message);
+    return json.data;
   },
-  disconnect: async () => { _endpoint = ""; _headers = {}; },
-  ping: async () => {
-    const t = runtime.now();
-    try {
-      await gql({ query: "{ __typename }" });
-      return { ok: true, latencyMs: Math.round(runtime.now() - t) };
-    } catch {
-      return { ok: false, latencyMs: Math.round(runtime.now() - t) };
-    }
+
+  ping(conn) {
+    return {
+      url: conn.endpoint,
+      init: {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: "{ __typename }" }),
+      },
+    };
   },
 
   operations: {
     query: {
-      handler: async (params: any) => gql({ query: params?.query, variables: params?.variables }),
       description: "Execute a GraphQL query",
       paramsSchema: {
         type: "object",
-        properties: {
-          query: { type: "string" },
-          variables: { type: "object" },
-        },
+        properties: { query: { type: "string" }, variables: { type: "object" } },
         required: ["query"],
       },
     },
     mutate: {
-      handler: async (params: any) => gql({ query: params?.mutation, variables: params?.variables }),
       description: "Execute a GraphQL mutation",
       paramsSchema: {
         type: "object",
-        properties: {
-          mutation: { type: "string" },
-          variables: { type: "object" },
-        },
+        properties: { mutation: { type: "string" }, variables: { type: "object" } },
         required: ["mutation"],
       },
     },
     introspect: {
-      handler: async () => gql({ query: "{ __schema { types { name kind } } }" }),
       description: "Introspect the GraphQL schema",
     },
   },
-});
+};
+
+registerAdapter(graphqlAdapter);
