@@ -55,8 +55,12 @@ export interface Hyperedge {
   head?: string[];
   /** Directed tail nodes — targets/outputs of the relation (optional) */
   tail?: string[];
-  /** Timestamp */
+  /** Creation timestamp (ms since epoch) */
   createdAt: number;
+  /** Time-to-live in milliseconds (undefined = permanent) */
+  ttl?: number;
+  /** Expiration timestamp = createdAt + ttl (computed, undefined = never) */
+  expiresAt?: number;
 }
 
 /** Incidence query result. */
@@ -159,8 +163,10 @@ export const hypergraph = {
     atlasVertex?: number,
     head?: string[],
     tail?: string[],
+    ttl?: number,
   ): Promise<Hyperedge> {
     const id = await hyperedgeId(nodes, label);
+    const now = Date.now();
     const he: Hyperedge = {
       id,
       nodes,
@@ -171,7 +177,9 @@ export const hypergraph = {
       atlasVertex,
       head,
       tail,
-      createdAt: Date.now(),
+      createdAt: now,
+      ttl,
+      expiresAt: ttl !== undefined ? now + ttl : undefined,
     };
 
     // Persist as a KGNode in GrafeoDB
@@ -188,6 +196,8 @@ export const hypergraph = {
         ...(atlasVertex !== undefined ? { atlasVertex } : {}),
         ...(head ? { head } : {}),
         ...(tail ? { tail } : {}),
+        ...(ttl !== undefined ? { ttl } : {}),
+        ...(he.expiresAt !== undefined ? { expiresAt: he.expiresAt } : {}),
         ...properties,
       },
       createdAt: he.createdAt,
@@ -364,8 +374,9 @@ export const hypergraph = {
   /**
    * Get statistics about the hypergraph.
    */
-  stats(): { edgeCount: number; indexedNodes: number; avgArity: number; labelCount: number; atlasVertices: number } {
+  stats(): { edgeCount: number; indexedNodes: number; avgArity: number; labelCount: number; atlasVertices: number; temporalEdges: number; expiredEdges: number } {
     const edges = Array.from(edgeCache.values());
+    const now = Date.now();
     const avgArity = edges.length > 0
       ? edges.reduce((s, e) => s + e.arity, 0) / edges.length
       : 0;
@@ -375,7 +386,54 @@ export const hypergraph = {
       avgArity: Math.round(avgArity * 100) / 100,
       labelCount: labelIndex.size,
       atlasVertices: atlasIndex.size,
+      temporalEdges: edges.filter(e => e.ttl !== undefined).length,
+      expiredEdges: edges.filter(e => e.expiresAt !== undefined && e.expiresAt <= now).length,
     };
+  },
+
+  /**
+   * Check if a hyperedge has expired (TTL elapsed).
+   */
+  isExpired(he: Hyperedge): boolean {
+    return he.expiresAt !== undefined && Date.now() >= he.expiresAt;
+  },
+
+  /**
+   * Get all currently active (non-expired) cached edges.
+   */
+  activeEdges(): Hyperedge[] {
+    const now = Date.now();
+    return Array.from(edgeCache.values()).filter(
+      he => he.expiresAt === undefined || he.expiresAt > now,
+    );
+  },
+
+  /**
+   * Collect and remove all expired hyperedges.
+   * Returns the number of edges reaped.
+   */
+  async reapExpired(): Promise<number> {
+    const now = Date.now();
+    const expired = Array.from(edgeCache.values()).filter(
+      he => he.expiresAt !== undefined && he.expiresAt <= now,
+    );
+    for (const he of expired) {
+      deindexEdge(he);
+      await grafeoStore.removeNode(`${UOR_NS}hyperedge/${he.id}`);
+    }
+    return expired.length;
+  },
+
+  /**
+   * Query edges active within a time window [startMs, endMs].
+   * An edge is active if it was created before endMs and hasn't expired before startMs.
+   */
+  edgesInWindow(startMs: number, endMs: number): Hyperedge[] {
+    return Array.from(edgeCache.values()).filter(he => {
+      if (he.createdAt > endMs) return false;
+      if (he.expiresAt !== undefined && he.expiresAt < startMs) return false;
+      return true;
+    });
   },
 
   /** Clear all in-memory indexes (GrafeoDB data remains). */
