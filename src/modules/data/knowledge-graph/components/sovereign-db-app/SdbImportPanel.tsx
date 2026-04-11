@@ -65,18 +65,18 @@ export function SdbImportPanel({ db }: Props) {
       const text = await file.text();
       const name = file.name.toLowerCase();
 
-      let count = 0;
+      let imported: any[];
       if (name.endsWith(".jsonld") || name.endsWith(".json")) {
-        count = await importJsonLd(text);
+        imported = await importJsonLd(text);
       } else if (name.endsWith(".csv")) {
-        count = await importCsv(text);
+        imported = await importCsv(text);
       } else if (name.endsWith(".cypher")) {
-        count = await importCypher(text);
+        imported = await importCypher(text);
       } else {
         setStatus("Unsupported file format. Use .jsonld, .csv, or .cypher");
         return;
       }
-      setStatus(`Imported ${count} edges from ${file.name}`);
+      setStatus(`Imported ${imported.length} edges from ${file.name}`);
     } catch (e) {
       setStatus(`Import failed: ${e}`);
     }
