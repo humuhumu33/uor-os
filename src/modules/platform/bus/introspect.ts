@@ -4,14 +4,14 @@
  * ═════════════════════════════════════════════════════════════════
  *
  * bus.call("rpc/discover")    → full method catalog
- * bus.call("rpc/connectors")  → active Universal Connectors
+ * bus.call("rpc/connectors")  → active connections + available adapters
  * bus.call("rpc/openrpc")     → OpenRPC-compatible discovery doc
  *
- * @version 2.0.0
+ * @version 3.0.0
  */
 
 import { register, listModules, allDescriptors } from "./registry";
-import { getActiveConnectors } from "./connector";
+import { getActiveConnections, listAdapters } from "./connector";
 
 export interface MethodInfo {
   method: string;
@@ -24,7 +24,10 @@ export interface DiscoverResult {
   version: string;
   protocol: "JSON-RPC 2.0";
   modules: Array<{ ns: string; label: string; methods: MethodInfo[] }>;
-  connectors: Array<{ protocol: string; label: string; connectedAt: number }>;
+  connectors: {
+    active: Array<{ id: string; protocol: string; endpoint: string; connectedAt: number }>;
+    adapters: Array<{ protocol: string; label: string; operations: string[] }>;
+  };
   totalMethods: number;
 }
 
@@ -45,28 +48,44 @@ function handleDiscover(): DiscoverResult {
     return { ns: mod.ns, label: mod.label, methods };
   });
 
-  const connectors = Array.from(getActiveConnectors().values()).map((c) => ({
+  const active = Array.from(getActiveConnections().values()).map((c) => ({
+    id: c.id,
     protocol: c.protocol,
-    label: c.label,
+    endpoint: c.endpoint,
     connectedAt: c.connectedAt,
   }));
 
-  return { version: "2.0.0", protocol: "JSON-RPC 2.0", modules, connectors, totalMethods: total };
+  const adapters = listAdapters().map((a) => ({
+    protocol: a.name,
+    label: a.label,
+    operations: Object.keys(a.operations),
+  }));
+
+  return { version: "3.0.0", protocol: "JSON-RPC 2.0", modules, connectors: { active, adapters }, totalMethods: total };
 }
 
 function handleConnectors() {
-  return Array.from(getActiveConnectors().entries()).map(([protocol, c]) => ({
-    protocol,
-    label: c.label,
+  const active = Array.from(getActiveConnections().values()).map((c) => ({
+    id: c.id,
+    protocol: c.protocol,
+    endpoint: c.endpoint,
     connectedAt: c.connectedAt,
   }));
+
+  const adapters = listAdapters().map((a) => ({
+    protocol: a.name,
+    label: a.label,
+    operations: Object.entries(a.operations).map(([op, meta]) => ({ op, ...meta })),
+  }));
+
+  return { active, adapters };
 }
 
 function handleOpenRpc() {
   const discovery = handleDiscover();
   return {
     openrpc: "1.3.2",
-    info: { title: "Sovereign Bus", version: "2.0.0" },
+    info: { title: "Sovereign Bus", version: "3.0.0" },
     methods: discovery.modules.flatMap((mod) =>
       mod.methods.map((m) => ({
         name: m.method,
@@ -99,7 +118,7 @@ export function registerIntrospect(): void {
       },
       connectors: {
         handler: async () => handleConnectors(),
-        description: "List all active Universal Connectors and their status",
+        description: "List active connections and available protocol adapters",
       },
       openrpc: {
         handler: async () => handleOpenRpc(),

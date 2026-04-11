@@ -6,7 +6,7 @@
  *   import { bus } from "@/modules/platform/bus";
  *   const result = await bus.call("kernel/derive", payload);
  *
- * @version 3.0.0
+ * @version 4.0.0
  */
 
 // Re-export types
@@ -31,9 +31,9 @@ export type { RuntimeAdapter } from "./adapter";
 export { defineFacet, registerFacet } from "./facet";
 export type { ModuleFacet } from "./facet";
 
-// Re-export connector
-export { defineConnector, registerConnector, getActiveConnectors } from "./connector";
-export type { ConnectorConfig } from "./connector";
+// Re-export Universal Connector
+export { registerAdapter, getAdapter, listAdapters, registerUniversalConnector, getActiveConnections } from "./connector";
+export type { ProtocolAdapter, Connection, ConnectionParams } from "./connector";
 
 // Re-export introspection
 export { registerIntrospect } from "./introspect";
@@ -62,6 +62,7 @@ export { useBootStatus, EngineStatusIndicator } from "@/modules/platform/boot";
 import { call, batch, canCall, isReachable } from "./bus";
 import { register, listMethods, listModules, use } from "./registry";
 import { registerIntrospect } from "./introspect";
+import { registerUniversalConnector } from "./connector";
 import { timingMiddleware, loggingMiddleware } from "./middleware";
 
 export const bus = {
@@ -78,6 +79,7 @@ export const bus = {
     use(timingMiddleware);
     use(loggingMiddleware);
     registerIntrospect();
+    registerUniversalConnector();
   },
 } as const;
 
