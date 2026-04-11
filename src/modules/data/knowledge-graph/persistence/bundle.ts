@@ -108,3 +108,39 @@ export async function downloadBundle(filename?: string): Promise<void> {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// ── Runtime Bundle Extension ────────────────────────────────────────────────
+
+/** Extended bundle format that includes app runtime metadata. */
+export interface RuntimeBundle extends SovereignBundle {
+  /** Runtime configuration for sovereign runtime boot */
+  runtime?: {
+    /** App canonical ID */
+    appCanonicalId: string;
+    /** Entrypoint path */
+    entrypoint: string;
+    /** Tech stack */
+    tech: string[];
+    /** Memory limit in MB */
+    memoryLimitMb: number;
+    /** Network policy */
+    networkPolicy?: {
+      allowedOrigins: string[];
+      offlineReplay: boolean;
+    };
+  };
+}
+
+/**
+ * Export a sovereign bundle with runtime metadata attached.
+ * This produces a complete portable unit: graph + runtime config + seal.
+ */
+export async function exportRuntimeBundle(
+  runtimeConfig?: RuntimeBundle["runtime"],
+): Promise<RuntimeBundle> {
+  const bundle = await exportSovereignBundle();
+  return {
+    ...bundle,
+    runtime: runtimeConfig,
+  };
+}
