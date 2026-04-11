@@ -1,78 +1,67 @@
 
 
-# Stripe Lessons Applied to Universal Connector
+# HDC/VSA Performance Upgrades — Frontier Research Applied
 
-## Key Insights from Stripe's Evolution
+## The Opportunity
 
-Stripe's genius was three things: **7-line integration**, **one state machine for all payment methods**, and **progressive disclosure** (simple by default, powerful when needed). Their journey from `Charge` → `Sources` → `PaymentIntents` mirrors exactly what we've already done — collapsing multiple protocol-specific modules into one `translate → fetch → parse` pipeline.
+The current HDC engine is clean and correct but leaves significant performance and capability on the table. Three insights from recent research (2024–2026) map directly onto our R₈ architecture:
 
-But there are concrete lessons we haven't yet applied:
+### 1. SIMD-Width Bind and Distance (biggest win)
 
-### What We Can Steal
+**Research insight**: FPGA/SIMD HDC accelerators achieve 1300x speedups by processing vectors in wide chunks instead of byte-by-byte.
 
-1. **One-liner quickstart** — Stripe's `curl https://api.stripe.com/v1/charges -u sk_test -d amount=1000` is iconic. Our equivalent should be equally terse. Right now `connect/open` + `connect/call` is two steps. Stripe's first API was *one call*. We need an `execute` shorthand that auto-opens ephemeral connections.
+**Our gap**: `bind()` XORs byte-by-byte in a scalar loop. `distance()` calls `popcount8` per byte. On a 1024-dim vector, that's 1024 loop iterations + 1024 function calls.
 
-2. **Idempotency keys** — Stripe uses `Idempotency-Key` headers so retries are safe. Our `execute()` pipeline has no idempotency. For IoT/MQTT/WebSocket this matters enormously.
+**Fix**: Process 4 bytes at a time using `Uint32Array` views. XOR becomes 256 iterations instead of 1024. For popcount, use a 32-bit parallel bit-count (already have `popcount32` in uor-core but it uses Kernighan's loop — replace with the constant-time bitmask version). This is a 3-4x speedup with zero API changes.
 
-3. **Webhook-style event streaming** — Stripe's webhook system (`stripe listen --forward-to`) lets devs react to async events. Our Universal Connector currently only does request/response. We need an `onEvent` subscription primitive for adapters that support push (WebSocket, MQTT, SSE).
+### 2. Low-Dimension Mode (research: 32-dim achieves 96.88% on MNIST)
 
-4. **Error taxonomy** — Stripe has typed errors (`card_declined`, `insufficient_funds`, `rate_limit`). Our pipeline throws generic `Error`. Protocol adapters should return structured errors with codes the caller can switch on.
+**Research insight**: Recent work shows dimensions as low as 32–100 maintain or improve accuracy for classification while slashing compute.
 
-5. **Built-in test mode** — Stripe's `sk_test_` vs `sk_live_` prefix lets devs test without real transactions. We can add a `sandbox: true` flag to `ConnectionParams` that makes adapters return mock responses.
+**Our gap**: `DEFAULT_DIM = 1024` is hardcoded everywhere. No facility for adaptive dimensionality.
+
+**Fix**: Add a `thinBind` / `thinDistance` fast path that auto-detects when dim ≤ 128 and uses a single-pass approach. Add `COMPACT_DIM = 64` as a named constant for embeddings that don't need full resolution (e.g., protocol fingerprints, connection IDs).
+
+### 3. Resonator Network for Factorization (NVSA insight)
+
+**Research insight**: IBM's NVSA uses resonator networks to decompose bundled vectors back into constituents — enabling unbundling (the inverse of bundle), which our system currently lacks.
+
+**Our gap**: We have `unbind` (XOR inverse) but no `unbundle`. Given a bundled vector of N items, there's no way to recover the components. This limits the reasoning engine.
+
+**Fix**: Add a `resonate()` function — iterative codebook-based factorization. Given a bundled vector and a codebook (the ItemMemory), it iteratively sharpens estimates of the constituent factors. ~25 lines, pure algebra, no neural networks.
+
+### 4. Unify `distance()` with `uor-core.fidelity()`
+
+**Current duplication**: `hypervector.distance()` and `uor-core.hammingBytes()/fidelity()` compute the same thing. The HDC distance function should delegate to the canonical primitive.
+
+**Fix**: Make `distance()` call `hammingBytes()` from uor-core and normalize. Remove the inline popcount loop. One distance implementation for the entire system.
+
+### 5. Sparsity-Aware Bundle (FATE framework insight)
+
+**Research insight**: The FATE framework achieves 50%+ speedup via sparsity — skip zero components during bundling.
+
+**Our gap**: `bundle()` always iterates all dims × all bits × all vectors (O(dim × 8 × N)). For sparse vectors (many zero bytes), this wastes cycles.
+
+**Fix**: Add an early-exit check in the inner loop: if all vectors have zero at position d, output zero and skip the bit loop. Simple, backwards-compatible, helps with the sparse vectors that E8 basis expansion produces.
 
 ## Implementation Plan
 
-### Step 1: Add `connect/execute` — The One-Liner (~20 lines in connector.ts)
+### File: `src/lib/uor-core.ts` (~10 lines changed)
+- Replace `popcount32` Kernighan loop with constant-time bitmask version (3 instructions vs variable loop)
 
-A single bus call that combines open + call + close for stateless protocols:
+### File: `src/modules/kernel/hdc/hypervector.ts` (~60 lines changed)
+- **`bind()`**: Use `Uint32Array` view, XOR 4 bytes at a time (256 vs 1024 iterations)
+- **`distance()`**: Delegate to `hammingBytes` from uor-core, normalize by `a.length * 8`
+- **`bundle()`**: Add zero-skip fast path in outer loop
+- **`permute()`**: Use `Uint8Array.copyWithin()` + temp buffer instead of modular index math
+- Add `COMPACT_DIM = 64` export
+- Add `resonate()` function for resonator-network unbundling
 
-```typescript
-bus.call("connect/execute", {
-  protocol: "graphql",
-  endpoint: "https://api.example.com/graphql",
-  auth: { type: "bearer", token: "..." },
-  op: "query",
-  params: { query: "{ users { id name } }" }
-})
-```
+### File: `src/modules/kernel/hdc/index.ts` (~3 lines)
+- Export `resonate`, `COMPACT_DIM`
 
-No connection management needed. Opens ephemeral connection, executes, returns result. Like Stripe's single `curl` call.
+### File: `src/modules/kernel/hdc/item-memory.ts` (~5 lines)
+- Add `queryThreshold(target, minSimilarity)` — return all items above a similarity threshold instead of top-K (common pattern in HDC classification)
 
-### Step 2: Add idempotency to the pipeline (~15 lines in connector.ts)
-
-Add optional `idempotencyKey` to execute params. Cache results by key in a simple `Map<string, { result; expiry }>` with TTL. If the same key arrives again within TTL, return cached result without re-fetching.
-
-### Step 3: Add `onEvent` to ProtocolAdapter interface (~10 lines in protocol-adapter.ts)
-
-Optional method on adapters for push-based protocols:
-
-```typescript
-onEvent?(conn: Connection, handler: (event: unknown) => void): () => void;
-```
-
-WebSocket and MQTT adapters implement it. REST/GraphQL/S3/Neo4j don't — they're request/response only. The Universal Connector registers `connect/subscribe` on the bus.
-
-### Step 4: Structured error responses (~20 lines in connector.ts)
-
-Wrap pipeline errors in a typed `ConnectorError` with `code`, `protocol`, `retriable`, and `detail`. Each adapter's `parse()` can throw `ConnectorError` with protocol-specific codes (e.g. Neo4j's `Neo.ClientError.Statement.SyntaxError`).
-
-### Step 5: Sandbox mode (~15 lines in connector.ts)
-
-Add `sandbox?: boolean` to `ConnectionParams`. When true, `execute()` skips `runtime.fetch()` and returns the adapter's `translate()` output as a dry-run response — showing the developer exactly what *would* be sent. Zero-cost testing without a live endpoint.
-
-## File Changes
-
-| File | Change |
-|------|--------|
-| `bus/connector.ts` | Add `execute` shorthand, idempotency cache, sandbox mode, structured errors |
-| `bus/connectors/protocol-adapter.ts` | Add `onEvent?` method, `ConnectorError` type |
-| `bus/connectors/websocket.ts` | Implement `onEvent` |
-| `bus/connectors/mqtt.ts` | Implement `onEvent` |
-| `bus/index.ts` | Export `ConnectorError` |
-
-~80 lines of new code total. Every addition follows the same pattern: pure functions, zero state leakage, protocol-agnostic pipeline.
-
-## Why This Matters
-
-Stripe's lesson isn't about payments — it's about **progressive disclosure of complexity**. The simplest path (`connect/execute`) is one call. Need persistence? Use `connect/open`. Need events? Add `onEvent`. Need safety? Add `idempotencyKey`. Need testing? Set `sandbox: true`. Each layer is opt-in, and the zero-config default just works.
+**Estimated total**: ~80 lines changed, ~20 lines removed. Zero API breaks. Every existing test passes unchanged. Performance improvement: 3-4x on bind/distance hot paths.
 
