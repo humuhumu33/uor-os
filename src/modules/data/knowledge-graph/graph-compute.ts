@@ -20,6 +20,8 @@ import {
   cosineSimilarity,
   type SparseVector,
 } from "@/modules/kernel/ring-core/semantic-similarity";
+import { encodeFile } from "@/modules/kernel/hdc/encoder";
+import { similarity as hdcSimilarity } from "@/modules/kernel/hdc/hypervector";
 
 // ── Semantic Similarity Search ──────────────────────────────────────────────
 
@@ -62,6 +64,49 @@ export async function findSimilarNodes(
   return results
     .sort((a, b) => b.similarity - a.similarity)
     .slice(0, limit);
+}
+
+// ── HDC Structural Similarity Search ────────────────────────────────────────
+
+interface HdcSimilarityResult {
+  node: KGNode;
+  similarity: number;
+}
+
+/**
+ * Find structurally similar nodes via HDC hypervector encoding.
+ * Complements text-based trigram search with algebraic structure matching.
+ * Encodes each node as a hypervector (path + content hash + type) and
+ * compares via Hamming similarity.
+ */
+export async function findSimilarByHDC(
+  nodeAddr: string,
+  topK = 5,
+): Promise<HdcSimilarityResult[]> {
+  const targetNode = await localGraphStore.getNode(nodeAddr);
+  if (!targetNode) return [];
+
+  const targetHv = encodeFile(
+    targetNode.uorAddress,
+    targetNode.canonicalForm ?? targetNode.label,
+    targetNode.nodeType,
+  );
+
+  const allNodes = await localGraphStore.getAllNodes();
+  const scored: HdcSimilarityResult[] = [];
+
+  for (const node of allNodes) {
+    if (node.uorAddress === nodeAddr) continue;
+    const hv = encodeFile(
+      node.uorAddress,
+      node.canonicalForm ?? node.label,
+      node.nodeType,
+    );
+    scored.push({ node, similarity: hdcSimilarity(targetHv, hv) });
+  }
+
+  scored.sort((a, b) => b.similarity - a.similarity);
+  return scored.slice(0, topK);
 }
 
 function buildSearchText(node: KGNode): string {
