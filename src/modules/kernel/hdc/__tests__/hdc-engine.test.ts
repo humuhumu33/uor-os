@@ -123,8 +123,7 @@ describe("E8 root system", () => {
     for (let i = 0; i < 240; i++) {
       const neg = sys.negationTable[i];
       for (let k = 0; k < 8; k++) {
-        // Use toEqual to handle -0 === 0
-        expect(sys.roots[neg][k]).toEqual(-sys.roots[i][k]);
+        expect(sys.roots[neg][k]).toBe((-sys.roots[i][k]) || 0); // normalize -0 to 0
       }
     }
   });
