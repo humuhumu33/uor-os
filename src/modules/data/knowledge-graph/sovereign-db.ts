@@ -6,7 +6,7 @@
  * Runs identically in browser, desktop, mobile, edge, server.
  *
  * @product SovereignDB
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 import { hypergraph, hyperedgeReaper, hyperedgeEvents } from "./hypergraph";
@@ -19,8 +19,15 @@ import { QueryBuilder } from "./query-builder";
 import { SovereignTransaction } from "./transaction";
 import { schemaRegistry } from "./schema-constraints";
 import { indexManager } from "./index-manager";
+import { traversalEngine } from "./traversal";
+import { graphAlgorithms } from "./algorithms";
+import { cypherEngine } from "./cypher-engine";
+import { textIndexManager } from "./text-index";
 import type { SchemaDefinition, ValidationError } from "./schema-constraints";
 import type { IndexInfo } from "./index-manager";
+import type { TraversalOptions, TraversalResult, PathResult } from "./traversal";
+import type { PageRankResult, ComponentResult, DegreeResult, CommunityResult } from "./algorithms";
+import type { CypherResult } from "./cypher-engine";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -96,17 +103,26 @@ export class SovereignDB {
     // Schema validation if a schema is registered for this label
     const schema = schemaRegistry.get(label);
     if (schema) {
-      const errors = schemaRegistry.validate(label, properties);
+      // For uniqueness checks, gather existing edges of the same label
+      const existingEdges = schema.properties
+        ? (await this.byLabel(label)).map(e => e.properties)
+        : undefined;
+      const errors = schemaRegistry.validate(label, properties, existingEdges);
       if (errors.length > 0) {
         throw new Error(`Schema validation failed for "${label}": ${errors.map(e => e.message).join("; ")}`);
       }
     }
 
-    return hypergraph.addEdge(
+    const edge = await hypergraph.addEdge(
       nodes, label, properties,
       options?.weight, options?.atlasVertex,
       options?.head, options?.tail, options?.ttl,
     );
+
+    // Update text indexes
+    textIndexManager.onEdgeAdded(edge);
+
+    return edge;
   }
 
   /** Remove a hyperedge by ID. */
