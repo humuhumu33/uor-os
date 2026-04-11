@@ -9,7 +9,7 @@
  * @product SovereignDB
  */
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { getAtlas, type AtlasVertex } from "@/modules/research/atlas/atlas";
 import { decodeTriality } from "@/modules/research/atlas/triality";
 import type { GNode, GLink } from "./SdbGraphCanvas";
@@ -186,4 +186,73 @@ export function SdbAtlasOverlay({ stats, onDismiss }: OverlayProps) {
 
 export function useAtlasSeedData(torusR = 250, torusR2 = 90) {
   return useMemo(() => buildAtlasSeedData(torusR, torusR2), [torusR, torusR2]);
+}
+
+// ── Animated intro hook ─────────────────────────────────────────────────
+
+const INTRO_DURATION = 2400; // total stagger window in ms
+const ROTATION_DURATION = 3000; // gentle rotation settle time
+
+/**
+ * Returns atlas seed data with staggered fade-in opacity and a gentle
+ * initial rotation that settles to the final torus positions.
+ */
+export function useAtlasIntroAnimation(torusR = 250, torusR2 = 90): AtlasSeedData {
+  const base = useMemo(() => buildAtlasSeedData(torusR, torusR2), [torusR, torusR2]);
+  const startTime = useRef(Date.now());
+  const [tick, setTick] = useState(0);
+  const rafId = useRef(0);
+  const done = useRef(false);
+
+  useEffect(() => {
+    startTime.current = Date.now();
+    done.current = false;
+
+    const loop = () => {
+      const elapsed = Date.now() - startTime.current;
+      if (elapsed > INTRO_DURATION + 400) {
+        done.current = true;
+        setTick(t => t + 1); // final render at full opacity
+        return;
+      }
+      setTick(t => t + 1);
+      rafId.current = requestAnimationFrame(loop);
+    };
+    rafId.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId.current);
+  }, []);
+
+  return useMemo(() => {
+    if (done.current) return base;
+
+    const elapsed = Date.now() - startTime.current;
+    const rotationProgress = Math.min(elapsed / ROTATION_DURATION, 1);
+    // Ease-out rotation offset: starts at π/6, settles to 0
+    const rotOffset = (Math.PI / 6) * (1 - easeOutCubic(rotationProgress));
+
+    const animatedNodes = base.nodes.map((node, i) => {
+      // Stagger: each node fades in based on its index position along the torus
+      const staggerDelay = (i / 96) * INTRO_DURATION;
+      const nodeElapsed = elapsed - staggerDelay;
+      const opacity = Math.max(0, Math.min(1, nodeElapsed / 400));
+
+      if (rotOffset === 0) return { ...node, opacity };
+
+      // Apply rotation offset to the pinned position
+      const ox = node.fx ?? node.x ?? 0;
+      const oy = node.fy ?? node.y ?? 0;
+      const cos = Math.cos(rotOffset);
+      const sin = Math.sin(rotOffset);
+      const rx = ox * cos - oy * sin;
+      const ry = ox * sin + oy * cos;
+
+      return { ...node, opacity, x: rx, y: ry, fx: rx, fy: ry };
+    });
+
+    return { ...base, nodes: animatedNodes };
+  }, [base, tick]);
+}
+
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
 }

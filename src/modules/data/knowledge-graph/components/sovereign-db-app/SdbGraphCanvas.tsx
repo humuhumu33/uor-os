@@ -29,6 +29,8 @@ export interface GNode extends SimulationNodeDatum {
   degree?: number;
   pinned?: boolean;
   expanded?: boolean;
+  /** 0–1 opacity for intro animations */
+  opacity?: number;
   /** cluster group id for group-by-type */
   group?: string;
 }
@@ -311,7 +313,10 @@ export function SdbGraphCanvas({
 
         const sDimmed = dimmedIds.has(s.id);
         const tDimmed = dimmedIds.has(tt.id);
-        const alpha = (sDimmed || tDimmed) ? 0.08 : 0.3;
+        const sOp = (s as GNode).opacity ?? 1;
+        const tOp = (tt as GNode).opacity ?? 1;
+        const edgeOpacity = Math.min(sOp, tOp);
+        const alpha = (sDimmed || tDimmed) ? 0.08 : 0.3 * edgeOpacity;
         const thickness = Math.min(1 + (lk.weight || 1) * 0.5, 4);
 
         ctx.strokeStyle = `hsla(0, 0%, 50%, ${alpha})`;
@@ -364,7 +369,8 @@ export function SdbGraphCanvas({
         const isSel = selectedIds.has(node.id);
         const r = nodeRadius(node);
         const drawR = isHover ? r + 2 : isSel ? r + 1.5 : r;
-        const alpha = isDimmed ? 0.15 : 1;
+        const nodeOpacity = node.opacity ?? 1;
+        const alpha = isDimmed ? 0.15 : nodeOpacity;
         const shape = node.shape || "circle";
 
         // Selection ring
