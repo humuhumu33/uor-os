@@ -175,15 +175,15 @@ export const atlasAddressing = {
     label: string,
     properties: Record<string, unknown> = {},
     weight = 1.0,
+    ttl?: number,
   ): Promise<Hyperedge> {
     let atlasVertex = labelToVertex.get(label);
-    // Auto-resolve if not manually registered
     if (atlasVertex === undefined) {
       const hash = await sha256hex(label);
       const engine = getAtlasEngine();
       atlasVertex = engine.resolve(hash) ?? undefined;
     }
-    return hypergraph.addEdge(nodes, label, properties, weight, atlasVertex);
+    return hypergraph.addEdge(nodes, label, properties, weight, atlasVertex, undefined, undefined, ttl);
   },
 
   byAtlasVertex(vertex: number): Hyperedge[] {
