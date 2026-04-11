@@ -10,8 +10,8 @@
  */
 
 import { useMemo } from "react";
-import { getAtlas, type AtlasVertex } from "../../../research/atlas/atlas";
-import { decodeTriality } from "../../../research/atlas/triality";
+import { getAtlas, type AtlasVertex } from "@/modules/research/atlas/atlas";
+import { decodeTriality } from "@/modules/research/atlas/triality";
 import type { GNode, GLink } from "./SdbGraphCanvas";
 
 // ── Sign Class Color Palette ─────────────────────────────────────────────
