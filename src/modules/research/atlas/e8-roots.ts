@@ -197,3 +197,69 @@ export function findRootIndex(v: readonly number[]): number {
   }
   return -1;
 }
+
+// ── Simple Roots ───────────────────────────────────────────────────────────
+
+/**
+ * The 8 simple roots of E8 in doubled representation.
+ * Standard Bourbaki convention:
+ *   α₁ = e₁ - e₂, α₂ = e₂ - e₃, ..., α₆ = e₆ - e₇,
+ *   α₇ = e₆ + e₇, α₈ = -½(e₁+e₂+e₃+e₄+e₅+e₆+e₇+e₈)
+ * In doubled representation (×2):
+ */
+export function simpleRoots(): readonly (readonly number[])[] {
+  return Object.freeze([
+    Object.freeze([ 2, -2,  0,  0,  0,  0,  0,  0]),  // α₁ = e₁ - e₂
+    Object.freeze([ 0,  2, -2,  0,  0,  0,  0,  0]),  // α₂ = e₂ - e₃
+    Object.freeze([ 0,  0,  2, -2,  0,  0,  0,  0]),  // α₃ = e₃ - e₄
+    Object.freeze([ 0,  0,  0,  2, -2,  0,  0,  0]),  // α₄ = e₄ - e₅
+    Object.freeze([ 0,  0,  0,  0,  2, -2,  0,  0]),  // α₅ = e₅ - e₆
+    Object.freeze([ 0,  0,  0,  0,  0,  2, -2,  0]),  // α₆ = e₆ - e₇
+    Object.freeze([ 0,  0,  0,  0,  0,  2,  2,  0]),  // α₇ = e₆ + e₇
+    Object.freeze([-1, -1, -1, -1, -1, -1, -1, -1]),  // α₈ = -½Σeᵢ (doubled)
+  ]);
+}
+
+// ── Sign Class Utilities ───────────────────────────────────────────────────
+
+/**
+ * Compute the sign class of a Type II root (±1 coordinates).
+ * Sign class = number of +1 coordinates (0–8, but only even values for E8).
+ * Returns 0–3 representing {0,2,4,6,8} → {0,1,2,3} positive-count buckets.
+ */
+export function signClass(v: readonly number[]): number {
+  let pos = 0;
+  for (let i = 0; i < v.length; i++) if (v[i] > 0) pos++;
+  return pos;
+}
+
+/**
+ * Get a representative root for each sign class among the given root indices.
+ */
+export function signClassRepresentative(indices: readonly number[]): Map<number, number> {
+  const roots = getE8Roots();
+  const reps = new Map<number, number>();
+  for (const i of indices) {
+    const sc = signClass(roots[i]);
+    if (!reps.has(sc)) reps.set(sc, i);
+  }
+  return reps;
+}
+
+/**
+ * Count how many roots fall into each sign class.
+ */
+export function countSignClasses(indices: readonly number[]): Map<number, number> {
+  const roots = getE8Roots();
+  const counts = new Map<number, number>();
+  for (const i of indices) {
+    const sc = signClass(roots[i]);
+    counts.set(sc, (counts.get(sc) ?? 0) + 1);
+  }
+  return counts;
+}
+
+/** O(1) negation lookup: index of -root[i]. */
+export function negateRoot(rootIndex: number): number {
+  return getE8RootSystem().negationTable[rootIndex];
+}
