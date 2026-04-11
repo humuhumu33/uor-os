@@ -231,7 +231,7 @@ export async function deployApp(opts: DeployOptions): Promise<DeployResult> {
       witness,
       startedAt: new Date().toISOString(),
       stop: () => { sovereignRuntime!.stop(); },
-      getTraces: async () => [await witness.getTrace()],
+      getTraces: async () => [],
       getFrame: () => null,
     };
   } else {
