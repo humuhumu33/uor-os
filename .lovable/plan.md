@@ -1,66 +1,129 @@
 
-Goal: fix the real build blocker, which is not the Tailwind warnings. The failure is the missing/deep-imported UNS container module.
 
-What I found:
-- `AppBuilderPage.tsx` imports `@/modules/identity/uns/build/container`.
-- Other files also depend on that same deep path:
-  - `src/modules/platform/compose/orchestrator.ts`
-  - `src/modules/platform/desktop/components/ContainerBootOverlay.tsx`
-- The project’s public UNS barrel (`src/modules/identity/uns/index.ts`) already inlines other “build” APIs specifically to avoid build-resolution problems, but it does not export the container API yet.
-- The current `container.ts` shape is also incomplete for existing call sites:
-  - `AppBuilderPage` expects `createContainer(opts)` and basic lifecycle helpers.
-  - `orchestrator.ts` expects `createContainer(image, opts)` plus `linkContainerToKernel`.
-  - `ContainerBootOverlay.tsx` expects `getContainer(instanceId)` to work with the orchestrator bridge.
+# Repo Presentation Overhaul — "The Tauri Effect"
 
-Do I know what the issue is?
-Yes. The current fix is brittle because it relies on a deep module path instead of the stable public UNS API, and the container module API does not fully match how the rest of the app is already using it. That is why builds keep failing or re-failing around this path.
+## What Tauri Does Right
 
-Plan to fix:
-1. Normalize the UNS container API
-- Update `src/modules/identity/uns/build/container.ts` so it fully supports all current call sites.
-- Add/confirm these exports:
-  - types: `UorContainer`, `ContainerInspection`, `ContainerState`
-  - functions: `createContainer`, `listContainers`, `getContainer`, `startContainer`, `stopContainer`, `removeContainer`, `inspectContainer`, `linkContainerToKernel`
-- Make `createContainer` support both call signatures used in the repo:
-  - `createContainer({ name, imageId, ... })`
-  - `createContainer(image, { name, ... })`
-- Add a container-to-kernel mapping so `getContainer(instanceId)` can resolve linked kernel instances correctly for the boot overlay.
+Tauri's README is deceptively simple. Here's the formula:
 
-2. Expose container helpers from the public UNS barrel
-- Re-export the container types/functions from `src/modules/identity/uns/index.ts`.
-- This matches the existing repo pattern already used for snapshot/build-related helpers and removes the fragile deep import dependency.
+1. **Hero splash image** — A full-width branded banner (`/.github/splash.png`) that immediately communicates identity
+2. **Badge row** — Status, license, CI, chat, website, sponsor — all on one line, all clickable
+3. **Two-paragraph intro** — What it is, one sentence. How it works, two more.
+4. **One-command quickstart** — `npm create tauri-app@latest`. That's it.
+5. **Feature bullets** — Short, scannable, no jargon
+6. **Platform support table** — Clean, at-a-glance
+7. **Contributing** — Brief, links to a separate `CONTRIBUTING.md`
+8. **Partners/sponsors section** — Visual logos, not text
+9. **Clean root directory** — Config files are minimal; the folder list itself tells a story
 
-3. Replace deep imports in consumers
-- Update:
-  - `src/modules/platform/app-builder/pages/AppBuilderPage.tsx`
-  - `src/modules/platform/compose/orchestrator.ts`
-  - `src/modules/platform/desktop/components/ContainerBootOverlay.tsx`
-- Change imports from `@/modules/identity/uns/build/container` to `@/modules/identity/uns`.
+The overall effect: a developer lands on the page and within 10 seconds knows what it is, whether it supports their platform, and how to start. The current UOR OS README is thorough but reads like internal documentation — six layer descriptions, deep architecture, and no visual hook.
 
-4. Preserve current UI behavior
-- Keep App Builder’s container list/inspect/start/stop/remove flow working exactly as now.
-- Keep orchestrator’s “container bridge” behavior non-fatal.
-- Keep boot overlay’s container lookup working via the instance mapping.
+## Current Gaps
 
-5. Verify the fix
-- Run a full TypeScript/Vite production build.
-- Confirm the previous ENOENT is gone.
-- Confirm no new type errors are introduced by the barrel export change.
-- Treat the Tailwind `duration-[400ms]` / `ease-[...]` warnings as non-blocking unless you want me to clean them up separately.
+| Area | Tauri | UOR OS |
+|------|-------|--------|
+| Hero image | Full-width branded splash | None |
+| Badges | 8 shields (status, CI, license, chat, website) | None |
+| Intro length | 2 paragraphs | 2 paragraphs + 6 layer deep-dives |
+| Quickstart | 1 command | 3 lines + caveats |
+| Visual appeal | Splash + sponsor logos | Plain text only |
+| Community files | CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md, issue/PR templates | Only workflows/ |
+| Root cleanliness | Config files hidden in subdirs or dotfiles | Same (good) |
 
-Technical notes:
-- Root cause: deep import to a non-stable internal path instead of the module barrel, plus API mismatch across call sites.
-- Best-practice fix:
+## The Plan
+
+### 1. Create a Hero Banner
+
+Design and add `.github/splash.png` — a branded banner image for UOR OS. This is the single highest-impact change. It should show:
+- The UOR OS logo/wordmark
+- A tagline: "Sovereign OS. Browser to Desktop."
+- Optionally a screenshot of the desktop shell
+
+### 2. Rewrite README.md — Tauri Structure
+
+New structure:
+
 ```text
-platform files -> "@/modules/identity/uns" -> re-exported container API
-                                  \
-                                   -> build/container.ts implementation
-```
-- This is safer for Vite/Rollup/PWA builds than having platform code reach into `uns/build/container` directly.
+![UOR OS](.github/splash.png)              ← hero banner
 
-Files to change once approved:
-- `src/modules/identity/uns/build/container.ts`
-- `src/modules/identity/uns/index.ts`
-- `src/modules/platform/app-builder/pages/AppBuilderPage.tsx`
-- `src/modules/platform/compose/orchestrator.ts`
-- `src/modules/platform/desktop/components/ContainerBootOverlay.tsx`
+[badges: status, license, CI, website, discord/chat]
+
+## What is UOR OS?
+  2-3 sentences. No jargon.
+
+## Quick Start
+  npm install && npm run dev              ← web
+  npm run tauri:build                     ← desktop (one extra line)
+
+## Features
+  - bullet list, 6-8 items, scannable
+
+## Platform Support
+  | Platform | Status |
+  macOS, Windows, Linux — simple table
+
+## Architecture
+  One paragraph + link to ARCHITECTURE.md
+  (Move ALL layer details out of README)
+
+## Contributing
+  Link to .github/CONTRIBUTING.md
+
+## Tech Stack
+  Keep the existing table (it's good)
+
+## License
+  One line
+```
+
+Key changes vs current README:
+- Remove the 6 layer deep-dives (move to ARCHITECTURE.md, which already exists)
+- Remove the "Why" philosophical section (move to website/docs)
+- Remove the Project Structure tree (it's in ARCHITECTURE.md)
+- Remove Configuration section (move to docs or CONTRIBUTING.md)
+- Add badges and hero image
+- Shorten Quick Start to the absolute minimum
+
+### 3. Add Community Health Files
+
+Create these under `.github/`:
+- `CONTRIBUTING.md` — Prerequisites, dev setup, PR process, coding conventions (absorb the "Contributing" and "Configuration" sections from current README)
+- `CODE_OF_CONDUCT.md` — Standard Contributor Covenant
+- `SECURITY.md` — Responsible disclosure process
+- `ISSUE_TEMPLATE/bug_report.md` — Structured bug template
+- `ISSUE_TEMPLATE/feature_request.md` — Feature request template
+- `PULL_REQUEST_TEMPLATE.md` — PR checklist
+
+### 4. Add Shields.io Badges
+
+Add a row of badges at the top:
+- Build status (link to GitHub Actions)
+- License (Apache 2.0)
+- Version/release
+- Website link (uor-os.lovable.app)
+- Platform support badge
+
+### 5. Create a One-Command Dev Experience (stretch)
+
+Consider adding an `npx create-uor-app` or at minimum ensuring `npm install && npm run dev` works with zero configuration and no `.env` file required for the basic shell experience. If Supabase credentials are optional for the core desktop demo, document that clearly.
+
+## Files to Create/Modify
+
+| File | Action |
+|------|--------|
+| `.github/splash.png` | Create — hero banner image |
+| `README.md` | Rewrite — Tauri-style concise format |
+| `ARCHITECTURE.md` | Expand — absorb layer details from README |
+| `.github/CONTRIBUTING.md` | Create — dev setup, conventions, PR process |
+| `.github/CODE_OF_CONDUCT.md` | Create — Contributor Covenant |
+| `.github/SECURITY.md` | Create — disclosure policy |
+| `.github/ISSUE_TEMPLATE/bug_report.md` | Create |
+| `.github/ISSUE_TEMPLATE/feature_request.md` | Create |
+| `.github/PULL_REQUEST_TEMPLATE.md` | Create |
+
+## What This Does NOT Change
+
+- No code changes. This is purely repo presentation.
+- The build error (container module) is a separate task tracked in the approved plan.
+- No changes to the actual application, Tauri config, or CI workflow.
+
