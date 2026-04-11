@@ -20,15 +20,16 @@ import {
 import { buildAppImage } from "@/modules/uor-sdk/runtime/image-builder";
 import type { ImageBuildResult } from "@/modules/uor-sdk/runtime/image-builder";
 import type { AppFile } from "@/modules/uor-sdk/import-adapter";
-// Lazy-loaded to avoid PWA Rollup resolution failure
-import type { UorContainer, ContainerInspection } from "@/modules/identity/uns/build/container";
-
-let _containerMod: typeof import("@/modules/identity/uns/build/container") | null = null;
-async function getContainerMod() {
-  if (!_containerMod) {
-    _containerMod = await import("@/modules/identity/uns/build/container");
-  }
-  return _containerMod;
+import {
+  type UorContainer,
+  type ContainerInspection,
+  createContainer,
+  listContainers,
+  startContainer,
+  stopContainer,
+  removeContainer,
+  inspectContainer,
+} from "@/modules/identity/uns/build/container";
 }
 import { shipApp } from "@/modules/uor-sdk/runtime/registry-ship";
 import type { ShipResult } from "@/modules/uor-sdk/runtime/registry-ship";
