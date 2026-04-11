@@ -211,9 +211,9 @@ export default function Neo4jMigrationWizard() {
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium">
             {result.errors.length === 0 ? (
-              <span className="text-green-500">✓ Migration Complete</span>
+              <span className="text-primary">✓ Migration Complete</span>
             ) : (
-              <span className="text-yellow-500">⚠ Migration completed with {result.errors.length} errors</span>
+              <span className="text-destructive">⚠ Migration completed with {result.errors.length} errors</span>
             )}
           </div>
 
