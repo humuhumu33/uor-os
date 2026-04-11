@@ -21,16 +21,15 @@ import { buildAppImage } from "@/modules/uor-sdk/runtime/image-builder";
 import type { ImageBuildResult } from "@/modules/uor-sdk/runtime/image-builder";
 import type { AppFile } from "@/modules/uor-sdk/import-adapter";
 // Lazy-loaded to avoid PWA Rollup resolution failure
+import type { UorContainer, ContainerInspection } from "@/modules/identity/uns/build/container";
+
 let _containerMod: typeof import("@/modules/identity/uns/build/container") | null = null;
 async function getContainerMod() {
   if (!_containerMod) {
-    const path = "@/modules/identity/uns/build/container";
-    _containerMod = await import(/* @vite-ignore */ path);
+    _containerMod = await import("@/modules/identity/uns/build/container");
   }
   return _containerMod;
 }
-type UorContainer = import("@/modules/identity/uns/build/container").UorContainer;
-type ContainerInspection = import("@/modules/identity/uns/build/container").ContainerInspection;
 import { shipApp } from "@/modules/uor-sdk/runtime/registry-ship";
 import type { ShipResult } from "@/modules/uor-sdk/runtime/registry-ship";
 import type { AppManifest } from "@/modules/uor-sdk/app-identity";
@@ -190,7 +189,7 @@ export default function AppBuilderPage() {
     if (!buildResult) { log("RUN", "No image built"); return; }
     try {
       const mod = await getContainerMod();
-      const container = await mod.createContainer({
+      const container = mod.createContainer({
         name: `${appName}-${Date.now().toString(36)}`,
         imageId: buildResult.image.canonicalId,
         env: { NODE_ENV: "production" },
