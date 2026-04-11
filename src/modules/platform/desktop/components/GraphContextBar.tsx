@@ -54,8 +54,8 @@ export default function GraphContextBar({ appId, onViewGraph }: GraphContextBarP
     if (onViewGraph) {
       onViewGraph();
     } else {
-      // Open graph explorer via OS event
-      window.dispatchEvent(new CustomEvent("uor:open-app", { detail: "graph-explorer" }));
+      // Open SovereignDB via OS event
+      window.dispatchEvent(new CustomEvent("uor:open-app", { detail: "sovereign-db" }));
     }
   }, [appId, onViewGraph, push]);
 
