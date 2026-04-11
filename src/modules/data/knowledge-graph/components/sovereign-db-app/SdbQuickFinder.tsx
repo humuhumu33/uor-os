@@ -9,13 +9,20 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { IconSearch, IconFile, IconPlus, IconCalendar, IconFolder } from "@tabler/icons-react";
+import { IconSearch, IconFile, IconPlus, IconCalendar, IconFolder, IconTerminal2, IconGraph, IconSun, IconLayoutBoard } from "@tabler/icons-react";
 
 export interface FinderItem {
   id: string;
   title: string;
   type: "note" | "folder" | "daily";
   updatedAt?: number;
+}
+
+export interface CommandAction {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  action: () => void;
 }
 
 interface Props {
@@ -25,9 +32,11 @@ interface Props {
   recentIds?: string[];
   onSelect: (id: string) => void;
   onCreate: (title: string) => void;
+  commands?: CommandAction[];
 }
 
-export function SdbQuickFinder({ open, onClose, items, recentIds = [], onSelect, onCreate }: Props) {
+export function SdbQuickFinder({ open, onClose, items, recentIds = [], onSelect, onCreate, commands = [] }: Props) {
+  const isCommandMode = useMemo(() => false, []); // will be derived from query
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
