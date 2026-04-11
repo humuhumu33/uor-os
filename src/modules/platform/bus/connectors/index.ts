@@ -17,6 +17,7 @@ import "./s3";
 import "./mqtt";
 import "./websocket";
 import "./redis";
+import "./grpc-web";
 
 // Re-export types for convenience
 export type { ProtocolAdapter, Connection, ConnectionParams } from "./protocol-adapter";
