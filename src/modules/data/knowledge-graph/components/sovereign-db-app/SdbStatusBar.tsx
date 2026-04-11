@@ -3,13 +3,15 @@ import { hypergraph } from "../../hypergraph";
 import type { SovereignDB } from "../../sovereign-db";
 import { providerRegistry } from "../../persistence/provider-registry";
 import { partitionRouter } from "../../persistence/partition-router";
+import type { UiMode } from "./SdbHyperPulse";
 
 interface Props {
   db: SovereignDB | null;
   startTime: number;
+  mode?: UiMode;
 }
 
-export function SdbStatusBar({ db, startTime }: Props) {
+export function SdbStatusBar({ db, startTime, mode = "developer" }: Props) {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -28,13 +30,27 @@ export function SdbStatusBar({ db, startTime }: Props) {
   const nodeSet = new Set(edges.flatMap((e) => e.nodes));
   const labels = new Set(edges.map((e) => e.label));
 
+  // Consumer mode: count workspace items
+  const wsItems = edges.filter(e => e.label.startsWith("workspace:"));
+  const wsFolders = edges.filter(e => e.label === "workspace:folder");
+
   return (
-    <footer className="flex items-center gap-4 h-7 px-4 border-t border-border bg-card text-[11px] text-muted-foreground shrink-0 font-mono">
-      <span>Edges: <strong className="text-foreground">{edges.length.toLocaleString()}</strong></span>
-      <span className="w-px h-3 bg-border" />
-      <span>Nodes: <strong className="text-foreground">{nodeSet.size.toLocaleString()}</strong></span>
-      <span className="w-px h-3 bg-border" />
-      <span>Labels: <strong className="text-foreground">{labels.size}</strong></span>
+    <footer className="flex items-center gap-4 h-8 px-5 border-t border-border bg-card text-[12px] text-muted-foreground shrink-0 font-mono">
+      {mode === "consumer" ? (
+        <>
+          <span>{wsItems.length} items</span>
+          <span className="w-px h-3 bg-border" />
+          <span>{wsFolders.length} workspaces</span>
+        </>
+      ) : (
+        <>
+          <span>Edges: <strong className="text-foreground">{edges.length.toLocaleString()}</strong></span>
+          <span className="w-px h-3 bg-border" />
+          <span>Nodes: <strong className="text-foreground">{nodeSet.size.toLocaleString()}</strong></span>
+          <span className="w-px h-3 bg-border" />
+          <span>Labels: <strong className="text-foreground">{labels.size}</strong></span>
+        </>
+      )}
       <span className="w-px h-3 bg-border" />
       <span>Uptime: <strong className="text-foreground">{uptime}</strong></span>
       {db && (
@@ -45,7 +61,7 @@ export function SdbStatusBar({ db, startTime }: Props) {
               <span>Partitions: <strong className="text-foreground">{partitionRouter.size}</strong></span>
             </>
           )}
-          <span className="ml-auto text-[10px]">
+          <span className="ml-auto text-[11px]">
             {providerRegistry.active()} · {providerRegistry.size} providers
           </span>
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
