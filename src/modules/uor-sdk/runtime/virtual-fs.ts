@@ -22,6 +22,7 @@
 
 import { sha256hex } from "@/lib/crypto";
 import { grafeoStore } from "@/modules/data/knowledge-graph";
+import { hypergraph } from "@/modules/data/knowledge-graph/hypergraph";
 import type { KGNode } from "@/modules/data/knowledge-graph/types";
 import type { GraphNode } from "./graph-image";
 import { DeltaChain } from "@/lib/delta-engine";
@@ -274,8 +275,12 @@ export class VirtualFileSystem {
     };
     this.mutations.push(mutation);
 
-    // Persist mutation as a graph node for full audit trail
-    await this.persistMutation(mutation);
+    // Record as hyperedge: (file, action, namespace, contentHash)
+    await hypergraph.addEdge(
+      [this.deriveIri(fullPath), `${UOR_NS}action/write`, `${UOR_NS}ns/${this.namespace}`, `${UOR_NS}hash/${contentHash}`],
+      "fs:write",
+      { path: fullPath, byteLength: content.length, mimeType: newNode.mimeType },
+    );
 
     return newNode;
   }
@@ -297,8 +302,12 @@ export class VirtualFileSystem {
       { path: fullPath },
     );
 
-    // Remove from cache
-    this.nodeCache.delete(fullPath);
+    // Record as hyperedge: (file, action, namespace)
+    await hypergraph.addEdge(
+      [this.deriveIri(fullPath), `${UOR_NS}action/delete`, `${UOR_NS}ns/${this.namespace}`],
+      "fs:delete",
+      { path: fullPath, previousContentHash: node.canonicalId },
+    );
 
     const mutation: FsMutation = {
       operation: "delete",
@@ -310,7 +319,6 @@ export class VirtualFileSystem {
       deltaId: delta.deltaId,
     };
     this.mutations.push(mutation);
-    await this.persistMutation(mutation);
   }
 
   // ── Introspection ───────────────────────────────────────────
