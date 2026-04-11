@@ -3,26 +3,17 @@
  * @ontology uor:ServiceMesh
  * ═════════════════════════════════════════════════════════════════
  *
- * The canonical entry point for the entire system.
- *
  *   import { bus } from "@/modules/platform/bus";
  *   const result = await bus.call("kernel/derive", payload);
  *
- * @version 2.0.0
+ * @version 3.0.0
  */
 
 // Re-export types
 export type {
-  RpcRequest,
-  RpcResponse,
-  RpcSuccess,
-  RpcError,
-  SovereignResult,
-  BusHandler,
-  OperationDescriptor,
-  ModuleRegistration,
-  Middleware,
-  BusContext,
+  RpcRequest, RpcResponse, RpcSuccess, RpcError,
+  SovereignResult, BusHandler, OperationDescriptor,
+  ModuleRegistration, Middleware, BusContext,
 } from "./types";
 export { RPC_ERRORS } from "./types";
 
@@ -31,6 +22,18 @@ export { register, resolve, has, listMethods, listModules, use } from "./registr
 
 // Re-export bus core
 export { call, batch, canCall, isReachable } from "./bus";
+
+// Re-export adapter
+export { runtime } from "./adapter";
+export type { RuntimeAdapter } from "./adapter";
+
+// Re-export facet
+export { defineFacet, registerFacet } from "./facet";
+export type { ModuleFacet } from "./facet";
+
+// Re-export connector
+export { defineConnector, registerConnector, getActiveConnectors } from "./connector";
+export type { ConnectorConfig } from "./connector";
 
 // Re-export introspection
 export { registerIntrospect } from "./introspect";
@@ -44,8 +47,8 @@ export type { SovereignClientConfig } from "./client";
 export { timingMiddleware, loggingMiddleware } from "./middleware";
 
 // Re-export manifest
-export { BUS_MANIFEST, getRemoteMethods, getLocalMethods, isInManifest } from "./manifest";
-export type { ManifestEntry, ManifestModule } from "./manifest";
+export { getManifest, BUS_MANIFEST, getRemoteMethods, getLocalMethods, isInManifest } from "./manifest";
+export type { ManifestEntry, ManifestModule, BusManifest } from "./manifest";
 
 // Re-export hooks
 export { useBusCall, useBusLazy, useBusReachable } from "./hooks";
@@ -61,14 +64,6 @@ import { register, listMethods, listModules, use } from "./registry";
 import { registerIntrospect } from "./introspect";
 import { timingMiddleware, loggingMiddleware } from "./middleware";
 
-/**
- * The Sovereign Bus — single namespace for the entire API surface.
- *
- * @example
- * import { bus } from "@/modules/platform/bus";
- * bus.init();
- * const result = await bus.call("kernel/derive", { content: "hello" });
- */
 export const bus = {
   call,
   batch,
@@ -79,23 +74,13 @@ export const bus = {
   listModules,
   use,
 
-  /**
-   * Initialize the bus with default middleware and introspection.
-   * Call once at app startup.
-   */
   init() {
     use(timingMiddleware);
     use(loggingMiddleware);
     registerIntrospect();
-    // Module registrations are loaded via side-effect imports
-    // in the modules that call register()
   },
 } as const;
 
-/**
- * Initialize the full sovereign engine: load WASM + init bus.
- * Call once at app startup for complete sovereign bootstrap.
- */
 export async function loadEngine(): Promise<void> {
   const { loadWasm } = await import("@/lib/wasm/uor-bridge");
   await loadWasm();
