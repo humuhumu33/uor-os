@@ -251,6 +251,13 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
         onToggle3D={() => setShow2D(v => !v)}
       />
 
+      {/* GPU acceleration badge */}
+      {gpuAvailable && !show2D && (
+        <div className="absolute top-3 right-3 px-2 py-1 rounded bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono uppercase tracking-wider backdrop-blur-sm">
+          ⚡ GPU
+        </div>
+      )}
+
       {contextMenu && (
         <SdbGraphContextMenu
           node={contextMenu.node}
