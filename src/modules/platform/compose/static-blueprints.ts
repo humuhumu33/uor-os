@@ -193,26 +193,6 @@ export const STATIC_BLUEPRINTS: AppBlueprint[] = [
     iconName: "Activity",
     resources: {},
   },
-  {
-    "@context": CTX,
-    "@type": TYPE,
-    name: "graph-explorer",
-    version: "1.0.0",
-    requires: ["graph/query", "graph/insert", "graph/sparql", "graph/cypher"],
-    permissions: ["graph/"],
-    morphisms: [
-      { method: "graph/query", description: "Query the knowledge graph" },
-    ],
-    fastPath: ["graph/query", "graph/sparql"],
-    ui: { component: "@/modules/data/knowledge-graph/components/SovereignGraphExplorer", lazy: true },
-    defaultSize: { w: 1100, h: 720 },
-    color: "hsl(160 70% 45%)",
-    category: "OBSERVE",
-    description: "Visual knowledge graph with SPARQL and Cypher queries",
-    keywords: ["graph", "knowledge", "network", "nodes", "edges", "sparql", "cypher", "explore"],
-    iconName: "Network",
-    resources: { workers: 1, requiresSAB: true, callBudget: { maxPerSecond: 200 } },
-  },
 
   // ── STRUCTURE ───────────────────────────────────────────────────────────
 
