@@ -16,6 +16,7 @@ import { CorrelationTool } from "@/modules/kernel/resolver/components/Correlatio
 import { EntitySearch } from "@/modules/kernel/resolver/components/entity-search/EntitySearch";
 
 const SovereignGraphExplorer = lazy(() => import("../components/SovereignGraphExplorer"));
+const Neo4jMigrationWizard = lazy(() => import("../components/Neo4jMigrationWizard"));
 
 type ViewMode = "data" | "explorer";
 
@@ -230,6 +231,13 @@ const KnowledgeGraphPage = () => {
           {/* Partition Visualizer */}
           <div className="mb-8">
             <PartitionVisualizer />
+          </div>
+
+          {/* Neo4j Migration Wizard */}
+          <div className="mb-8">
+            <Suspense fallback={<div className="text-xs text-muted-foreground">Loading migration wizard…</div>}>
+              <Neo4jMigrationWizard />
+            </Suspense>
           </div>
 
           {/* Correlation Tool */}
