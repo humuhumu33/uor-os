@@ -38,6 +38,22 @@ export function SdbConsumerPages({ db }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [noteContent, setNoteContent] = useState("");
   const [noteTitle, setNoteTitle] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // Ensure workspace text index exists
+  useEffect(() => {
+    const existing = textIndexManager.list().find(i => i.name === "workspace-notes");
+    if (!existing) {
+      textIndexManager.create("workspace-notes", ["title", "content", "name"]);
+    }
+  }, []);
+  const [items, setItems] = useState<TreeItem[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [noteContent, setNoteContent] = useState("");
+  const [noteTitle, setNoteTitle] = useState("");
 
   // Load workspace items from hypergraph
   const reload = useCallback(async () => {
