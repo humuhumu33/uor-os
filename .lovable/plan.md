@@ -1,26 +1,66 @@
 
+Goal: fix the real build blocker, which is not the Tailwind warnings. The failure is the missing/deep-imported UNS container module.
 
-## Analysis
+What I found:
+- `AppBuilderPage.tsx` imports `@/modules/identity/uns/build/container`.
+- Other files also depend on that same deep path:
+  - `src/modules/platform/compose/orchestrator.ts`
+  - `src/modules/platform/desktop/components/ContainerBootOverlay.tsx`
+- The project’s public UNS barrel (`src/modules/identity/uns/index.ts`) already inlines other “build” APIs specifically to avoid build-resolution problems, but it does not export the container API yet.
+- The current `container.ts` shape is also incomplete for existing call sites:
+  - `AppBuilderPage` expects `createContainer(opts)` and basic lifecycle helpers.
+  - `orchestrator.ts` expects `createContainer(image, opts)` plus `linkContainerToKernel`.
+  - `ContainerBootOverlay.tsx` expects `getContainer(instanceId)` to work with the orchestrator bridge.
 
-**Root cause**: The current player uses `blob:` URLs to embed YouTube. Blob URLs create iframes with a `null` origin, which YouTube's embed endpoint rejects or blocks. Meanwhile, a working edge function (`video-stream`) already exists that serves an HTML player page from a proper HTTPS origin — but it's only being used for thumbnails, not playback.
+Do I know what the issue is?
+Yes. The current fix is brittle because it relies on a deep module path instead of the stable public UNS API, and the container module API does not fully match how the rest of the app is already using it. That is why builds keep failing or re-failing around this path.
 
-**Solution**: Replace the blob URL approach with the edge function URL. The `video-stream` edge function already:
-- Serves an HTML page with YouTube's embed iframe
-- Sets `X-Frame-Options: ALLOWALL` so it can be iframed
-- Runs on `*.supabase.co` (proper HTTPS origin YouTube trusts)
+Plan to fix:
+1. Normalize the UNS container API
+- Update `src/modules/identity/uns/build/container.ts` so it fully supports all current call sites.
+- Add/confirm these exports:
+  - types: `UorContainer`, `ContainerInspection`, `ContainerState`
+  - functions: `createContainer`, `listContainers`, `getContainer`, `startContainer`, `stopContainer`, `removeContainer`, `inspectContainer`, `linkContainerToKernel`
+- Make `createContainer` support both call signatures used in the repo:
+  - `createContainer({ name, imageId, ... })`
+  - `createContainer(image, { name, ... })`
+- Add a container-to-kernel mapping so `getContainer(instanceId)` can resolve linked kernel instances correctly for the boot overlay.
 
-## Plan
+2. Expose container helpers from the public UNS barrel
+- Re-export the container types/functions from `src/modules/identity/uns/index.ts`.
+- This matches the existing repo pattern already used for snapshot/build-related helpers and removes the fragile deep import dependency.
 
-### 1. Update `YouTubePlayer` in `MediaPlayer.tsx`
-- Remove `createPlayerBlobUrl` function entirely
-- Change the iframe `src` from `blobUrl` to the edge function URL: `https://{projectId}.supabase.co/functions/v1/video-stream?id={videoId}`
-- Remove blob state management (`useState`, `useEffect`, `URL.revokeObjectURL`)
-- Add `sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"` to the iframe for security while allowing YouTube playback
-- Keep the fallback error state with "Watch on YouTube" link
+3. Replace deep imports in consumers
+- Update:
+  - `src/modules/platform/app-builder/pages/AppBuilderPage.tsx`
+  - `src/modules/platform/compose/orchestrator.ts`
+  - `src/modules/platform/desktop/components/ContainerBootOverlay.tsx`
+- Change imports from `@/modules/identity/uns/build/container` to `@/modules/identity/uns`.
 
-### 2. Ensure thumbnails keep working
-- Thumbnails already use `getPipedThumbnail()` which routes through the same edge function with `?thumb=1` — no changes needed
+4. Preserve current UI behavior
+- Keep App Builder’s container list/inspect/start/stop/remove flow working exactly as now.
+- Keep orchestrator’s “container bridge” behavior non-fatal.
+- Keep boot overlay’s container lookup working via the instance mapping.
 
-### Technical detail
-The edge function URL will be constructed the same way as `getPipedThumbnail` in `video-catalog.ts`, using `VITE_SUPABASE_PROJECT_ID`. This is a single-file change in `MediaPlayer.tsx`.
+5. Verify the fix
+- Run a full TypeScript/Vite production build.
+- Confirm the previous ENOENT is gone.
+- Confirm no new type errors are introduced by the barrel export change.
+- Treat the Tailwind `duration-[400ms]` / `ease-[...]` warnings as non-blocking unless you want me to clean them up separately.
 
+Technical notes:
+- Root cause: deep import to a non-stable internal path instead of the module barrel, plus API mismatch across call sites.
+- Best-practice fix:
+```text
+platform files -> "@/modules/identity/uns" -> re-exported container API
+                                  \
+                                   -> build/container.ts implementation
+```
+- This is safer for Vite/Rollup/PWA builds than having platform code reach into `uns/build/container` directly.
+
+Files to change once approved:
+- `src/modules/identity/uns/build/container.ts`
+- `src/modules/identity/uns/index.ts`
+- `src/modules/platform/app-builder/pages/AppBuilderPage.tsx`
+- `src/modules/platform/compose/orchestrator.ts`
+- `src/modules/platform/desktop/components/ContainerBootOverlay.tsx`
