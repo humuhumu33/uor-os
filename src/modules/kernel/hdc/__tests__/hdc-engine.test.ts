@@ -206,8 +206,9 @@ describe("ItemMemory", () => {
     mem.storeWith("target", v);
     // Store some distractors
     for (let i = 0; i < 5; i++) mem.storeWith(`noise-${i}`, random());
-    const results = mem.query(v, 1);
-    expect(results[0].label).toBe("target");
-    expect(results[0].similarity).toBeCloseTo(1.0);
+    const result = mem.query(v);
+    expect(result).not.toBeNull();
+    expect(result!.label).toBe("target");
+    expect(result!.similarity).toBeCloseTo(1.0);
   });
 });
