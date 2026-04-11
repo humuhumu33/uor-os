@@ -1,7 +1,6 @@
 /**
- * MediaPlayer — Video streaming with blob-URL-based YouTube embed.
- * Thumbnails proxied through video-stream edge function.
- * Playback uses a client-side blob URL to bypass nested iframe restrictions.
+ * MediaPlayer — Video streaming via edge-function-hosted YouTube embed.
+ * Thumbnails and playback proxied through video-stream edge function.
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
@@ -19,42 +18,20 @@ import {
   type VideoCategory,
 } from "@/modules/intelligence/media/lib/video-catalog";
 
-/* ── Blob-based YouTube player ───────────────────────────────── */
-
-function createPlayerBlobUrl(videoId: string): string {
-  const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;background:#000}
-iframe{width:100%;height:100%;border:none}
-</style></head><body>
-<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&color=white&playsinline=1"
-  allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share"
-  allowfullscreen></iframe>
-</body></html>`;
-  const blob = new Blob([html], { type: "text/html" });
-  return URL.createObjectURL(blob);
-}
+const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID || "erwfuxphwcvynxhfbvql";
 
 /* ── YouTube Player Component ────────────────────────────────── */
 
 function YouTubePlayer({ video }: { video: CatalogVideo }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const playerUrl = `https://${PROJECT_ID}.supabase.co/functions/v1/video-stream?id=${video.id}`;
 
-  useEffect(() => {
-    const url = createPlayerBlobUrl(video.id);
-    setBlobUrl(url);
-    setFailed(false);
-    return () => URL.revokeObjectURL(url);
-  }, [video.id]);
-
-  if (failed || !blobUrl) {
+  if (failed) {
     return (
       <div className="w-full aspect-video bg-black flex items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-center px-4">
           <Play className="w-12 h-12 text-white/20" />
-          <p className="text-white/40 text-sm">Video playback unavailable in preview</p>
+          <p className="text-white/40 text-sm">Video playback unavailable</p>
           <a
             href={`https://www.youtube.com/watch?v=${video.id}`}
             target="_blank"
@@ -72,9 +49,10 @@ function YouTubePlayer({ video }: { video: CatalogVideo }) {
     <div className="w-full aspect-video bg-black relative">
       <iframe
         key={video.id}
-        src={blobUrl}
+        src={playerUrl}
         title={video.title}
         className="w-full h-full absolute inset-0"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
         onError={() => setFailed(true)}
@@ -82,7 +60,6 @@ function YouTubePlayer({ video }: { video: CatalogVideo }) {
     </div>
   );
 }
-
 /* ── Video Card ──────────────────────────────────────────────── */
 
 function VideoCard({
