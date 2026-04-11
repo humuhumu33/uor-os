@@ -5,7 +5,7 @@ type: agent-discovery
 license: Apache-2.0
 crate: https://crates.io/crates/uor-foundation
 crate_docs: https://docs.rs/uor-foundation
-spec: https://github.com/UOR-Foundation/UOR-Framework
+spec: https://github.com/humuhumu33/UOR-Framework
 ontology: https://uor-foundation.github.io/UOR-Framework/uor.foundation.json
 api: https://api.uor.foundation/v1
 openapi: https://uor.foundation/openapi.json
@@ -152,7 +152,7 @@ Send any text to `POST /v1/bridge/partition`. The `partition:density` score indi
 |----------|-----|
 | **Rust Crate (Source of Truth)** | https://crates.io/crates/uor-foundation |
 | **Crate API Docs** | https://docs.rs/uor-foundation |
-| GitHub | https://github.com/UOR-Foundation/UOR-Framework |
+| GitHub | https://github.com/humuhumu33/UOR-Framework |
 | Ontology (JSON-LD) | https://uor-foundation.github.io/UOR-Framework/uor.foundation.json |
 | API Base | https://api.uor.foundation/v1 |
 | OpenAPI Spec | https://uor.foundation/openapi.json |

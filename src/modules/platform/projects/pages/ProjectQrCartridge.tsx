@@ -9,7 +9,7 @@ const ProjectQrCartridge = () => (
     category="Developer Tools"
     tagline="Turn any content into a scannable QR code that carries its own verified identity. One scan to load. No trust required."
     heroImage={projectImg}
-    repoUrl="https://github.com/UOR-Foundation"
+    repoUrl="https://github.com/humuhumu33"
     agentInstructions={[
       { action: "Generate a cartridge", detail: "POST any JSON-LD object to build a cartridge with canonical identity." },
       { action: "Scan and decode", detail: "Decode any QR URL with #sha256= fragment to recover the full UOR identity." },

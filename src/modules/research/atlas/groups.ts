@@ -14,7 +14,7 @@
  *
  * Inclusion chain: G₂ ⊂ F₄ ⊂ E₆ ⊂ E₇ ⊂ E₈
  *
- * @see https://github.com/UOR-Foundation/research/tree/main/atlas-embeddings
+ * @see https://github.com/humuhumu33/research/tree/main/atlas-embeddings
  */
 
 import { getAtlas, type Atlas } from "./atlas";

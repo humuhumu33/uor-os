@@ -9,7 +9,7 @@ const ProjectUorMcp = () => (
     category="Developer Tools"
     tagline="A server that connects AI models to the UOR verification engine. Every response is graded, traceable, and independently verifiable."
     heroImage={heroImg}
-    repoUrl="https://github.com/UOR-Foundation/uor-mcp"
+    repoUrl="https://github.com/humuhumu33/uor-mcp"
     agentInstructions={[
       { action: "Understand the value", detail: "UOR MCP exposes eight verification tools via the Model Context Protocol. Any AI client can ground its responses in content-addressed, verifiable data." },
       { action: "Connect your client", detail: "Add the MCP server URL to Claude Desktop, Cursor, Windsurf, or VS Code. The tools appear automatically." },

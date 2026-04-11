@@ -32,7 +32,7 @@ const About = () => {
             style={{ animationDelay: "0.25s" }}
           >
             <a
-              href="https://github.com/UOR-Foundation/.github"
+              href="https://github.com/humuhumu33/.github"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-foreground/60 text-foreground font-medium font-body text-fluid-body hover:bg-foreground hover:text-background transition-all duration-200"
@@ -90,7 +90,7 @@ const About = () => {
             style={{ animationDelay: "0.25s" }}
           >
             A five-member board serving three-year terms. All governance rules are published on{" "}
-            <a href="https://github.com/UOR-Foundation/.github" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 transition-colors">GitHub</a>.
+            <a href="https://github.com/humuhumu33/.github" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 transition-colors">GitHub</a>.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
             {governanceBoard.map((member, idx) => (
@@ -144,8 +144,8 @@ const About = () => {
           <h2 className="font-display text-fluid-heading font-bold text-foreground mb-8">Governance Documents</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
             {[
-              { label: "Foundation Bylaws", href: "https://github.com/UOR-Foundation/.github/blob/main/governance/The_UOR_Foundation_Bylaws.pdf" },
-              { label: "Code of Conduct", href: "https://github.com/UOR-Foundation/.github/blob/main/CODE_OF_CONDUCT.md" },
+              { label: "Foundation Bylaws", href: "https://github.com/humuhumu33/.github/blob/main/governance/The_UOR_Foundation_Bylaws.pdf" },
+              { label: "Code of Conduct", href: "https://github.com/humuhumu33/.github/blob/main/CODE_OF_CONDUCT.md" },
               { label: "Contributing Guide", href: `${GITHUB_DOTGITHUB_URL}/blob/main/CONTRIBUTING.md` },
               { label: "Organization on GitHub", href: GITHUB_DOTGITHUB_URL },
             ].map((link, idx) => (

@@ -155,7 +155,7 @@ const BlogPost2 = () => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 mt-4 text-primary font-medium hover:underline"
               >
-                github.com/UOR-Foundation/research/atlas-embeddings <ExternalLink size={14} />
+                github.com/humuhumu33/research/atlas-embeddings <ExternalLink size={14} />
               </a>
               <p className="mt-4">
                 Researchers, creators, and curious minds alike are invited to explore, challenge, and expand upon these findings, together writing the next chapter of humanity's dialogue with the universe.

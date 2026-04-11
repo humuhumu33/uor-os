@@ -247,7 +247,7 @@ const BlogPost3 = () => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 mt-4 text-primary font-medium hover:underline"
               >
-                github.com/UOR-Foundation/UOR-Framework <ExternalLink size={14} />
+                github.com/humuhumu33/UOR-Framework <ExternalLink size={14} />
               </a>
               <p className="mt-6">
                 This is not a finished product. It is a foundation, and it is designed to grow through real-world use, honest critique, and open collaboration. Your perspective, especially where you see gaps, is exactly what makes this better.

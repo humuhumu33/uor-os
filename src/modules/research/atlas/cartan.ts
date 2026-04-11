@@ -6,7 +6,7 @@
  * All computations use exact integers. Zero floating point.
  * Cartan matrices encode the complete structure of a Lie algebra.
  *
- * @see https://github.com/UOR-Foundation/research/tree/main/atlas-embeddings
+ * @see https://github.com/humuhumu33/research/tree/main/atlas-embeddings
  */
 
 // ── Cartan Matrix ──────────────────────────────────────────────────────────

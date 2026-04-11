@@ -16,7 +16,7 @@ const ProjectUorIdentity = () => {
     category="Core Infrastructure"
     tagline="One permanent, private identity derived from who you are, not which service you signed up for. Works everywhere. Controlled entirely by you."
     heroImage={heroImg}
-    repoUrl="https://github.com/UOR-Foundation"
+    repoUrl="https://github.com/humuhumu33"
     agentInstructions={[
       { action: "Create your identity", detail: "Your canonical ID is derived from your attributes via a deterministic pipeline. Same person, same relationships, same identity everywhere." },
       { action: "Build your security posture", detail: "Post-quantum keypairs sign every action. Your trust score grows with verified interactions." },

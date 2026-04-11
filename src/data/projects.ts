@@ -38,7 +38,7 @@ export const projects: ProjectData[] = [
     category: "Open Science",
     description: "Research proving that five of the most complex structures in mathematics share a single origin, revealing a hidden order that connects seemingly unrelated fields.",
     maturity: "Sandbox",
-    url: "https://github.com/UOR-Foundation/research/tree/main/atlas-embeddings",
+    url: "https://github.com/humuhumu33/research/tree/main/atlas-embeddings",
     imageKey: "atlas",
   },
   {
@@ -56,7 +56,7 @@ export const projects: ProjectData[] = [
     category: "Core Infrastructure",
     description: "The reference implementation of the UOR Framework. Assigns every piece of data a permanent, unique address based on what it is, not where it is stored.",
     maturity: "Sandbox",
-    url: "https://github.com/UOR-Foundation/prism",
+    url: "https://github.com/humuhumu33/prism",
     imageKey: "prism",
   },
   {
@@ -65,7 +65,7 @@ export const projects: ProjectData[] = [
     category: "Developer Tools",
     description: "A server that connects AI models to the UOR verification engine. Every response is graded, traceable, and independently verifiable.",
     maturity: "Sandbox",
-    url: "https://github.com/UOR-Foundation/uor-mcp",
+    url: "https://github.com/humuhumu33/uor-mcp",
     imageKey: "uorMcp",
   },
   {

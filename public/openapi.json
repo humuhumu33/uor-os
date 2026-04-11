@@ -4,7 +4,7 @@
   "info": {
     "title": "UOR Framework Agent API",
     "version": "1.0.0",
-    "summary": "A complete, agent-navigable REST API for the Universal Object Reference (UOR) Framework — strictly mapped to the formal ontology at github.com/UOR-Foundation/UOR-Framework.",
+    "summary": "A complete, agent-navigable REST API for the Universal Object Reference (UOR) Framework — strictly mapped to the formal ontology at github.com/humuhumu33/UOR-Framework.",
     "description": "## Overview\n\nThis API exposes the full UOR kernel as REST operations. Every endpoint, schema field, and enum value maps 1:1 to a named class, property, or individual in the Rust ontology source under `spec/src/namespaces/`.\n\nThe UOR Framework is structured in three spaces:\n\n| Space  | Namespaces                                         | API group        |\n|--------|----------------------------------------------------|------------------|\n| Kernel | `u:`, `schema:`, `op:`                             | `/kernel`        |\n| Bridge | `resolver:`, `partition:`, `observable:`, `proof:`,| `/bridge`        |\n|        | `derivation:`, `trace:`, `cert:`                   |                  |\n| User   | `type:`, `morphism:`, `state:`                     | `/user`          |\n\nThe end-to-end resolution cycle (test7_end_to_end.rs) is:\n```\nContext → Type → Resolver → Partition → Observable → Cert → Trace → Transform\n```\n\n## Quick Start\n\nGET /kernel/op/verify?x=42 — verify neg(bnot(42)) = succ(42) = 43\n\n## Security\n\nAll GET endpoints require no authentication. POST endpoints accept optional `X-UOR-Agent-Key` header for rate-limit tier elevation. Rate limits (unauthenticated): 120 req/min for kernel GET, 60 req/min for bridge POST.\n\n## POST Semantics\n\nAll POST endpoints return `200 OK` (not `201`) because they compute deterministic artifacts on-the-fly — same inputs always produce the same output. No resource is persisted.",
     "contact": {
       "name": "UOR Foundation",
@@ -19,7 +19,7 @@
     "x-agent-entry-point": "https://uor.foundation/llms.md",
     "x-discovery-metadata": "https://uor.foundation/.well-known/uor.json",
     "x-community": "https://www.moltbook.com/m/uor",
-    "x-ontology-source": "https://github.com/UOR-Foundation/UOR-Framework",
+    "x-ontology-source": "https://github.com/humuhumu33/UOR-Framework",
     "x-conformance-suite": "cargo run --bin uor-conformance",
     "x-source-crate": "https://crates.io/crates/uor-foundation",
     "x-source-docs": "https://docs.rs/uor-foundation",
@@ -38,53 +38,53 @@
   ],
   "externalDocs": {
     "description": "UOR Framework GitHub source and conformance suite",
-    "url": "https://github.com/UOR-Foundation/UOR-Framework"
+    "url": "https://github.com/humuhumu33/UOR-Framework"
   },
   "tags": [
     {
       "name": "kernel-op",
       "description": "**`op/` namespace** — Ring operations, involutions, and algebraic identities.\nSource: `spec/src/namespaces/op.rs`\nClasses: `Operation`, `UnaryOp`, `BinaryOp`, `Involution`, `Identity`, `Group`, `DihedralGroup`.\nNamed individuals: `neg`, `bnot`, `succ`, `pred`, `add`, `sub`, `mul`, `xor`, `and`, `or`, `criticalIdentity`, `D2n`.",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/op.rs", "description": "op.rs — ontology source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/op.rs", "description": "op.rs — ontology source" }
     },
     {
       "name": "kernel-schema",
       "description": "**`schema/` + `u/` namespaces** — Ring substrate, term language, datum values, and content addressing.\nSource: `spec/src/namespaces/schema.rs`, `spec/src/namespaces/u.rs`",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/schema.rs", "description": "schema.rs — ontology source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/schema.rs", "description": "schema.rs — ontology source" }
     },
     {
       "name": "bridge-partition",
       "description": "**`partition/` namespace** — Irreducibility partition of the ring.\nSource: `spec/src/namespaces/partition.rs`\nClasses: `Partition`, `IrreducibleSet`, `ReducibleSet`, `UnitSet`, `ExteriorSet`.",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/partition.rs", "description": "partition.rs — ontology source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/partition.rs", "description": "partition.rs — ontology source" }
     },
     {
       "name": "bridge-proof",
       "description": "**`proof/` namespace** — Verification proofs.\nSource: `spec/src/namespaces/proof.rs`\nClasses: `Proof`, `CriticalIdentityProof`, `CoherenceProof`, `WitnessData`.",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/proof.rs", "description": "proof.rs — ontology source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/proof.rs", "description": "proof.rs — ontology source" }
     },
     {
       "name": "bridge-cert",
       "description": "**`cert/` namespace** — Attestation certificates.\nSource: `spec/src/namespaces/cert.rs`\nClasses: `Certificate`, `TransformCertificate`, `IsometryCertificate`, `InvolutionCertificate`.",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/cert.rs", "description": "cert.rs — ontology source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/cert.rs", "description": "cert.rs — ontology source" }
     },
     {
       "name": "bridge-observable",
       "description": "**`observable/` namespace** — Metric and geometric measurements.\nSource: `spec/src/namespaces/observable.rs`\nClasses: `RingMetric`, `HammingMetric`, `CascadeLength`, `CatastropheThreshold`, `Commutator`, `Monodromy`.",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/observable.rs", "description": "observable.rs — ontology source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/observable.rs", "description": "observable.rs — ontology source" }
     },
     {
       "name": "bridge-derivation",
       "description": "**`derivation/` namespace** — Auditable step-by-step operation records.\nSource: `spec/src/namespaces/derivation.rs`",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/derivation.rs", "description": "derivation.rs — ontology source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/derivation.rs", "description": "derivation.rs — ontology source" }
     },
     {
       "name": "bridge-trace",
       "description": "**`trace/` namespace** — Bit-level execution traces for injection detection.\nSource: `spec/src/namespaces/trace.rs`",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/trace.rs", "description": "trace.rs — ontology source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/trace.rs", "description": "trace.rs — ontology source" }
     },
     {
       "name": "bridge-resolver",
       "description": "**`resolver/` namespace** — Canonical form classification of ring elements.\nSource: `spec/src/namespaces/resolver.rs`",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/resolver.rs", "description": "resolver.rs — ontology source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/resolver.rs", "description": "resolver.rs — ontology source" }
     },
     {
       "name": "bridge-sparql",
@@ -107,27 +107,27 @@
     {
       "name": "user-type",
       "description": "**`type/` namespace** — Runtime type declarations.\nSource: `spec/src/namespaces/type_.rs`",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/type_.rs", "description": "type_.rs — ontology source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/type_.rs", "description": "type_.rs — ontology source" }
     },
     {
       "name": "user-morphism",
       "description": "**`morphism/` namespace** — Structure-preserving maps between ring sizes.\nSource: `spec/src/namespaces/morphism.rs`",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/morphism.rs", "description": "morphism.rs — ontology source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/morphism.rs", "description": "morphism.rs — ontology source" }
     },
     {
       "name": "user-state",
       "description": "**`state/` namespace** — Agent lifecycle state binding.\nSource: `spec/src/namespaces/state.rs`",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/state.rs", "description": "state.rs — ontology source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/state.rs", "description": "state.rs — ontology source" }
     },
     {
       "name": "navigate",
       "description": "Framework navigation — reading order, namespace index, ontology links, all endpoint URLs.",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework", "description": "UOR Framework source" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework", "description": "UOR Framework source" }
     },
     {
       "name": "store",
       "description": "UOR × IPFS persistent storage. Serialises UOR objects to JSON-LD, computes dual addresses (u:Address via Braille bijection + CIDv1 via sha2-256 multihash), and stores to IPFS.",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework", "description": "UOR store/ namespace spec" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework", "description": "UOR store/ namespace spec" }
     },
     {
       "name": "pod-storage",
@@ -136,7 +136,7 @@
     {
       "name": "agent-tools",
       "description": "**Five canonical agent tool functions** (§6.4) — uor_derive, uor_query, uor_verify, uor_correlate, uor_partition. All endpoints return epistemic_grade.",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework", "description": "UOR Roadmap §6.4" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework", "description": "UOR Roadmap §6.4" }
     },
     {
       "name": "morphism",
@@ -169,7 +169,7 @@
     {
       "name": "observer",
       "description": "**Observer Theory** — agent registration, zone classification (COHERENCE/DRIFT/COLLAPSE), and network convergence analysis.",
-      "externalDocs": { "url": "https://github.com/UOR-Foundation/UOR-Framework", "description": "Observer namespace spec" }
+      "externalDocs": { "url": "https://github.com/humuhumu33/UOR-Framework", "description": "Observer namespace spec" }
     },
     {
       "name": "graph",
@@ -3527,7 +3527,7 @@
         }
       },
       "NotImplemented": {
-        "description": "This endpoint requires the Rust conformance suite (full dihedral factorization) and is not yet available in the cloud API. See https://github.com/UOR-Foundation/UOR-Framework for the local implementation.",
+        "description": "This endpoint requires the Rust conformance suite (full dihedral factorization) and is not yet available in the cloud API. See https://github.com/humuhumu33/UOR-Framework for the local implementation.",
         "content": {
           "application/json": {
             "schema": { "$ref": "#/components/schemas/ErrorResponse" },
@@ -3535,7 +3535,7 @@
               "error": "Not implemented in v1",
               "code": "NOT_IMPLEMENTED",
               "note": "Requires Rust conformance suite",
-              "conformance_suite": "https://github.com/UOR-Foundation/UOR-Framework"
+              "conformance_suite": "https://github.com/humuhumu33/UOR-Framework"
             }
           }
         }
