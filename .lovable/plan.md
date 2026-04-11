@@ -1,67 +1,77 @@
 
 
-# HDC/VSA Performance Upgrades — Frontier Research Applied
+# Hypergraph Performance Upgrades — Frontier Research Applied
 
-## The Opportunity
+## Analysis
 
-The current HDC engine is clean and correct but leaves significant performance and capability on the table. Three insights from recent research (2024–2026) map directly onto our R₈ architecture:
+The current hypergraph (`hypergraph.ts`, ~287 lines) is clean but has five performance and capability gaps that recent research (2024-2026) directly addresses.
 
-### 1. SIMD-Width Bind and Distance (biggest win)
+### Gaps Identified
 
-**Research insight**: FPGA/SIMD HDC accelerators achieve 1300x speedups by processing vectors in wide chunks instead of byte-by-byte.
+1. **Sequential `addEdge` writes**: Each node in a hyperedge triggers a separate `addQuad` call (lines 135-142). For arity-N edges, that's N+1 async writes. Research on scalable partitioning shows batch writes are critical.
 
-**Our gap**: `bind()` XORs byte-by-byte in a scalar loop. `distance()` calls `popcount8` per byte. On a 1024-dim vector, that's 1024 loop iterations + 1024 function calls.
+2. **O(N) filtering everywhere**: `byAtlasVertex()`, `bySignClass()`, and `byLabel()` scan all cached edges with `.filter()`. With thousands of edges, this is wasteful. The HyperNetX/EasyHypergraph libraries use inverted indexes.
 
-**Fix**: Process 4 bytes at a time using `Uint32Array` views. XOR becomes 256 iterations instead of 1024. For popcount, use a 32-bit parallel bit-count (already have `popcount32` in uor-core but it uses Kernighan's loop — replace with the constant-time bitmask version). This is a 3-4x speedup with zero API changes.
+3. **No directed/weighted traversal**: The current model is undirected — `projectToTriples` generates all (i,j) pairs symmetrically. Research on directed hypergraphs (AAAI 2025, NeurIPS 2025) shows head/tail node sets enable richer modeling (e.g., "inputs A,B produce output C").
 
-### 2. Low-Dimension Mode (research: 32-dim achieves 96.88% on MNIST)
+4. **No dual hypergraph**: The dual (swap nodes ↔ edges) is fundamental for spectral methods and HGNNs. Missing entirely.
 
-**Research insight**: Recent work shows dimensions as low as 32–100 maintain or improve accuracy for classification while slashing compute.
+5. **HDC integration is one-way**: `encodeHyperedge()` in `encoder.ts` creates hypervectors from edges, but there's no reverse — using HDC similarity to *find* related edges. The incidence index is string-based only.
 
-**Our gap**: `DEFAULT_DIM = 1024` is hardcoded everywhere. No facility for adaptive dimensionality.
+## Plan
 
-**Fix**: Add a `thinBind` / `thinDistance` fast path that auto-detects when dim ≤ 128 and uses a single-pass approach. Add `COMPACT_DIM = 64` as a named constant for embeddings that don't need full resolution (e.g., protocol fingerprints, connection IDs).
+### Step 1: Batch `addEdge` writes (~10 lines in `hypergraph.ts`)
 
-### 3. Resonator Network for Factorization (NVSA insight)
+Replace the sequential `for` loop of `addQuad` calls with a single batched write. Collect all quads into an array, call `grafeoStore.addQuads()` (or sequential but with `Promise.all`). Cuts N+1 awaits to 2.
 
-**Research insight**: IBM's NVSA uses resonator networks to decompose bundled vectors back into constituents — enabling unbundling (the inverse of bundle), which our system currently lacks.
+### Step 2: Inverted indexes for label and Atlas vertex (~20 lines in `hypergraph.ts`)
 
-**Our gap**: We have `unbind` (XOR inverse) but no `unbundle`. Given a bundled vector of N items, there's no way to recover the components. This limits the reasoning engine.
+Add two in-memory maps alongside the existing incidence index:
+- `labelIndex: Map<string, Set<string>>` — label → edge IDs
+- `atlasIndex: Map<number, Set<string>>` — vertex → edge IDs
 
-**Fix**: Add a `resonate()` function — iterative codebook-based factorization. Given a bundled vector and a codebook (the ItemMemory), it iteratively sharpens estimates of the constituent factors. ~25 lines, pure algebra, no neural networks.
+Update `indexEdge`/`deindexEdge` to maintain them. Replace `.filter()` scans in `byLabel()`, `byAtlasVertex()`, `bySignClass()` with O(1) lookups.
 
-### 4. Unify `distance()` with `uor-core.fidelity()`
+### Step 3: Directed hyperedges with head/tail sets (~15 lines)
 
-**Current duplication**: `hypervector.distance()` and `uor-core.hammingBytes()/fidelity()` compute the same thing. The HDC distance function should delegate to the canonical primitive.
+Extend `Hyperedge` interface with optional `head: string[]` and `tail: string[]` fields. When present, `projectToTriples` generates directed triples (head→tail) instead of all-pairs. Backward-compatible: if head/tail absent, behavior unchanged.
 
-**Fix**: Make `distance()` call `hammingBytes()` from uor-core and normalize. Remove the inline popcount loop. One distance implementation for the entire system.
+### Step 4: Dual hypergraph view (~20 lines)
 
-### 5. Sparsity-Aware Bundle (FATE framework insight)
+Add `dual()` method that returns a lightweight view where each original node becomes an edge and each original edge becomes a node. The dual's incidence is the transpose of the original's. Pure computation, no storage duplication — returns a simple `{ nodes, edges, incidentTo }` object.
 
-**Research insight**: The FATE framework achieves 50%+ speedup via sparsity — skip zero components during bundling.
+### Step 5: HDC-powered similarity search (~15 lines)
 
-**Our gap**: `bundle()` always iterates all dims × all bits × all vectors (O(dim × 8 × N)). For sparse vectors (many zero bytes), this wastes cycles.
+Add `similarEdges(edgeId: string, topK = 5)` method that:
+1. Gets the edge's hypervector via `encodeHyperedge()`
+2. Compares against all cached edges' hypervectors using `similarity()`
+3. Returns top-K by Hamming similarity
 
-**Fix**: Add an early-exit check in the inner loop: if all vectors have zero at position d, output zero and skip the bit loop. Simple, backwards-compatible, helps with the sparse vectors that E8 basis expansion produces.
+This bridges the hypergraph and HDC subsystems — edges become queryable by algebraic similarity, not just string matching.
 
-## Implementation Plan
+## File Changes
 
-### File: `src/lib/uor-core.ts` (~10 lines changed)
-- Replace `popcount32` Kernighan loop with constant-time bitmask version (3 instructions vs variable loop)
+| File | Change |
+|------|--------|
+| `src/modules/data/knowledge-graph/hypergraph.ts` | Batch writes, inverted indexes, directed head/tail, dual view, similarity search |
+| `src/modules/data/knowledge-graph/types.ts` | No changes needed (Hyperedge is defined in hypergraph.ts) |
 
-### File: `src/modules/kernel/hdc/hypervector.ts` (~60 lines changed)
-- **`bind()`**: Use `Uint32Array` view, XOR 4 bytes at a time (256 vs 1024 iterations)
-- **`distance()`**: Delegate to `hammingBytes` from uor-core, normalize by `a.length * 8`
-- **`bundle()`**: Add zero-skip fast path in outer loop
-- **`permute()`**: Use `Uint8Array.copyWithin()` + temp buffer instead of modular index math
-- Add `COMPACT_DIM = 64` export
-- Add `resonate()` function for resonator-network unbundling
+~80 lines added, ~10 lines removed. Zero API breaks — all new fields are optional, all new methods are additive.
 
-### File: `src/modules/kernel/hdc/index.ts` (~3 lines)
-- Export `resonate`, `COMPACT_DIM`
+## Technical Details
 
-### File: `src/modules/kernel/hdc/item-memory.ts` (~5 lines)
-- Add `queryThreshold(target, minSimilarity)` — return all items above a similarity threshold instead of top-K (common pattern in HDC classification)
+```text
+Before:                          After:
+addEdge(N nodes)                 addEdge(N nodes)
+  → N sequential addQuad()         → 1 batched Promise.all()
+  → 1 putNode()                    → 1 putNode()
 
-**Estimated total**: ~80 lines changed, ~20 lines removed. Zero API breaks. Every existing test passes unchanged. Performance improvement: 3-4x on bind/distance hot paths.
+byLabel("fs:write")              byLabel("fs:write")
+  → getNodesByType("hyperedge")    → labelIndex.get("fs:write")
+  → .filter(N edges)               → O(1) Set lookup
+  → O(N)                           → O(K) where K = matches
+
+Hyperedge { nodes }              Hyperedge { nodes, head?, tail? }
+  projectToTriples → all pairs     projectToTriples → head→tail directed
+```
 
