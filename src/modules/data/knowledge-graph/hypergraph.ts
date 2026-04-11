@@ -345,7 +345,7 @@ export const hypergraph = {
     const targetHv = encodeHyperedge(target.label, target.nodes);
     const scored: SimilarEdge[] = [];
 
-    for (const [id, he] of edgeCache) {
+    for (const [id, he] of Array.from(edgeCache.entries())) {
       if (id === edgeId) continue;
       const hv = encodeHyperedge(he.label, he.nodes);
       const sim = similarity(targetHv, hv);
