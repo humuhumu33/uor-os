@@ -1,99 +1,164 @@
 
 
-# SovereignDB Explorer — Standalone Application UI
+# SovereignDB — Storage Transparency, Migration & Partitioning
 
-## Vision
+## What This Delivers
 
-Replace the current minimal `DatabaseExplorer.tsx` (3 simple tabs) with a professional, full-screen database application that feels immediately familiar to Neo4j Browser/Bloom users while maintaining SovereignDB's unique identity. This becomes the primary visual entry point — a standalone app within the hypergraph OS.
+Three capabilities that make SovereignDB truly provider-agnostic:
 
-## Layout — Neo4j-Inspired Single Screen
+1. **Storage Dashboard** — Users see exactly where their hypergraph lives (browser IndexedDB, Supabase, SQLite, etc.) with size estimates, sync status, and provider details.
+2. **One-Click Migration** — Move the entire database between providers: export from current → import into target → verify → switch. Supports local, Supabase, and any S3-compatible cloud (AWS, GCP, Azure).
+3. **Data Partitioning** — Split the hypergraph into named partitions (like containers), each routed to a different provider. Example: sensitive data stays local, analytics go to the cloud.
+
+## Current Architecture
 
 ```text
-┌──────────────────────────────────────────────────────────────────────┐
-│  ■ SovereignDB              [db-name]   ⟐ Connected  ☰ Settings    │
-├────────┬─────────────────────────────────────────────────────────────┤
-│        │                                                             │
-│  NAV   │   QUERY EDITOR  (Cypher / SPARQL)            [▶ Execute]   │
-│        │   ─────────────────────────────────────────────────────     │
-│ Query  │                                                             │
-│ Edges  │   RESULTS AREA                                              │
-│ Schema │   ┌─────────────────────────────────────────────────────┐   │
-│ Algo   │   │  Table View  │  Graph View  │  JSON View           │   │
-│ Import │   │                                                     │   │
-│ Stats  │   │  (force-directed viz OR tabular results OR raw)     │   │
-│        │   │                                                     │   │
-│        │   └─────────────────────────────────────────────────────┘   │
-│        │                                                             │
-├────────┴─────────────────────────────────────────────────────────────┤
-│  Edges: 1,234  │  Nodes: 567  │  Labels: 12  │  Uptime: 3m 22s     │
-└──────────────────────────────────────────────────────────────────────┘
+SovereignDB.open()
+  ├── StoreBackend (sqlite | grafeo-wasm)  ← local engine
+  └── PersistenceProvider (local | supabase) ← sync/remote
 ```
 
-## Key Design Principles
+The `PersistenceProvider` interface already abstracts the remote layer cleanly. We extend this pattern with a **provider registry** (multiple named providers) and a **partition router** that maps namespace → provider.
 
-- **Single screen** — no page navigation, everything in view
-- **Large readable text** — 14px base, 13px mono for code, generous padding
-- **Collapsible sidebar** — icon-only mode for more workspace
-- **Neo4j familiarity** — query editor at top, results below, sidebar for navigation
-- **Dark-first** — uses existing theme tokens, high contrast
-- **Balanced whitespace** — no noise, every element earns its place
+## Scalability Assessment
 
-## Sidebar Sections (6 panels)
+**Current limits:**
+- **Browser (IndexedDB):** ~500MB–2GB depending on browser. Practical for 100K–1M edges.
+- **In-memory hypergraph:** All edges cached in JS heap. At ~500 bytes/edge, 1M edges ≈ 500MB RAM. Realistically 100K–500K edges comfortably.
+- **SQLite (Tauri):** No practical limit beyond disk space.
+- **Supabase:** PostgreSQL limits apply — billions of rows, limited by plan storage quotas.
+- **Import:** Currently loads entire file into memory. Large imports (>100MB) will OOM in browser.
 
-1. **Query** — default view, the Cypher/SPARQL editor + results
-2. **Edges** — browse/filter/sort all edges, click to inspect
-3. **Schema** — view registered schemas, indexes, constraints (including uniqueness)
-4. **Algorithms** — run PageRank, Components, Centrality, Communities with one click
-5. **Import/Export** — CSV, JSON-LD, Cypher dump, Neo4j migration shortcut
-6. **Stats** — live dashboard with counts, arity distribution, label breakdown
+**Mitigations we'll add:**
+- Streaming import for large files (chunked reads)
+- Pagination for edge browsing (already exists in Supabase provider)
+- Provider-level size reporting so users see capacity warnings
 
-## Result Views (3 modes)
+## Design — New Architecture
 
-- **Table** — columnar display of query results, sortable
-- **Graph** — force-directed node-link diagram using Sigma.js (already in project)
-- **JSON** — raw formatted output
+```text
+SovereignDB.open()
+  ├── StoreBackend (unchanged)
+  ├── ProviderRegistry          ← NEW: named map of providers
+  │     ├── "local"   → localProvider
+  │     ├── "supabase" → supabaseProvider
+  │     └── "s3-aws"  → s3Provider (new)
+  ├── PartitionRouter           ← NEW: namespace → provider mapping
+  │     ├── "default"    → "local"
+  │     ├── "analytics"  → "supabase"
+  │     └── "archive"    → "s3-aws"
+  └── MigrationEngine           ← NEW: export → verify → import → switch
+```
 
-## Technical Plan
+## Implementation Plan
 
-### Files to Create
+### 1. Provider Registry — `persistence/provider-registry.ts` (~80 lines)
 
-| File | Purpose |
-|------|---------|
-| `knowledge-graph/components/sovereign-db-app/SovereignDBApp.tsx` | Root component — layout shell with sidebar + content |
-| `knowledge-graph/components/sovereign-db-app/SdbSidebar.tsx` | Collapsible nav sidebar with 6 sections |
-| `knowledge-graph/components/sovereign-db-app/SdbQueryPanel.tsx` | Query editor + execute + result tabs (table/graph/json) |
-| `knowledge-graph/components/sovereign-db-app/SdbEdgePanel.tsx` | Edge browser with filter, sort, detail expand |
-| `knowledge-graph/components/sovereign-db-app/SdbSchemaPanel.tsx` | Schema/index/constraint viewer |
-| `knowledge-graph/components/sovereign-db-app/SdbAlgoPanel.tsx` | One-click algorithm runner with result display |
-| `knowledge-graph/components/sovereign-db-app/SdbImportPanel.tsx` | Import/export controls |
-| `knowledge-graph/components/sovereign-db-app/SdbStatsPanel.tsx` | Live stats dashboard |
-| `knowledge-graph/components/sovereign-db-app/SdbStatusBar.tsx` | Bottom status bar with live metrics |
-| `knowledge-graph/components/sovereign-db-app/SdbResultGraph.tsx` | Force-directed graph visualization of query results |
+A named map of `PersistenceProvider` instances. Replaces the single `activeProvider` in `persistence/index.ts`.
 
-### Files to Edit
+```typescript
+interface ProviderEntry {
+  provider: PersistenceProvider;
+  status: "connected" | "disconnected" | "error";
+  sizeBytes?: number;
+  lastSync?: string;
+}
+class ProviderRegistry {
+  register(id: string, provider: PersistenceProvider): void;
+  get(id: string): ProviderEntry;
+  list(): ProviderEntry[];
+  active(): string; // current default
+  setActive(id: string): void;
+}
+```
+
+### 2. S3-Compatible Provider — `persistence/s3-provider.ts` (~100 lines)
+
+Generic S3 provider that works with AWS, GCP, Azure Blob (via S3-compat), and MinIO. Stores the full N-Quads snapshot as a single object, changes as append-only log objects.
+
+- Uses pre-signed URLs (generated by edge function) — no AWS SDK in browser
+- Edge function `sovereign-s3-proxy` handles signing
+- Config: `{ bucket, region, endpoint, prefix }`
+
+### 3. Partition Router — `persistence/partition-router.ts` (~90 lines)
+
+Maps namespaces to providers. Each edge's label prefix determines its namespace.
+
+```typescript
+interface PartitionRule {
+  namespace: string;      // e.g. "analytics", "vault", "default"
+  providerId: string;     // which provider handles this partition
+  filter?: (edge: Hyperedge) => boolean; // optional fine-grained filter
+}
+class PartitionRouter {
+  addRule(rule: PartitionRule): void;
+  removeRule(namespace: string): void;
+  route(edge: Hyperedge): string; // returns providerId
+  rules(): PartitionRule[];
+}
+```
+
+### 4. Migration Engine — `persistence/migration-engine.ts` (~120 lines)
+
+Orchestrates full database migration between providers:
+
+```typescript
+interface MigrationPlan {
+  source: string;       // provider ID
+  target: string;       // provider ID
+  edgeCount: number;
+  estimatedSizeBytes: number;
+  partitions?: string[]; // optional: migrate only specific partitions
+}
+class MigrationEngine {
+  async plan(source: string, target: string): Promise<MigrationPlan>;
+  async execute(plan: MigrationPlan, onProgress: (pct: number) => void): Promise<MigrationResult>;
+  async verify(plan: MigrationPlan): Promise<boolean>; // hash comparison
+}
+```
+
+Steps: export N-Quads from source → push to target → pull back and compare seal hash → switch active provider.
+
+### 5. Storage Dashboard UI — `sovereign-db-app/SdbStoragePanel.tsx` (~180 lines)
+
+New sidebar section "Storage" showing:
+
+- **Current Provider** card: name, type, status indicator, estimated size, last sync time
+- **All Providers** list: registered providers with connect/disconnect buttons
+- **Partition Map**: visual table of namespace → provider assignments with drag-to-reassign
+- **Migration** button: opens a 3-step wizard (select target → preview → migrate with progress bar)
+- **Capacity Warning**: amber/red indicators when approaching storage limits
+
+### 6. Wire Into SovereignDB — edits to existing files
 
 | File | Change |
 |------|--------|
-| `static-blueprints.ts` | Add `sovereign-db` blueprint entry |
-| `desktop-apps.ts` | Add component mapping + `Database` icon |
-| `KnowledgeGraphPage.tsx` | Point "Database Explorer" tab to new `SovereignDBApp` |
-| `index.ts` | Export new component |
+| `sovereign-db.ts` | Add `db.storage()` returning registry info, `db.migrate()`, `db.partition()` methods |
+| `persistence/index.ts` | Swap singleton for ProviderRegistry, backward-compatible `getProvider()` |
+| `SdbSidebar.tsx` | Add "Storage" section icon (Database icon) |
+| `SovereignDBApp.tsx` | Render `SdbStoragePanel` for new section |
+| `SdbStatusBar.tsx` | Show active provider name + partition count |
 
-### Registration as OS App
+### 7. Streaming Import Enhancement — edit `io-adapters.ts` (~30 lines)
 
-The app registers via the existing blueprint system — a new `AppBlueprint` in `static-blueprints.ts` with:
-- `name: "sovereign-db"`, `iconName: "Database"`, `category: "OBSERVE"`
-- `requires: ["graph/query", "graph/insert", "graph/sparql", "graph/cypher", "graph/traverse", "graph/algorithms"]`
-- Component: `@/modules/data/knowledge-graph/components/sovereign-db-app/SovereignDBApp`
-- `defaultSize: { w: 1200, h: 800 }`
+Add chunked file reading for imports >10MB using `ReadableStream` / `FileReader` slicing. Prevents browser OOM on large datasets.
 
-This makes SovereignDB launchable from the desktop dock, Spotlight search, and the app hub — a true standalone application within the hypergraph OS.
+## File Summary
 
-### Atlas Engine Integration
+| File | Action | ~Lines |
+|------|--------|--------|
+| `persistence/provider-registry.ts` | **New** | 80 |
+| `persistence/s3-provider.ts` | **New** | 100 |
+| `persistence/partition-router.ts` | **New** | 90 |
+| `persistence/migration-engine.ts` | **New** | 120 |
+| `components/sovereign-db-app/SdbStoragePanel.tsx` | **New** | 180 |
+| `sovereign-db.ts` | **Edit** | +40 |
+| `persistence/index.ts` | **Edit** | +20 |
+| `SdbSidebar.tsx` | **Edit** | +5 |
+| `SovereignDBApp.tsx` | **Edit** | +5 |
+| `SdbStatusBar.tsx` | **Edit** | +10 |
+| `io-adapters.ts` | **Edit** | +30 |
+| `__tests__/storage-migration.test.ts` | **New** | 80 |
 
-The `SovereignDBApp` root component will call `SovereignDB.open()` on mount, which already initializes the hypergraph, persistence provider, and reaper. The status bar will show the Atlas engine state (vertex count, backend type). This demonstrates the "app compiled and running inside the hypergraph" paradigm — the app itself is a node in the graph it manages.
-
-### Estimated Scope
-
-~600 lines across 10 new component files + ~30 lines of edits to 4 existing files. The old `DatabaseExplorer.tsx` is preserved but the new app supersedes it.
+**Total: ~760 lines.** No new dependencies. S3 provider uses fetch + edge function for signing.
 
