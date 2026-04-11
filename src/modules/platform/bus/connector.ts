@@ -232,7 +232,7 @@ function registerShorthands(connId: string, adapter: ProtocolAdapter, conn: Conn
 
   for (const [opName, meta] of Object.entries(adapter.operations)) {
     ops[opName] = {
-      handler: async (params: any) => execute(connId, opName, params ?? {}),
+      handler: async (params: any) => executePipeline(connId, opName, params ?? {}),
       description: meta.description,
       paramsSchema: meta.paramsSchema,
     };
@@ -296,7 +296,7 @@ export function registerUniversalConnector(): void {
         handler: async (params: any) => {
           const { connection, op, ...rest } = params ?? {};
           const connId = connection ?? rest.protocol;
-          return execute(connId, op, rest.params ?? rest);
+          return executePipeline(connId, op, rest.params ?? rest);
         },
         description: "Execute an operation through a connection",
         paramsSchema: {
