@@ -103,4 +103,25 @@ export interface ProtocolAdapter {
     description: string;
     paramsSchema?: Record<string, unknown>;
   }>;
+
+  /**
+   * Subscribe to push-based events (WebSocket, MQTT, SSE).
+   * Returns an unsubscribe function. Request/response protocols omit this.
+   */
+  onEvent?(conn: Connection, handler: (event: unknown) => void): () => void;
+}
+
+// ── Structured Errors ─────────────────────────────────────────────────────
+
+/** Stripe-style typed error with protocol-specific codes. */
+export class ConnectorError extends Error {
+  constructor(
+    public readonly code: string,
+    public readonly protocol: string,
+    public readonly retriable: boolean,
+    public readonly detail?: unknown,
+  ) {
+    super(`[${protocol}] ${code}`);
+    this.name = "ConnectorError";
+  }
 }

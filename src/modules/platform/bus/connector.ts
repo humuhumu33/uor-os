@@ -27,9 +27,15 @@ import type {
   ConnectionParams,
   TranslatedRequest,
 } from "./connectors/protocol-adapter";
+import { ConnectorError } from "./connectors/protocol-adapter";
 import type { ModuleRegistration, OperationDescriptor } from "./types";
 import { register } from "./registry";
 import { runtime } from "./adapter";
+
+// ── Idempotency Cache ─────────────────────────────────────────────────────
+
+const _idempotencyCache = new Map<string, { result: unknown; expiry: number }>();
+const IDEMPOTENCY_TTL = 300_000; // 5 minutes
 
 // ── Adapter Registry ──────────────────────────────────────────────────────
 
