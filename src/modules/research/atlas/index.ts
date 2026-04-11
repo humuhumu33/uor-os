@@ -9,6 +9,19 @@
 export { Atlas, getAtlas, ATLAS_VERTEX_COUNT, ATLAS_EDGE_COUNT_EXPECTED } from "./atlas";
 export type { AtlasLabel, AtlasVertex } from "./atlas";
 
+// Canonical E8 root system
+export {
+  getE8RootSystem, getE8Roots, norm2, inner, reflect,
+  byteToE8Vector, isByteE8Root, findRootIndex,
+} from "./e8-roots";
+export type { E8RootSystem } from "./e8-roots";
+
+// Certified Atlas → E8 embedding
+export {
+  labelToE8Root, computeEmbedding, embedVertex, embeddedRootIndex,
+} from "./embedding";
+export type { EmbeddingResult } from "./embedding";
+
 // R₈ ↔ Atlas bridge
 export {
   computeR8Partition,
