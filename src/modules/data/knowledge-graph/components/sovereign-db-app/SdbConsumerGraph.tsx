@@ -11,6 +11,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { IconX } from "@tabler/icons-react";
+import { Suspense, lazy } from "react";
 import type { SovereignDB } from "../../sovereign-db";
 import { hypergraph } from "../../hypergraph";
 import { traversalEngine } from "../../traversal";
@@ -21,6 +22,7 @@ import { SdbGraphSelection, type SelectionAction } from "./SdbGraphSelection";
 import { useAtlasIntroAnimation, SdbAtlasOverlay } from "./SdbAtlasSeed";
 import { getAtlas } from "@/modules/research/atlas/atlas";
 import { decodeTriality } from "@/modules/research/atlas/triality";
+const SdbAtlas3D = lazy(() => import("./SdbAtlas3D").then(m => ({ default: m.SdbAtlas3D })));
 
 import type { AppSection } from "./SovereignDBApp";
 
@@ -49,6 +51,7 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [showAtlasLayer, setShowAtlasLayer] = useState(true);
+  const [show3D, setShow3D] = useState(false);
 
   // Atlas seed data
   const atlasSeed = useAtlasIntroAnimation();
