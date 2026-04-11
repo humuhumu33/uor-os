@@ -30,6 +30,10 @@ import { ingestAppAssets } from "./runtime/asset-ingestor";
 import type { IngestResult } from "./runtime/asset-ingestor";
 import { runApp } from "./runtime/wasm-loader";
 import type { WasmAppInstance } from "./runtime/wasm-loader";
+import { encodeAppToGraph } from "./runtime/graph-image";
+import type { GraphImage } from "./runtime/graph-image";
+import { pushGraph } from "./runtime/graph-registry";
+import type { GraphPushReceipt } from "./runtime/graph-registry";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -67,6 +71,8 @@ export interface DeployOptions {
   shieldLevel?: "standard" | "strict" | "paranoid";
   /** Progress callback. */
   onProgress?: DeployProgressCallback;
+  /** Image encoding: "graph" for graph-native, "classic" for layer-based. */
+  encoding?: "graph" | "classic";
 }
 
 /** Complete deployment result. all artifacts from every stage. */
@@ -83,6 +89,9 @@ export interface DeployResult {
   instance: WasmAppInstance;
   /** Total pipeline duration in ms. */
   durationMs: number;
+  /** Graph-native artifacts (when encoding = "graph"). */
+  graphImage?: GraphImage;
+  graphPushReceipt?: GraphPushReceipt;
 }
 
 // ── Deploy Pipeline ─────────────────────────────────────────────────────────
@@ -137,6 +146,28 @@ export async function deployApp(opts: DeployOptions): Promise<DeployResult> {
     },
   );
 
+  // ── Stage 2.5: GRAPH ENCODE (optional) ──────────────────────
+  let graphImage: GraphImage | undefined;
+  let graphPushReceipt: GraphPushReceipt | undefined;
+
+  if (opts.encoding === "graph") {
+    progress("build", "Encoding app as knowledge graph subgraph...");
+
+    const appFiles = [
+      {
+        path: importResult.manifest["app:entrypoint"],
+        bytes: new TextEncoder().encode(
+          `<!-- ${appName} v${version}. entry: ${importResult.manifest["app:entrypoint"]} -->`
+        ),
+      },
+    ];
+
+    graphImage = await encodeAppToGraph(appFiles, importResult.manifest);
+
+    progress("ship", "Pushing graph image to registry (structural dedup)...");
+    graphPushReceipt = await pushGraph(graphImage);
+  }
+
   // ── Stage 3: SHIP ────────────────────────────────────────────
   progress("ship", "Pushing to registry and creating deployment snapshot...");
 
@@ -190,5 +221,7 @@ export async function deployApp(opts: DeployOptions): Promise<DeployResult> {
     ingest: ingestResult,
     instance,
     durationMs,
+    graphImage,
+    graphPushReceipt,
   };
 }

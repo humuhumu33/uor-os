@@ -226,6 +226,42 @@ export type {
   RuntimeStatus,
 } from "./runtime";
 
+// ── Graph-Native Runtime (Knowledge Graph Container) ────────────────────────
+export {
+  encodeAppToGraph,
+  decodeGraphToApp,
+  diffGraphImages,
+  pushGraph,
+  pullGraph,
+  pushGraphDelta,
+  SovereignRuntime,
+  createSovereignRuntime,
+  VirtualFileSystem,
+  VirtualNetwork,
+  detectPlatform,
+  detectCapabilities,
+  selectStrategy,
+  getPlatformSummary,
+} from "./runtime";
+export type {
+  GraphImage,
+  GraphNode,
+  GraphEdge,
+  GraphDelta,
+  GraphPushReceipt,
+  GraphPullResult,
+  SovereignRuntimeConfig,
+  RuntimeLifecycleState,
+  SovereignRuntimeStatus,
+  VirtualStat,
+  FsMutation,
+  NetPolicy,
+  NetSummary,
+  PlatformType,
+  PlatformCapabilities,
+  RuntimeStrategy,
+} from "./runtime";
+
 // ── App SDK (P11. five-function developer-facing SDK) ──────────────────────
 export { createUorAppClient, browserAutoInit } from "./app-sdk";
 export type {
