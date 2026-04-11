@@ -219,6 +219,7 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
           width={dims.w}
           height={dims.h}
           gpuAvailable={gpuAvailable}
+          highlightSignClass={highlightSc}
         />
       ) : (
         /* ── 2D fallback ── */
