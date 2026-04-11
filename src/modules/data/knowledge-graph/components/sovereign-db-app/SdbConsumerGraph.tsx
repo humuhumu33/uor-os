@@ -202,64 +202,129 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
     return { vertex: v, coord };
   }, [selected]);
 
+  // 3D selected vertex index
+  const [selected3DIdx, setSelected3DIdx] = useState<number | null>(null);
+
+  const atlas3DVertexDetail = useMemo(() => {
+    if (selected3DIdx === null) return null;
+    const atlas = getAtlas();
+    const v = atlas.vertices[selected3DIdx];
+    if (!v) return null;
+    return { vertex: v, coord: decodeTriality(selected3DIdx) };
+  }, [selected3DIdx]);
+
   return (
     <div className="relative w-full h-full">
-      <SdbGraphCanvas
-        nodes={mergedNodes}
-        links={mergedLinks}
-        layoutMode={showAtlasLayer && !hasWorkspaceNodes ? "force" : layoutMode}
-        filters={filters}
-        config={{ baseRadius: 5, labelDegreeThreshold: 2, animateEdges: true }}
-        onNodeClick={setSelected}
-        onNodeContextMenu={(node, pos) => setContextMenu({ node, pos })}
-        onNodeDoubleClick={node => handleContextAction("open", node)}
-        onSelectionChange={setSelectedIds}
-        onBackgroundClick={() => { setSelected(null); setContextMenu(null); }}
-      >
-        <SdbGraphControls
-          types={mergedTypeStats}
-          filters={filters}
-          onFiltersChange={setFilters}
-          layoutMode={layoutMode}
-          onLayoutChange={setLayoutMode}
-          onFitAll={handleFitAll}
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          showAtlasLayer={showAtlasLayer}
-          onToggleAtlasLayer={() => setShowAtlasLayer(v => !v)}
-        />
+      {show3D ? (
+        <>
+          <Suspense fallback={
+            <div className="flex items-center justify-center w-full h-full bg-background text-muted-foreground text-sm">
+              Loading 3D view…
+            </div>
+          }>
+            <SdbAtlas3D onSelectVertex={setSelected3DIdx} selectedIdx={selected3DIdx} />
+          </Suspense>
 
-        {contextMenu && (
-          <SdbGraphContextMenu
-            node={contextMenu.node}
-            position={contextMenu.pos}
-            mode="consumer"
-            onAction={handleContextAction}
-            onClose={() => setContextMenu(null)}
-          />
-        )}
+          {/* 3D controls overlay */}
+          <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+            <button
+              onClick={() => setShow3D(false)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-primary/10 border-primary/30 text-primary text-[12px] font-medium backdrop-blur-sm transition-colors"
+            >
+              ← 2D View
+            </button>
+          </div>
 
-        <SdbGraphSelection
-          count={selectedIds.length}
-          onAction={handleSelectionAction}
-          onClear={() => setSelectedIds([])}
-        />
-
-        {/* Atlas overlay info */}
-        {showAtlasLayer && !hasWorkspaceNodes && (
+          {/* 3D Atlas overlay */}
           <SdbAtlasOverlay stats={atlasSeed.stats} />
-        )}
 
-        {/* Legend */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-3 text-[11px] text-muted-foreground bg-card/80 px-3 py-1.5 rounded-lg border border-border backdrop-blur-sm">
-          {mergedTypeStats.slice(0, 10).map(t => (
-            <span key={t.type} className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full" style={{ background: t.color }} />
-              {t.type}
-            </span>
-          ))}
-        </div>
-      </SdbGraphCanvas>
+          {/* 3D detail panel */}
+          {atlas3DVertexDetail && (
+            <div className="absolute top-16 left-4 w-72 bg-card/95 backdrop-blur-sm rounded-lg border border-border shadow-lg p-4 animate-scale-in z-30">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ background: `hsl(${[210,180,150,120,40,20,340,270][atlas3DVertexDetail.vertex.signClass]}, 70%, 55%)` }} />
+                  <h3 className="text-[15px] font-semibold text-foreground">v{atlas3DVertexDetail.vertex.index}</h3>
+                </div>
+                <button onClick={() => setSelected3DIdx(null)} className="text-muted-foreground hover:text-foreground">
+                  <IconX size={14} />
+                </button>
+              </div>
+              <div className="text-[12px] text-muted-foreground space-y-1.5">
+                <p>Sign Class: <span className="text-foreground font-medium">{atlas3DVertexDetail.vertex.signClass}</span></p>
+                <p>Degree: <span className="text-foreground">{atlas3DVertexDetail.vertex.degree}</span></p>
+                <p>Triality: <span className="text-foreground font-mono text-[11px]">
+                  h₂={atlas3DVertexDetail.coord.quadrant} d={atlas3DVertexDetail.coord.modality} ℓ={atlas3DVertexDetail.coord.slot}
+                </span></p>
+                <p>Mirror: <span className="text-foreground">v{atlas3DVertexDetail.vertex.mirrorPair}</span></p>
+                <p>Neighbors: <span className="text-foreground text-[11px]">
+                  {atlas3DVertexDetail.vertex.neighbors.map(n => `v${n}`).join(", ")}
+                </span></p>
+                {atlas3DVertexDetail.vertex.isUnity && (
+                  <p className="text-primary text-[11px] font-medium">★ Unity position</p>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <SdbGraphCanvas
+          nodes={mergedNodes}
+          links={mergedLinks}
+          layoutMode={showAtlasLayer && !hasWorkspaceNodes ? "force" : layoutMode}
+          filters={filters}
+          config={{ baseRadius: 5, labelDegreeThreshold: 2, animateEdges: true }}
+          onNodeClick={setSelected}
+          onNodeContextMenu={(node, pos) => setContextMenu({ node, pos })}
+          onNodeDoubleClick={node => handleContextAction("open", node)}
+          onSelectionChange={setSelectedIds}
+          onBackgroundClick={() => { setSelected(null); setContextMenu(null); }}
+        >
+          <SdbGraphControls
+            types={mergedTypeStats}
+            filters={filters}
+            onFiltersChange={setFilters}
+            layoutMode={layoutMode}
+            onLayoutChange={setLayoutMode}
+            onFitAll={handleFitAll}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            showAtlasLayer={showAtlasLayer}
+            onToggleAtlasLayer={() => setShowAtlasLayer(v => !v)}
+            show3D={show3D}
+            onToggle3D={() => setShow3D(true)}
+          />
+
+          {contextMenu && (
+            <SdbGraphContextMenu
+              node={contextMenu.node}
+              position={contextMenu.pos}
+              mode="consumer"
+              onAction={handleContextAction}
+              onClose={() => setContextMenu(null)}
+            />
+          )}
+
+          <SdbGraphSelection
+            count={selectedIds.length}
+            onAction={handleSelectionAction}
+            onClear={() => setSelectedIds([])}
+          />
+
+          {showAtlasLayer && !hasWorkspaceNodes && (
+            <SdbAtlasOverlay stats={atlasSeed.stats} />
+          )}
+
+          <div className="absolute bottom-4 right-4 flex items-center gap-3 text-[11px] text-muted-foreground bg-card/80 px-3 py-1.5 rounded-lg border border-border backdrop-blur-sm">
+            {mergedTypeStats.slice(0, 10).map(t => (
+              <span key={t.type} className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full" style={{ background: t.color }} />
+                {t.type}
+              </span>
+            ))}
+          </div>
+        </SdbGraphCanvas>
+      )}
 
       {/* Detail panel */}
       {selected && (
