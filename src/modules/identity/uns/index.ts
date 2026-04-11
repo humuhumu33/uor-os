@@ -88,6 +88,17 @@ export type {
   OrbitRouteAnnouncement, UnsNodeConfig, ServiceStatus, HealthResponse,
 } from "./mesh";
 
+// ── Container runtime ──────────────────────────────────────────────────────
+export {
+  createContainer,
+  listContainers,
+  startContainer,
+  stopContainer,
+  removeContainer,
+  inspectContainer,
+} from "./build/container";
+export type { UorContainer, ContainerInspection, ContainerState } from "./build/container";
+
 // ── Build stubs (inlined to avoid PWA IIFE resolution issues) ──────────────
 
 // Uorfile
