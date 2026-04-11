@@ -11,8 +11,8 @@
  * All operations work entirely offline — zero network dependency.
  */
 
-import { grafeoStore as localGraphStore, type KGNode, type KGEdge } from "./grafeo-store";
-import type { KGNode as _KGNode, KGEdge as _KGEdge } from "./types";
+import { grafeoStore as localGraphStore } from "./grafeo-store";
+import type { KGNode, KGEdge } from "./types";
 import {
   normalizeQuery,
   trigramVectorize,
