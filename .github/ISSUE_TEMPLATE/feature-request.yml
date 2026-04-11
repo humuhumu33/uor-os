@@ -1,0 +1,58 @@
+name: "\U0001F680 Feature Request"
+description: Suggest an idea or enhancement for the project
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest a feature! Please fill out the sections below.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Feature Area
+      description: Which part of the project does this relate to?
+      options:
+        - Sovereign Runtime
+        - CLI (packages/cli)
+        - Knowledge Graph / GrafeoDB
+        - Hologram Engine
+        - Delta Engine
+        - Graph Sync / Bundles
+        - UOR SDK
+        - UI / Desktop
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: What problem does this feature solve, or what opportunity does it create?
+      placeholder: "I'm always frustrated when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature or change you'd like to see.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any other approaches you've thought about?
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I'm willing to help implement this feature
