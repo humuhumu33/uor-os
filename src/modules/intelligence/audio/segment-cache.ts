@@ -14,7 +14,7 @@
  */
 
 import type { SegmentCacheEntry } from "./types";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256raw } from "@/lib/crypto";
 
 const DEFAULT_MAX_ENTRIES = 256;
 const DEFAULT_MAX_BYTES = 128 * 1024 * 1024; // 128 MB
@@ -29,7 +29,7 @@ export interface SegmentCacheConfig {
  * Uses SHA-256 via SubtleCrypto (browser-native, zero dependencies).
  */
 async function computeSegmentHash(data: ArrayBuffer): Promise<string> {
-  const hashBuffer = sha256(new Uint8Array(data));
+  const hashBuffer = sha256raw(new Uint8Array(data));
   const hashArray = new Uint8Array(hashBuffer);
   return Array.from(hashArray, (b) => b.toString(16).padStart(2, "0")).join("");
 }

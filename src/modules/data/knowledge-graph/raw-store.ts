@@ -8,8 +8,7 @@
  * No UOR involvement here — plain SHA-256 for audit trail.
  */
 
-import { sha256hex } from "@/lib/crypto";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256hex, sha256raw } from "@/lib/crypto";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 

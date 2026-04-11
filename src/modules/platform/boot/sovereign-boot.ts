@@ -39,7 +39,7 @@ import { scheduleLutWarmup } from "@/modules/identity/uns/core/hologram/gpu/lut-
 import { startSealMonitor } from "./seal-monitor";
 import { validateStack, validateMinimality } from "./tech-stack";
 import type { StackComponentStatus } from "./types";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256raw } from "@/lib/crypto";
 
 // ── Module-private seal storage (Finding 2: closure, not sessionStorage) ──
 

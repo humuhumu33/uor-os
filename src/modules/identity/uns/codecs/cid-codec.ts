@@ -14,8 +14,7 @@
 import { CID } from "multiformats/cid";
 import * as json from "multiformats/codecs/json";
 import { sha256 } from "multiformats/hashes/sha2";
-import { sha256 as nobleSha256 } from "@noble/hashes/sha2.js";
-import { bytesToHex } from "@noble/hashes/utils.js";
+import { sha256raw, toHex } from "@/lib/crypto";
 
 // ── dag-json codec code ─────────────────────────────────────────────────────
 const DAG_JSON_CODE = 0x0129;
@@ -102,8 +101,8 @@ export function cidFromString(cidStr: string): CID {
  * Uses @noble/hashes for synchronous SHA-256.
  */
 export function uorCanonicalIdFromBytes(contentBytes: Uint8Array): string {
-  const digest = nobleSha256(contentBytes);
-  return `urn:uor:derivation:sha256:${bytesToHex(digest)}`;
+  const digest = sha256raw(contentBytes);
+  return `urn:uor:derivation:sha256:${toHex(digest)}`;
 }
 
 /**

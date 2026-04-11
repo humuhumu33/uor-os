@@ -19,7 +19,7 @@
 // @ts-ignore. jsonld v8 types may not resolve perfectly in all configurations
 import jsonld from "jsonld";
 import { computeCid, computeUorAddress, canonicalJsonLd, computeIpv6Address } from "./uor-address";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { sha256raw, toHex } from "@/lib/crypto";
 
 // ── UOR inline context for wrapping non-JSON-LD objects ─────────────────────
 // Inline to avoid network dependency. any agent can reproduce this locally.
