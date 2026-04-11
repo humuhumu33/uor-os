@@ -7,7 +7,7 @@
 import { useState } from "react";
 import {
   IconFilter, IconLayoutGrid, IconFocus2, IconZoomIn, IconZoomOut,
-  IconNetwork, IconHierarchy, IconCircleDot, IconSearch,
+  IconNetwork, IconHierarchy, IconCircleDot, IconSearch, IconAtom,
 } from "@tabler/icons-react";
 import type { LayoutMode, GraphFilter } from "./SdbGraphCanvas";
 
@@ -20,6 +20,8 @@ interface Props {
   onFitAll: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  showAtlasLayer?: boolean;
+  onToggleAtlasLayer?: () => void;
 }
 
 const LAYOUTS: { mode: LayoutMode; icon: typeof IconNetwork; label: string }[] = [
@@ -31,6 +33,7 @@ const LAYOUTS: { mode: LayoutMode; icon: typeof IconNetwork; label: string }[] =
 
 export function SdbGraphControls({
   types, filters, onFiltersChange, layoutMode, onLayoutChange, onFitAll, onZoomIn, onZoomOut,
+  showAtlasLayer, onToggleAtlasLayer,
 }: Props) {
   const [showFilters, setShowFilters] = useState(false);
 
@@ -65,6 +68,18 @@ export function SdbGraphControls({
         >
           <IconFilter size={14} /> Filters
         </button>
+
+        {/* Atlas layer toggle */}
+        {onToggleAtlasLayer && (
+          <button
+            onClick={onToggleAtlasLayer}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[12px] font-medium transition-colors ${
+              showAtlasLayer ? "bg-primary/10 border-primary/30 text-primary" : "bg-card/90 border-border text-muted-foreground hover:text-foreground"
+            } backdrop-blur-sm`}
+          >
+            <IconAtom size={14} /> Atlas
+          </button>
+        )}
 
         {/* Type toggles */}
         {showFilters && (
