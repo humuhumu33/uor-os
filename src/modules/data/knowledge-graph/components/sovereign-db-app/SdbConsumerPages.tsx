@@ -124,6 +124,41 @@ export function SdbConsumerPages({ db }: Props) {
     setSelectedId(noteId);
   }, [db, reload]);
 
+  // Extract [[wiki links]] from content
+  const parseWikiLinks = useCallback((text: string): string[] => {
+    const matches = text.matchAll(/\[\[([^\]]+)\]\]/g);
+    return [...matches].map(m => m[1].trim()).filter(Boolean);
+  }, []);
+
+  // Sync wiki-link edges: remove old links from this note, create new ones
+  const syncWikiLinks = useCallback(async (noteId: string, content: string) => {
+    const linkedTitles = parseWikiLinks(content);
+    if (linkedTitles.length === 0) return;
+
+    // Remove existing outgoing workspace:link edges from this note
+    const existingLinks = await db.byLabel("workspace:link");
+    for (const link of existingLinks) {
+      if (link.nodes[0] === noteId) {
+        await db.removeEdge(link.id);
+      }
+    }
+
+    // Create new link edges for each [[reference]]
+    for (const title of linkedTitles) {
+      const target = items.find(
+        i => i.type === "note" && i.name.toLowerCase() === title.toLowerCase()
+      );
+      if (target && target.id !== noteId) {
+        await db.addEdge([noteId, target.id], "workspace:link", {
+          relation: "references",
+          sourceTitle: noteTitle,
+          targetTitle: target.name,
+          createdAt: Date.now(),
+        });
+      }
+    }
+  }, [db, items, parseWikiLinks, noteTitle]);
+
   // Save note content
   const saveNote = useCallback(async () => {
     if (!selected || selected.type !== "note") return;
@@ -133,8 +168,10 @@ export function SdbConsumerPages({ db }: Props) {
       "workspace:note",
       { ...selected.edge.properties, title: noteTitle, content: noteContent, updatedAt: Date.now() },
     );
+    // Sync wiki-link edges
+    await syncWikiLinks(selected.id, noteContent);
     await reload();
-  }, [db, selected, noteTitle, noteContent, reload]);
+  }, [db, selected, noteTitle, noteContent, reload, syncWikiLinks]);
 
   // Delete item
   const deleteItem = useCallback(async (item: TreeItem) => {
@@ -338,13 +375,51 @@ export function SdbConsumerPages({ db }: Props) {
               placeholder="Untitled"
               className="w-full text-[28px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/30 mb-6"
             />
-            <textarea
-              value={noteContent}
-              onChange={e => setNoteContent(e.target.value)}
-              onBlur={saveNote}
-              placeholder="Start writing..."
-              className="w-full min-h-[400px] text-[15px] leading-relaxed text-foreground/90 bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/30"
-            />
+            {/* Content editor with wiki-link overlay */}
+            <div className="relative">
+              <textarea
+                value={noteContent}
+                onChange={e => setNoteContent(e.target.value)}
+                onBlur={saveNote}
+                placeholder="Start writing… Use [[Note Title]] to link to other notes"
+                className="w-full min-h-[400px] text-[15px] leading-relaxed text-foreground/90 bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground/30"
+              />
+            </div>
+
+            {/* Linked notes indicator */}
+            {(() => {
+              const linked = parseWikiLinks(noteContent);
+              if (linked.length === 0) return null;
+              const resolved = linked.map(title => {
+                const target = items.find(i => i.type === "note" && i.name.toLowerCase() === title.toLowerCase());
+                return { title, resolved: !!target, id: target?.id };
+              });
+              return (
+                <div className="mt-4 pt-3 border-t border-border/20">
+                  <p className="text-[12px] font-semibold text-muted-foreground mb-2">
+                    Linked Notes ({resolved.length})
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {resolved.map((link, i) => (
+                      <button
+                        key={i}
+                        onClick={() => link.id && setSelectedId(link.id)}
+                        disabled={!link.resolved}
+                        className={`px-2.5 py-1 rounded-md text-[12px] transition-colors ${
+                          link.resolved
+                            ? "bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
+                            : "bg-muted/30 text-muted-foreground/50 cursor-default"
+                        }`}
+                      >
+                        {link.title}
+                        {!link.resolved && <span className="ml-1 text-[10px]">(not found)</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="mt-6 pt-4 border-t border-border/30 flex items-center gap-3 text-[12px] text-muted-foreground/50 font-mono">
               <span>{selected.edge.id.slice(0, 8)}</span>
               <span>·</span>
