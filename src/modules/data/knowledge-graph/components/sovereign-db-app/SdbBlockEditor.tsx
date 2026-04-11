@@ -285,7 +285,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
                 className="text-[15px] leading-relaxed text-foreground/90 py-1 cursor-text min-h-[28px] whitespace-pre-wrap break-words"
               >
                 {block.text
-                  ? renderBlockText(block.text, onWikiLinkClick)
+                  ? renderBlockText(block.text, onWikiLinkClick, noteNames, getPreview)
                   : <span className="text-muted-foreground/30">Type something…</span>}
               </div>
             )}
