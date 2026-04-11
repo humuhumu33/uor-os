@@ -18,7 +18,7 @@ import { SdbGraphCanvas, type GNode, type GLink, type LayoutMode, type GraphFilt
 import { SdbGraphControls } from "./SdbGraphControls";
 import { SdbGraphContextMenu, type ContextAction } from "./SdbGraphContextMenu";
 import { SdbGraphSelection, type SelectionAction } from "./SdbGraphSelection";
-import { useAtlasSeedData, SdbAtlasOverlay } from "./SdbAtlasSeed";
+import { useAtlasIntroAnimation, SdbAtlasOverlay } from "./SdbAtlasSeed";
 import { getAtlas } from "@/modules/research/atlas/atlas";
 import { decodeTriality } from "@/modules/research/atlas/triality";
 
@@ -51,7 +51,7 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
   const [showAtlasLayer, setShowAtlasLayer] = useState(true);
 
   // Atlas seed data
-  const atlasSeed = useAtlasSeedData();
+  const atlasSeed = useAtlasIntroAnimation();
 
   // Build graph from workspace edges
   const edges = hypergraph.cachedEdges();
