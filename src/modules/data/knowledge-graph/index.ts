@@ -143,6 +143,24 @@ export {
   edgesToCypher, importCypher,
 } from "./io-adapters";
 
+// ── Neo4j Migration ─────────────────────────────────────────────────────────
+
+export {
+  testConnection as testNeo4jConnection,
+  introspectSchema as introspectNeo4jSchema,
+  migrateFromNeo4j,
+  fetchNodes as fetchNeo4jNodes,
+  fetchRelationships as fetchNeo4jRelationships,
+} from "./neo4j-migration";
+export type {
+  Neo4jConnection,
+  Neo4jSchema,
+  Neo4jNode,
+  Neo4jRelationship,
+  MigrationProgress,
+  MigrationResult,
+} from "./neo4j-migration";
+
 // ── Persistence Provider Layer ──────────────────────────────────────────────
 
 export { getProvider, setProvider, initProvider } from "./persistence";
