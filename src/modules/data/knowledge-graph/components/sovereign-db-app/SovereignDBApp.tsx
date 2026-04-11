@@ -73,6 +73,16 @@ const SovereignDBApp = () => {
     localStorage.setItem(STORAGE_VIEW_KEY, JSON.stringify(v));
   }, []);
 
+  // Listen for command palette view switching
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const view = (e as CustomEvent).detail as ViewMode;
+      handleViewChange(view);
+    };
+    window.addEventListener("sdb:set-view", handler);
+    return () => window.removeEventListener("sdb:set-view", handler);
+  }, [handleViewChange]);
+
   const handlePulseSelect = useCallback((m: UiMode) => {
     setShowPulse(false);
     handleModeChange(m);
