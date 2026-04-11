@@ -1,101 +1,84 @@
 
 
-# SovereignDB — Atlas "State Zero" Seed & Torus Visualization
+# SovereignDB — Algebrica-Inspired UX Polish
 
-## Vision
+## What Algebrica Gets Right
 
-When a user opens SovereignDB for the first time and sees an empty graph, instead of a blank canvas with a "Create notes to get started" message, they see the **living Atlas** — 96 vertices arranged on a torus, color-coded by sign class, with edges showing adjacency. This is the OS introspecting itself. The user is looking at the mathematical structure that powers the system they're using.
+Looking at their interface, the key qualities are:
 
-## What Makes This Magical
+1. **Rich home view** — not an empty state, but a curated landing with history, discovery, and most-explored content
+2. **Structured sidebar sections** — clear visual hierarchy: History (with timestamps), Discover (with connection counts), Most Explored (with view counts)
+3. **Generous whitespace and typography** — clean, confident spacing; nothing cramped
+4. **Discovery-oriented** — surfaces content the user hasn't explicitly searched for
+5. **Warm but precise** — subtle separators, readable hierarchy, no visual noise
 
-1. **Self-referential**: The graph is showing the actual Atlas object used by the engine — not a mock. We read directly from `getAtlas()`.
-2. **Torus layout**: The 96 vertices map naturally to a torus via their triality coordinates `(h₂, d, ℓ)` — quadrant × modality gives the major ring (12 positions around the torus), slot gives the minor ring (8 positions). This is geometrically accurate.
-3. **Interactive from moment zero**: Users can zoom, pan, hover to see vertex labels and coordinates, click to see properties, filter by sign class — all before writing a single note.
-4. **Seamless transition**: As the user creates notes, the Atlas nodes remain as a "substrate layer" (toggleable) and their notes become nodes alongside/atop the Atlas.
+## Current SovereignDB Gaps
 
-## Torus Geometry
+- Empty state is a generic "Welcome to your Knowledge Space" with two buttons
+- Sidebar is a flat workspace tree with no sections, no history, no discovery
+- Header feels functional but not polished
+- No concept of "most connected" or "discover" sections
+- Spacing and typography are adequate but not elevated
 
-The triality decomposition gives `v = 24·h₂ + 8·d + ℓ` where:
-- h₂ ∈ {0,1,2,3}, d ∈ {0,1,2}, ℓ ∈ {0,1,2,3,4,5,6,7}
-- Major angle θ = 2π × (h₂ × 3 + d) / 12 — 12 positions around the major ring
-- Minor angle φ = 2π × ℓ / 8 — 8 positions around the minor ring
-- Torus coordinates: x = (R + r·cos(φ))·cos(θ), y = (R + r·cos(φ))·sin(θ), projected to 2D
+## Plan
 
-This produces a beautiful, symmetric layout where:
-- Sign classes form 8 color bands
-- Mirror pairs (τ involution) sit across the torus
-- Adjacency edges trace the Atlas's 256-edge structure
-- Triality orbits (size 3) are visually apparent as arcs
+### 1. Rich Home View (replaces empty state in `SdbConsumerPages.tsx`)
 
-## Technical Plan
+When no note is selected, instead of the generic welcome message, render a **home dashboard** with:
 
-### New File: `SdbAtlasSeed.tsx` (~180 lines)
+- **Your History** — last 10 visited notes with relative timestamps (like "1m ago", "2d")
+- **Most Connected** — notes ranked by inbound link count, showing connection count badges
+- **Discover** — hashtags/topics across the workspace ranked by frequency, with counts
+- **Atlas teaser** — subtle "Explore the Ontological Graph →" link to switch to Graph view
+- **Quick actions** — "Today's Note", "New Page" as clean pill buttons
 
-A component that:
-1. Calls `getAtlas()` and `decodeTriality()` to get all 96 vertices with coordinates
-2. Computes torus layout (2D projection): major ring for `(h₂, d)`, minor ring for `ℓ`
-3. Renders via the existing `SdbGraphCanvas` (GNode/GLink format), using `"radial"` or custom positioning
-4. Colors nodes by sign class (8 distinct hues from a curated palette)
-5. Shows adjacency edges with subtle opacity
-6. Adds a translucent info overlay: "Atlas · 96 vertices · 256 edges · 8 sign classes"
-7. Mirror pairs connected by dashed lines
-8. Hover shows vertex index, label tuple, sign class, degree, mirror pair
-9. A "Dismiss" / "Start Writing" button transitions to normal empty-state Pages view
-10. A toggle in Graph view controls to show/hide the Atlas substrate layer
+This is a new component `SdbHomeView.tsx` (~120 lines) rendered when `selected === null`.
 
-### Modified: `SdbConsumerGraph.tsx` (~30 lines)
+### 2. Sidebar Redesign (`SdbConsumerPages.tsx` sidebar section)
 
-- When graph has zero workspace edges, render `SdbAtlasSeed` as the state-zero view instead of the "Create notes" empty state
-- Add an "Atlas Layer" toggle in `SdbGraphControls` that overlays Atlas nodes (dimmed) alongside workspace nodes
-- Atlas nodes typed as `"atlas"` with distinct color scheme
+Restructure the sidebar into clear sections with dividers:
 
-### Modified: `SdbGraphControls.tsx` (~10 lines)
+- **Search** — the existing ⌘K trigger, but styled as a full-width search bar at the top
+- **Daily Notes** — already exists, keep as-is
+- **Your History** — recent 5 notes with relative timestamps (compact version of home)
+- **Workspace** — the existing folder/note tree
+- **Outline** — already exists at bottom, keep
 
-- Add "Atlas" toggle to the type filter panel
+Each section gets a subtle `text-[11px] uppercase tracking-wider` section header like Algebrica uses.
 
-### Color Palette for Sign Classes
+### 3. Typography & Spacing Refinements
 
-```
-SC 0: hsl(210, 80%, 60%)  — blue
-SC 1: hsl(180, 70%, 50%)  — teal
-SC 2: hsl(150, 70%, 50%)  — green
-SC 3: hsl(120, 60%, 55%)  — lime
-SC 4: hsl(40, 85%, 55%)   — amber
-SC 5: hsl(20, 85%, 55%)   — orange
-SC 6: hsl(340, 70%, 55%)  — rose
-SC 7: hsl(270, 60%, 60%)  — purple
-```
+- Note title input: increase to `text-[32px]`, add `leading-tight`, more bottom margin
+- Block editor: increase line height, add `py-1` per block for more breathing room
+- Sidebar items: increase to `py-2.5` with `text-[14px]`
+- Header: reduce visual weight — remove "Connected" badge, simplify to just mode/view toggles and a subtle SovereignDB wordmark
 
-### Data Flow
+### 4. Header Polish (`SovereignDBApp.tsx`)
 
-```text
-getAtlas() → 96 AtlasVertex objects
-    │
-decodeTriality(v.index) → (h₂, d, ℓ) for each vertex
-    │
-torusLayout(h₂, d, ℓ) → (x, y) screen coordinates
-    │
-map to GNode[] + GLink[] from adjacency lists
-    │
-feed into SdbGraphCanvas (existing renderer)
-```
+- Remove "Connected" indicator and backend label from header (move to status bar)
+- Clean wordmark: just the green dot + "SovereignDB" with the db name in lighter weight
+- Thinner header: `h-11` instead of `h-12`
 
-### Torus 2D Projection Formula
+### 5. Status Bar Enhancement (`SdbStatusBar.tsx`)
 
-```text
-majorAngle = 2π × (h₂ × 3 + d) / 12
-minorAngle = 2π × ℓ / 8
+- Consumer mode: show "X notes · Y connections · Z tags" instead of generic "items"
+- Add the connection status here instead of the header
 
-R = 250 (major radius)
-r = 90  (minor radius)
+## Technical Details
 
-x = (R + r × cos(minorAngle)) × cos(majorAngle)
-y = (R + r × cos(minorAngle)) × sin(majorAngle)
-```
+### New File
+| File | Purpose | ~Lines |
+|---|---|---|
+| `SdbHomeView.tsx` | Rich home dashboard with history, discovery, most-connected | 120 |
 
-The z-depth from `sin(minorAngle)` gives a subtle size scaling for 3D-like depth.
+### Modified Files
+| File | Change |
+|---|---|
+| `SdbConsumerPages.tsx` | Replace empty state with `SdbHomeView`; restructure sidebar into sections with headers; refine spacing |
+| `SovereignDBApp.tsx` | Simplify header — remove connection status, cleaner layout |
+| `SdbStatusBar.tsx` | Consumer mode shows notes/connections/tags counts |
+| `SdbBlockEditor.tsx` | Increase line height and spacing for blocks |
 
 ### Estimated Scope
-
-~180 lines new in `SdbAtlasSeed.tsx`, ~40 lines of edits across `SdbConsumerGraph.tsx` and `SdbGraphControls.tsx`. No new dependencies — uses existing Atlas engine + graph canvas.
+~120 new lines + ~100 lines of edits across 4 files.
 
