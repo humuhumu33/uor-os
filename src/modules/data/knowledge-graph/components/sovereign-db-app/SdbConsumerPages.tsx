@@ -543,7 +543,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
             onSelect={id => setSelectedId(id)}
             onCreateNote={() => createNote()}
             onCreateDaily={reloadDaily}
-            onSwitchGraph={() => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "graph" }))}
+            onSwitchGraph={() => onNavigateSection?.("graph")}
           />
         ) : (
           <>
