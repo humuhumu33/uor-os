@@ -59,9 +59,18 @@ export function SdbQuickFinder({ open, onClose, items, recentIds = [], onSelect,
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
+  const inCommandMode = query.startsWith(">");
+
+  const cmdQuery = inCommandMode ? query.slice(1).trim().toLowerCase() : "";
+  const filteredCommands = useMemo(() => {
+    if (!inCommandMode) return [];
+    if (!cmdQuery) return commands;
+    return commands.filter(c => c.label.toLowerCase().includes(cmdQuery));
+  }, [inCommandMode, cmdQuery, commands]);
+
   const filtered = useMemo(() => {
+    if (inCommandMode) return [];
     if (!query.trim()) {
-      // Show recent items first, then all sorted by updatedAt
       const recent = recentIds
         .map(id => items.find(i => i.id === id))
         .filter(Boolean) as FinderItem[];
@@ -79,11 +88,11 @@ export function SdbQuickFinder({ open, onClose, items, recentIds = [], onSelect,
         return aStart - bStart;
       })
       .slice(0, 12);
-  }, [query, items, recentIds]);
+  }, [query, items, recentIds, inCommandMode]);
 
-  const showCreate = query.trim().length > 0 && !filtered.some(i => i.title.toLowerCase() === query.toLowerCase());
+  const showCreate = !inCommandMode && query.trim().length > 0 && !filtered.some(i => i.title.toLowerCase() === query.toLowerCase());
 
-  const totalItems = filtered.length + (showCreate ? 1 : 0);
+  const totalItems = inCommandMode ? filteredCommands.length : filtered.length + (showCreate ? 1 : 0);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
@@ -94,7 +103,12 @@ export function SdbQuickFinder({ open, onClose, items, recentIds = [], onSelect,
       setActiveIdx(i => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (activeIdx < filtered.length) {
+      if (inCommandMode) {
+        if (activeIdx < filteredCommands.length) {
+          filteredCommands[activeIdx].action();
+          onClose();
+        }
+      } else if (activeIdx < filtered.length) {
         onSelect(filtered[activeIdx].id);
         onClose();
       } else if (showCreate) {
