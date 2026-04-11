@@ -35,12 +35,12 @@ export function popcount16(x: number): number {
   return (x + (x >> 8)) & 0x1f;
 }
 
-/** Count set bits in a 32-bit integer (Kernighan's method). */
+/** Count set bits in a 32-bit integer (constant-time bitmask). */
 export function popcount32(x: number): number {
-  let v = x >>> 0;
-  let count = 0;
-  while (v) { v &= v - 1; count++; }
-  return count;
+  let n = x >>> 0;
+  n = n - ((n >> 1) & 0x55555555);
+  n = (n & 0x33333333) + ((n >> 2) & 0x33333333);
+  return (((n + (n >> 4)) & 0x0f0f0f0f) * 0x01010101) >> 24;
 }
 
 // ── Hex encoding: the address serialization primitive ───────────────────────

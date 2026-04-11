@@ -90,6 +90,18 @@ export class ItemMemory {
     return scored.slice(0, k);
   }
 
+  /** Return all items above a similarity threshold (common HDC classification pattern). */
+  queryThreshold(target: Hypervector, minSimilarity: number): QueryResult[] {
+    const results: QueryResult[] = [];
+    for (const item of this.items.values()) {
+      const sim = 1.0 - distance(item.vector, target);
+      if (sim >= minSimilarity) {
+        results.push({ label: item.label, similarity: sim, metadata: item.metadata });
+      }
+    }
+    return results.sort((a, b) => b.similarity - a.similarity);
+  }
+
   /** All stored labels. */
   labels(): string[] {
     return Array.from(this.items.keys());
