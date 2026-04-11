@@ -102,9 +102,10 @@ describe("ItemMemory", () => {
     const a = random(DIM);
     mem.storeWith("alpha", a);
     mem.storeWith("beta", random(DIM));
-    const result = mem.query(a, 1);
-    expect(result[0].label).toBe("alpha");
-    expect(result[0].similarity).toBeGreaterThan(0.99);
+    const result = mem.query(a);
+    expect(result).not.toBeNull();
+    expect(result!.label).toBe("alpha");
+    expect(result!.similarity).toBeGreaterThan(0.99);
   });
 });
 
