@@ -141,6 +141,10 @@ export function SdbQueryPanel({ db }: Props) {
               <div className="p-4 text-sm text-muted-foreground">
                 Query returned no tabular data.
               </div>
+            ) : view === "graph" ? (
+              <div className="flex-1 min-h-[300px]">
+                <SdbResultGraph rows={rows} columns={columns} />
+              </div>
             ) : (
               <pre className="flex-1 overflow-auto m-4 p-4 rounded-md bg-muted/50 text-[12px] font-mono leading-relaxed">
                 {JSON.stringify(result, null, 2)}
