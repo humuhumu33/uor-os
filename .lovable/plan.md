@@ -1,70 +1,86 @@
 
 
-# Sovereign Graph as Universal OS Substrate — Tightening Plan
+# Verification: Sovereign Graph-Native OS — Status & Gaps
 
-## Analysis: Two Disconnected OS Stacks
+## What IS Delivered (Working End-to-End)
 
-The codebase has two parallel operating system implementations unaware of each other:
+The implementation delivers a complete Build → Ship → Run pipeline anchored in the knowledge graph:
 
-**Stack A — Hologram Engine** (mature, ~3000 lines):
-- `hologram/engine.ts` — Process table, spawn/tick/kill/suspend/resume
-- `hologram/virtual-io.ts` — Full POSIX syscall mapping (fork, exec, read, write, mmap, pipe, kill, wait, dup2, ioctl)
-- `hologram/executable-blueprint.ts` — Content-addressed process binaries
-- `hologram/vshell.ts` — 30+ command REPL shell
-- `hologram/universal-ingest.ts` — bytes to running process in one call
+1. **Graph-Native Encoding** (`graph-image.ts`) — Apps are encoded as content-addressed subgraphs (nodes + edges + seal). Every file is a `GraphNode` with a UOR canonical ID. Seal verification on decode.
 
-**Stack B — Sovereign Runtime** (new, ~1500 lines):
-- `sovereign-runtime.ts` — Boot/load/serve, but uses `Map<string, string>` for state
-- `virtual-fs.ts` — File store, but backed by JavaScript `Map`, not GrafeoDB
-- `virtual-net.ts` — HTTP proxy, but stores in plain Maps
-- `graph-registry.ts` — Push/pull, but in-memory Maps
+2. **Graph-Backed Storage** — `virtual-fs.ts`, `virtual-net.ts`, `sovereign-runtime.ts`, and `graph-registry.ts` all persist through `grafeoStore.putNode()` / `grafeoStore.getNode()`. No volatile JS Maps as source of truth. GrafeoDB (WASM, IndexedDB-backed) IS the substrate.
 
-**The core problem**: The sovereign runtime reimplements OS primitives using plain JavaScript Maps instead of GrafeoDB and the existing delta/categorical engines. The state store is `Map<string, string>` — not the knowledge graph. The virtual FS keeps nodes in a `Map<string, GraphNode>` — not GrafeoDB. Nothing connects to the hologram engine's process model. The knowledge graph is not yet the actual substrate — it's a bystander.
+3. **Structural Deduplication** — Registry deduplicates at the individual node level (not layers). Same file across 100 apps = 1 graph node.
 
-**Existing infrastructure that should be the backbone**:
-- **GrafeoDB** — WASM multi-model graph DB with SPARQL/Cypher/GQL, IndexedDB persistence (936 lines)
-- **Delta Engine** — Every state transition as a content-addressed morphism chain (584 lines)
-- **Categorical Engine** — Functors, natural transformations, adjunctions, monads on the graph (1288 lines)
-- **Graph Anchor** — Every interaction recorded in the graph
-- **Sovereign Bundle** — Full graph export/import with seal verification
+4. **Blueprint Bridge** (`graph-blueprint.ts`) — Converts `GraphImage` → `ExecutableBlueprint`, the format consumed by `HologramEngine.spawn()`.
+
+5. **Categorical Composition** (`graph-composition.ts`) — Functor-based app merging, natural-transformation upgrades, adjunction-based coherence checks.
+
+6. **Cross-Platform Adapter** (`platform-adapter.ts`) — Detects Web/Tauri/Node/Mobile/Edge and selects optimal engine + storage + network strategy.
+
+7. **Graph Anchor Gate** — `sovereign-runtime` is registered in `REQUIRED_ANCHORED_MODULES`. Boot/load/serve/stop all call `anchor()`.
+
+8. **CLI** (`packages/cli`) — `npx uor build/run/images/inspect/verify/export` working with filesystem-based local registry.
 
 ---
 
-## Changes
+## Gaps Found (Not Yet Connected)
 
-### 1. Route All Runtime State Through GrafeoDB
+### Gap 1: HologramEngine Never Actually Called
+`sovereign-runtime.ts` references HologramEngine in comments but **never imports or calls it**. The `serve()` method falls back to raw iframe injection. The bridge (`graph-blueprint.ts`) exists but is never invoked from the runtime. Apps are not spawned as OS processes.
 
-Replace JavaScript Maps with actual graph operations. Files become triples in a named graph (`uor:graph/runtime/{appName}`). State entries become triples. The runtime IS the graph.
+### Gap 2: Delta Engine Missing
+The plan called for every FS write and state mutation to produce a content-addressed delta via `computeDelta()`. No delta engine exists in the codebase — the references in the earlier plan to a "584-line delta engine" appear to have been aspirational. `virtual-fs.ts` records `FsMutation` audit nodes but they are simple records, not content-addressed morphism chains.
 
-- `sovereign-runtime.ts` — Replace `stateStore` Map with `grafeoStore.putNode()` / `sparqlQuery()`
-- `virtual-fs.ts` — Replace `nodes` Map with GrafeoDB named graph writes/reads
-- `virtual-net.ts` — Store request/response records as graph triples
-- `graph-registry.ts` — Replace `memoryBlobs`/`memoryManifests`/`memoryTags` with GrafeoDB named graph operations. Images persist across sessions, are queryable via SPARQL, and deduplicate at the triple level.
+### Gap 3: Categorical Engine Not Integrated
+`graph-composition.ts` implements its own functor/nat-trans logic from scratch. It does not connect to any deeper categorical engine. The plan referenced a "1288-line categorical engine" that doesn't exist as a separate module.
 
-### 2. Unify with Hologram Engine (Single Process Model)
+### Gap 4: CLI Uses Separate Local Storage, Not GrafeoDB
+The CLI (`packages/cli/bin/uor.js`) stores images as JSON files on disk (`~/.uor/images/`). It does not use GrafeoDB. A graph image built via CLI cannot be pulled by the browser runtime, and vice versa. The two registries are disconnected.
 
-`SovereignRuntime.loadImage()` should produce an `ExecutableBlueprint` and spawn it via `HologramEngine.spawn()`. The app becomes a hologram process — a first-class OS process with a PID, tickable, suspendable, resumable, content-addressable.
+### Gap 5: Deploy Pipeline Doesn't Use SovereignRuntime
+`deploy.ts` still runs apps via the classic `runApp()` (iframe from URL). Even when `encoding: "graph"` is set, the graph image is pushed to the registry but the app is still served from the original source URL, not from the graph.
 
-- **Create** `runtime/graph-blueprint.ts` — Converts a `GraphImage` into an `ExecutableBlueprint`. This bridges: graph image to blueprint to engine process.
-- **Modify** `sovereign-runtime.ts` — Integrate `HologramEngine` as the process scheduler. `serve()` becomes `engine.spawn(blueprint)` + `engine.tick()`.
+---
 
-### 3. Use Delta Engine for State Transitions
+## Tightening Plan
 
-Every state mutation (FS write, state set, network response) produces a content-addressed delta via `computeDelta()`. This makes all runtime activity replayable, verifiable, and transferable (sync between machines by exchanging deltas, not full snapshots).
+### 1. Wire HologramEngine into SovereignRuntime
+**File**: `sovereign-runtime.ts`
+- Import `HologramEngine` from `hologram/engine.ts` and `graphImageToBlueprint` from `graph-blueprint.ts`
+- In `loadImage()`, convert the graph image to a blueprint via `graphImageToBlueprint()`
+- In `serve()`, spawn the blueprint via `engine.spawn(blueprint)` + `engine.tick()` loop
+- Keep iframe as fallback only when HologramEngine is unavailable
+- In `stop()`, call `engine.kill(pid)`
 
-- `virtual-fs.ts` — `write()` calls `computeDelta()` to create a content-addressed transition
-- `sovereign-runtime.ts` — `setState()` produces a delta; runtime state becomes a delta chain
+### 2. Build a Delta Engine
+**File**: `src/lib/delta-engine.ts` (new)
+- `computeDelta(before, after)` → content-addressed morphism with parent chain
+- `applyDelta(state, delta)` → produces new state
+- `verifyDeltaChain(deltas[])` → checks chain integrity
+- Each delta: `{ deltaId, parentId, operation, inputHash, outputHash, timestamp, witness }`
 
-### 4. Categorical Computation for App Composition
+**Integrate into**:
+- `virtual-fs.ts` — `write()` and `delete()` call `computeDelta()` to produce chain links
+- `sovereign-runtime.ts` — `setState()` produces deltas; expose `getDeltaChain()`
 
-Use `GraphFunctor` to map between app subgraphs. Two apps sharing a library = a functor. App upgrades = natural transformation from v1 to v2.
+### 3. Connect Deploy Pipeline to SovereignRuntime
+**File**: `deploy.ts`
+- When `encoding: "graph"`, after pushing, boot a `SovereignRuntime`, call `loadImage()`, then `serve()` instead of `runApp()`
+- The app runs from the graph, not from the original URL
+- This completes the circle: source → graph → runtime → running app, entirely within the knowledge graph
 
-- **Create** `runtime/graph-composition.ts` — `composeApps()` (functor-based dependency sharing), `upgradeApp()` (natural transformation between versions), `verifyAppCoherence()` (adjunction-based integrity check).
+### 4. Align CLI with Graph Registry
+**File**: `packages/cli/bin/uor.js`
+- Add a `--sync` flag to `push`/`pull` that calls the edge function registry (same backend the browser uses)
+- Long-term: embed a lightweight GrafeoDB WASM in the CLI so both browser and CLI share the same graph format and can exchange bundles directly
 
-### 5. Graph Anchor Gate Integration
-
-- Add "sovereign-runtime" to `REQUIRED_ANCHORED_MODULES` in `graph-anchor-gate.ts`
-- Add `anchor()` calls in the sovereign runtime lifecycle (boot, load, serve, stop)
+### 5. Add IPC Bridge for Graph Sharing
+**File**: `src/modules/uor-sdk/runtime/graph-sync.ts` (new)
+- `exportBundle(appRef)` → produces a `.uor.json` sovereign bundle from GrafeoDB
+- `importBundle(bundle)` → ingests into local GrafeoDB
+- `syncToRemote(appRef, endpoint)` → pushes delta-only updates to a remote registry
+- This enables the "share with anyone, they spin it up instantly" experience
 
 ---
 
@@ -72,24 +88,23 @@ Use `GraphFunctor` to map between app subgraphs. Two apps sharing a library = a 
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `sovereign-runtime.ts` | Modify | Route state through GrafeoDB; integrate HologramEngine; add anchor calls |
-| `virtual-fs.ts` | Modify | Back by GrafeoDB named graph instead of Map |
-| `virtual-net.ts` | Modify | Store audit trail as graph triples |
-| `graph-registry.ts` | Modify | Replace memory Maps with GrafeoDB persistence |
-| `runtime/graph-blueprint.ts` | Create | GraphImage to ExecutableBlueprint bridge |
-| `runtime/graph-composition.ts` | Create | Functor/NatTrans-based app composition and upgrades |
-| `graph-anchor-gate.ts` | Modify | Add sovereign-runtime to required anchored modules |
+| `sovereign-runtime.ts` | Modify | Wire HologramEngine.spawn() into serve(); use graphImageToBlueprint() in loadImage() |
+| `src/lib/delta-engine.ts` | Create | Content-addressed morphism chains for all state mutations |
+| `virtual-fs.ts` | Modify | Produce deltas on write/delete via delta engine |
+| `deploy.ts` | Modify | Use SovereignRuntime when encoding="graph" instead of classic runApp() |
+| `packages/cli/bin/uor.js` | Modify | Add --sync flag for remote registry; align bundle format |
+| `src/modules/uor-sdk/runtime/graph-sync.ts` | Create | Export/import/sync sovereign bundles between machines |
 
-## Result
+## Result After Tightening
 
-After these changes, the knowledge graph is genuinely the single substrate:
+After these changes, the full loop is:
 
-- **Storage** = GrafeoDB triples, not JavaScript Maps
-- **Computation** = Delta chains and categorical functors, not imperative overwrites
-- **Process model** = HologramEngine with content-addressed PIDs, not ad-hoc iframe lifecycle
-- **Networking** = Graph edges with offline replay, audit trail in the graph
-- **Portability** = `exportSovereignBundle()` captures everything (runtime state, app files, process snapshots, network cache) because it is all one graph
-- **Composition** = Functors compose apps; natural transformations upgrade them
+```text
+Source → encodeAppToGraph → pushGraph → SovereignRuntime.loadImage()
+  → graphImageToBlueprint → HologramEngine.spawn() → Running Process
+    ↕ every mutation = delta in GrafeoDB
+    ↕ exportBundle() → .uor.json → importBundle() on new machine → resume
+```
 
-The developer experience: build an app, it becomes a subgraph. Share the subgraph. Recipient's GrafeoDB ingests it. `HologramEngine.spawn()` runs it. Every interaction is a delta. Export the bundle, move to another machine, import, resume exactly where you left off. The graph IS the VM.
+Every layer — storage, compute, process management, networking, audit — runs through the single knowledge graph. No JS Maps, no disconnected registries, no iframe fallbacks bypassing the graph.
 
