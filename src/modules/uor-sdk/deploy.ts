@@ -34,6 +34,8 @@ import { encodeAppToGraph } from "./runtime/graph-image";
 import type { GraphImage } from "./runtime/graph-image";
 import { pushGraph } from "./runtime/graph-registry";
 import type { GraphPushReceipt } from "./runtime/graph-registry";
+import { createSovereignRuntime } from "./runtime/sovereign-runtime";
+import type { SovereignRuntime } from "./runtime/sovereign-runtime";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -85,13 +87,15 @@ export interface DeployResult {
   ship: ShipResult;
   /** Stage 3.5: Ingestion result (asset storage). */
   ingest?: IngestResult;
-  /** Stage 4: Running instance. */
+  /** Stage 4: Running instance (classic mode). */
   instance: WasmAppInstance;
   /** Total pipeline duration in ms. */
   durationMs: number;
   /** Graph-native artifacts (when encoding = "graph"). */
   graphImage?: GraphImage;
   graphPushReceipt?: GraphPushReceipt;
+  /** Sovereign runtime (when encoding = "graph"). */
+  sovereignRuntime?: SovereignRuntime;
 }
 
 // ── Deploy Pipeline ─────────────────────────────────────────────────────────
@@ -194,21 +198,51 @@ export async function deployApp(opts: DeployOptions): Promise<DeployResult> {
   });
 
   // ── Stage 4: RUN ─────────────────────────────────────────────
-  progress("run", "Starting WASM runtime...");
+  let instance: WasmAppInstance;
+  let sovereignRuntime: SovereignRuntime | undefined;
 
-  // Use the ORIGINAL source URL for the live iframe (like docker port-forward).
-  // The serve-app stored copy is the content-addressed backup/verification layer.
-  const originalSourceUrl = importResult.manifest["app:sourceUrl"] as string;
-  const runnableUrl = originalSourceUrl.startsWith("http")
-    ? originalSourceUrl
-    : ingestResult.serveUrl;
+  if (opts.encoding === "graph" && graphImage) {
+    // Graph-native path: boot SovereignRuntime → loadImage → serve
+    // The app runs FROM the graph, not from the original URL.
+    progress("run", "Booting Sovereign Runtime from knowledge graph...");
 
-  const instance = await runApp({
-    imageRef: buildResult.image.canonicalId,
-    sourceUrl: runnableUrl,
-    mountTarget: opts.mountTarget,
-    tracing: true,
-  });
+    sovereignRuntime = await createSovereignRuntime({
+      mountTarget: opts.mountTarget,
+      memoryLimitMb: 256,
+      stateNamespace: appName,
+    });
+
+    await sovereignRuntime.loadImage(graphImage.canonicalId);
+    const serveUrl = await sovereignRuntime.serve(
+      typeof opts.mountTarget === "string"
+        ? opts.mountTarget
+        : opts.mountTarget,
+    );
+
+    // Create a WasmAppInstance-compatible wrapper for the result type
+    instance = {
+      imageRef: buildResult.image.canonicalId,
+      sourceUrl: serveUrl,
+      status: "running" as const,
+      startedAt: new Date().toISOString(),
+      stop: async () => { await sovereignRuntime!.stop(); },
+    } as WasmAppInstance;
+  } else {
+    // Classic path: iframe from URL
+    progress("run", "Starting WASM runtime...");
+
+    const originalSourceUrl = importResult.manifest["app:sourceUrl"] as string;
+    const runnableUrl = originalSourceUrl.startsWith("http")
+      ? originalSourceUrl
+      : ingestResult.serveUrl;
+
+    instance = await runApp({
+      imageRef: buildResult.image.canonicalId,
+      sourceUrl: runnableUrl,
+      mountTarget: opts.mountTarget,
+      tracing: true,
+    });
+  }
 
   // ── Complete ─────────────────────────────────────────────────
   const durationMs = Math.round(performance.now() - startTime);
@@ -223,5 +257,6 @@ export async function deployApp(opts: DeployOptions): Promise<DeployResult> {
     durationMs,
     graphImage,
     graphPushReceipt,
+    sovereignRuntime,
   };
 }
