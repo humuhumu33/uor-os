@@ -1,0 +1,66 @@
+name: 📚 Documentation Request
+description: Report gaps, improvements, or new documentation needs
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping us improve the documentation!
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Request Type
+      options:
+        - Missing documentation
+        - Incorrect or outdated information
+        - Improvement to existing docs
+        - New guide or tutorial
+        - API reference gap
+    validations:
+      required: true
+
+  - type: input
+    id: area
+    attributes:
+      label: Documentation Area
+      description: Which part of the project does this relate to?
+      placeholder: "e.g., Sovereign Runtime, Knowledge Graph, UOR SDK, CLI"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What is missing, incorrect, or could be improved?
+      placeholder: Describe the documentation gap or improvement clearly.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should the documentation cover?
+      description: Describe what you expected to find or what would be helpful.
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Links to related code, existing docs, or external resources that may help.
+      placeholder: |
+        - Link to relevant source file
+        - Link to existing doc page
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I would be willing to submit a PR to address this documentation gap
