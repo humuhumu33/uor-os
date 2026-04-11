@@ -419,6 +419,13 @@ export function SdbConsumerPages({ db }: Props) {
             rootItems.map(i => renderItem(i))
           )}
         </nav>
+
+        {/* Outline panel when note selected */}
+        {selected && (selected.type === "note" || selected.type === "daily") && (
+          <SdbOutline blocks={blocks} onFocusBlock={(idx) => {
+            // Scroll to block — trigger editing
+          }} />
+        )}
       </aside>
 
       {/* Main content area */}
@@ -459,7 +466,15 @@ export function SdbConsumerPages({ db }: Props) {
               onChange={e => setNoteTitle(e.target.value)}
               onBlur={saveNote}
               placeholder="Untitled"
-              className="w-full text-[28px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/30 mb-6"
+              className="w-full text-[28px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/30 mb-4"
+            />
+
+            {/* Note properties */}
+            <SdbNoteProperties
+              edge={selected.edge}
+              blocks={blocks}
+              allEdges={allEdges}
+              noteId={selected.id}
             />
 
             {/* Block outliner */}
@@ -472,6 +487,17 @@ export function SdbConsumerPages({ db }: Props) {
 
             {/* Backlinks */}
             <SdbBacklinks
+              currentNoteId={selected.id}
+              currentNoteTitle={noteTitle}
+              allEdges={allEdges}
+              onNavigate={async (noteId) => {
+                await saveNote();
+                navigateTo(noteId);
+              }}
+            />
+
+            {/* Local graph */}
+            <SdbLocalGraph
               currentNoteId={selected.id}
               currentNoteTitle={noteTitle}
               allEdges={allEdges}
