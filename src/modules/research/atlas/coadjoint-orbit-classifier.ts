@@ -129,26 +129,12 @@ const SIMPLE_ROOTS: number[][] = Array.from({ length: RANK }, (_, i) => {
 import { getE8Roots } from "./e8-roots";
 
 /**
- * Get E8 root projections for partition function computation.
- * Uses the canonical E8 root system, converting Type I roots to unit scale
- * and keeping Type II roots at half-integer scale for numerical work.
+ * E8 roots in standard (halved) representation for numerical computation.
+ * Canonical source: e8-roots.ts. Divided by 2 to get unit-scale coordinates.
  */
-function getE8RootProjections(): readonly (readonly number[])[] {
-  const roots = getE8Roots();
-  // Convert from doubled representation to standard for numerical computation
-  return roots.map(r => {
-    const out = new Array(8);
-    // Type I roots have coords in {-2,0,2}, Type II in {-1,1}
-    // Detect by checking if any coord has absolute value 2
-    const isTypeI = r.some(c => Math.abs(c) === 2);
-    for (let i = 0; i < 8; i++) {
-      out[i] = isTypeI ? r[i] / 2 : r[i] / 2;
-    }
-    return out;
-  });
-}
-
-const E8_ROOTS = getE8RootProjections();
+const E8_ROOTS: readonly (readonly number[])[] = getE8Roots().map(r =>
+  Object.freeze(r.map(c => c / 2))
+);
 
 // ── Orbit Generation ──────────────────────────────────────────────────────
 

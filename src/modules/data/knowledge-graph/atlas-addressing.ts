@@ -4,35 +4,28 @@
  *
  * Extends the hypergraph with Atlas coordinate addressing.
  * Each of the 96 Atlas vertices defines a fundamental relation type.
- * Hyperedges can be tagged with an Atlas vertex (0–95), giving them
- * a position in the E8 lattice and enabling geometric operations:
  *
- *   - Similarity between relation types via E8 inner product
- *   - Mirror-pair duality (τ involution) on relations
- *   - Sign-class grouping of relation families
- *   - E8 reflection-based relation transforms
+ * Two modes of vertex assignment:
+ *   1. Manual: `registerRelation(label, vertex)` — explicit override
+ *   2. Automatic: `engine.resolve(hash)` — deterministic from content hash
  *
  * @module knowledge-graph/atlas-addressing
- * @version 1.0.0
  */
 
 import { getAtlasEngine } from "@/modules/research/atlas/atlas-engine";
 import { inner } from "@/modules/research/atlas/e8-roots";
+import { sha256hex } from "@/lib/crypto";
 import type { Hyperedge } from "./hypergraph";
 import { hypergraph } from "./hypergraph";
 
-// ── Atlas Relation Type Registry ────────────────────────────────────────────
+// ── Types ───────────────────────────────────────────────────────────────────
 
-/**
- * Atlas-addressed relation type.
- * Maps a semantic label to a position in the 96-vertex Atlas.
- */
 export interface AtlasRelationType {
   /** Atlas vertex index (0–95) */
   vertex: number;
   /** Human-readable relation label */
   label: string;
-  /** Sign class (0–7) of the Atlas vertex */
+  /** Sign class of the Atlas vertex */
   signClass: number;
   /** Mirror-pair vertex index under τ involution */
   mirrorVertex: number;
@@ -40,17 +33,30 @@ export interface AtlasRelationType {
   e8Vector: readonly number[];
 }
 
-/** Registry: label → Atlas vertex index. */
+// ── Registry ────────────────────────────────────────────────────────────────
+
 const labelToVertex = new Map<string, number>();
-/** Registry: Atlas vertex index → label. */
 const vertexToLabel = new Map<number, string>();
 
-// ── Atlas Addressing API ────────────────────────────────────────────────────
+// ── Internal Helpers ────────────────────────────────────────────────────────
+
+function buildRelationType(vertex: number, label: string): AtlasRelationType {
+  const engine = getAtlasEngine();
+  const av = engine.atlas.vertices[vertex];
+  return {
+    vertex,
+    label,
+    signClass: av.signClass,
+    mirrorVertex: av.mirrorPair,
+    e8Vector: engine.embedVertex(vertex),
+  };
+}
+
+// ── Public API ──────────────────────────────────────────────────────────────
 
 export const atlasAddressing = {
   /**
-   * Register a semantic relation label at a specific Atlas vertex.
-   * Returns the full AtlasRelationType with E8 coordinates.
+   * Register a relation at a specific Atlas vertex (manual override).
    */
   registerRelation(label: string, vertex: number): AtlasRelationType {
     if (vertex < 0 || vertex > 95) {
@@ -60,130 +66,109 @@ export const atlasAddressing = {
     if (existing && existing !== label) {
       throw new Error(`Atlas vertex ${vertex} already assigned to "${existing}"`);
     }
-
-    const engine = getAtlasEngine();
-    const atlasVertex = engine.atlas.vertices[vertex];
-
     labelToVertex.set(label, vertex);
     vertexToLabel.set(vertex, label);
-
-    return {
-      vertex,
-      label,
-      signClass: atlasVertex.signClass,
-      mirrorVertex: atlasVertex.mirrorPair,
-      e8Vector: engine.embedVertex(vertex),
-    };
+    return buildRelationType(vertex, label);
   },
 
   /**
-   * Look up the Atlas vertex for a relation label.
+   * Auto-assign a relation label to an Atlas vertex via deterministic hashing.
+   * Uses `engine.resolve(sha256(label))` — same label → same vertex, always.
    */
+  async autoRegister(label: string): Promise<AtlasRelationType> {
+    const existing = labelToVertex.get(label);
+    if (existing !== undefined) return buildRelationType(existing, label);
+
+    const hash = await sha256hex(label);
+    const engine = getAtlasEngine();
+    const vertex = engine.resolve(hash);
+    if (vertex === null) throw new Error(`Failed to resolve Atlas vertex for "${label}"`);
+
+    // Don't overwrite manual assignments at this vertex
+    const occupant = vertexToLabel.get(vertex);
+    if (occupant && occupant !== label) {
+      // Collision: vertex already taken by a different label. This is fine —
+      // multiple labels can map to the same vertex (same relation type).
+    }
+
+    labelToVertex.set(label, vertex);
+    vertexToLabel.set(vertex, label);
+    return buildRelationType(vertex, label);
+  },
+
   resolveLabel(label: string): number | undefined {
     return labelToVertex.get(label);
   },
 
-  /**
-   * Look up the label for an Atlas vertex.
-   */
   resolveVertex(vertex: number): string | undefined {
     return vertexToLabel.get(vertex);
   },
 
-  /**
-   * Get the full AtlasRelationType for a registered label.
-   */
   getRelationType(label: string): AtlasRelationType | undefined {
     const vertex = labelToVertex.get(label);
     if (vertex === undefined) return undefined;
-
-    const engine = getAtlasEngine();
-    const av = engine.atlas.vertices[vertex];
-    return {
-      vertex,
-      label,
-      signClass: av.signClass,
-      mirrorVertex: av.mirrorPair,
-      e8Vector: engine.embedVertex(vertex),
-    };
+    return buildRelationType(vertex, label);
   },
 
   /**
-   * Compute E8 inner product between two relation types.
-   * Adjacent Atlas vertices have inner product -4.
-   * Returns undefined if either label is unregistered.
+   * E8 inner product between two relation types.
    */
   relationSimilarity(labelA: string, labelB: string): number | undefined {
     const va = labelToVertex.get(labelA);
     const vb = labelToVertex.get(labelB);
     if (va === undefined || vb === undefined) return undefined;
-
     const engine = getAtlasEngine();
     return inner(engine.embedVertex(va), engine.embedVertex(vb));
   },
 
   /**
-   * Get the mirror-dual relation label (τ involution).
-   * Returns undefined if the label or its mirror is unregistered.
+   * Mirror-dual relation label (τ involution).
    */
   mirrorRelation(label: string): string | undefined {
     const vertex = labelToVertex.get(label);
     if (vertex === undefined) return undefined;
-
     const engine = getAtlasEngine();
     const mirror = engine.atlas.vertices[vertex].mirrorPair;
     return vertexToLabel.get(mirror);
   },
 
   /**
-   * Get all registered relations in the same sign class.
+   * All registered relations in the same sign class.
    */
   signClassFamily(label: string): AtlasRelationType[] {
     const vertex = labelToVertex.get(label);
     if (vertex === undefined) return [];
-
     const engine = getAtlasEngine();
     const targetSC = engine.atlas.vertices[vertex].signClass;
-
     const family: AtlasRelationType[] = [];
     for (const [v, l] of vertexToLabel) {
       if (engine.atlas.vertices[v].signClass === targetSC) {
-        family.push({
-          vertex: v,
-          label: l,
-          signClass: targetSC,
-          mirrorVertex: engine.atlas.vertices[v].mirrorPair,
-          e8Vector: engine.embedVertex(v),
-        });
+        family.push(buildRelationType(v, l));
       }
     }
     return family;
   },
 
   /**
-   * Find the N nearest registered relation types to a given label
-   * (by E8 inner product, descending).
+   * N nearest registered relation types by E8 inner product (descending).
    */
   nearestRelations(label: string, n = 5): Array<{ label: string; vertex: number; innerProduct: number }> {
     const vertex = labelToVertex.get(label);
     if (vertex === undefined) return [];
-
     const engine = getAtlasEngine();
     const vec = engine.embedVertex(vertex);
-
     const scored: Array<{ label: string; vertex: number; innerProduct: number }> = [];
     for (const [v, l] of vertexToLabel) {
       if (v === vertex) continue;
       scored.push({ label: l, vertex: v, innerProduct: inner(vec, engine.embedVertex(v)) });
     }
-
     scored.sort((a, b) => b.innerProduct - a.innerProduct);
     return scored.slice(0, n);
   },
 
   /**
    * Create an Atlas-addressed hyperedge.
-   * Resolves the label to an Atlas vertex automatically if registered.
+   * Auto-resolves vertex if label is registered.
    */
   async addAtlasEdge(
     nodes: string[],
@@ -191,38 +176,27 @@ export const atlasAddressing = {
     properties: Record<string, unknown> = {},
     weight = 1.0,
   ): Promise<Hyperedge> {
-    const atlasVertex = labelToVertex.get(label);
+    let atlasVertex = labelToVertex.get(label);
+    // Auto-resolve if not manually registered
+    if (atlasVertex === undefined) {
+      const hash = await sha256hex(label);
+      const engine = getAtlasEngine();
+      atlasVertex = engine.resolve(hash) ?? undefined;
+    }
     return hypergraph.addEdge(nodes, label, properties, weight, atlasVertex);
   },
 
-  /**
-   * Query all hyperedges at a specific Atlas vertex.
-   */
   byAtlasVertex(vertex: number): Hyperedge[] {
-    const results: Hyperedge[] = [];
-    for (const he of edgeCacheValues()) {
-      if (he.atlasVertex === vertex) results.push(he);
-    }
-    return results;
+    return hypergraph.cachedEdges().filter(he => he.atlasVertex === vertex);
   },
 
-  /**
-   * Query all hyperedges in a sign class.
-   */
   bySignClass(signClass: number): Hyperedge[] {
     const engine = getAtlasEngine();
-    const results: Hyperedge[] = [];
-    for (const he of edgeCacheValues()) {
-      if (he.atlasVertex !== undefined && engine.atlas.vertices[he.atlasVertex].signClass === signClass) {
-        results.push(he);
-      }
-    }
-    return results;
+    return hypergraph.cachedEdges().filter(he =>
+      he.atlasVertex !== undefined && engine.atlas.vertices[he.atlasVertex].signClass === signClass
+    );
   },
 
-  /**
-   * Get Atlas addressing statistics.
-   */
   stats(): {
     registeredRelations: number;
     assignedVertices: number;
@@ -243,15 +217,8 @@ export const atlasAddressing = {
     };
   },
 
-  /** Clear all registrations. */
   clearRegistry(): void {
     labelToVertex.clear();
     vertexToLabel.clear();
   },
 };
-
-// ── Internal helper to access edge cache ────────────────────────────────────
-
-function edgeCacheValues(): Hyperedge[] {
-  return hypergraph.cachedEdges();
-}

@@ -8,6 +8,11 @@
 
 // ═══ Atlas Engine (primary API) ═══════════════════════════════════════════
 export { AtlasEngine, getAtlasEngine } from "./atlas-engine";
+export type { Projection } from "./atlas-engine";
+
+// Atlas Kernel (portable seed)
+export { getAtlasKernel, serializeKernel, deserializeKernel } from "@/modules/kernel/atlas-kernel";
+export type { AtlasKernel } from "@/modules/kernel/atlas-kernel";
 
 // Atlas construction
 export { Atlas, getAtlas, ATLAS_VERTEX_COUNT, ATLAS_EDGE_COUNT_EXPECTED } from "./atlas";
