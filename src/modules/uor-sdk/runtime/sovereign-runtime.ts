@@ -33,6 +33,7 @@ import { graphImageToBlueprint } from "./graph-blueprint";
 import type { GraphBlueprintResult } from "./graph-blueprint";
 import type { AppFile } from "../import-adapter";
 import { grafeoStore } from "@/modules/data/knowledge-graph";
+import { hypergraph } from "@/modules/data/knowledge-graph/hypergraph";
 import { anchor } from "@/modules/data/knowledge-graph/anchor";
 import type { KGNode } from "@/modules/data/knowledge-graph/types";
 import { HologramEngine } from "@/modules/identity/uns/core/hologram/engine";
@@ -164,6 +165,14 @@ export class SovereignRuntime {
 
     this.state = "ready";
 
+    // Record boot as a hyperedge: (runtime, action, namespace, timestamp)
+    const runtimeIri = `${UOR_NS}runtime/${this.config.stateNamespace}`;
+    await hypergraph.addEdge(
+      [runtimeIri, `${UOR_NS}action/boot`, `${UOR_NS}ns/${this.config.stateNamespace}`],
+      "runtime:lifecycle",
+      { mountPoint: this.config.mountPoint, engineId: `sovereign:${this.config.stateNamespace}` },
+    );
+
     // Anchor boot event
     anchor(ANCHOR_MODULE, "runtime:booted", {
       label: "Sovereign Runtime booted",
@@ -174,7 +183,7 @@ export class SovereignRuntime {
       },
     });
 
-    console.log("[SovereignRuntime] ✓ Booted — graph-backed virtual OS + HologramEngine ready");
+    console.log("[SovereignRuntime] ✓ Booted — hypergraph-native virtual OS + HologramEngine ready");
   }
 
   /**
@@ -265,6 +274,19 @@ export class SovereignRuntime {
     // Render via iframe (the visual layer)
     const serveUrl = this.renderIframe(target);
 
+    // Record serve as a hyperedge: (process, app, action, runtime)
+    const runtimeIri = `${UOR_NS}runtime/${this.config.stateNamespace}`;
+    await hypergraph.addEdge(
+      [
+        this.pid ? `${UOR_NS}process/${this.pid}` : runtimeIri,
+        `${UOR_NS}app/${this.loadedImage.canonicalId}`,
+        `${UOR_NS}action/serve`,
+        runtimeIri,
+      ],
+      "runtime:serve",
+      { serveUrl, engineManaged: this.pid !== null },
+    );
+
     // Anchor serve event
     anchor(ANCHOR_MODULE, "app:serving", {
       label: `Serving ${this.loadedImage.appName}`,
@@ -344,6 +366,14 @@ export class SovereignRuntime {
     };
     await grafeoStore.putNode(kgNode);
     this.stateKeys.add(key);
+
+    // Record state mutation as hyperedge: (stateKey, process, action, value)
+    const runtimeIri = `${UOR_NS}runtime/${ns}`;
+    await hypergraph.addEdge(
+      [kgNode.uorAddress, this.pid ? `${UOR_NS}process/${this.pid}` : runtimeIri, `${UOR_NS}action/setState`],
+      "state:mutation",
+      { key, previousValue, newValue: value },
+    );
 
     // Produce a content-addressed delta
     await this.deltaChain.append(

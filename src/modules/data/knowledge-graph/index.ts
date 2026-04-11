@@ -10,6 +10,10 @@ export type { KGNode, KGEdge, KGDerivation, KGStats } from "./types";
 export type { SparqlBinding } from "./grafeo-store";
 export { sparqlQuery, sparqlUpdate } from "./grafeo-store";
 
+// ── Sovereign Hypergraph ────────────────────────────────────────────────────
+export { hypergraph } from "./hypergraph";
+export type { Hyperedge, IncidenceResult } from "./hypergraph";
+
 export { ingestBridge } from "./ingest-bridge";
 
 export { getBacklinks, getBacklinkCount, invalidateBacklinks } from "./backlinks";
