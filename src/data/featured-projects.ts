@@ -29,7 +29,7 @@ export const featuredProjects = [
     description: "Research showing that five of the most complex structures in mathematics share a single origin, revealing a deeper order beneath the surface.",
     maturity: "Sandbox" as MaturityLevel,
     license: "MIT",
-    url: "https://github.com/UOR-Foundation/research/tree/main/atlas-embeddings",
+    url: "https://github.com/humuhumu33/research/tree/main/atlas-embeddings",
   },
   {
     name: "UOR MCP",
@@ -38,6 +38,6 @@ export const featuredProjects = [
     description: "A server that connects AI models to the UOR kernel. Every response is cryptographically verified, auditable, and fully reproducible.",
     maturity: "Sandbox" as MaturityLevel,
     license: "Apache-2.0",
-    url: "https://github.com/UOR-Foundation/uor-mcp",
+    url: "https://github.com/humuhumu33/uor-mcp",
   },
 ];

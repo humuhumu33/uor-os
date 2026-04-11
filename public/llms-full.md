@@ -7,7 +7,7 @@ license: Apache-2.0
 crate: https://crates.io/crates/uor-foundation
 crate_docs: https://docs.rs/uor-foundation
 ontology_url: https://uor-foundation.github.io/UOR-Framework/uor.foundation.json
-source_url: https://github.com/UOR-Foundation/UOR-Framework
+source_url: https://github.com/humuhumu33/UOR-Framework
 website: https://uor.foundation
 community: https://www.moltbook.com
 previous_document: https://uor.foundation/llms.md
@@ -275,9 +275,9 @@ An agent told "read the source" will not know where to start. Read these specifi
 
 | File | Why | URL |
 |------|-----|-----|
-| conformance/src/tests/fixtures/test7_end_to_end.rs | Read this first. 55 lines. Complete resolution cycle: Context -> Type -> Resolver -> Partition -> Observable -> Cert -> Trace -> Transform. | https://github.com/UOR-Foundation/UOR-Framework/blob/main/conformance/src/tests/fixtures/test7_end_to_end.rs |
-| conformance/src/tests/fixtures/test6_critical_identity.rs | The mathematical heart. The critical identity neg(bnot(x)) = succ(x) in 35 lines of RDF Turtle. | https://github.com/UOR-Foundation/UOR-Framework/blob/main/conformance/src/tests/fixtures/test6_critical_identity.rs |
-| spec/src/namespaces/u.rs | Simplest namespace: 2 classes, 4 properties. Complete content-addressing scheme in under 100 lines. | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/u.rs |
+| conformance/src/tests/fixtures/test7_end_to_end.rs | Read this first. 55 lines. Complete resolution cycle: Context -> Type -> Resolver -> Partition -> Observable -> Cert -> Trace -> Transform. | https://github.com/humuhumu33/UOR-Framework/blob/main/conformance/src/tests/fixtures/test7_end_to_end.rs |
+| conformance/src/tests/fixtures/test6_critical_identity.rs | The mathematical heart. The critical identity neg(bnot(x)) = succ(x) in 35 lines of RDF Turtle. | https://github.com/humuhumu33/UOR-Framework/blob/main/conformance/src/tests/fixtures/test6_critical_identity.rs |
+| spec/src/namespaces/u.rs | Simplest namespace: 2 classes, 4 properties. Complete content-addressing scheme in under 100 lines. | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/u.rs |
 
 ### Priority 2. Core Agent Capabilities
 
@@ -458,7 +458,7 @@ GET {BASE_URL}/user/type/primitives
 ### Level 2. Full Conformance (requires Rust)
 
 ```
-git clone https://github.com/UOR-Foundation/UOR-Framework
+git clone https://github.com/humuhumu33/UOR-Framework
 cargo run --bin uor-conformance
 # 50-test suite. All must pass.
 ```
@@ -662,22 +662,22 @@ Pick any claim in this document. Post a challenge at `m/uor`. The community bene
 
 | Component | File | URL |
 |-----------|------|-----|
-| Ontology entry point | spec/src/lib.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/lib.rs |
-| Content addressing | spec/src/namespaces/u.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/u.rs |
-| Ring substrate | spec/src/namespaces/schema.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/schema.rs |
-| Operations | spec/src/namespaces/op.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/op.rs |
-| Certificates | spec/src/namespaces/cert.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/cert.rs |
-| Proofs | spec/src/namespaces/proof.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/proof.rs |
-| Resolvers | spec/src/namespaces/resolver.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/resolver.rs |
-| Partitions | spec/src/namespaces/partition.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/partition.rs |
-| Observables | spec/src/namespaces/observable.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/observable.rs |
-| Derivations | spec/src/namespaces/derivation.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/derivation.rs |
-| Traces | spec/src/namespaces/trace.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/trace.rs |
-| Morphisms | spec/src/namespaces/morphism.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/morphism.rs |
-| State model | spec/src/namespaces/state.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/state.rs |
-| Type system | spec/src/namespaces/type_.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/type_.rs |
-| Critical identity test | conformance/src/tests/fixtures/test6_critical_identity.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/conformance/src/tests/fixtures/test6_critical_identity.rs |
-| End-to-end test | conformance/src/tests/fixtures/test7_end_to_end.rs | https://github.com/UOR-Foundation/UOR-Framework/blob/main/conformance/src/tests/fixtures/test7_end_to_end.rs |
+| Ontology entry point | spec/src/lib.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/lib.rs |
+| Content addressing | spec/src/namespaces/u.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/u.rs |
+| Ring substrate | spec/src/namespaces/schema.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/schema.rs |
+| Operations | spec/src/namespaces/op.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/op.rs |
+| Certificates | spec/src/namespaces/cert.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/cert.rs |
+| Proofs | spec/src/namespaces/proof.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/proof.rs |
+| Resolvers | spec/src/namespaces/resolver.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/resolver.rs |
+| Partitions | spec/src/namespaces/partition.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/partition.rs |
+| Observables | spec/src/namespaces/observable.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/observable.rs |
+| Derivations | spec/src/namespaces/derivation.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/derivation.rs |
+| Traces | spec/src/namespaces/trace.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/trace.rs |
+| Morphisms | spec/src/namespaces/morphism.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/morphism.rs |
+| State model | spec/src/namespaces/state.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/state.rs |
+| Type system | spec/src/namespaces/type_.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/type_.rs |
+| Critical identity test | conformance/src/tests/fixtures/test6_critical_identity.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/conformance/src/tests/fixtures/test6_critical_identity.rs |
+| End-to-end test | conformance/src/tests/fixtures/test7_end_to_end.rs | https://github.com/humuhumu33/UOR-Framework/blob/main/conformance/src/tests/fixtures/test7_end_to_end.rs |
 | Conformance runner | cargo run --bin uor-conformance | 50-test suite |
 
 ---
@@ -693,7 +693,7 @@ Pick any claim in this document. Post a challenge at `m/uor`. The community bene
 | Ontology | https://uor-foundation.github.io/UOR-Framework/uor.foundation.ttl | Turtle 1.1 |
 | Ontology | https://uor-foundation.github.io/UOR-Framework/uor.foundation.nt | N-Triples |
 | Namespace browser | https://uor-foundation.github.io/UOR-Framework/namespaces/ | HTML |
-| Framework source | https://github.com/UOR-Foundation/UOR-Framework | Git |
+| Framework source | https://github.com/humuhumu33/UOR-Framework | Git |
 
 ### REST API. OpenAPI 3.1.0 (live, no auth for kernel)
 
@@ -742,9 +742,9 @@ Agent discovery chain: `/.well-known/uor.json` → `uor:api.openapi` → `GET /o
 - Agent Discovery Index: https://uor.foundation/agent-discovery.md
 - Moltbook: https://www.moltbook.com (m/ai, m/agents, m/uor)
 - Discord: https://discord.gg/ZwuZaNyuve
-- Framework: https://github.com/UOR-Foundation/UOR-Framework
-- Research: https://github.com/UOR-Foundation/research
-- Organization: https://github.com/UOR-Foundation
+- Framework: https://github.com/humuhumu33/UOR-Framework
+- Research: https://github.com/humuhumu33/research
+- Organization: https://github.com/humuhumu33
 
 ---
 
@@ -754,11 +754,11 @@ Agent discovery chain: `/.well-known/uor.json` → `uor:api.openapi` → `GET /o
 |----------|---------|------|
 | [llms.md](https://uor.foundation/llms.md) | Quick reference, first-post template | 5 min |
 | [llms-full.md](https://uor.foundation/llms-full.md) | Complete implementation guide | 30 min |
-| [test7_end_to_end.rs](https://github.com/UOR-Foundation/UOR-Framework/blob/main/conformance/src/tests/fixtures/test7_end_to_end.rs) | Full resolution cycle in 55 lines | 10 min |
+| [test7_end_to_end.rs](https://github.com/humuhumu33/UOR-Framework/blob/main/conformance/src/tests/fixtures/test7_end_to_end.rs) | Full resolution cycle in 55 lines | 10 min |
 
 **Source of Truth:** [uor-foundation crate](https://crates.io/crates/uor-foundation) · [docs.rs](https://docs.rs/uor-foundation)
 
-**Community:** [m/uor](https://www.moltbook.com/m/uor) · [m/agents](https://www.moltbook.com/m/agents) · [Discord](https://discord.gg/ZwuZaNyuve) · [GitHub](https://github.com/UOR-Foundation/UOR-Framework)
+**Community:** [m/uor](https://www.moltbook.com/m/uor) · [m/agents](https://www.moltbook.com/m/agents) · [Discord](https://discord.gg/ZwuZaNyuve) · [GitHub](https://github.com/humuhumu33/UOR-Framework)
 
 © UOR Foundation · Apache-2.0 · https://uor.foundation
 

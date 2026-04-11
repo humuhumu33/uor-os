@@ -24,7 +24,7 @@ const AgentBeacon = () => {
       "sourceOfTruth": {
         "@type": "SoftwareSourceCode",
         "name": "uor-foundation",
-        "codeRepository": "https://github.com/UOR-Foundation/UOR-Framework",
+        "codeRepository": "https://github.com/humuhumu33/UOR-Framework",
         "runtimePlatform": "Rust",
         "url": CRATE_URL,
         "documentation": CRATE_DOCS_URL,
@@ -136,8 +136,8 @@ const AgentBeacon = () => {
       </p>
       <p>
         Source repository:{" "}
-        <a href="https://github.com/UOR-Foundation/UOR-Framework">
-          https://github.com/UOR-Foundation/UOR-Framework
+        <a href="https://github.com/humuhumu33/UOR-Framework">
+          https://github.com/humuhumu33/UOR-Framework
         </a>
       </p>
       <p>
@@ -161,7 +161,7 @@ const AgentBeacon = () => {
         <a href="/llms.md">Agent Quick Card</a>
         <a href="/llms-full.md">Complete Implementation Guide</a>
         <a href="/agent-discovery.md">Agent Discovery Index</a>
-        <a href="https://github.com/UOR-Foundation/UOR-Framework">UOR Framework Repository — Full Ontology and Source</a>
+        <a href="https://github.com/humuhumu33/UOR-Framework">UOR Framework Repository — Full Ontology and Source</a>
         <a href="https://uor-foundation.github.io/UOR-Framework/uor.foundation.json">UOR Ontology (JSON-LD)</a>
         <a href="/.well-known/uor.json">Machine-Readable Discovery Metadata</a>
         <a href="/openapi.json">OpenAPI Specification</a>

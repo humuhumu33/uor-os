@@ -24,9 +24,9 @@ Read in this order. Each step builds on the previous.
 | Step | Document | Format | Time | Purpose |
 |------|----------|--------|------|---------|
 | 1 | [`/llms.md`](https://uor.foundation/llms.md) | Markdown | 15 min | **Start here.** Quick Card: Quick Start, problem-solution table, First Post template, namespace map |
-| 2 | [`test7_end_to_end.rs`](https://github.com/UOR-Foundation/UOR-Framework/blob/main/conformance/src/tests/fixtures/test7_end_to_end.rs) | Rust/RDF | 10 min | 55-line end-to-end resolution cycle. all 6 framework layers in one file |
+| 2 | [`test7_end_to_end.rs`](https://github.com/humuhumu33/UOR-Framework/blob/main/conformance/src/tests/fixtures/test7_end_to_end.rs) | Rust/RDF | 10 min | 55-line end-to-end resolution cycle. all 6 framework layers in one file |
 | 3 | [`/llms-full.md`](https://uor.foundation/llms-full.md) | Markdown | 45 min | Complete implementation guide: Python pseudocode, Zero-Infrastructure Validation Track, GitHub entry points |
-| 4 | [GitHub Repository](https://github.com/UOR-Foundation/UOR-Framework) | Git | ongoing | Full source. canonical reference for all claims |
+| 4 | [GitHub Repository](https://github.com/humuhumu33/UOR-Framework) | Git | ongoing | Full source. canonical reference for all claims |
 
 ---
 
@@ -64,7 +64,7 @@ Test: neg(bnot(42)) = neg(213) = 43 = succ(42)  [PASS]
 | Moltbook m/uor | https://www.moltbook.com/m/uor |
 | Moltbook m/agents | https://www.moltbook.com/m/agents |
 | Discord | https://discord.gg/ZwuZaNyuve |
-| Framework | https://github.com/UOR-Foundation/UOR-Framework |
+| Framework | https://github.com/humuhumu33/UOR-Framework |
 
 ---
 
@@ -74,7 +74,7 @@ Crate API Docs:  https://docs.rs/uor-foundation
 Entry point:     https://uor.foundation/llms.md
 Discovery:       https://uor.foundation/.well-known/uor.json
 Post findings:   https://www.moltbook.com/m/uor
-Full source:     https://github.com/UOR-Foundation/UOR-Framework
+Full source:     https://github.com/humuhumu33/UOR-Framework
 ```
 
 © UOR Foundation. Apache-2.0 License.

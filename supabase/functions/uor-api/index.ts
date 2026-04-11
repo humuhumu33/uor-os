@@ -361,7 +361,7 @@ function error501(rl?: RateLimitResult): Response {
     error: 'Not implemented in v1',
     code: 'NOT_IMPLEMENTED',
     note: 'This namespace requires the Rust conformance suite for full dihedral factorization.',
-    conformance_suite: 'https://github.com/UOR-Foundation/UOR-Framework',
+    conformance_suite: 'https://github.com/humuhumu33/UOR-Framework',
     docs: 'https://api.uor.foundation/v1/openapi.json'
   }), { status: 501, headers: { ...JSON_HEADERS, ...(rl ? rateLimitHeaders(rl) : {}) } });
 }
@@ -998,8 +998,8 @@ async function opVerifyCriticalIdentity(url: URL, rl: RateLimitResult): Promise<
       "derivation:step3": `op:succ(${x}) = (${x}+1) mod ${m} = ${succ_x}`,
       "derivation:conclusion": `neg(bnot(${x})) = ${neg_bnot_x} = succ(${x}) [${holds ? 'PASS' : 'FAIL'}]`
     },
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/op.rs",
-    "conformance_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/conformance/src/tests/fixtures/test6_critical_identity.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/op.rs",
+    "conformance_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/conformance/src/tests/fixtures/test6_critical_identity.rs"
   }, `neg(bnot(${x}))`, neg_bnot_x, n), CACHE_HEADERS_KERNEL, etag, rl);
 }
 
@@ -1088,7 +1088,7 @@ function opVerifyAll(url: URL, rl: RateLimitResult): Response {
     },
     ...(expand && witnesses.length > 0 ? { "proof:witnesses": witnesses } : {}),
     "expand_url": m <= 256 ? `${baseUrl}/kernel/op/verify/all?expand=true&quantum=${quantum}` : undefined,
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/proof.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/proof.rs"
   }, 'A'), CACHE_HEADERS_KERNEL, etag, rl);
 }
 
@@ -1275,7 +1275,7 @@ async function opCompute(url: URL, rl: RateLimitResult): Promise<Response> {
       "succ_x": succ_x,
       "statement": `neg(bnot(${x})) = ${neg_bnot_x} = succ(${x}) [${neg_bnot_x === succ_x ? 'PASS' : 'FAIL'}]`
     },
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/op.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/op.rs"
   }, primaryTerm, neg_bnot_x, n), CACHE_HEADERS_KERNEL, etag, rl);
 }
 
@@ -1294,7 +1294,7 @@ function opList(rl: RateLimitResult): Response {
     "@id": "https://uor.foundation/op/",
     "@type": "op:OperationCatalogue",
     "description": "All named individuals in the op/ namespace — 5 primitives (neg, bnot, xor, and, or) plus derived operations (op.rs)",
-    "source": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/op.rs",
+    "source": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/op.rs",
     "unary_operations": [
       {
         "@id": "https://uor.foundation/op/neg",
@@ -1497,8 +1497,8 @@ async function addressEncode(req: Request, rl: RateLimitResult): Promise<Respons
     "encoding_note": "address_simplified uses 6-bit bijection chr(0x2800 + (b & 0x3F)). address_canonical would apply resolver:DihedralFactorizationResolver for bytes ≥ 64; full dihedral factorization requires the Rust conformance suite.",
     "glyphs": glyphs,
     "ontology_ref": {
-      "u_namespace": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/u.rs",
-      "resolver_namespace": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/resolver.rs"
+      "u_namespace": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/u.rs",
+      "resolver_namespace": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/resolver.rs"
     }
   }, CACHE_HEADERS_KERNEL, undefined, rl);
 }
@@ -1581,7 +1581,7 @@ async function schemaDatum(url: URL, rl: RateLimitResult): Promise<Response> {
       "schema:pi1": { "schema:value": 1, "schema:role": "generator", "note": "ring generator, value=1" },
       "schema:zero": { "schema:value": 0, "schema:role": "additive_identity", "note": "additive identity, value=0" }
     },
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/schema.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/schema.rs"
   }, `datum(${x})`, x, n), CACHE_HEADERS_KERNEL, etag, rl);
 }
 
@@ -1682,7 +1682,7 @@ function schemaTriad(url: URL, rl: RateLimitResult): Response {
       "partition:role": "Named graph context — scopes this Triad within the ring's algebraic structure"
     },
     "schema:formalStatement": `Triad(${x}) = ⟨ datum:[${bytes}], stratum:${totalStratum}/${n}, spectrum:${spectrum} ⟩ ∈ ${component} ⊂ Z/${m}Z`,
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/schema.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/schema.rs"
   }, CACHE_HEADERS_KERNEL, etag, rl);
 }
 
@@ -1749,7 +1749,7 @@ function bridgeGraphQuery(url: URL, rl: RateLimitResult): Response {
     ],
     "partition:disjointness": `UnitSet ∩ ExteriorSet ∩ IrreducibleSet ∩ ReducibleSet = ∅ and UnitSet ∪ ExteriorSet ∪ IrreducibleSet ∪ ReducibleSet = Z/${m}Z`,
     "partition:members": members,
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/partition.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/partition.rs"
   }, CACHE_HEADERS_BRIDGE, etag, rl);
 }
 
@@ -1822,7 +1822,7 @@ function kernelOntology(rl: RateLimitResult): Response {
         { "id": "EndToEnd", "target": "Full resolution cycle: value → IRI → datum shape validation", "roadmapRef": "§7, §3" }
       ]
     },
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/ontology/"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/ontology/"
   }, CACHE_HEADERS_KERNEL, etag, rl);
 }
 
@@ -1912,8 +1912,8 @@ function shaclShapes(rl: RateLimitResult): Response {
         ]
       }
     ],
-    "shacl:sourceRepository": "https://github.com/UOR-Foundation/UOR-Framework/tree/main/spec/src/shacl/",
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/shacl.rs"
+    "shacl:sourceRepository": "https://github.com/humuhumu33/UOR-Framework/tree/main/spec/src/shacl/",
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/shacl.rs"
   }, CACHE_HEADERS_BRIDGE, etag, rl);
 }
 
@@ -2031,7 +2031,7 @@ function shaclValidate(url: URL, rl: RateLimitResult): Response {
     "shacl:durationMs": durationMs,
     "shacl:timestamp": timestamp(),
     "shacl:shapesSource": "https://api.uor.foundation/v1/bridge/shacl/shapes",
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/shacl/"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/shacl/"
   }, CACHE_HEADERS_BRIDGE, etag, rl);
 }
 
@@ -2157,7 +2157,7 @@ async function kernelDerive(req: Request, rl: RateLimitResult): Promise<Response
       },
       "derivation:derivationId": derivationId,
       "derivation:timestamp": timestamp(),
-      "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/derivation.rs"
+      "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/derivation.rs"
     }, CACHE_HEADERS_KERNEL, undefined, rl);
   } catch (e) {
     return error400(e instanceof Error ? e.message : String(e), 'term', rl);
@@ -2222,7 +2222,7 @@ function kernelCorrelate(url: URL, rl: RateLimitResult): Response {
           : `High drift (${totalDifference}/${maxStratum} bits differ). Significant structural divergence — possible integrity violation.`,
     "datum_x": makeDatum(x, n),
     "datum_y": makeDatum(y, n),
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/op.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/op.rs"
   }, CACHE_HEADERS_KERNEL, etag, rl);
 }
 
@@ -2299,8 +2299,8 @@ async function partitionResolve(req: Request, rl: RateLimitResult): Promise<Resp
         "caveat": "A string of identical odd bytes (e.g. 'aaaa') will always PASS because each byte is algebraically irreducible — this is a byte-class property, not a content-quality judgement."
       },
       "resolver": body.resolver ?? "EvaluationResolver",
-      "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/partition.rs",
-      "conformance_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/conformance/src/tests/fixtures/test5_partition.rs"
+      "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/partition.rs",
+      "conformance_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/conformance/src/tests/fixtures/test5_partition.rs"
     }, CACHE_HEADERS_BRIDGE, undefined, rl);
   }
 
@@ -2344,7 +2344,7 @@ async function partitionResolve(req: Request, rl: RateLimitResult): Promise<Resp
         "caveat": "A string of identical odd bytes (e.g. 'aaaa') will always PASS because each byte is algebraically irreducible — this is a byte-class property, not a content-quality judgement."
       },
       "resolver": body.resolver ?? "EvaluationResolver",
-      "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/partition.rs"
+      "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/partition.rs"
     }, CACHE_HEADERS_BRIDGE, undefined, rl);
   }
 
@@ -2411,8 +2411,8 @@ function proofCriticalIdentity(url: URL, rl: RateLimitResult): Response {
       "derivation:step3": `op:succ(${x}) = (${x}+1) mod ${m} = ${succ_x}`,
       "derivation:conclusion": `neg(bnot(${x})) = ${neg_bnot_x} = succ(${x}) [${holds ? 'PASS' : 'FAIL'}]`
     },
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/proof.rs",
-    "conformance_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/conformance/src/tests/fixtures/test6_critical_identity.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/proof.rs",
+    "conformance_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/conformance/src/tests/fixtures/test6_critical_identity.rs"
   }, CACHE_HEADERS_BRIDGE, etag, rl);
 }
 
@@ -2467,7 +2467,7 @@ async function proofCoherence(req: Request, rl: RateLimitResult): Promise<Respon
       "pairwise": { "note": "Pairwise coherence requires two proof:CoherenceProof instances to compare" },
       "global": { "note": "Global coherence requires a proof:GlobalCoherenceProof aggregation" }
     },
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/proof.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/proof.rs"
   }, CACHE_HEADERS_BRIDGE, undefined, rl);
 }
 
@@ -2524,7 +2524,7 @@ function certInvolution(url: URL, rl: RateLimitResult): Response {
       "failed": failCount,
       "holds_universally": allHold
     },
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/cert.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/cert.rs"
   }, CACHE_HEADERS_BRIDGE, etag, rl);
 }
 
@@ -2597,7 +2597,7 @@ function observableMetrics(url: URL, rl: RateLimitResult): Response {
       "holonomy":          "POST /bridge/observable/holonomy",
       "stream_analysis":   "POST /bridge/observable/stream"
     },
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/observable.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/observable.rs"
   }, CACHE_HEADERS_BRIDGE, etag, rl);
 }
 
@@ -2678,7 +2678,7 @@ async function observableMetric(url: URL, rl: RateLimitResult): Promise<Response
       "incompatibility": incomp
     },
     "critical_identity_holds": neg(bnot(a, n), n) === succOp(a, n),
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/observable.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/observable.rs"
   }, 'A'), CACHE_HEADERS_BRIDGE, etag, rl);
 }
 
@@ -2992,7 +2992,7 @@ function typeList(rl: RateLimitResult): Response {
     "@id": "https://uor.foundation/type/",
     "@type": "type:TypeCatalogue",
     "description": "Catalogue of primitive type definitions from type_.rs",
-    "source": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/type_.rs",
+    "source": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/type_.rs",
     "primitive_types": [
       {
         "@id": "https://uor.foundation/type/U8",
@@ -3048,7 +3048,7 @@ function typeList(rl: RateLimitResult): Response {
         "description": "A type:TypeDefinition with additional partition:Partition constraints"
       }
     ],
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/type_.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/type_.rs"
   }, CACHE_HEADERS_USER, etag, rl);
 }
 
@@ -3225,12 +3225,12 @@ function frameworkIndex(rl: RateLimitResult): Response {
       { "step": 2, "url": `${base}/kernel/op/verify?x=42`, "purpose": "Live verification of critical identity", "time": "30 sec" },
       { "step": 3, "url": `${base}/openapi.json`, "purpose": "Full OpenAPI 3.1.0 spec", "time": "10 min" },
       { "step": 4, "url": "https://uor.foundation/llms-full.md", "purpose": "Complete implementation guide", "time": "30 min" },
-      { "step": 5, "url": "https://github.com/UOR-Foundation/UOR-Framework", "purpose": "Canonical source", "time": "ongoing" }
+      { "step": 5, "url": "https://github.com/humuhumu33/UOR-Framework", "purpose": "Canonical source", "time": "ongoing" }
     ],
     "community": {
       "moltbook": "https://www.moltbook.com/m/uor",
       "discord": "https://discord.gg/ZwuZaNyuve",
-      "github": "https://github.com/UOR-Foundation/UOR-Framework"
+      "github": "https://github.com/humuhumu33/UOR-Framework"
     },
     "module_registry": {
       "@type": "uor:ModuleRegistry",
@@ -3541,7 +3541,7 @@ async function bridgeDerivation(url: URL, rl: RateLimitResult): Promise<Response
       "cert:timestamp": timestamp()
     },
     "derivation:timestamp": timestamp(),
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/derivation.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/derivation.rs"
   }, CACHE_HEADERS_BRIDGE, etag, rl);
 }
 
@@ -3641,7 +3641,7 @@ async function bridgeTrace(url: URL, rl: RateLimitResult): Promise<Response> {
     "trace:frameCount": frames.length,
     "trace:totalHammingDrift": totalHammingDrift,
     "trace:timestamp": timestamp(),
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/trace.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/trace.rs"
   }, traceTerm, current, n), CACHE_HEADERS_BRIDGE, etag, rl);
 }
 
@@ -3737,7 +3737,7 @@ async function bridgeResolver(url: URL, rl: RateLimitResult): Promise<Response> 
     },
     "resolver:datum": makeDatum(x, n),
     "resolver:timestamp": timestamp(),
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/resolver.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/resolver.rs"
   }, `resolve(${x})`, x, n), CACHE_HEADERS_BRIDGE, etag, rl);
 }
 
@@ -3829,7 +3829,7 @@ function morphismTransforms(url: URL, rl: RateLimitResult): Response {
       "morphism:mulsCommute": true
     },
     "morphism:timestamp": timestamp(),
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/morphism.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/morphism.rs"
   }, CACHE_HEADERS_USER, etag, rl);
 }
 
@@ -3923,7 +3923,7 @@ function userState(url: URL, rl: RateLimitResult): Response {
     "state:reachableComponents": [...new Set(transitions.map((t: any) => t['state:toComponent']))],
     "state:criticalIdentityHolds": critHolds,
     "state:timestamp": timestamp(),
-    "ontology_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/state.rs"
+    "ontology_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/state.rs"
   }, CACHE_HEADERS_USER, etag, rl);
 }
 
@@ -4113,7 +4113,7 @@ async function storeResolve(url: URL, rl: RateLimitResult): Promise<Response> {
     "resolution": {
       "ring_label": `Z/(2^${n})Z = Z/${m}Z`,
       "method": "braille_bijection",
-      "spec": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/spec/src/namespaces/u.rs",
+      "spec": "https://github.com/humuhumu33/UOR-Framework/blob/main/spec/src/namespaces/u.rs",
       "algorithm":
         "Each byte b in [0,255] maps to Unicode codepoint U+(2800+b). " +
         "The address glyph string is the concatenation of all mapped codepoints. " +
@@ -8403,7 +8403,7 @@ async function testE2e(rl: RateLimitResult): Promise<Response> {
     "all_stages_passed": allPassed,
     "epistemic_grade": allPassed ? "A" : "D",
     "epistemic_grade_label": allPassed ? "Algebraically Proven" : "LLM-Generated (Unverified)",
-    "conformance_ref": "https://github.com/UOR-Foundation/UOR-Framework/blob/main/conformance/src/tests/fixtures/test7_end_to_end.rs",
+    "conformance_ref": "https://github.com/humuhumu33/UOR-Framework/blob/main/conformance/src/tests/fixtures/test7_end_to_end.rs",
   }, CACHE_HEADERS_BRIDGE, undefined, rl);
 }
 

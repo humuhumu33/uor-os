@@ -10,7 +10,7 @@
  *
  * Construction uses exact integer arithmetic only. Zero floating point.
  *
- * @see https://github.com/UOR-Foundation/research/tree/main/atlas-embeddings
+ * @see https://github.com/humuhumu33/research/tree/main/atlas-embeddings
  */
 
 // ── Label System ────────────────────────────────────────────────────────────

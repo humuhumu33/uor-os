@@ -8,7 +8,7 @@ const ProjectCertificate = () => (
     category="Core Infrastructure"
     tagline="A self-verifying receipt for any digital object. Proves authenticity through mathematics, not authorities. Anyone can verify, anywhere, with no special access required."
     heroImage={heroImg}
-    repoUrl="https://github.com/UOR-Foundation"
+    repoUrl="https://github.com/humuhumu33"
     agentInstructions={[
       { action: "Understand the concept", detail: "A UOR Certificate is a mathematical proof that content is authentic. It works like a receipt: it records what the content IS, not where it came from." },
       { action: "Generate a certificate", detail: "Import generateCertificate from the module, pass any object, and receive a complete self-verifying certificate." },
