@@ -169,38 +169,55 @@ export function compatible(a: Hypervector, b: Hypervector): boolean {
 
 // ── E8-Structured Basis ─────────────────────────────────────────────────────
 
+/** Cached E8 roots (lazy-init, self-contained — no external imports). */
+let _e8cache: number[][] | null = null;
+
+function getE8RootsInline(): number[][] {
+  if (_e8cache) return _e8cache;
+  const roots: number[][] = [];
+  // Type I: ±eᵢ ± eⱼ (i<j), doubled → ±2
+  for (let i = 0; i < 8; i++)
+    for (let j = i + 1; j < 8; j++)
+      for (const si of [-2, 2])
+        for (const sj of [-2, 2]) {
+          const r = [0, 0, 0, 0, 0, 0, 0, 0];
+          r[i] = si; r[j] = sj;
+          roots.push(r);
+        }
+  // Type II: (±1)⁸ with even parity
+  for (let mask = 0; mask < 256; mask++) {
+    let neg = 0;
+    const r = new Array(8);
+    for (let b = 0; b < 8; b++) {
+      if (mask & (1 << b)) { r[b] = -1; neg++; } else { r[b] = 1; }
+    }
+    if (neg % 2 === 0) roots.push(r);
+  }
+  _e8cache = roots;
+  return roots;
+}
+
 /**
  * Create a deterministic hypervector from an E8 root index (0–239).
  *
  * Expands the 8D E8 root into a full-dimension hypervector by
- * deterministic expansion: each root coordinate seeds 128 bytes
- * via a mixing function, yielding 8×128 = 1024 components.
- *
- * Same root index → same hypervector on any machine.
+ * deterministic expansion: each root coordinate seeds dim/8 bytes
+ * via a mixing function. Same root index → same hypervector on any machine.
  */
 export function fromE8Root(rootIndex: number, dim = DEFAULT_DIM): Hypervector {
   if (rootIndex < 0 || rootIndex >= 240) {
     throw new RangeError(`E8 root index ${rootIndex} out of range [0,239]`);
   }
-
-  // Lazy import to avoid circular dependency at module level
-  const { getE8Roots } = require("@/modules/research/atlas/e8-roots");
-  const roots = getE8Roots();
-  const root = roots[rootIndex];
-
+  const root = getE8RootsInline()[rootIndex];
   const hv = new Uint8Array(dim);
   const chunkSize = (dim / 8) | 0;
 
   for (let coord = 0; coord < 8; coord++) {
     const base = coord * chunkSize;
-    const rv = root[coord]; // -2, -1, 0, 1, or 2
-
+    const rv = root[coord];
     for (let j = 0; j < chunkSize && base + j < dim; j++) {
-      // Deterministic mix: root value × position-dependent scramble
-      // Maps the algebraic structure of E8 into byte space
       hv[base + j] = ((rv * 53 + j * 137 + coord * 43 + rootIndex * 7) & 0xff) >>> 0;
     }
   }
-
   return hv;
 }
