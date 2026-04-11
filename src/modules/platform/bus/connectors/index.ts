@@ -15,6 +15,7 @@ import "./graphql";
 import "./neo4j";
 import "./s3";
 import "./mqtt";
+import "./websocket";
 
 // Re-export types for convenience
 export type { ProtocolAdapter, Connection, ConnectionParams } from "./protocol-adapter";
