@@ -39,6 +39,8 @@ export interface Hyperedge {
   properties: Record<string, unknown>;
   /** Weight (default 1.0) for weighted hypergraph algorithms */
   weight: number;
+  /** Atlas vertex index (0–95) if this relation maps to the Atlas seed, else undefined */
+  atlasVertex?: number;
   /** Timestamp */
   createdAt: number;
 }
@@ -95,6 +97,7 @@ export const hypergraph = {
     label: string,
     properties: Record<string, unknown> = {},
     weight = 1.0,
+    atlasVertex?: number,
   ): Promise<Hyperedge> {
     const id = await hyperedgeId(nodes, label);
     const he: Hyperedge = {
@@ -104,6 +107,7 @@ export const hypergraph = {
       arity: nodes.length,
       properties,
       weight,
+      atlasVertex,
       createdAt: Date.now(),
     };
 

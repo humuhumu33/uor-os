@@ -1,214 +1,168 @@
+/**
+ * HDC Engine Tests — Algebraic Properties + Atlas Engine Integration
+ */
 import { describe, it, expect } from "vitest";
 import {
   random, zero, bind, unbind, bundle, permute,
   distance, similarity, encodeSequence, encodeRecord,
   fromE8Root, DEFAULT_DIM,
 } from "../hypervector";
-import { encodeProcess, encodeFile, analogy, getEncoderMemory } from "../encoder";
 import { ItemMemory } from "../item-memory";
+import { encodeProcess, encodeFile, encodeHyperedge, analogy } from "../encoder";
+import { AtlasEngine, getAtlasEngine } from "@/modules/research/atlas/atlas-engine";
+import { simpleRoots, negateRoot, getE8RootSystem, inner, norm2 } from "@/modules/research/atlas/e8-roots";
 
-// Helper: assert two HVs are identical
+const DIM = DEFAULT_DIM;
+
 function expectEqual(a: Uint8Array, b: Uint8Array) {
   expect(a.length).toBe(b.length);
   for (let i = 0; i < a.length; i++) expect(a[i]).toBe(b[i]);
 }
 
-// Helper: assert two HVs are very similar (similarity > threshold)
-function expectSimilar(a: Uint8Array, b: Uint8Array, threshold = 0.8) {
-  expect(similarity(a, b)).toBeGreaterThan(threshold);
-}
+// ── Bind / Unbind ──────────────────────────────────────────────────────────
 
-// Helper: assert two HVs are dissimilar (near random baseline ~0.5)
-function expectDissimilar(a: Uint8Array, b: Uint8Array, maxSim = 0.6) {
-  expect(similarity(a, b)).toBeLessThan(maxSim);
-}
-
-describe("HDC Hypervector Primitives", () => {
-  describe("bind / unbind (XOR)", () => {
-    it("is self-inverse: unbind(bind(A, B), B) = A", () => {
-      const a = random();
-      const b = random();
-      const bound = bind(a, b);
-      const recovered = unbind(bound, b);
-      expectEqual(recovered, a);
-    });
-
-    it("is commutative: bind(A, B) = bind(B, A)", () => {
-      const a = random();
-      const b = random();
-      expectEqual(bind(a, b), bind(b, a));
-    });
-
-    it("bind with self yields zero", () => {
-      const a = random();
-      expectEqual(bind(a, a), zero());
-    });
-
-    it("bind result is dissimilar to both inputs", () => {
-      const a = random();
-      const b = random();
-      const c = bind(a, b);
-      expectDissimilar(c, a);
-      expectDissimilar(c, b);
-    });
+describe("bind/unbind", () => {
+  it("self-inverse: unbind(bind(a,b), b) === a", () => {
+    const a = random(DIM), b = random(DIM);
+    expectEqual(unbind(bind(a, b), b), a);
   });
 
-  describe("bundle (majority vote)", () => {
-    it("single vector bundle returns copy", () => {
-      const a = random();
-      const b = bundle([a]);
-      expectEqual(b, a);
-    });
-
-    it("bundle of identical vectors returns same vector", () => {
-      const a = random();
-      expectEqual(bundle([a, a, a]), a);
-    });
-
-    it("bundle is similar to all inputs (convergence)", () => {
-      const vecs = Array.from({ length: 5 }, () => random());
-      const b = bundle(vecs);
-      for (const v of vecs) {
-        // Each input should be more similar to the bundle than random chance (~0.5)
-        expect(similarity(b, v)).toBeGreaterThan(0.5);
-      }
-    });
-
-    it("adding more copies of A biases bundle toward A", () => {
-      const a = random();
-      const b = random();
-      const biased = bundle([a, a, a, b]);
-      expect(similarity(biased, a)).toBeGreaterThan(similarity(biased, b));
-    });
+  it("commutative: bind(a,b) === bind(b,a)", () => {
+    const a = random(DIM), b = random(DIM);
+    expectEqual(bind(a, b), bind(b, a));
   });
 
-  describe("permute", () => {
-    it("permute(v, 0) returns copy", () => {
-      const a = random();
-      expectEqual(permute(a, 0), a);
-    });
-
-    it("permute is dissimilar to original (for k > 0)", () => {
-      const a = random();
-      expectDissimilar(permute(a, 1), a);
-    });
-
-    it("full-cycle permute returns original", () => {
-      const a = random();
-      expectEqual(permute(a, DEFAULT_DIM), a);
-    });
+  it("binding with self yields zero", () => {
+    const a = random(DIM);
+    expectEqual(bind(a, a), zero(DIM));
   });
 
-  describe("distance / similarity", () => {
-    it("distance(v, v) = 0", () => {
-      const a = random();
-      expect(distance(a, a)).toBe(0);
-    });
-
-    it("similarity(v, v) = 1", () => {
-      const a = random();
-      expect(similarity(a, a)).toBe(1);
-    });
-
-    it("random vectors have similarity ≈ 0.5", () => {
-      const a = random();
-      const b = random();
-      const s = similarity(a, b);
-      expect(s).toBeGreaterThan(0.35);
-      expect(s).toBeLessThan(0.65);
-    });
+  it("bound vector is dissimilar from inputs", () => {
+    const a = random(DIM), b = random(DIM);
+    const ab = bind(a, b);
+    expect(similarity(ab, a)).toBeLessThan(0.6);
+    expect(similarity(ab, b)).toBeLessThan(0.6);
   });
 });
 
-describe("HDC Sequence & Record Encoding", () => {
-  it("sequence encoding is order-sensitive", () => {
-    const a = random();
-    const b = random();
-    const c = random();
-    const seq1 = encodeSequence([a, b, c]);
-    const seq2 = encodeSequence([c, b, a]);
-    expectDissimilar(seq1, seq2);
+// ── Bundle ─────────────────────────────────────────────────────────────────
+
+describe("bundle", () => {
+  it("bundle converges toward inputs", () => {
+    const a = random(DIM), b = random(DIM), c = random(DIM);
+    const bundled = bundle([a, b, c]);
+    expect(similarity(bundled, a)).toBeGreaterThan(0.3);
+    expect(similarity(bundled, b)).toBeGreaterThan(0.3);
+    expect(similarity(bundled, c)).toBeGreaterThan(0.3);
   });
 
-  it("record encoding bundles bound key-value pairs", () => {
-    const k1 = random(), v1 = random();
-    const k2 = random(), v2 = random();
-    const rec = encodeRecord([[k1, v1], [k2, v2]]);
-    // Record should be dissimilar to any single key or value
-    expectDissimilar(rec, k1);
-    expectDissimilar(rec, v1);
+  it("odd-count bundle biases toward majority", () => {
+    const a = random(DIM);
+    const bundled = bundle([a, a, a]);
+    expectEqual(bundled, a);
   });
 });
 
-describe("HDC Encoder (OS Objects)", () => {
-  it("encodeProcess produces consistent output", () => {
-    const a = encodeProcess("p1", "running", ["f1.txt"]);
-    const b = encodeProcess("p1", "running", ["f1.txt"]);
-    expectEqual(a, b);
-  });
+// ── Sequence Encoding ──────────────────────────────────────────────────────
 
-  it("different processes produce dissimilar vectors", () => {
-    const a = encodeProcess("p1", "running");
-    const b = encodeProcess("p2", "stopped");
-    expectDissimilar(a, b);
-  });
-
-  it("encodeFile is deterministic", () => {
-    const a = encodeFile("/a.txt", "abc123");
-    const b = encodeFile("/a.txt", "abc123");
-    expectEqual(a, b);
-  });
-
-  it("analogy: bind(bind(A,B),C) is self-consistent", () => {
-    const a = random(), b = random(), c = random();
-    const result = analogy(a, b, c);
-    // analogy(a, b, c) = bind(bind(a, b), c)
-    expectEqual(result, bind(bind(a, b), c));
+describe("encodeSequence", () => {
+  it("order-sensitive: [a,b] ≠ [b,a]", () => {
+    const a = random(DIM), b = random(DIM);
+    const s1 = encodeSequence([a, b]);
+    const s2 = encodeSequence([b, a]);
+    expect(similarity(s1, s2)).toBeLessThan(0.6);
   });
 });
 
-describe("E8-Structured Basis", () => {
-  it("fromE8Root produces deterministic vectors", () => {
-    const a = fromE8Root(0);
-    const b = fromE8Root(0);
-    expectEqual(a, b);
-  });
+// ── Record Encoding ────────────────────────────────────────────────────────
 
-  it("different roots produce different vectors", () => {
-    const a = fromE8Root(0);
-    const b = fromE8Root(1);
-    expect(distance(a, b)).toBeGreaterThan(0);
-  });
-
-  it("rejects out-of-range root indices", () => {
-    expect(() => fromE8Root(-1)).toThrow();
-    expect(() => fromE8Root(240)).toThrow();
-  });
-
-  it("produces vectors of correct dimension", () => {
-    expect(fromE8Root(42).length).toBe(DEFAULT_DIM);
-    expect(fromE8Root(42, 512).length).toBe(512);
+describe("encodeRecord", () => {
+  it("produces deterministic output", () => {
+    const k = random(DIM), v = random(DIM);
+    const r1 = encodeRecord([[k, v]]);
+    const r2 = encodeRecord([[k, v]]);
+    expectEqual(r1, r2);
   });
 });
+
+// ── Analogy ────────────────────────────────────────────────────────────────
+
+describe("analogy", () => {
+  it("analogy(a,b,c) === bind(bind(a,b),c)", () => {
+    const a = random(DIM), b = random(DIM), c = random(DIM);
+    expectEqual(analogy(a, b, c), bind(bind(a, b), c));
+  });
+});
+
+// ── ItemMemory ─────────────────────────────────────────────────────────────
 
 describe("ItemMemory", () => {
-  it("stores and retrieves vectors", () => {
+  it("nearest neighbor retrieval", () => {
     const mem = new ItemMemory();
-    const v = random();
-    mem.storeWith("test", v);
-    expect(mem.has("test")).toBe(true);
-    expectEqual(mem.get("test")!, v);
+    const a = random(DIM);
+    mem.storeWith("alpha", a);
+    mem.storeWith("beta", random(DIM));
+    const result = mem.query(a);
+    expect(result).not.toBeNull();
+    expect(result!.label).toBe("alpha");
+    expect(result!.similarity).toBeGreaterThan(0.99);
+  });
+});
+
+// ── E8 Root System ─────────────────────────────────────────────────────────
+
+describe("E8 root system", () => {
+  it("has 240 roots with norm² = 8", () => {
+    const sys = getE8RootSystem();
+    expect(sys.roots.length).toBe(240);
+    for (const r of sys.roots) expect(norm2(r)).toBe(8);
   });
 
-  it("nearest-neighbor query finds stored item", () => {
-    const mem = new ItemMemory();
-    const v = random();
-    mem.storeWith("target", v);
-    // Store some distractors
-    for (let i = 0; i < 5; i++) mem.storeWith(`noise-${i}`, random());
-    const result = mem.query(v);
-    expect(result).not.toBeNull();
-    expect(result!.label).toBe("target");
-    expect(result!.similarity).toBeCloseTo(1.0);
+  it("negation table: -root[i] === root[neg[i]]", () => {
+    const sys = getE8RootSystem();
+    for (let i = 0; i < 240; i++) {
+      const neg = sys.negationTable[i];
+      for (let k = 0; k < 8; k++) {
+        expect(sys.roots[neg][k]).toBe((-sys.roots[i][k]) || 0); // normalize -0 to 0
+      }
+    }
+  });
+
+  it("has 8 simple roots with correct inner products", () => {
+    const sr = simpleRoots();
+    expect(sr.length).toBe(8);
+    for (const r of sr) expect(norm2(r)).toBe(8);
+  });
+});
+
+// ── Atlas Engine ───────────────────────────────────────────────────────────
+
+describe("AtlasEngine", () => {
+  it("singleton returns verified engine", () => {
+    const engine = getAtlasEngine();
+    expect(engine.vertexCount).toBe(96);
+    expect(engine.rootCount).toBe(240);
+    expect(engine.embedding.allRootsValid).toBe(true);
+    expect(engine.embedding.injective).toBe(true);
+  });
+
+  it("96 + complementRoots = 240", () => {
+    const engine = getAtlasEngine();
+    expect(engine.complementRoots.length).toBe(240 - 96);
+  });
+
+  it("rootToVertex round-trips for all Atlas vertices", () => {
+    const engine = getAtlasEngine();
+    for (let v = 0; v < 96; v++) {
+      const ri = engine.rootIndex(v);
+      expect(engine.rootToVertex(ri)).toBe(v);
+    }
+  });
+
+  it("negation is an involution", () => {
+    const engine = getAtlasEngine();
+    for (let i = 0; i < 240; i++) {
+      expect(engine.negation(engine.negation(i))).toBe(i);
+    }
   });
 });

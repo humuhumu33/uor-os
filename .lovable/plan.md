@@ -1,78 +1,67 @@
 
 
-# Atlas Engine: Consolidation + Missing Features
+# E8 Computational Substrate + Redundancy Pruning
 
-## Gap Analysis: Rust Reference vs Current Implementation
+## Overview
 
-Our current TypeScript implementation covers the core correctly (96-vertex Atlas, 240 E8 roots, embedding, groups, bridge). But comparing against the Rust `e8/mod.rs`, two features are missing from `e8-roots.ts`:
+Create a canonical E8 root system module, wire it into the HDC engine as a structured basis, and eliminate the 3 scattered duplicate E8 root constructions across `boundary.ts`, `coadjoint-orbit-classifier.ts`, and `groups.ts`.
 
-1. **Negation table** — The Rust impl precomputes `negation_table[i]` for O(1) lookup of `-root`. We do linear scans.
-2. **Simple roots** — The 8 simple roots of E8 (the basis from which all 240 roots are generated). The Rust impl has `simple_roots() -> [Vector8; 8]`. We have none.
-3. **Sign class counting on root system** — `count_sign_classes()` and `sign_class_representative()`.
+## What Gets Built
 
-Beyond that, the main architectural gap is the **Atlas Engine** abstraction: a single entry point that initializes the 96-vertex Atlas, computes the E8 embedding, and exposes the full computational substrate as one module.
+### 1. Canonical E8 Root System — `src/modules/research/atlas/e8-roots.ts`
 
-## Plan
+Single source of truth for all 240 E8 roots. Exact integer arithmetic (2× scaling to avoid floats). Replaces the private `constructE8Roots()` in `boundary.ts` and `generateE8RootProjections()` in `coadjoint-orbit-classifier.ts`.
 
-### 1. Create `src/modules/research/atlas/atlas-engine.ts` — The Atlas Engine
+- Generate 112 Type I roots (±eᵢ ± eⱼ, i < j) and 128 Type II roots (±1 coordinates, even parity)
+- Inner product computation (exact integers)
+- Root system axiom verification (240 count, all norm² = 8 in doubled rep, closure under reflections)
+- `byteToE8Root(b: number): number[] | null` — maps R₈ elements to E8 roots (128 of 256 bytes are roots)
+- Export `E8_ROOTS: readonly number[][]` as frozen singleton
 
-A single facade that lazily initializes everything and is the canonical entry point for any consumer:
+### 2. Certified Atlas → E8 Embedding — `src/modules/research/atlas/embedding.ts`
 
-```typescript
-export class AtlasEngine {
-  // Lazy singletons — computed once, frozen forever
-  readonly atlas: Atlas;           // 96 vertices
-  readonly e8: E8RootSystem;       // 240 roots
-  readonly embedding: EmbeddingResult; // 96 → 240 map
-  
-  // Derived operations
-  embedVertex(i: number): readonly number[];
-  rootIndex(i: number): number;
-  innerProduct(i: number, j: number): number;
-  reflect(v: number[], root: number): number[];
-  simpleRoots(): readonly (readonly number[])[];
-  negation(rootIndex: number): number;
-}
+Maps the 96 Atlas vertices into the 240-root E8 system. Each Atlas label `(e₁,e₂,e₃,d₄₅,e₆,e₇)` extends to an 8D vector satisfying the E8 root constraints.
 
-// Singleton
-export function getAtlasEngine(): AtlasEngine;
-```
+- `embedVertex(index: number): number[]` — Atlas vertex → E8 root (8D integer vector)
+- Adjacency preservation check: v ~ w in Atlas ⟺ ⟨φ(v), φ(w)⟩ = -4 (in doubled rep)
+- Self-verifying on construction
 
-This replaces scattered calls to `getAtlas()`, `getE8RootSystem()`, `computeEmbedding()` with one unified `getAtlasEngine()`.
+### 3. E8-Structured HDC Basis — Modify `hypervector.ts` + `encoder.ts`
 
-### 2. Add missing features to `e8-roots.ts`
+Replace ad-hoc `seedFromString` with E8-rooted basis vectors. The 240 E8 roots become the structured codebook. Symbols map to E8 coordinates first, then extend to full hypervectors via deterministic expansion.
 
-- **Negation table**: `negationTable: readonly number[]` — precomputed for O(1) lookup
-- **Simple roots**: The 8 basis vectors (in doubled representation: α₁=(2,-2,0,...), α₈=(-1,-1,-1,-1,-1,-1,-1,-1))
-- **Sign class utilities**: `signClassRep(i)` and `countSignClasses(indices)`
+- Add `fromE8Root(rootIndex: number): Hypervector` — expand an 8D E8 root into a 1024-dim hypervector deterministically
+- Modify `encoder.ts` `sym()` to use E8-derived seeds for the first 240 symbols, falling back to the current string-hash method beyond that
+- The encoder's item memory becomes E8-indexed: symbols 0–95 map to Atlas vertices, 96–239 map to remaining E8 roots
 
-### 3. Wire Atlas Engine into HDC encoder
+### 4. Prune Redundant E8 Constructions
 
-Replace the scattered imports in `encoder.ts` with `getAtlasEngine()`. The encoder becomes aware that symbols 0–95 are Atlas vertices, 96–239 are remaining E8 roots.
-
-### 4. Wire Atlas Engine into Hypergraph
-
-Add an optional `atlasType` field to `Hyperedge` — when a relation maps to one of the 96 Atlas vertex types, it gets an Atlas coordinate. This gives the hypergraph a mathematical addressing system.
-
-### 5. Prune redundant entry points
-
-Update `index.ts` to export `AtlasEngine` and `getAtlasEngine` as the primary API. Keep individual module exports for advanced use but document that `AtlasEngine` is the canonical facade.
+| File | Change |
+|------|--------|
+| `boundary.ts` | Remove private `constructE8Roots()`, `byteToVector()`, `isByteE8Root()` — import from `e8-roots.ts` |
+| `coadjoint-orbit-classifier.ts` | Remove private `generateE8RootProjections()` and `E8_ROOTS` constant — import from `e8-roots.ts` |
+| `groups.ts` `analyzeE8RootStructure()` | Use actual root counts from `e8-roots.ts` instead of hardcoded `112`/`128` |
+| `index.ts` (atlas barrel) | Export new `e8-roots` and `embedding` modules |
+| `hdc/index.ts` | Export `fromE8Root` |
 
 ## File Summary
 
 | File | Action |
 |------|--------|
-| `src/modules/research/atlas/atlas-engine.ts` | **Create** — Unified facade: Atlas + E8 + Embedding |
-| `src/modules/research/atlas/e8-roots.ts` | **Modify** — Add negation table, simple roots, sign class utils |
-| `src/modules/kernel/hdc/encoder.ts` | **Modify** — Use AtlasEngine for symbol allocation |
-| `src/modules/data/knowledge-graph/hypergraph.ts` | **Modify** — Add optional Atlas coordinate field |
-| `src/modules/research/atlas/index.ts` | **Modify** — Export AtlasEngine as primary API |
-| `mem://index.md` | **Update** — Add Atlas Engine memory entry |
+| `src/modules/research/atlas/e8-roots.ts` | **Create** — Canonical 240 E8 roots, exact integer arithmetic |
+| `src/modules/research/atlas/embedding.ts` | **Create** — 96 Atlas vertices → E8 certified map |
+| `src/modules/kernel/hdc/hypervector.ts` | **Modify** — Add `fromE8Root()` constructor |
+| `src/modules/kernel/hdc/encoder.ts` | **Modify** — E8-indexed symbol allocation |
+| `src/modules/research/atlas/boundary.ts` | **Modify** — Remove duplicate E8 root code, import canonical |
+| `src/modules/research/atlas/coadjoint-orbit-classifier.ts` | **Modify** — Remove duplicate E8 root code, import canonical |
+| `src/modules/research/atlas/groups.ts` | **Modify** — Use live E8 root data instead of hardcoded counts |
+| `src/modules/research/atlas/index.ts` | **Modify** — Export new modules |
+| `src/modules/kernel/hdc/index.ts` | **Modify** — Export `fromE8Root` |
 
 ## Outcome
 
-- **One import, one object**: `getAtlasEngine()` gives you the full computational substrate
-- **Missing Rust features ported**: negation table, simple roots, sign classes
-- **"Atlas Engine" as a named module**: referenceable, modular, self-contained
-- **Every app/model = a projection within E8**: the hypergraph can tag relations with Atlas coordinates
+- **3 duplicate E8 root constructions → 1 canonical source** (`e8-roots.ts`)
+- **HDC symbols rooted in E8 geometry** — first 240 symbols have algebraic meaning from exceptional Lie theory
+- **Atlas → E8 embedding verified** — adjacency preservation proven at construction time
+- **Same seed, same lattice, same OS** — deterministic reconstruction on any machine from first principles
 
