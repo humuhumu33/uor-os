@@ -1,124 +1,101 @@
 
 
-# SovereignDB — Obsidian-Inspired Experience Enhancements
+# SovereignDB — Atlas "State Zero" Seed & Torus Visualization
 
-## Obsidian Analysis: Why Users Love It
+## Vision
 
-After thorough research, Obsidian's appeal comes down to six pillars:
+When a user opens SovereignDB for the first time and sees an empty graph, instead of a blank canvas with a "Create notes to get started" message, they see the **living Atlas** — 96 vertices arranged on a torus, color-coded by sign class, with edges showing adjacency. This is the OS introspecting itself. The user is looking at the mathematical structure that powers the system they're using.
 
-1. **Local Graph View per note** — not just a global graph, but a focused view showing only a note's immediate neighborhood. This is the "aha" moment for most users.
-2. **Canvas (infinite whiteboard)** — spatial thinking: drag notes, images, and text cards onto an infinite canvas, connect them with arrows. This is Obsidian's most differentiated feature.
-3. **Properties / Frontmatter** — structured metadata on notes (type, tags, date, status) that can be queried, filtered, and displayed.
-4. **Split panes & link previews** — hover over a `[[link]]` to see a floating preview; click to open side-by-side. No context switching.
-5. **Command Palette depth** — not just find pages, but run any action (toggle checkbox, insert template, change theme).
-6. **Outline panel** — table-of-contents for the current note's headings, always visible in sidebar.
+## What Makes This Magical
 
-## What We Already Have vs. What's Missing
+1. **Self-referential**: The graph is showing the actual Atlas object used by the engine — not a mock. We read directly from `getAtlas()`.
+2. **Torus layout**: The 96 vertices map naturally to a torus via their triality coordinates `(h₂, d, ℓ)` — quadrant × modality gives the major ring (12 positions around the torus), slot gives the minor ring (8 positions). This is geometrically accurate.
+3. **Interactive from moment zero**: Users can zoom, pan, hover to see vertex labels and coordinates, click to see properties, filter by sign class — all before writing a single note.
+4. **Seamless transition**: As the user creates notes, the Atlas nodes remain as a "substrate layer" (toggleable) and their notes become nodes alongside/atop the Atlas.
 
-| Obsidian Feature | SovereignDB Status | Gap |
-|---|---|---|
-| Global graph view | Done (SdbConsumerGraph) | — |
-| Local graph per note | Missing | High impact |
-| Canvas / whiteboard | Missing | High impact |
-| Link hover preview | Missing | Medium impact |
-| Properties panel | Missing | Medium impact |
-| Command palette | Partial (Cmd+K finds pages only) | Extend to actions |
-| Outline / TOC | Missing | Low-medium |
-| Split panes | Missing | Medium |
-| Starred / bookmarks | Missing | Low |
+## Torus Geometry
 
-## What We're Adding (High-Signal, No Noise)
+The triality decomposition gives `v = 24·h₂ + 8·d + ℓ` where:
+- h₂ ∈ {0,1,2,3}, d ∈ {0,1,2}, ℓ ∈ {0,1,2,3,4,5,6,7}
+- Major angle θ = 2π × (h₂ × 3 + d) / 12 — 12 positions around the major ring
+- Minor angle φ = 2π × ℓ / 8 — 8 positions around the minor ring
+- Torus coordinates: x = (R + r·cos(φ))·cos(θ), y = (R + r·cos(φ))·sin(θ), projected to 2D
 
-### 1. Local Graph View — Per-Note Neighborhood
-
-A small, embedded graph panel at the bottom or side of each note showing only its direct connections (1-hop). This is Obsidian's most beloved graph feature — it makes backlinks visual.
-
-- Renders inline below the backlinks panel (or toggleable sidebar)
-- Shows the current note at center, linked notes as satellites
-- Click a satellite to navigate to it
-- Reuses `SdbGraphCanvas` in a compact "local" mode with fixed radial layout
-- ~80 lines in a new `SdbLocalGraph.tsx`
-
-### 2. Canvas — Infinite Spatial Workspace
-
-An infinite whiteboard where users drag note cards, text cards, and connections onto a 2D canvas. This maps directly to the hypergraph — each card is a node, each arrow is a hyperedge.
-
-- New view mode: Pages | Graph | **Canvas**
-- Pan/zoom canvas (reuses transform logic from SdbGraphCanvas)
-- Double-click empty space → create text card
-- Drag a note from sidebar → add note card (shows title + first block)
-- Draw connections between cards (creates `workspace:canvas-link` edges)
-- Cards are resizable, colored by type
-- Canvas state stored as a `workspace:canvas` hyperedge with positions/sizes
-- ~250 lines in `SdbCanvas.tsx` + ~30 lines wiring in `SovereignDBApp.tsx`
-
-### 3. Link Hover Preview
-
-Hovering over any `[[wiki-link]]` in the block editor shows a floating preview card with the linked note's title and first few blocks. No click needed — instant context.
-
-- Tooltip-style popover appears after 300ms hover delay
-- Shows note title, first 3 blocks of content, and connection count
-- Click the preview to navigate; Cmd+Click to open in split (future)
-- ~60 lines added to `SdbBlockEditor.tsx`
-
-### 4. Note Properties Panel
-
-A collapsible metadata header on each note showing structured properties: tags, creation date, last modified, word count, link count. Editable inline.
-
-- Rendered above the block editor content
-- Properties stored in the note's hyperedge properties
-- Add custom properties (key-value pairs)
-- Filters in graph view can use these properties
-- ~70 lines in `SdbNoteProperties.tsx`
-
-### 5. Extended Command Palette
-
-Upgrade Cmd+K from page-finder to full command palette: find pages, run actions, switch views, create daily note, toggle graph.
-
-- When input starts with `>`, show actions instead of pages
-- Actions: "Switch to Graph", "New Daily Note", "Toggle Dark Mode", "New Folder", "Open Canvas"
-- Fuzzy matching on action names
-- ~40 lines of edits to `SdbQuickFinder.tsx`
-
-### 6. Outline Panel (Table of Contents)
-
-A sidebar section showing the current note's block hierarchy as a clickable outline. Since blocks have indent levels, this is natural.
-
-- Shows in the sidebar when a note is selected
-- Each top-level block is a heading; indented blocks shown nested
-- Click to scroll/focus that block in the editor
-- ~50 lines in `SdbOutline.tsx`
+This produces a beautiful, symmetric layout where:
+- Sign classes form 8 color bands
+- Mirror pairs (τ involution) sit across the torus
+- Adjacency edges trace the Atlas's 256-edge structure
+- Triality orbits (size 3) are visually apparent as arcs
 
 ## Technical Plan
 
-### New Files
+### New File: `SdbAtlasSeed.tsx` (~180 lines)
 
-| File | Purpose | ~Lines |
-|---|---|---|
-| `SdbLocalGraph.tsx` | Compact radial graph showing current note's 1-hop neighborhood | 80 |
-| `SdbCanvas.tsx` | Infinite whiteboard with draggable note/text cards and connections | 250 |
-| `SdbNoteProperties.tsx` | Structured metadata panel for notes | 70 |
-| `SdbOutline.tsx` | Block hierarchy outline in sidebar | 50 |
+A component that:
+1. Calls `getAtlas()` and `decodeTriality()` to get all 96 vertices with coordinates
+2. Computes torus layout (2D projection): major ring for `(h₂, d)`, minor ring for `ℓ`
+3. Renders via the existing `SdbGraphCanvas` (GNode/GLink format), using `"radial"` or custom positioning
+4. Colors nodes by sign class (8 distinct hues from a curated palette)
+5. Shows adjacency edges with subtle opacity
+6. Adds a translucent info overlay: "Atlas · 96 vertices · 256 edges · 8 sign classes"
+7. Mirror pairs connected by dashed lines
+8. Hover shows vertex index, label tuple, sign class, degree, mirror pair
+9. A "Dismiss" / "Start Writing" button transitions to normal empty-state Pages view
+10. A toggle in Graph view controls to show/hide the Atlas substrate layer
 
-### Modified Files
+### Modified: `SdbConsumerGraph.tsx` (~30 lines)
 
-| File | Change |
-|---|---|
-| `SdbBlockEditor.tsx` | Add link hover preview popover (~60 lines) |
-| `SdbQuickFinder.tsx` | Extend to command palette with `>` prefix for actions (~40 lines) |
-| `SdbConsumerPages.tsx` | Wire local graph, properties panel, outline; integrate canvas into view switcher |
-| `SovereignDBApp.tsx` | Add "canvas" as third view mode alongside pages/graph |
-| `SdbModeSwitch.tsx` | Add Canvas tab to consumer mode view switcher |
+- When graph has zero workspace edges, render `SdbAtlasSeed` as the state-zero view instead of the "Create notes" empty state
+- Add an "Atlas Layer" toggle in `SdbGraphControls` that overlays Atlas nodes (dimmed) alongside workspace nodes
+- Atlas nodes typed as `"atlas"` with distinct color scheme
 
-### Data Model
+### Modified: `SdbGraphControls.tsx` (~10 lines)
+
+- Add "Atlas" toggle to the type filter panel
+
+### Color Palette for Sign Classes
+
+```
+SC 0: hsl(210, 80%, 60%)  — blue
+SC 1: hsl(180, 70%, 50%)  — teal
+SC 2: hsl(150, 70%, 50%)  — green
+SC 3: hsl(120, 60%, 55%)  — lime
+SC 4: hsl(40, 85%, 55%)   — amber
+SC 5: hsl(20, 85%, 55%)   — orange
+SC 6: hsl(340, 70%, 55%)  — rose
+SC 7: hsl(270, 60%, 60%)  — purple
+```
+
+### Data Flow
 
 ```text
-Canvas:     { label: "workspace:canvas", nodes: ["ws:root", "canvas:main"], properties: { cards: [...], connections: [...] } }
-Card:       { id, type: "text"|"note", noteId?, text?, x, y, width, height, color }
-Connection: { from: cardId, to: cardId, label? }
+getAtlas() → 96 AtlasVertex objects
+    │
+decodeTriality(v.index) → (h₂, d, ℓ) for each vertex
+    │
+torusLayout(h₂, d, ℓ) → (x, y) screen coordinates
+    │
+map to GNode[] + GLink[] from adjacency lists
+    │
+feed into SdbGraphCanvas (existing renderer)
 ```
+
+### Torus 2D Projection Formula
+
+```text
+majorAngle = 2π × (h₂ × 3 + d) / 12
+minorAngle = 2π × ℓ / 8
+
+R = 250 (major radius)
+r = 90  (minor radius)
+
+x = (R + r × cos(minorAngle)) × cos(majorAngle)
+y = (R + r × cos(minorAngle)) × sin(majorAngle)
+```
+
+The z-depth from `sin(minorAngle)` gives a subtle size scaling for 3D-like depth.
 
 ### Estimated Scope
 
-~510 lines across 4 new files + ~170 lines editing 5 existing files. No new dependencies.
+~180 lines new in `SdbAtlasSeed.tsx`, ~40 lines of edits across `SdbConsumerGraph.tsx` and `SdbGraphControls.tsx`. No new dependencies — uses existing Atlas engine + graph canvas.
 
