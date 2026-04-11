@@ -55,6 +55,8 @@ export interface ConnectionParams {
   };
   /** Protocol-specific config passed through to the adapter. */
   config?: Record<string, unknown>;
+  /** Sandbox mode: dry-run without executing network requests. */
+  sandbox?: boolean;
 }
 
 /** The result of translate(): a fully-formed fetch request. */
