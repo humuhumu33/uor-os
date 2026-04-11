@@ -9,16 +9,25 @@
  * encode the ordered node list + metadata. Incidence is tracked via an
  * in-memory sparse index for O(1) lookups.
  *
+ * Performance (frontier research 2024–2026):
+ *   - Batched writes via Promise.all (scalable partitioning insight)
+ *   - Inverted indexes for label/atlas (HyperNetX pattern)
+ *   - Directed head/tail sets (AAAI 2025 directed hypergraphs)
+ *   - Dual hypergraph view (spectral methods, HGNNs)
+ *   - HDC similarity search (neuro-vector-symbolic bridge)
+ *
  * All operations go through GrafeoDB — this is a view layer, not a
  * separate database.
  *
- * @version 1.0.0
+ * @version 2.0.0 — frontier research upgrades
  */
 
 import { sha256hex } from "@/lib/crypto";
 import { grafeoStore, sparqlQuery } from "./grafeo-store";
 import type { SparqlBinding } from "./grafeo-store";
 import type { KGNode, KGEdge } from "./types";
+import { encodeHyperedge } from "@/modules/kernel/hdc/encoder";
+import { similarity } from "@/modules/kernel/hdc/hypervector";
 
 const UOR_NS = "https://uor.foundation/";
 const HE_GRAPH = `${UOR_NS}graph/hyperedges`;
@@ -41,6 +50,10 @@ export interface Hyperedge {
   weight: number;
   /** Atlas vertex index (0–95) if this relation maps to the Atlas seed, else undefined */
   atlasVertex?: number;
+  /** Directed head nodes — sources/inputs of the relation (optional) */
+  head?: string[];
+  /** Directed tail nodes — targets/outputs of the relation (optional) */
+  tail?: string[];
   /** Timestamp */
   createdAt: number;
 }
@@ -53,7 +66,23 @@ export interface IncidenceResult {
   degree: number;
 }
 
-// ── Sparse Incidence Index ──────────────────────────────────────────────────
+/** Lightweight dual hypergraph view (no storage duplication). */
+export interface DualView {
+  /** Original edge IDs become "nodes" in the dual */
+  nodes: string[];
+  /** Original node IRIs become "edges" in the dual */
+  edges: string[];
+  /** Incidence: dual-node (original edge) → dual-edges (original nodes) */
+  incidentTo(edgeId: string): string[];
+}
+
+/** HDC similarity search result. */
+export interface SimilarEdge {
+  edge: Hyperedge;
+  similarity: number;
+}
+
+// ── Sparse Incidence Index + Inverted Indexes ──────────────────────────────
 
 /**
  * In-memory incidence map: nodeId → Set<hyperedgeId>.
@@ -62,19 +91,41 @@ export interface IncidenceResult {
 const incidence = new Map<string, Set<string>>();
 const edgeCache = new Map<string, Hyperedge>();
 
+/** Inverted index: label → Set<edgeId> for O(1) label lookups */
+const labelIndex = new Map<string, Set<string>>();
+
+/** Inverted index: atlasVertex → Set<edgeId> for O(1) vertex lookups */
+const atlasIndex = new Map<number, Set<string>>();
+
+function addToIndex(map: Map<any, Set<string>>, key: any, id: string): void {
+  let set = map.get(key);
+  if (!set) { set = new Set(); map.set(key, set); }
+  set.add(id);
+}
+
+function removeFromIndex(map: Map<any, Set<string>>, key: any, id: string): void {
+  map.get(key)?.delete(id);
+}
+
 function indexEdge(he: Hyperedge): void {
   edgeCache.set(he.id, he);
   for (const nodeId of he.nodes) {
-    let set = incidence.get(nodeId);
-    if (!set) { set = new Set(); incidence.set(nodeId, set); }
-    set.add(he.id);
+    addToIndex(incidence, nodeId, he.id);
+  }
+  addToIndex(labelIndex, he.label, he.id);
+  if (he.atlasVertex !== undefined) {
+    addToIndex(atlasIndex, he.atlasVertex, he.id);
   }
 }
 
 function deindexEdge(he: Hyperedge): void {
   edgeCache.delete(he.id);
   for (const nodeId of he.nodes) {
-    incidence.get(nodeId)?.delete(he.id);
+    removeFromIndex(incidence, nodeId, he.id);
+  }
+  removeFromIndex(labelIndex, he.label, he.id);
+  if (he.atlasVertex !== undefined) {
+    removeFromIndex(atlasIndex, he.atlasVertex, he.id);
   }
 }
 
@@ -91,6 +142,7 @@ export const hypergraph = {
   /**
    * Add a hyperedge connecting N nodes.
    * Content-addressed: same nodes + label = same ID (idempotent).
+   * Supports optional directed head/tail sets for directed hypergraphs.
    */
   async addEdge(
     nodes: string[],
@@ -98,6 +150,8 @@ export const hypergraph = {
     properties: Record<string, unknown> = {},
     weight = 1.0,
     atlasVertex?: number,
+    head?: string[],
+    tail?: string[],
   ): Promise<Hyperedge> {
     const id = await hyperedgeId(nodes, label);
     const he: Hyperedge = {
@@ -108,6 +162,8 @@ export const hypergraph = {
       properties,
       weight,
       atlasVertex,
+      head,
+      tail,
       createdAt: Date.now(),
     };
 
@@ -123,6 +179,8 @@ export const hypergraph = {
         arity: nodes.length,
         weight,
         ...(atlasVertex !== undefined ? { atlasVertex } : {}),
+        ...(head ? { head } : {}),
+        ...(tail ? { tail } : {}),
         ...properties,
       },
       createdAt: he.createdAt,
@@ -131,15 +189,12 @@ export const hypergraph = {
     };
     await grafeoStore.putNode(kgNode);
 
-    // Also insert binary edges for triple-based query compatibility
-    for (const nodeId of nodes) {
-      await grafeoStore.addQuad(
-        `${UOR_NS}hyperedge/${id}`,
-        `${UOR_NS}hyperedge/incident`,
-        nodeId,
-        HE_GRAPH,
-      );
-    }
+    // Batch all incidence quads via Promise.all (was sequential)
+    const heIri = `${UOR_NS}hyperedge/${id}`;
+    const incidentPred = `${UOR_NS}hyperedge/incident`;
+    await Promise.all(
+      nodes.map(nodeId => grafeoStore.addQuad(heIri, incidentPred, nodeId, HE_GRAPH))
+    );
 
     indexEdge(he);
     return he;
@@ -175,7 +230,6 @@ export const hypergraph = {
   async incidentTo(nodeId: string): Promise<IncidenceResult> {
     const ids = incidence.get(nodeId);
     if (!ids || ids.size === 0) {
-      // Cold path: query GrafeoDB
       return this._incidentFromGraph(nodeId);
     }
     const edges = Array.from(ids)
@@ -185,9 +239,17 @@ export const hypergraph = {
   },
 
   /**
-   * Query hyperedges by label.
+   * Query hyperedges by label — O(1) via inverted index.
+   * Falls back to GrafeoDB scan only if index is cold.
    */
   async byLabel(label: string): Promise<Hyperedge[]> {
+    const ids = labelIndex.get(label);
+    if (ids && ids.size > 0) {
+      return Array.from(ids)
+        .map(id => edgeCache.get(id))
+        .filter((e): e is Hyperedge => !!e);
+    }
+    // Cold path: populate index from GrafeoDB
     const nodes = await grafeoStore.getNodesByType("hyperedge");
     return nodes
       .filter(n => n.properties.heLabel === label)
@@ -200,32 +262,104 @@ export const hypergraph = {
   },
 
   /**
-   * Project a hyperedge into binary triples (backward-compatible decomposition).
-   * A hyperedge (A, B, C) with label L produces:
-   *   A -L-> B, A -L-> C, B -L-> C
+   * Query hyperedges by Atlas vertex — O(1) via inverted index.
+   */
+  byAtlasVertex(vertex: number): Hyperedge[] {
+    const ids = atlasIndex.get(vertex);
+    if (!ids || ids.size === 0) return [];
+    return Array.from(ids)
+      .map(id => edgeCache.get(id))
+      .filter((e): e is Hyperedge => !!e);
+  },
+
+  /**
+   * Project a hyperedge into binary triples.
+   * Directed: if head/tail are set, produces head→tail triples.
+   * Undirected: all-pairs (i,j) for backward compatibility.
    */
   projectToTriples(he: Hyperedge): KGEdge[] {
     const edges: KGEdge[] = [];
-    for (let i = 0; i < he.nodes.length; i++) {
-      for (let j = i + 1; j < he.nodes.length; j++) {
-        edges.push({
-          id: `${he.nodes[i]}|${he.label}|${he.nodes[j]}`,
-          subject: he.nodes[i],
-          predicate: he.label,
-          object: he.nodes[j],
-          graphIri: HE_GRAPH,
-          createdAt: he.createdAt,
-          syncState: "local",
-        });
+
+    if (he.head && he.tail && he.head.length > 0 && he.tail.length > 0) {
+      // Directed projection: head nodes → tail nodes
+      for (const h of he.head) {
+        for (const t of he.tail) {
+          edges.push({
+            id: `${h}|${he.label}|${t}`,
+            subject: h,
+            predicate: he.label,
+            object: t,
+            graphIri: HE_GRAPH,
+            createdAt: he.createdAt,
+            syncState: "local",
+          });
+        }
+      }
+    } else {
+      // Undirected: all-pairs
+      for (let i = 0; i < he.nodes.length; i++) {
+        for (let j = i + 1; j < he.nodes.length; j++) {
+          edges.push({
+            id: `${he.nodes[i]}|${he.label}|${he.nodes[j]}`,
+            subject: he.nodes[i],
+            predicate: he.label,
+            object: he.nodes[j],
+            graphIri: HE_GRAPH,
+            createdAt: he.createdAt,
+            syncState: "local",
+          });
+        }
       }
     }
     return edges;
   },
 
   /**
+   * Dual hypergraph view — swap nodes ↔ edges.
+   * The dual's "nodes" are original edge IDs; its "edges" are original node IRIs.
+   * Incidence is transposed: dual-node e is incident to dual-edge v
+   * iff original node v was in original edge e.
+   * Pure computation — no storage duplication.
+   */
+  dual(): DualView {
+    const edgeIds = Array.from(edgeCache.keys());
+    const nodeIds = Array.from(incidence.keys());
+    return {
+      nodes: edgeIds,
+      edges: nodeIds,
+      incidentTo(edgeId: string): string[] {
+        const he = edgeCache.get(edgeId);
+        return he ? he.nodes : [];
+      },
+    };
+  },
+
+  /**
+   * HDC-powered similarity search — find edges algebraically similar to a given edge.
+   * Bridges the hypergraph and HDC subsystems via hypervector encoding + Hamming similarity.
+   */
+  similarEdges(edgeId: string, topK = 5): SimilarEdge[] {
+    const target = edgeCache.get(edgeId);
+    if (!target) return [];
+
+    const targetHv = encodeHyperedge(target.label, target.nodes);
+    const scored: SimilarEdge[] = [];
+
+    for (const [id, he] of Array.from(edgeCache.entries())) {
+      if (id === edgeId) continue;
+      const hv = encodeHyperedge(he.label, he.nodes);
+      const sim = similarity(targetHv, hv);
+      scored.push({ edge: he, similarity: sim });
+    }
+
+    scored.sort((a, b) => b.similarity - a.similarity);
+    return scored.slice(0, topK);
+  },
+
+  /**
    * Get statistics about the hypergraph.
    */
-  stats(): { edgeCount: number; indexedNodes: number; avgArity: number } {
+  stats(): { edgeCount: number; indexedNodes: number; avgArity: number; labelCount: number; atlasVertices: number } {
     const edges = Array.from(edgeCache.values());
     const avgArity = edges.length > 0
       ? edges.reduce((s, e) => s + e.arity, 0) / edges.length
@@ -234,13 +368,17 @@ export const hypergraph = {
       edgeCount: edgeCache.size,
       indexedNodes: incidence.size,
       avgArity: Math.round(avgArity * 100) / 100,
+      labelCount: labelIndex.size,
+      atlasVertices: atlasIndex.size,
     };
   },
 
-  /** Clear the in-memory index (GrafeoDB data remains). */
+  /** Clear all in-memory indexes (GrafeoDB data remains). */
   clearIndex(): void {
     incidence.clear();
     edgeCache.clear();
+    labelIndex.clear();
+    atlasIndex.clear();
   },
 
   /** All cached hyperedges (for view-layer queries). */
@@ -273,7 +411,7 @@ export const hypergraph = {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function kgNodeToHyperedge(node: KGNode, id: string): Hyperedge {
-  const { nodes, heLabel, arity, weight, atlasVertex, ...rest } = node.properties as any;
+  const { nodes, heLabel, arity, weight, atlasVertex, head, tail, ...rest } = node.properties as any;
   return {
     id,
     nodes: nodes ?? [],
@@ -282,6 +420,8 @@ function kgNodeToHyperedge(node: KGNode, id: string): Hyperedge {
     properties: rest,
     weight: weight ?? 1.0,
     atlasVertex: atlasVertex ?? undefined,
+    head: head ?? undefined,
+    tail: tail ?? undefined,
     createdAt: node.createdAt,
   };
 }
