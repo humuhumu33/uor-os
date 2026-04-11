@@ -127,3 +127,28 @@ export type {
   PlatformCapabilities,
   RuntimeStrategy,
 } from "./platform-adapter";
+
+// ── Graph Blueprint Bridge ──────────────────────────────────────────────────
+export {
+  graphImageToBlueprint,
+  getGraphSourceId,
+} from "./graph-blueprint";
+export type {
+  GraphBlueprintOptions,
+  GraphBlueprintResult,
+} from "./graph-blueprint";
+
+// ── Graph Composition (Categorical Algebra) ─────────────────────────────────
+export {
+  composeApps,
+  upgradeApp,
+  verifyAppCoherence,
+} from "./graph-composition";
+export type {
+  AppFunctor,
+  AppTransformation,
+  TransformComponent,
+  CoherenceResult,
+  CoherenceFinding,
+  CompositionResult,
+} from "./graph-composition";
