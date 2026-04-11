@@ -11,31 +11,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Windowed desktop shell with dock, spotlight search, and theme engine
-- AI Oracle with multi-model interface, epistemic grading, and derivation proofs
-- End-to-end encrypted messenger with post-quantum (ML-KEM) key exchange
-- Docker-compatible container runtime (build/run/ship pipeline)
+- AI interface with multi-model support, epistemic grading, and derivation proofs
+- End-to-end encrypted messenger with post-quantum key exchange
+- Docker-compatible container runtime
 - Knowledge graph with RDF triples, SPARQL queries, and JSON-LD support
-- Universal Name Service (UNS) for content-addressed identity resolution
+- Content-addressed identity resolution for all objects
 - Tauri 2 desktop builds for macOS, Windows, and Linux
-- Auto-updater via `@tauri-apps/plugin-updater`
-- AES-256-GCM encryption at rest, ML-KEM post-quantum encryption in transit
-- Algebraic computation engine with Ring R₈ verification
-- Content addressing: SHA-256 → CID → IPv6 → Unicode glyph
-- GitHub Actions CI workflow (lint, test, build)
-- Community health files (CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, issue/PR templates)
+- Auto-updater support
+- GitHub Actions CI workflow
+- Community health files
 
 ### Changed
-- README rewritten to match Tauri-style repo presentation
+- README rewritten for clarity and alignment with open-source best practices
 - Architecture details moved to dedicated ARCHITECTURE.md
 
 ## [1.0.0] - 2025-01-01
 
 ### Added
-- Initial release of UOR OS
+- Initial release
 - Browser-based virtual operating system shell
-- Basic file system and window management
-- Supabase backend integration (Edge Functions, Postgres, Storage)
-- React 18 + Vite 5 + Tailwind CSS 3 frontend stack
+- File system and window management
+- Supabase backend integration
+- React 18, Vite 5, Tailwind CSS 3 frontend
 
 [Unreleased]: https://github.com/nicholasgriffintn/uor-os/compare/v2.0.0...HEAD
 [2.0.0]: https://github.com/nicholasgriffintn/uor-os/compare/v1.0.0...v2.0.0
