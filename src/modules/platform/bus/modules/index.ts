@@ -6,7 +6,7 @@
  * Import this file to register all core modules on the bus.
  * Each import triggers the module's register() call as a side effect.
  *
- * @version 2.0.0
+ * @version 3.0.0
  */
 
 // ── Layer 0: Engine (pure computation) ────────────────────────────────
@@ -48,3 +48,6 @@ import "./mesh-sync";
 // ── Layer 4: Sovereign Portal ────────────────────────────────────────
 import "./clipboard";
 import "./hologram-file";
+
+// ── Universal Connectors (REST, GraphQL, Neo4j, S3) ─────────────────
+import "../connectors";
