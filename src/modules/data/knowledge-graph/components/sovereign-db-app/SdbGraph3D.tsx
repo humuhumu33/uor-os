@@ -217,6 +217,39 @@ export function SdbGraph3D({
     };
   }, [gpuAvailable, nodes.length]);
 
+  /* ── Billboard text sprite helper ──────────────────────────── */
+
+  const makeLabel = useCallback((text: string, color: THREE.Color, yOffset: number) => {
+    const canvas = document.createElement("canvas");
+    const sz = 256;
+    canvas.width = sz;
+    canvas.height = 64;
+    const ctx = canvas.getContext("2d")!;
+    ctx.clearRect(0, 0, sz, 64);
+    // Background pill
+    ctx.fillStyle = "rgba(10, 22, 40, 0.75)";
+    const pad = 12;
+    const tw = ctx.measureText(text).width || sz * 0.5;
+    ctx.beginPath();
+    ctx.roundRect((sz - tw - pad * 2) / 2, 4, tw + pad * 2, 56, 12);
+    ctx.fill();
+    // Text
+    ctx.font = "bold 28px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = `rgb(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)})`;
+    // Re-measure after setting font
+    ctx.fillText(text, sz / 2, 34);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.needsUpdate = true;
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(16, 4, 1);
+    sprite.position.set(0, yOffset, 0);
+    return sprite;
+  }, []);
+
   /* ── Custom node rendering with instancing hints ──────────── */
 
   const nodeThreeObject = useCallback((node: any) => {
@@ -251,6 +284,10 @@ export function SdbGraph3D({
         side: THREE.DoubleSide,
       });
       group.add(new THREE.Mesh(ringGeo, ringMat));
+
+      // Billboard label
+      const label = node.label || node.id || "";
+      group.add(makeLabel(label, color, baseSize + 4));
     }
 
     // Atlas nodes: outer glow sphere (enhanced for bloom)
@@ -265,7 +302,7 @@ export function SdbGraph3D({
     }
 
     return group;
-  }, [degreeMap, hovered]);
+  }, [degreeMap, hovered, makeLabel]);
 
   /* ── Link rendering ────────────────────────────────────────── */
 
