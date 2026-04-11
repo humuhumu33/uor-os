@@ -13,7 +13,10 @@ import { hypergraph, hyperedgeReaper, hyperedgeEvents } from "./hypergraph";
 import type { Hyperedge, IncidenceResult, SimilarEdge, HyperedgeEvent, HyperedgeEventType } from "./hypergraph";
 import { sparqlQuery, sparqlUpdate } from "./grafeo-store";
 import type { SparqlBinding } from "./grafeo-store";
-import { getProvider, initProvider } from "./persistence";
+import { getProvider, initProvider, providerRegistry, partitionRouter, migrationEngine } from "./persistence";
+import type { ProviderEntry } from "./persistence/provider-registry";
+import type { PartitionRule } from "./persistence/partition-router";
+import type { MigrationPlan, MigrationResult } from "./persistence/migration-engine";
 import { getStoreBackend, initStoreBackend } from "./stores/store-factory";
 import { QueryBuilder } from "./query-builder";
 import { SovereignTransaction } from "./transaction";
@@ -331,6 +334,39 @@ export class SovereignDB {
 
   /** The active storage backend. */
   get backend(): string { return this._backend; }
+
+  // ── Storage Management ───────────────────────────────────
+
+  /** Get info about all registered storage providers. */
+  storage(): { active: string; providers: Array<{ id: string } & ProviderEntry> } {
+    this.ensureOpen();
+    return { active: providerRegistry.active(), providers: providerRegistry.list() };
+  }
+
+  /** Plan a migration between providers (dry run). */
+  async planMigration(targetId: string): Promise<MigrationPlan> {
+    this.ensureOpen();
+    return migrationEngine.plan(providerRegistry.active(), targetId);
+  }
+
+  /** Execute a migration to another provider. */
+  async migrate(targetId: string, onProgress?: (pct: number) => void): Promise<MigrationResult> {
+    this.ensureOpen();
+    const plan = await migrationEngine.plan(providerRegistry.active(), targetId);
+    return migrationEngine.execute(plan, onProgress);
+  }
+
+  /** Add a partition rule routing a namespace to a provider. */
+  addPartition(rule: PartitionRule): void {
+    this.ensureOpen();
+    partitionRouter.addRule(rule);
+  }
+
+  /** Get all partition rules. */
+  partitions(): PartitionRule[] {
+    this.ensureOpen();
+    return partitionRouter.listRules();
+  }
 
   // ── Lifecycle ───────────────────────────────────────────────
 
