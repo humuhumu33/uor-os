@@ -225,6 +225,3 @@ export async function deployApp(opts: DeployOptions): Promise<DeployResult> {
     graphPushReceipt,
   };
 }
-    durationMs,
-  };
-}
