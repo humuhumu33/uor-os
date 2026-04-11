@@ -2035,7 +2035,7 @@ const SearchPage = () => {
         <div className={result && readerMode ? "w-full" : "profile-container max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-10"}>
 
           {/* ══════════════ EMPTY STATE — Homepage ══════════════ */}
-          {!result && !aiMode && !(inWindow && windowInitialQuery) && (
+          {!result && !aiMode && (
             <ImmersiveSearchView
               onSearch={(q) => { setInput(q); handleSearch(q); }}
               onExit={() => {
