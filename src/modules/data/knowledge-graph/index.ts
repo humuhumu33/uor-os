@@ -218,29 +218,60 @@ export type {
 
 export { identityMorphism } from "./lib/graph-morphisms";
 
-// ── Hologram File Format ────────────────────────────────────────────────────
+// ── Holo File Format (.holo) ────────────────────────────────────────────────
 
 export {
+  encodeHoloFile,
+  decodeHoloFile,
+  verifySeal,
+  serializeHolo,
+  parseHolo,
+  holoToNQuads,
+  nquadsToHoloQuads,
+  // Legacy aliases
   encodeHologramFile,
   decodeHologramFile,
-  verifySeal,
   serializeHologram,
   parseHologram,
   hologramToNQuads,
   nquadsToHologramQuads,
-} from "./hologram-file/codec";
+} from "./holo-file/codec";
 
 export {
+  ingestHoloFile,
+  exportHoloFile,
+  listHoloFiles,
   ingestHologramFile,
   exportHologramFile,
   listHologramFiles,
-} from "./hologram-file/ingest";
+} from "./holo-file/ingest";
+
+export {
+  HoloGraphBuilder,
+  createHoloGraphBuilder,
+} from "./holo-file/graph-builder";
+
+export {
+  executeHoloCompute,
+  executeSingleNode,
+} from "./holo-file/executor";
 
 export type {
+  HoloFile,
+  HoloManifest,
+  HoloIdentity,
+  HoloFileOptions,
+  HoloQuad,
+  HoloDecodeResult,
+  HoloComputeNode,
+  HoloComputeSection,
+  HoloExecutionSchedule,
+  HoloBlob,
+  // Legacy aliases
   HologramFile,
   HologramFileManifest,
   HologramFileIdentity,
   HologramFileOptions,
   HologramQuad,
   HologramDecodeResult,
-} from "./hologram-file/types";
+} from "./holo-file/types";
