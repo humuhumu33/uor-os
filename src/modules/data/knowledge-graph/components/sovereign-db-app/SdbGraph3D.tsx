@@ -15,6 +15,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import type { GNode, GLink, LayoutMode } from "./SdbGraphCanvas";
 import { getGpuForceLayout, type GpuForceNode, type GpuForceLink } from "./SdbGpuForceLayout";
+import { SdbMinimap } from "./SdbMinimap";
 
 interface Props {
   nodes: GNode[];
@@ -421,37 +422,40 @@ export function SdbGraph3D({
   const dagMode = dagModeFor(layoutMode);
 
   return (
-    <ForceGraph3D
-      ref={fgRef}
-      graphData={graphData}
-      width={width}
-      height={height}
-      backgroundColor={BG_COLOR}
-      nodeThreeObject={nodeThreeObject}
-      nodeThreeObjectExtend={false}
-      linkColor={linkColor}
-      linkWidth={linkWidth}
-      linkOpacity={0.6}
-      linkThreeObject={linkThreeObject}
-      linkThreeObjectExtend={false}
-      linkPositionUpdate={linkPositionUpdate}
-      linkDirectionalParticles={linkDirectionalParticles}
-      linkDirectionalParticleSpeed={0.004}
-      linkDirectionalParticleWidth={1.2}
-      linkDirectionalParticleColor={() => "rgba(147, 197, 253, 0.5)"}
-      onNodeClick={handleNodeClick}
-      onNodeRightClick={handleNodeRightClick}
-      onNodeHover={handleNodeHover}
-      onBackgroundClick={onBackgroundClick}
-      dagMode={dagMode}
-      dagLevelDistance={dagMode ? 40 : undefined}
-      d3AlphaDecay={0.02}
-      d3VelocityDecay={0.3}
-      warmupTicks={60}
-      cooldownTicks={120}
-      showNavInfo={false}
-      enableNodeDrag={true}
-      enablePointerInteraction={true}
-    />
+    <div className="relative w-full h-full" style={{ width, height }}>
+      <ForceGraph3D
+        ref={fgRef}
+        graphData={graphData}
+        width={width}
+        height={height}
+        backgroundColor={BG_COLOR}
+        nodeThreeObject={nodeThreeObject}
+        nodeThreeObjectExtend={false}
+        linkColor={linkColor}
+        linkWidth={linkWidth}
+        linkOpacity={0.6}
+        linkThreeObject={linkThreeObject}
+        linkThreeObjectExtend={false}
+        linkPositionUpdate={linkPositionUpdate}
+        linkDirectionalParticles={linkDirectionalParticles}
+        linkDirectionalParticleSpeed={0.004}
+        linkDirectionalParticleWidth={1.2}
+        linkDirectionalParticleColor={() => "rgba(147, 197, 253, 0.5)"}
+        onNodeClick={handleNodeClick}
+        onNodeRightClick={handleNodeRightClick}
+        onNodeHover={handleNodeHover}
+        onBackgroundClick={onBackgroundClick}
+        dagMode={dagMode}
+        dagLevelDistance={dagMode ? 40 : undefined}
+        d3AlphaDecay={0.02}
+        d3VelocityDecay={0.3}
+        warmupTicks={60}
+        cooldownTicks={120}
+        showNavInfo={false}
+        enableNodeDrag={true}
+        enablePointerInteraction={true}
+      />
+      <SdbMinimap fgRef={fgRef} nodes={nodes} />
+    </div>
   );
 }
