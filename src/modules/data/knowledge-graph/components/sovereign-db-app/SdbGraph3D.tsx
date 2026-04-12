@@ -311,9 +311,18 @@ export function SdbGraph3D({
     return group;
   }, [degreeMap, hovered, makeLabel, highlightSignClass]);
 
+  /* ── Mirror τ detection helper ───────────────────────────── */
+
+  const isMirrorLink = useCallback((link: any) => {
+    return link.label === "mirror τ";
+  }, []);
+
   /* ── Link rendering ────────────────────────────────────────── */
 
   const linkColor = useCallback((link: any) => {
+    if (isMirrorLink(link)) {
+      return "rgba(200, 160, 255, 0.35)";
+    }
     const sourceId = typeof link.source === "string" ? link.source : link.source?.id;
     const targetId = typeof link.target === "string" ? link.target : link.target?.id;
     if (hovered && (sourceId === hovered || targetId === hovered)) {
@@ -323,24 +332,64 @@ export function SdbGraph3D({
       return "rgba(100, 130, 200, 0.12)";
     }
     return "rgba(148, 163, 184, 0.18)";
-  }, [hovered]);
+  }, [hovered, isMirrorLink]);
 
   const linkWidth = useCallback((link: any) => {
+    if (isMirrorLink(link)) return 0.6;
     const sourceId = typeof link.source === "string" ? link.source : link.source?.id;
     const targetId = typeof link.target === "string" ? link.target : link.target?.id;
     if (hovered && (sourceId === hovered || targetId === hovered)) return 1.5;
     return link.weight ? Math.min(link.weight * 0.4, 2) : 0.3;
-  }, [hovered]);
+  }, [hovered, isMirrorLink]);
+
+  /* ── Custom dashed line for mirror-pair (τ) edges ──────────── */
+
+  const linkThreeObject = useCallback((link: any) => {
+    if (!isMirrorLink(link)) return undefined;
+
+    // Build a dashed line between source and target positions
+    const src = link.source;
+    const tgt = link.target;
+    if (!src?.x || !tgt?.x) return undefined;
+
+    const points = [
+      new THREE.Vector3(src.x, src.y, src.z),
+      new THREE.Vector3(tgt.x, tgt.y, tgt.z),
+    ];
+    const geo = new THREE.BufferGeometry().setFromPoints(points);
+    const mat = new THREE.LineDashedMaterial({
+      color: 0xc8a0ff,
+      dashSize: 4,
+      gapSize: 3,
+      transparent: true,
+      opacity: 0.45,
+    });
+    const line = new THREE.Line(geo, mat);
+    line.computeLineDistances();
+    return line;
+  }, [isMirrorLink]);
+
+  /** Update dashed line positions each frame (source/target move with force layout). */
+  const linkPositionUpdate = useCallback((obj: any, { start, end }: any, link: any) => {
+    if (!isMirrorLink(link) || !obj?.geometry) return;
+    const positions = obj.geometry.attributes.position;
+    if (!positions) return;
+    positions.setXYZ(0, start.x, start.y, start.z);
+    positions.setXYZ(1, end.x, end.y, end.z);
+    positions.needsUpdate = true;
+    obj.computeLineDistances();
+  }, [isMirrorLink]);
 
   /* ── Link particles for connected edges ────────────────────── */
 
   const linkDirectionalParticles = useCallback((link: any) => {
+    if (isMirrorLink(link)) return 0; // no particles on mirror links
     const sourceId = typeof link.source === "string" ? link.source : link.source?.id;
     const targetId = typeof link.target === "string" ? link.target : link.target?.id;
     if (hovered && (sourceId === hovered || targetId === hovered)) return 3;
     if (sourceId?.startsWith("atlas:") || targetId?.startsWith("atlas:")) return 1;
     return 0;
-  }, [hovered]);
+  }, [hovered, isMirrorLink]);
 
   /* ── Events ────────────────────────────────────────────────── */
 
@@ -383,6 +432,9 @@ export function SdbGraph3D({
       linkColor={linkColor}
       linkWidth={linkWidth}
       linkOpacity={0.6}
+      linkThreeObject={linkThreeObject}
+      linkThreeObjectExtend={false}
+      linkPositionUpdate={linkPositionUpdate}
       linkDirectionalParticles={linkDirectionalParticles}
       linkDirectionalParticleSpeed={0.004}
       linkDirectionalParticleWidth={1.2}
