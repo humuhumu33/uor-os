@@ -37,7 +37,7 @@ describe("encodeHologramFile", () => {
       tags: ["test"],
     });
 
-    expect(file["@type"]).toBe("uor:HologramFile");
+    expect(file["@type"]).toBe("uor:HoloFile");
     expect(file.identity["u:canonicalId"]).toMatch(/^urn:uor:derivation:sha256:/);
     expect(file.identity["u:cid"]).toBeTruthy();
     expect(file.identity["u:ipv6"]).toMatch(/^fd00:0075:6f72:/);
@@ -51,7 +51,7 @@ describe("encodeHologramFile", () => {
 
   it("encodes a plain object by wrapping it", async () => {
     const file = await encodeHologramFile(PLAIN_OBJECT);
-    expect(file["@type"]).toBe("uor:HologramFile");
+    expect(file["@type"]).toBe("uor:HoloFile");
     expect(file.identity["u:cid"]).toBeTruthy();
     expect(file.seal).toMatch(/^[0-9a-f]{64}$/);
   });
