@@ -1,39 +1,20 @@
 /**
- * UNS Core. Ring R_8 = Z/256Z
+ * UNS Core — Ring R₈ = Z/256Z
  *
- * The minimal algebraic substrate for the UOR identity engine.
- * Two primitive involutions (neg, bnot) and the critical identity:
+ * CANONICAL SOURCE: src/lib/uor-ring.ts
  *
- *   neg(bnot(x)) === succ(x)   ∀ x ∈ {0..255}
- *
- * This identity is the mathematical anchor for the entire UNS stack.
- * Every service built on top of UNS derives correctness from this ring.
- *
- * Pure functions. Zero dependencies.
+ * This file re-exports the canonical ring operations to avoid duplication.
+ * All ring arithmetic is defined once in lib/uor-ring.ts — the single
+ * source of truth for the R₈ algebraic substrate.
  */
 
-/** Additive inverse in Z/256Z: neg(x) = 256 − x mod 256. */
-export const neg = (x: number): number => ((-x) % 256 + 256) % 256;
+export { neg, bnot, succ, pred } from "@/lib/uor-ring";
+export { verifyAllCriticalIdentity as verifyCriticalIdentityAll } from "@/lib/uor-ring";
 
-/** Bitwise complement in 8-bit space: bnot(x) = x XOR 0xFF. */
-export const bnot = (x: number): number => x ^ 0xff;
+// The verifyCriticalIdentity used by consumers expects no args → verify all 256
+import { verifyAllCriticalIdentity } from "@/lib/uor-ring";
 
-/** Successor: succ(x) = (x + 1) mod 256. */
-export const succ = (x: number): number => (x + 1) % 256;
-
-/** Predecessor: pred(x) = (x − 1) mod 256. */
-export const pred = (x: number): number => ((x - 1) % 256 + 256) % 256;
-
-/**
- * Verify the critical identity: neg(bnot(x)) === succ(x) for ALL x in 0..255.
- *
- * This is the trust anchor. If this fails, the entire algebraic framework
- * is unsound and no identity derivation can be trusted.
- *
- * @returns true iff the identity holds for all 256 elements of R_8.
- */
+/** Verify the critical identity: neg(bnot(x)) === succ(x) for ALL x in 0..255. */
 export function verifyCriticalIdentity(): boolean {
-  return Array.from({ length: 256 }, (_, x) => neg(bnot(x)) === succ(x)).every(
-    Boolean
-  );
+  return verifyAllCriticalIdentity().verified;
 }

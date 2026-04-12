@@ -1,6 +1,12 @@
 /**
- * .hologram File Format — Barrel Exports.
- * @module knowledge-graph/hologram-file
+ * .hologram File Format — Legacy Barrel Exports.
+ *
+ * CANONICAL SOURCE: src/modules/data/knowledge-graph/holo-file/
+ *
+ * This file re-exports from the canonical holo-file module for
+ * backward compatibility. All new code should import from holo-file.
+ *
+ * @deprecated Use @/modules/data/knowledge-graph/holo-file
  */
 
 export type {
@@ -10,7 +16,7 @@ export type {
   HologramFileOptions,
   HologramQuad,
   HologramDecodeResult,
-} from "./types";
+} from "../holo-file/types";
 
 export {
   encodeHologramFile,
@@ -20,10 +26,10 @@ export {
   parseHologram,
   hologramToNQuads,
   nquadsToHologramQuads,
-} from "./codec";
+} from "../holo-file/codec";
 
 export {
   ingestHologramFile,
   exportHologramFile,
   listHologramFiles,
-} from "./ingest";
+} from "../holo-file/ingest";
