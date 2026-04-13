@@ -61,6 +61,7 @@ export default function VaultContextPicker({
     if (!filter.trim()) return true;
     const q = filter.toLowerCase();
     return (
+      <>
       (d.filename || "").toLowerCase().includes(q) ||
       d.cid.toLowerCase().includes(q) ||
       d.tags.some((t) => t.toLowerCase().includes(q))
@@ -173,5 +174,6 @@ export default function VaultContextPicker({
           )}
         </div>
       )}
+    </>
   );
 }

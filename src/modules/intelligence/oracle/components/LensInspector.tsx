@@ -48,6 +48,7 @@ function SegmentedControl<T extends string>({
   size?: "sm" | "xs";
 }) {
   return (
+    <>
     <div className="flex flex-wrap gap-1">
       {options.map((opt) => {
         const isActive = opt.value === value;
@@ -500,6 +501,7 @@ const LensInspector: React.FC<LensInspectorProps> = ({
           </div>
         </div>
       )}
+    </>
   );
 };
 

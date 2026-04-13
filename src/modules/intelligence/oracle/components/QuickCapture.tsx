@@ -147,6 +147,7 @@ export default function QuickCapture({ open, onClose }: Props) {
   }, [handleCapture, onClose]);
 
   return (
+          <>
           {open && (
         <>
           {/* Backdrop */}
@@ -201,5 +202,6 @@ export default function QuickCapture({ open, onClose }: Props) {
           </div>
         </>
       )}
+    </>
   );
 }

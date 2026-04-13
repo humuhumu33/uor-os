@@ -72,6 +72,7 @@ export default function ShortcutCheatSheet({ open, onClose }: Props) {
   const headerClass = isLight ? "text-black/30" : "text-white/30";
 
   return (
+          <>
           {open && (
         <>
           <div
@@ -120,5 +121,6 @@ export default function ShortcutCheatSheet({ open, onClose }: Props) {
           </div>
         </>
       )}
+    </>
   );
 }

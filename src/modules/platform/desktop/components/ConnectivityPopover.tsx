@@ -59,6 +59,7 @@ export default function ConnectivityPopover({ open, onClose, isLight }: Props) {
     : null;
 
   return (
+          <>
           {open && (
         <div
           ref={ref}
@@ -136,6 +137,7 @@ export default function ConnectivityPopover({ open, onClose, isLight }: Props) {
           </div>
         </div>
       )}
+    </>
   );
 }
 

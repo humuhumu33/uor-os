@@ -18,11 +18,13 @@ export default function SnapOverlay({ zone }: Props) {
   const border = isLight ? "2px solid rgba(0,0,0,0.10)" : "2px solid rgba(255,255,255,0.12)";
 
   return (
+          <>
           {rect && (
         <div
       className="fixed z-[180] pointer-events-none rounded-xl"
           style={{ top: rect.y, left: rect.x, width: rect.w, height: rect.h, background: bg, border }}
         />
       )}
+    </>
   );
 }

@@ -12,6 +12,7 @@ export default function RingIndicator({ active }: Props) {
   const { isLight } = useDesktopTheme();
 
   return (
+          <>
           {active && (
         <div
       className="fixed top-10 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none flex items-center gap-2 px-3 py-1.5 rounded-full"
@@ -31,5 +32,6 @@ export default function RingIndicator({ active }: Props) {
           </span>
         </div>
       )}
+    </>
   );
 }

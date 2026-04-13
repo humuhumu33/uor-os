@@ -137,6 +137,7 @@ export default function SpotlightSearch({ open, onClose, onOpenApp, onSearch }: 
   const suggestionIconColor = isLight ? "text-black/25" : "text-white/30";
 
   return (
+          <>
           {open && (
         <>
           <div
@@ -318,5 +319,6 @@ export default function SpotlightSearch({ open, onClose, onOpenApp, onSearch }: 
           </div>
         </>
       )}
+    </>
   );
 }

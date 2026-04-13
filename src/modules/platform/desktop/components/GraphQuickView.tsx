@@ -126,6 +126,7 @@ export default function GraphQuickView({ open, onClose, centerLabel, centerAddre
   }, [onClose]);
 
   return (
+          <>
           {open && (
         <div
           ref={overlayRef}
@@ -189,5 +190,6 @@ export default function GraphQuickView({ open, onClose, centerLabel, centerAddre
           </div>
         </div>
       )}
+    </>
   );
 }
