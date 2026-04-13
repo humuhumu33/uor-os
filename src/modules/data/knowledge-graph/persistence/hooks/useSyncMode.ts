@@ -87,19 +87,28 @@ export function useSyncMode(): SyncModeState {
         if (mountedRef.current) setIsMigrating(false);
       }
     } else if (newMode === "auto") {
-      // Re-run auto-detection
       setIsMigrating(true);
       try {
         const { initProvider } = await import("../index");
         await initProvider();
         if (mountedRef.current) {
           setActiveProviderId(providerRegistry.active());
+          toast.success("Switched to Auto", {
+            description: "Provider selected based on connectivity",
+            duration: 3000,
+          });
         }
       } catch (err) {
-        if (mountedRef.current) setMigrationError(String(err));
+        if (mountedRef.current) {
+          setMigrationError(String(err));
+          toast.error("Sync mode switch failed", { description: String(err), duration: 4000 });
+        }
       } finally {
         if (mountedRef.current) setIsMigrating(false);
       }
+    } else {
+      // No migration needed (e.g. already on the right provider)
+      toast(`Sync mode: ${modeLabels[newMode]}`, { duration: 2000 });
     }
   }, [mode]);
 
