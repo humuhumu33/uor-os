@@ -21,24 +21,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-node@v5
         with:
           node-version: 20
+          cache: 'npm'
 
-      - name: Cache node_modules
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+      - run: npm ci
 
-      - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+      - name: Lint & Test (parallel)
+        run: npx eslint . & npm test & wait
 
-      - run: npx eslint .
-      - run: npm test
       - run: npm audit --audit-level=critical || true
 
   build-and-deploy:
@@ -50,21 +45,22 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-node@v5
         with:
           node-version: 20
+          cache: 'npm'
 
-      - name: Restore node_modules cache
-        id: cache
+      - run: npm ci
+
+      - name: Restore Vite cache
         uses: actions/cache@v4
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-
-      - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+          path: node_modules/.vite
+          key: ${{ runner.os }}-vite-${{ hashFiles('src/**', 'vite.config.ts') }}
+          restore-keys: ${{ runner.os }}-vite-
 
       - name: Build
         run: npm run build
@@ -80,6 +76,7 @@ jobs:
         uses: actions/upload-pages-artifact@v4
         with:
           path: dist
+          compression-level: 1
 
       - name: Deploy to GitHub Pages
         id: deployment
