@@ -21,6 +21,13 @@
 
 @layer base {
   :root {
+    /* ── OS-Wide Body Text Size ──────────────────────────────────────
+     * Single parameter controlling ALL non-title, non-heading text.
+     * Change this one value to resize every label, body text, button,
+     * sidebar item, status bar, tag, timestamp across the entire OS.
+     */
+    --os-text-body: 14px;
+
     /* ── Unified Fluid Typography Scale ──────────────────────────────
      * Single source of truth for all text sizes across the site.
      * clamp(min, preferred, max) ensures legibility at every viewport.
@@ -172,22 +179,22 @@
    */
   .light {
     --background: 0 0% 97%;
-    --foreground: 225 20% 12%;
+    --foreground: 225 25% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 225 20% 12%;
+    --card-foreground: 225 25% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 225 20% 12%;
+    --popover-foreground: 225 25% 8%;
 
     --primary: 38 65% 42%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 225 10% 93%;
-    --secondary-foreground: 225 20% 15%;
+    --secondary-foreground: 225 25% 10%;
 
     --muted: 225 10% 94%;
-    --muted-foreground: 225 10% 38%;
+    --muted-foreground: 225 15% 28%;
 
     --accent: 270 40% 50%;
     --accent-foreground: 0 0% 100%;
@@ -195,23 +202,23 @@
     --destructive: 0 72% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 225 12% 87%;
-    --input: 225 12% 87%;
+    --border: 225 12% 82%;
+    --input: 225 12% 82%;
     --ring: 38 60% 45%;
 
     --section-dark: 225 10% 94%;
-    --section-dark-foreground: 225 20% 12%;
-    --pill-border: 225 10% 82%;
-    --rule: 225 12% 87%;
+    --section-dark-foreground: 225 25% 8%;
+    --pill-border: 225 10% 78%;
+    --rule: 225 12% 82%;
 
     --hologram-bg: 30 5% 96%;
     --hologram-surface: 30 5% 92%;
     --hologram-glass: hsla(30, 5%, 85%, 0.5);
     --hologram-glass-border: hsla(38, 15%, 40%, 0.1);
-    --hologram-text: 225 20% 15%;
-    --hologram-text-muted: 225 10% 45%;
-    --hologram-gold: 38 50% 42%;
-    --hologram-purple-warm: 270 30% 45%;
+    --hologram-text: 225 25% 10%;
+    --hologram-text-muted: 225 15% 35%;
+    --hologram-gold: 38 50% 38%;
+    --hologram-purple-warm: 270 30% 40%;
   }
 
   /* ── Immersive Theme — warmer/deeper than standard dark ─────────── */
