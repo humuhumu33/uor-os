@@ -442,8 +442,18 @@ export function SdbHomeView({
                   onClick={() => onSelect(item.id)}
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-xl hover:bg-muted/30 transition-colors group"
                 >
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
-                  <Icon size={16} className="text-muted-foreground shrink-0" />
+                  {item.fileDataUrl && item.fileMime?.startsWith("image/") ? (
+                    <img
+                      src={item.fileDataUrl}
+                      alt={item.name}
+                      className="w-8 h-8 rounded-lg object-cover shrink-0"
+                    />
+                  ) : (
+                    <>
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+                      <Icon size={16} className="text-muted-foreground shrink-0" />
+                    </>
+                  )}
                   <span className="text-os-body text-foreground truncate flex-1 text-left group-hover:text-foreground transition-colors">
                     {item.name}
                   </span>
