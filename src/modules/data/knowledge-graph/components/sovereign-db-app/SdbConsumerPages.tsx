@@ -903,17 +903,17 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             if (isFolder) toggleExpand(item.id);
             setSelectedId(item.id);
           }}
-          className={`group flex items-center w-full py-[5px] text-os-body transition-colors rounded-md ${
+          className={`flex items-center gap-3 w-full py-2 text-os-body font-medium transition-colors ${
             isSelected
-              ? "bg-foreground/[0.07] text-foreground font-medium"
-              : "text-foreground/65 hover:bg-foreground/[0.04] hover:text-foreground"
+              ? "bg-primary/10 text-primary border-r-2 border-primary"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           }`}
-          style={{ paddingLeft: `${8 + depth * 16}px`, paddingRight: "6px" }}
+          style={{ paddingLeft: `${16 + depth * 14}px`, paddingRight: "8px" }}
         >
           {isFolder ? (
             <>
-              <IconFolder size={15} className={`shrink-0 mr-2 ${getFolderColor(item.id)}`} />
-              <span className="truncate flex-1 text-left text-[13px]">{item.name}</span>
+              <IconFolder size={16} className={`shrink-0 ${getFolderColor(item.id)}`} />
+              <span className="truncate flex-1 text-left">{item.name}</span>
               {hasChildren && (
                 <span className="w-4 h-4 flex items-center justify-center shrink-0 text-muted-foreground/40">
                   <IconChevronRight
@@ -925,10 +925,10 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             </>
           ) : (
             <>
-              <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2 text-[12px]">
+              <span className="w-[18px] h-[18px] flex items-center justify-center shrink-0 text-[13px]">
                 {icon}
               </span>
-              <span className="truncate flex-1 text-left text-[13px]">{item.name}</span>
+              <span className="truncate flex-1 text-left">{item.name}</span>
             </>
           )}
         </button>
