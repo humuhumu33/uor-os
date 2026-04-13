@@ -935,54 +935,110 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       {/* ── Sidebar (portaled to unified sidebar container) ── */}
       {sidebarTarget && activeSection === "workspace" && createPortal(
         <div className="flex flex-col h-full overflow-hidden">
-          {/* ── Top actions ── */}
-          <div className={`px-3 pt-3 pb-1.5 flex items-center ${sidebarCollapsed ? "justify-center" : "gap-1.5"}`}>
+          {/* ── Top row: Home + New + Search (Eden-style) ── */}
+          <div className={`px-3 pt-3 pb-1 flex items-center ${sidebarCollapsed ? "justify-center" : "gap-1"}`}>
             <button
               onClick={() => setSelectedId(null)}
               title="Home"
-              className={`flex items-center gap-2 ${sidebarCollapsed ? "" : "flex-1"} px-2.5 py-[7px] rounded-lg text-os-body transition-colors ${
-                !selectedId ? "bg-primary/8 text-foreground font-medium" : "text-foreground/70 hover:bg-muted/25 hover:text-foreground"
+              className={`flex items-center gap-1.5 px-2.5 py-[6px] rounded-lg text-[13px] font-medium transition-colors ${
+                !selectedId ? "bg-foreground/[0.08] text-foreground" : "text-foreground/60 hover:bg-foreground/[0.04] hover:text-foreground"
               }`}
             >
               <IconHome size={15} className="shrink-0" />
               {!sidebarCollapsed && "Home"}
             </button>
             {!sidebarCollapsed && (
-              <button
-                onClick={() => setFinderOpen(true)}
-                className="p-2 rounded-lg text-muted-foreground/60 hover:bg-muted/25 hover:text-foreground transition-colors"
-                title="Search (⌘K)"
-              >
-                <IconSearch size={15} />
-              </button>
+              <div className="flex items-center gap-0.5 ml-auto">
+                <button onClick={() => createNote()} className="p-1.5 rounded-md text-foreground/40 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="New page">
+                  <IconPlus size={14} />
+                </button>
+                <button onClick={() => setFinderOpen(true)} className="p-1.5 rounded-md text-foreground/40 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="Search (⌘K)">
+                  <IconSearch size={14} />
+                </button>
+              </div>
             )}
           </div>
 
           {/* Scrollable content */}
-          <div className="flex-1 min-h-0 overflow-auto px-3 py-1.5">
+          <div className="flex-1 min-h-0 overflow-auto px-3 py-1">
             {!sidebarCollapsed && (
               <>
-                {/* ── Workspace / Folders ── */}
+                {/* ── Recents ── */}
+                {recentItems.length > 0 && (
+                  <div className="mb-1">
+                    <div className="px-1 pt-3 pb-1.5">
+                      <span className="text-[11px] font-medium text-foreground/35 uppercase tracking-wider">Recents</span>
+                    </div>
+                    <nav className="space-y-px">
+                      {recentItems.map(item => (
+                        <button
+                          key={item.id}
+                          onClick={() => setSelectedId(item.id)}
+                          className={`flex items-center gap-2 w-full px-2 py-[5px] rounded-md text-[13px] transition-colors ${
+                            selectedId === item.id
+                              ? "bg-foreground/[0.07] text-foreground font-medium"
+                              : "text-foreground/60 hover:bg-foreground/[0.04] hover:text-foreground"
+                          }`}
+                        >
+                          <span className="w-4 h-4 flex items-center justify-center shrink-0 text-[12px]">
+                            {item.icon || PAGE_ICONS[item.type] || "📄"}
+                          </span>
+                          <span className="truncate">{item.name}</span>
+                        </button>
+                      ))}
+                    </nav>
+                  </div>
+                )}
+
+                {/* ── Pinned ── */}
+                {favoriteItems.length > 0 && (
+                  <div className="mb-1">
+                    <div className="flex items-center px-1 pt-3 pb-1.5">
+                      <span className="text-[11px] font-medium text-foreground/35 uppercase tracking-wider">Pinned</span>
+                      <IconChevronDown size={10} className="ml-1 text-foreground/25" />
+                    </div>
+                    <nav className="space-y-px">
+                      {favoriteItems.map(item => (
+                        <button
+                          key={item.id}
+                          onClick={() => setSelectedId(item.id)}
+                          className={`flex items-center gap-2 w-full px-2 py-[5px] rounded-md text-[13px] transition-colors ${
+                            selectedId === item.id
+                              ? "bg-foreground/[0.07] text-foreground font-medium"
+                              : "text-foreground/60 hover:bg-foreground/[0.04] hover:text-foreground"
+                          }`}
+                        >
+                          <span className="w-4 h-4 flex items-center justify-center shrink-0 text-[12px]">
+                            {item.icon || PAGE_ICONS[item.type] || "📄"}
+                          </span>
+                          <span className="truncate">{item.name}</span>
+                        </button>
+                      ))}
+                    </nav>
+                  </div>
+                )}
+
+                {/* ── Workspace (Eden-style folder tree) ── */}
                 <div className="mb-1">
-                  <div className="flex items-center justify-between px-1 py-2">
-                    <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Workspace</span>
+                  <div className="flex items-center justify-between px-1 pt-3 pb-1.5">
+                    <span className="text-[11px] font-medium text-foreground/35 uppercase tracking-wider">Workspace</span>
                     <div className="flex items-center gap-0.5">
-                      <button onClick={() => createFolder()} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="New folder">
-                        <IconFolder size={12} />
+                      <button onClick={() => createFolder()} className="p-1 rounded text-foreground/30 hover:text-foreground hover:bg-foreground/[0.05] transition-colors" title="New folder">
+                        <IconFolder size={11} />
                       </button>
-                      <button onClick={() => createWorkspace()} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="New workspace">
-                        <IconPlus size={12} />
+                      <button onClick={() => createNote()} className="p-1 rounded text-foreground/30 hover:text-foreground hover:bg-foreground/[0.05] transition-colors" title="New page">
+                        <IconPlus size={11} />
                       </button>
                     </div>
                   </div>
                   {workspaces.length > 1 && (
-                    <div className="mb-1.5">
+                    <div className="mb-1">
                       {workspaces.map(ws => (
                         <button
                           key={ws.id}
                           onClick={() => { setActiveWorkspaceId(ws.id); setSelectedId(null); }}
-                          className={`flex items-center gap-2 w-full px-2.5 py-[5px] rounded-lg text-os-body transition-colors ${
-                            activeWorkspaceId === ws.id ? "bg-primary/8 text-foreground font-medium" : "text-foreground/70 hover:bg-muted/25 hover:text-foreground"
+                          className={`flex items-center gap-2 w-full px-2 py-[5px] rounded-md text-[13px] transition-colors ${
+                            activeWorkspaceId === ws.id ? "bg-foreground/[0.07] text-foreground font-medium" : "text-foreground/60 hover:bg-foreground/[0.04] hover:text-foreground"
                           }`}
                         >
                           <span className="text-[12px]">{ws.icon || "🏠"}</span>
@@ -991,33 +1047,9 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
                       ))}
                     </div>
                   )}
-                  <nav className="space-y-0.5">
+                  <nav className="space-y-px">
                     {rootItems.filter(i => i.type === "folder").map(i => renderItem(i))}
-                  </nav>
-                </div>
-
-                {/* ── Files ── */}
-                <div className="mb-1">
-                  <div className="flex items-center justify-between px-1 py-2">
-                    <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Files</span>
-                    <div className="flex items-center gap-0.5">
-                      <button onClick={() => uploadRef.current?.click()} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="Upload">
-                        <IconUpload size={12} />
-                      </button>
-                      <button onClick={() => createNote()} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="New page">
-                        <IconPlus size={12} />
-                      </button>
-                    </div>
-                  </div>
-                  <nav className="space-y-0.5">
-                    {rootItems.filter(i => i.type !== "folder").length === 0 ? (
-                      <div className="px-2.5 py-4 text-center">
-                        <p className="text-os-body text-muted-foreground/50 mb-2">No files yet</p>
-                        <button onClick={() => createNote()} className="text-os-body text-primary/80 hover:text-primary transition-colors">Create a page</button>
-                      </div>
-                    ) : (
-                      rootItems.filter(i => i.type !== "folder").map(i => renderItem(i))
-                    )}
+                    {rootItems.filter(i => i.type !== "folder").map(i => renderItem(i))}
                   </nav>
                 </div>
 
@@ -1036,6 +1068,20 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             )}
           </div>
 
+          {/* ── Bottom bar (Eden-style: upload, graph, settings) ── */}
+          {!sidebarCollapsed && (
+            <div className="px-3 py-2 border-t border-foreground/[0.06] flex items-center gap-1">
+              <button onClick={() => uploadRef.current?.click()} className="p-1.5 rounded-md text-foreground/35 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="Upload">
+                <IconUpload size={14} />
+              </button>
+              <button onClick={() => onNavigateSection?.("graph")} className="p-1.5 rounded-md text-foreground/35 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="Graph view">
+                <IconGraph size={14} />
+              </button>
+              <button className="p-1.5 rounded-md text-foreground/35 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="Settings">
+                <IconSettings size={14} />
+              </button>
+            </div>
+          )}
         </div>,
         sidebarTarget
       )}
