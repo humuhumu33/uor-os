@@ -41,7 +41,7 @@ interface Props {
 interface TreeItem {
   id: string;
   edge: Hyperedge;
-  type: "folder" | "note" | "daily";
+  type: "workspace" | "folder" | "note" | "daily";
   name: string;
   parentId?: string;
   icon?: string;
@@ -52,6 +52,7 @@ function generateId() {
 }
 
 const PAGE_ICONS: Record<string, string> = {
+  workspace: "🏠",
   note: "📄",
   daily: "☀️",
   folder: "📁",
