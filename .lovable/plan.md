@@ -1,81 +1,93 @@
 
 
-# Streamline UOR OS: Robust One-Command Setup + Offline-First Architecture
+# Full-System Streamlining: Lean, Performant, Scalable, Secure
 
-## What you found (summary)
+## Current State
 
-Your assessment is thorough and accurate. The core friction points are:
-1. **Install reliability** — `.npmrc` and `overrides` are now in place (done), but no `.env.example` or offline/remote boundary docs exist
-2. **Offline vs remote ambiguity** — `bus.ts` throws when a remote method is called without Supabase vars, but nothing tells the user which features need the network
-3. **Boot narrative hidden** — the sophisticated sovereign boot sequence is invisible to users; only source readers see it
-4. **No single entry point** — no `npx` or `make boot` that handles everything
+The codebase has a strong architectural spine (bus, sovereign boot, ring kernel, GrafeoDB) but carries weight from many heavy integrations loaded eagerly or without clear boundaries. Key findings:
+
+- **Code-splitting**: `App.tsx` lazy-loads route pages (good), but `PrivyWalletProvider` and `AuthProvider` are eagerly imported at root level — Privy alone pulls a large SDK. Three.js, Matrix SDK, Monaco, and ML libs are only used in specific apps but some are statically imported.
+- **Bus offline handling**: Already fixed — `getGatewayUrl()` returns `null` gracefully.
+- **Security**: CSP exists only inside WASM sandbox iframes (`wasm-loader.ts`), not for the main shell. Rate limiting exists in `security-gate.ts` and `shield/middleware.ts` but only for SDK/edge contexts, not for the client-side bus remote calls.
+- **Idempotency**: No request-ID or idempotency-key header on mutating remote RPC calls.
+- **Bundle**: ~100 dependencies including three.js, matrix-js-sdk, Monaco, HuggingFace transformers, Privy, graphology, sigma, d3-force, react-force-graph-3d, hls.js, lexical — all in one SPA.
 
 ## Plan
 
-### 1. Create `.env.example` with annotated defaults
+### Phase 1 — Lean (reduce critical-path weight)
 
-A checked-in file so users see exactly what's optional vs required:
+**1a. Lazy-load heavy providers**
 
-```env
-# ── Required: NONE — the core shell boots fully offline ──
+Move `PrivyWalletProvider` behind a lazy boundary — it's only needed when a user opens wallet features. Wrap it in a lightweight shim that renders children immediately and loads Privy on demand.
 
-# ── Optional: Enable remote features (AI, messenger, cloud sync) ──
-# VITE_SUPABASE_URL=https://your-project.supabase.co
-# VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
-```
+**1b. Add Vite manual chunks for heavy stacks**
 
-### 2. Make `bus.ts` fail gracefully when offline
+Configure `rollupOptions.output.manualChunks` in `vite.config.ts` to isolate:
+- `three` + `@react-three/*` + `react-force-graph-3d` → `vendor-3d`
+- `matrix-js-sdk` → `vendor-matrix`
+- `@monaco-editor/react` → `vendor-monaco`
+- `@huggingface/transformers` → `vendor-ml`
+- `lexical` + `@lexical/*` → `vendor-editor`
+- `graphology` + `sigma` + `@react-sigma/*` → `vendor-graph-viz`
 
-Currently `getGatewayUrl()` throws if no Supabase vars are set. Change it to return `null` and have `callRemote` return a clear error result instead of crashing. This makes the shell fully functional without any `.env` — remote features simply show "offline" status rather than throwing.
+This ensures none of these load until their route/component is actually rendered.
 
-### 3. Add a `boot` npm script
+**1c. Add `rollup-plugin-visualizer`**
 
-Add to `package.json`:
-```json
-"boot": "npm install && npm run dev"
-```
+Add a `build:analyze` script that produces a treemap HTML so you can see exactly where bundle weight lives.
 
-So the entire local experience becomes:
-```bash
-npm run boot
-```
+### Phase 2 — Performant (boot + runtime)
 
-### 4. Update README with architecture-vs-deployment section
+**2a. Defer bus module registration**
 
-Add a short section mapping features to their network requirements:
+`App.tsx` already defers `bus/modules` via `requestIdleCallback` — good. Verify that `sovereignBoot()` doesn't synchronously import heavy modules before first paint.
 
-```text
-┌─────────────────────────┬────────────┐
-│ Feature                 │ Requires   │
-├─────────────────────────┼────────────┤
-│ Desktop shell, dock     │ Offline    │
-│ Kernel (R₈ ring, WASM)  │ Offline    │
-│ Knowledge graph         │ Offline    │
-│ Sovereign boot + seal   │ Offline    │
-│ AI oracle               │ Network    │
-│ Encrypted messenger     │ Network    │
-│ Cloud sync              │ Network    │
-│ Edge functions (47)     │ Network    │
-└─────────────────────────┴────────────┘
-```
+**2b. PWA precache tuning**
 
-### 5. Surface boot status in onboarding
+The service worker already caps precache at 5MB and excludes WASM. Add explicit `globIgnores` for the new vendor chunks (`vendor-3d`, `vendor-matrix`, etc.) so they use runtime caching instead of precache — users who never open 3D or messenger shouldn't download those on install.
 
-Add a one-line note in README under Getting Started that explains what "Sovereign Boot" means in plain language — the system self-verifies its integrity on every launch, producing a cryptographic seal.
+### Phase 3 — Scalable (bus hardening)
 
-## Files changed
+**3a. Request ID + idempotency header on remote calls**
+
+Add `X-Request-ID` (from the existing `nextId()`) and an optional `X-Idempotency-Key` param to `callRemote()` in `bus.ts`. The gateway can use this for deduplication of mutating calls.
+
+**3b. Client-side retry with exponential backoff**
+
+Add a simple retry wrapper (max 2 retries, exponential backoff) for transient gateway errors (5xx, network errors) in `callRemote()`. Non-retryable errors (4xx) fail immediately.
+
+### Phase 4 — Secure (CSP + supply chain)
+
+**4a. Add CSP meta tag to `index.html`**
+
+A baseline Content-Security-Policy that restricts `script-src`, `connect-src`, and `default-src` to known origins. This protects the main shell, not just sandboxed WASM iframes.
+
+**4b. Add lockfile-only CI check**
+
+Add `--frozen-lockfile` equivalent to CI (`npm ci` already does this — verify the CI workflow uses `npm ci`, not `npm install`). Already using `npm ci` in `.github/workflows/ci.yml` — confirmed.
+
+**4c. Add `npm audit` step to CI**
+
+Add a `npm audit --audit-level=high` step to the CI workflow so known vulnerabilities are caught before merge.
+
+## Files Changed
 
 | File | Action |
 |------|--------|
-| `.env.example` | Create — annotated env template |
-| `src/modules/platform/bus/bus.ts` | Edit — graceful offline fallback in `getGatewayUrl()` and `callRemote` |
-| `package.json` | Edit — add `"boot"` script |
-| `README.md` | Edit — add offline/online feature table, boot explanation |
+| `vite.config.ts` | Add `manualChunks`, add `build:analyze` script reference |
+| `package.json` | Add `rollup-plugin-visualizer` devDep, `build:analyze` script |
+| `src/App.tsx` | Lazy-wrap `PrivyWalletProvider` |
+| `src/modules/platform/bus/bus.ts` | Add `X-Request-ID` header, optional idempotency key, retry logic for transient errors |
+| `src/custom-sw.ts` | Add `globIgnores` for vendor chunks in precache |
+| `index.html` | Add baseline CSP meta tag |
+| `.github/workflows/ci.yml` | Add `npm audit` step |
 
-## What this achieves
+## What This Achieves
 
-- **One command**: `npm run boot` — install + dev server, any OS, no flags
-- **Zero config**: Shell boots fully offline without `.env`; remote features degrade gracefully
-- **Transparent**: Users see what works offline vs online before they start
-- **Hardware agnostic**: No change needed — the boot already adapts to WASM/SIMD/GPU availability and records it in the seal
+- **First load**: Heavy 3D/Matrix/Monaco/ML chunks never load until needed — shell boots with just React + Tailwind + bus
+- **Offline-first**: Unchanged — shell works without `.env`, remote degrades gracefully
+- **Gateway resilience**: Request IDs enable tracing; retries handle transient failures; idempotency keys prevent duplicate mutations
+- **Security baseline**: CSP on the main shell + audit in CI
+- **Visibility**: Bundle analyzer gives you a treemap to track weight over time
+- **Hypergraph-rooted**: All changes stay within the bus/registry architecture — the graph remains the canonical substrate for operation discovery and data
 
