@@ -318,16 +318,18 @@ export default function TabBar({
         WebkitBackdropFilter: "blur(12px) saturate(1.2)",
       }}
     >
-      {/* Left: UOR menu */}
+      {/* Left: Home button (direct click → go to home screen) */}
+      <button
+        onClick={onHideAll}
+        className="flex items-center justify-center shrink-0 h-full transition-opacity duration-150 hover:opacity-70"
+        style={{ width: 50 }}
+        title="Home"
+      >
+        <Home className={`w-[16px] h-[16px] ${isLight ? "text-black/50" : "text-white/50"}`} />
+      </button>
+
+      {/* UOR menu (moved to separate trigger) */}
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            className="flex items-center justify-center shrink-0 h-full transition-opacity duration-150 hover:opacity-70"
-            style={{ width: 50 }}
-          >
-            <Home className={`w-[16px] h-[16px] ${isLight ? "text-black/50" : "text-white/50"}`} />
-          </button>
-        </DropdownMenuTrigger>
         <DropdownMenuContent
           className={`rounded-xl min-w-[340px] p-0 ${menuContentClass}`}
           align="start"
