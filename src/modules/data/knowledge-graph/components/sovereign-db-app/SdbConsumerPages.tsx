@@ -41,7 +41,7 @@ interface Props {
 interface TreeItem {
   id: string;
   edge: Hyperedge;
-  type: "folder" | "note" | "daily";
+  type: "workspace" | "folder" | "note" | "daily";
   name: string;
   parentId?: string;
   icon?: string;
@@ -52,6 +52,7 @@ function generateId() {
 }
 
 const PAGE_ICONS: Record<string, string> = {
+  workspace: "🏠",
   note: "📄",
   daily: "☀️",
   folder: "📁",
@@ -66,6 +67,7 @@ function loadTagColors(): Record<string, string> {
 
 export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   const [items, setItems] = useState<TreeItem[]>([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [recentIds, setRecentIds] = useState<string[]>([]);
@@ -115,16 +117,35 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   }, []);
 
   const reload = useCallback(async () => {
+    const workspaces = await db.byLabel("workspace:workspace");
     const folders = await db.byLabel("workspace:folder");
     const notes = await db.byLabel("workspace:note");
     const daily = await db.byLabel("workspace:daily");
+
+    // Auto-create default workspace if none exist
+    if (workspaces.length === 0) {
+      await db.addEdge(["root", "ws:default"], "workspace:workspace", {
+        name: "My Workspace",
+        createdAt: Date.now(),
+      });
+      const ws2 = await db.byLabel("workspace:workspace");
+      workspaces.push(...ws2);
+    }
+
     const all: TreeItem[] = [
+      ...workspaces.map(e => ({
+        id: e.nodes[1] || e.id,
+        edge: e,
+        type: "workspace" as const,
+        name: String(e.properties.name || "Workspace"),
+        icon: String(e.properties.icon || ""),
+      })),
       ...folders.map(e => ({
         id: e.nodes[1] || e.id,
         edge: e,
         type: "folder" as const,
         name: String(e.properties.name || "Untitled"),
-        parentId: e.nodes[0] === "ws:root" ? undefined : e.nodes[0],
+        parentId: e.nodes[0],
         icon: String(e.properties.icon || ""),
       })),
       ...notes.map(e => ({
@@ -140,11 +161,18 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
         edge: e,
         type: "daily" as const,
         name: String(e.properties.title || e.properties.date || "Daily"),
+        parentId: e.nodes[0],
         icon: String(e.properties.icon || ""),
       })),
     ];
     setItems(all);
-  }, [db]);
+
+    // Auto-select first workspace if none active
+    if (!activeWorkspaceId) {
+      const first = all.find(i => i.type === "workspace");
+      if (first) setActiveWorkspaceId(first.id);
+    }
+  }, [db, activeWorkspaceId]);
 
   useEffect(() => { reload(); }, [reload]);
 
@@ -325,16 +353,26 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     setNoteComments(prev => [...prev, comment]);
   }, []);
 
-  const createFolder = useCallback(async () => {
-    const folderId = `ws:${generateId()}`;
-    await db.addEdge(["ws:root", folderId], "workspace:folder", { name: "New Folder", createdAt: Date.now() });
+  const createWorkspace = useCallback(async (name = "New Workspace") => {
+    const wsId = `ws:${generateId()}`;
+    await db.addEdge(["root", wsId], "workspace:workspace", { name, createdAt: Date.now() });
     await reload();
-    setExpanded(prev => new Set(prev).add(folderId));
+    setActiveWorkspaceId(wsId);
   }, [db, reload]);
 
-  const createNote = useCallback(async (parentId = "ws:root", title = "Untitled") => {
+  const createFolder = useCallback(async (parentId?: string) => {
+    const parent = parentId || activeWorkspaceId || "ws:root";
+    const folderId = `folder:${generateId()}`;
+    await db.addEdge([parent, folderId], "workspace:folder", { name: "New Folder", createdAt: Date.now() });
+    await reload();
+    setExpanded(prev => new Set(prev).add(folderId));
+  }, [db, reload, activeWorkspaceId]);
+
+  const createNote = useCallback(async (parentId?: string, title = "Untitled") => {
+    // Notes go inside folders (or workspace root if no folder specified)
+    const parent = parentId || activeWorkspaceId || "ws:root";
     const noteId = `note:${generateId()}`;
-    await db.addEdge([parentId, noteId], "workspace:note", {
+    await db.addEdge([parent, noteId], "workspace:note", {
       title,
       content: "",
       blocks: JSON.stringify([{ id: "b0", text: "", indent: 0, children: [] }]),
@@ -344,7 +382,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     });
     await reload();
     setSelectedId(noteId);
-  }, [db, reload]);
+  }, [db, reload, activeWorkspaceId]);
 
   const navigateTo = useCallback((noteId: string) => {
     setSelectedId(noteId);
@@ -359,7 +397,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
       setSelectedId(existing.id);
     } else {
       await saveNote();
-      await createNote("ws:root", title);
+      await createNote(undefined, title);
     }
   }, [items, saveNote, createNote]);
 
@@ -423,7 +461,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
         ? content.split("\n").map((line, i) => ({ id: `b${i}`, text: line, indent: 0, children: [] }))
         : [{ id: "b0", text: `Uploaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, indent: 0, children: [] }];
 
-      await db.addEdge(["ws:root", noteId], "workspace:note", {
+      await db.addEdge([activeWorkspaceId || "ws:root", noteId], "workspace:note", {
         title: fileName,
         content: content || `Uploaded: ${file.name}`,
         blocks: JSON.stringify(blockContent),
@@ -527,7 +565,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
         name: current.name,
         icon: current.icon || PAGE_ICONS[current.type] || "📄",
       });
-      if (current.parentId && current.parentId !== "ws:root") {
+      if (current.parentId && current.parentId !== activeWorkspaceId && !current.parentId.startsWith("root")) {
         current = items.find(i => i.id === current!.parentId) as TreeItem | undefined as any;
       } else {
         break;
@@ -540,7 +578,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     { id: "graph", label: "Switch to Graph View", icon: <IconGraph size={15} />, action: () => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "graph" })) },
     { id: "canvas", label: "Open Canvas", icon: <IconLayoutBoard size={15} />, action: () => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "canvas" })) },
     { id: "daily", label: "Create Daily Note", icon: <IconSun size={15} />, action: () => reloadDaily() },
-    { id: "folder", label: "New Folder", icon: <IconFolder size={15} />, action: createFolder },
+    { id: "folder", label: "New Folder", icon: <IconFolder size={15} />, action: () => createFolder() },
     { id: "note", label: "New Note", icon: <IconPlus size={15} />, action: () => createNote() },
   ], [createFolder, createNote, reloadDaily]);
 
@@ -554,8 +592,12 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     [items]
   );
 
-  const rootItems = items.filter(i => i.type !== "daily" && (!i.parentId || i.parentId === "ws:root"));
-  const childrenOf = (parentId: string) => items.filter(i => i.parentId === parentId);
+  const workspaces = items.filter(i => i.type === "workspace");
+  const rootItems = items.filter(i =>
+    i.type !== "daily" && i.type !== "workspace" &&
+    (i.parentId === activeWorkspaceId || (!i.parentId && i.parentId !== "ws:root"))
+  );
+  const childrenOf = (parentId: string) => items.filter(i => i.parentId === parentId && i.type !== "workspace");
 
   const favoriteItems = useMemo(() =>
     items.filter(i => favorites.has(i.id)),
@@ -690,19 +732,46 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
         items={finderItems}
         recentIds={recentIds}
         onSelect={id => { setSelectedId(id); }}
-        onCreate={title => createNote("ws:root", title)}
+        onCreate={title => createNote(undefined, title)}
         commands={commands}
       />
 
       {/* ── Sidebar ───────────────────────── */}
       <aside className="w-[220px] shrink-0 border-r border-border/20 bg-muted/8 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-border/15">
-          <span className="text-os-body font-semibold text-foreground truncate flex-1">Workspace</span>
+        {/* Workspace selector */}
+        <div className="px-3 py-2.5 border-b border-border/15">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider flex-1">Workspace</span>
+            <button
+              onClick={() => createWorkspace()}
+              className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+              title="New workspace"
+            >
+              <IconPlus size={11} />
+            </button>
+          </div>
+          {workspaces.map(ws => (
+            <button
+              key={ws.id}
+              onClick={() => { setActiveWorkspaceId(ws.id); setSelectedId(null); }}
+              className={`flex items-center gap-2 w-full px-2.5 py-[6px] rounded-lg text-os-body transition-colors ${
+                activeWorkspaceId === ws.id
+                  ? "bg-primary/10 text-foreground font-medium"
+                  : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+              }`}
+            >
+              <span className="text-[12px]">{ws.icon || "🏠"}</span>
+              <span className="truncate">{ws.name}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Header with Upload */}
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-border/15">
           <button
             onClick={() => uploadRef.current?.click()}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-os-body font-medium transition-all hover:shadow-sm"
-            title="Upload files or create a new page"
+            title="Upload files"
           >
             <IconUpload size={14} />
             Upload
@@ -782,15 +851,15 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
             </div>
           )}
 
-          {/* Workspace tree — moved up, before daily notes */}
+          {/* Folders & Pages */}
           <div className="mb-3">
             <div className="flex items-center justify-between px-2.5 pb-1.5 pt-1">
               <div className="flex items-center gap-1.5">
                 <IconFolder size={12} className="text-muted-foreground" />
-                <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider">Pages</span>
+                <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider">Folders</span>
               </div>
               <button
-                onClick={createFolder}
+                onClick={() => createFolder()}
                 className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
               >
                 <IconPlus size={12} />
