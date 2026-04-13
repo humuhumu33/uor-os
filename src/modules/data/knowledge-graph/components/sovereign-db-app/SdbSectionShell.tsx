@@ -4,11 +4,8 @@
  * Eden-inspired: clean, spacious, balanced.
  */
 
-import { useState, useRef, useMemo, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  IconSearch, IconLayout, IconGraph, IconTerminal2,
-} from "@tabler/icons-react";
+import { useState, useRef, useMemo } from "react";
+import { IconSearch, IconLayout, IconGraph, IconTerminal2 } from "@tabler/icons-react";
 import type { AppSection } from "./SovereignDBApp";
 
 const BANNER_PHOTOS = [
@@ -37,14 +34,12 @@ interface Props {
   onSwitchSection: (section: AppSection) => void;
   onSearch?: (query: string) => void;
   searchValue?: string;
-  compact?: boolean;
   children: React.ReactNode;
 }
 
 export function SdbSectionShell({
   activeSection, onSwitchSection,
   onSearch, searchValue = "",
-  compact = false,
   children,
 }: Props) {
   const bannerRef = useRef<HTMLImageElement>(null);
@@ -53,7 +48,7 @@ export function SdbSectionShell({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* ── Hero Banner ── */}
+      {/* ── Hero Banner (fixed height, no change on section switch) ── */}
       <div className="relative w-full shrink-0 overflow-hidden h-[130px]">
         <img
           ref={bannerRef}
@@ -64,7 +59,6 @@ export function SdbSectionShell({
           onLoad={() => setBannerLoaded(true)}
           draggable={false}
         />
-        {/* Subtle tint */}
         <div className="absolute inset-0 bg-background/10" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
@@ -108,20 +102,9 @@ export function SdbSectionShell({
         </div>
       </div>
 
-      {/* ── Section content with crossfade ── */}
+      {/* ── Section content (all sections mounted, display-toggled) ── */}
       <div className="flex-1 min-h-0 overflow-hidden relative">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeSection}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="absolute inset-0"
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
+        {children}
       </div>
     </div>
   );

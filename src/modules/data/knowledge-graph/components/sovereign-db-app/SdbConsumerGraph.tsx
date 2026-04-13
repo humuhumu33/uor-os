@@ -5,7 +5,8 @@
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { IconX } from "@tabler/icons-react";
+import { createPortal } from "react-dom";
+import { IconX, IconCube, IconLayoutGrid, IconWorld, IconZoomIn, IconZoomOut, IconFocusCentered } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import { hypergraph } from "../../hypergraph";
 import { traversalEngine } from "../../traversal";
@@ -25,6 +26,8 @@ interface Props {
   db: SovereignDB;
   onNavigateSection?: (section: AppSection) => void;
   globalSearch?: string;
+  sidebarTarget?: HTMLDivElement | null;
+  sidebarCollapsed?: boolean;
 }
 
 const COLORS: Record<string, string> = {
@@ -46,7 +49,7 @@ const SIGN_CLASS_LEGEND = [
   { name: "SC₇", color: "hsl(270, 60%, 60%)" },
 ];
 
-export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "" }: Props) {
+export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "", sidebarTarget, sidebarCollapsed }: Props) {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("force");
   const [filters, setFilters] = useState<GraphFilter>({
     types: new Map(),
@@ -234,8 +237,66 @@ export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "" }: P
     return { vertex: v, coord: decodeTriality(idx) };
   }, [selected]);
 
+  const graphSidebarContent = (
+    <div className="flex flex-col h-full overflow-hidden">
+      {!sidebarCollapsed && (
+        <div className="px-4 py-3 border-b border-border/15">
+          <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">
+            Graph
+          </span>
+        </div>
+      )}
+      <nav className="flex-1 py-2 space-y-0.5 overflow-auto">
+        <button
+          onClick={() => setShow2D(v => !v)}
+          title={show2D ? "Switch to 3D" : "Switch to 2D"}
+          className={`flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium transition-colors ${
+            !show2D ? "bg-primary/10 text-primary border-r-2 border-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          }`}
+        >
+          <IconCube size={18} stroke={1.5} className="shrink-0" />
+          {!sidebarCollapsed && <span className="truncate">3D View</span>}
+        </button>
+        <button
+          onClick={() => setShow2D(v => !v)}
+          title={show2D ? "Switch to 3D" : "Switch to 2D"}
+          className={`flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium transition-colors ${
+            show2D ? "bg-primary/10 text-primary border-r-2 border-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          }`}
+        >
+          <IconLayoutGrid size={18} stroke={1.5} className="shrink-0" />
+          {!sidebarCollapsed && <span className="truncate">2D View</span>}
+        </button>
+        <div className="mx-3 my-1 border-t border-border/10" />
+        <button
+          onClick={() => setShowAtlasLayer(v => !v)}
+          className={`flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium transition-colors ${
+            showAtlasLayer ? "bg-primary/10 text-primary border-r-2 border-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          }`}
+        >
+          <IconWorld size={18} stroke={1.5} className="shrink-0" />
+          {!sidebarCollapsed && <span className="truncate">Atlas Layer</span>}
+        </button>
+        <div className="mx-3 my-1 border-t border-border/10" />
+        <button onClick={handleZoomIn} className="flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors">
+          <IconZoomIn size={18} stroke={1.5} className="shrink-0" />
+          {!sidebarCollapsed && <span className="truncate">Zoom In</span>}
+        </button>
+        <button onClick={handleZoomOut} className="flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors">
+          <IconZoomOut size={18} stroke={1.5} className="shrink-0" />
+          {!sidebarCollapsed && <span className="truncate">Zoom Out</span>}
+        </button>
+        <button onClick={handleFitAll} className="flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors">
+          <IconFocusCentered size={18} stroke={1.5} className="shrink-0" />
+          {!sidebarCollapsed && <span className="truncate">Fit All</span>}
+        </button>
+      </nav>
+    </div>
+  );
+
   return (
     <div ref={containerRef} className="relative w-full h-full">
+      {sidebarTarget && createPortal(graphSidebarContent, sidebarTarget)}
       {!show2D ? (
         /* ── 3D immersive view (default) ── */
         <SdbGraph3D
