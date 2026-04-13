@@ -6,6 +6,10 @@
  * the .holo file's compute section. Every node is a LUT hyperedge in
  * the sovereign hypergraph.
  *
+ * Atlas Integration: Each compute node is auto-assigned an Atlas vertex
+ * index via `AtlasEngine.resolve(contentHash)`. Nodes sharing a sign
+ * class are grouped into the same execution level for parallel scheduling.
+ *
  * @module knowledge-graph/holo-file/graph-builder
  */
 
@@ -13,6 +17,7 @@ import { sha256hexSync } from "@/lib/uor-core";
 import { ElementWiseView } from "@/modules/kernel/lut/element-wise-view";
 import { fromOp, type LutOpName } from "@/modules/kernel/lut/ops";
 import { optimizeGraph, type FusionNode } from "@/modules/kernel/lut/fusion";
+import { getAtlasEngine } from "@/modules/research/atlas/atlas-engine";
 import type { HoloComputeSection, HoloComputeNode, HoloExecutionSchedule } from "./types";
 
 // ── Builder node ────────────────────────────────────────────────────────────
@@ -74,7 +79,12 @@ export class HoloGraphBuilder {
   }
 
   /**
-   * Build the compute section. Runs fusion passes and computes schedule.
+   * Build the compute section.
+   *
+   * 1. Fuse ops (optional).
+   * 2. Assign each node an Atlas vertex via content-hash → resolve().
+   * 3. Schedule by topological order, then refine levels by sign-class
+   *    grouping so nodes on the same sign class execute in parallel.
    */
   build(optimize = true): HoloComputeSection {
     let fusionNodes: FusionNode[] = Array.from(this.nodes.values()).map(n => ({
@@ -88,21 +98,67 @@ export class HoloGraphBuilder {
       fusionNodes = optimizeGraph(fusionNodes);
     }
 
-    // Compute execution levels via topological sort
-    const schedule = computeSchedule(fusionNodes, this.inputIds);
+    // ── Atlas vertex assignment via content hash ─────────────────────
+    const engine = getAtlasEngine();
+    const vertexMap = new Map<string, number>();
 
-    const computeNodes: HoloComputeNode[] = fusionNodes.map((n, idx) => ({
+    for (const n of fusionNodes) {
+      const contentHash = sha256hexSync(new Uint8Array(n.lut.table));
+      const vertex = engine.resolve(contentHash);
+      if (vertex !== null) vertexMap.set(n.id, vertex);
+    }
+
+    // ── Topological schedule ────────────────────────────────────────
+    const topoSchedule = computeSchedule(fusionNodes, this.inputIds);
+
+    // ── Refine each topo level by sign-class grouping ───────────────
+    // Nodes in the same sign class (SC0–SC7) within a topo level form
+    // a parallel cohort — they share geometric locality on the Atlas
+    // torus and can be dispatched together.
+    const refinedLevels: string[][] = [];
+
+    for (const topoLevel of topoSchedule.levels) {
+      // Group nodes in this level by sign class
+      const scBuckets = new Map<number, string[]>();
+
+      for (const nodeId of topoLevel) {
+        const vertex = vertexMap.get(nodeId);
+        if (vertex !== null && vertex !== undefined) {
+          const rootIdx = engine.rootIndex(vertex);
+          const sc = engine.signClass(rootIdx);
+          let bucket = scBuckets.get(sc);
+          if (!bucket) { bucket = []; scBuckets.set(sc, bucket); }
+          bucket.push(nodeId);
+        } else {
+          // No atlas vertex — put in SC -1 bucket
+          let bucket = scBuckets.get(-1);
+          if (!bucket) { bucket = []; scBuckets.set(-1, bucket); }
+          bucket.push(nodeId);
+        }
+      }
+
+      // Each sign-class bucket becomes its own parallel sub-level
+      // Sort by SC index for deterministic ordering
+      const sortedKeys = [...scBuckets.keys()].sort((a, b) => a - b);
+      for (const sc of sortedKeys) {
+        refinedLevels.push(scBuckets.get(sc)!);
+      }
+    }
+
+    // ── Build final compute nodes ───────────────────────────────────
+    const computeNodes: HoloComputeNode[] = fusionNodes.map(n => ({
       id: n.id,
       op: n.lut.label,
       table: Array.from(n.lut.table),
       inputs: n.inputs,
       outputs: n.outputs,
-      level: schedule.levels.findIndex(level => level.includes(n.id)),
+      atlasVertex: vertexMap.get(n.id),
+      level: refinedLevels.findIndex(level => level.includes(n.id)),
     }));
 
     return {
       nodes: computeNodes,
-      schedule,
+      schedule: { levels: refinedLevels, nodeCount: fusionNodes.length },
     };
   }
 }
@@ -110,7 +166,6 @@ export class HoloGraphBuilder {
 // ── Schedule computation ────────────────────────────────────────────────────
 
 function computeSchedule(nodes: FusionNode[], inputIds: string[]): HoloExecutionSchedule {
-  const nodeMap = new Map(nodes.map(n => [n.id, n]));
   const levels: string[][] = [];
   const scheduled = new Set<string>(inputIds);
 
@@ -123,7 +178,6 @@ function computeSchedule(nodes: FusionNode[], inputIds: string[]): HoloExecution
       }
     }
     if (level.length === 0) {
-      // Remaining nodes have unresolvable deps — add them all
       level.push(...remaining.map(n => n.id));
     }
     levels.push(level);
