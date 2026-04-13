@@ -64,41 +64,44 @@ export function SdbSectionShell({
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
       </div>
 
-      {/* ── Search bar (centered, Google-style) ── */}
-      <div className="w-full -mt-7 relative z-10 shrink-0 flex flex-col items-center px-4">
-        <div className="relative w-full max-w-xl mb-5">
-          <IconSearch size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/40 pointer-events-none" />
-          <input
-            type="text"
-            value={searchValue}
-            onChange={e => onSearch?.(e.target.value)}
-            placeholder="Search anything..."
-            className="w-full pl-13 pr-5 py-3.5 text-[15px] bg-card/90 backdrop-blur-md border border-border/20 rounded-full
-              text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20
-              focus:border-primary/30 transition-all shadow-lg shadow-black/10"
-          />
-        </div>
+      {/* ── Search bar + Section tabs (single row) ── */}
+      <div className="w-full -mt-7 relative z-10 shrink-0 px-4 sm:px-6 lg:px-10">
+        <div className="flex items-center gap-3 mb-3">
+          {/* Search bar */}
+          <div className="relative flex-1 min-w-0">
+            <IconSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
+            <input
+              type="text"
+              value={searchValue}
+              onChange={e => onSearch?.(e.target.value)}
+              placeholder="Search anything..."
+              className="w-full pl-11 pr-4 py-3 text-[15px] bg-card border border-border/40 rounded-2xl
+                text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/25
+                focus:border-primary/30 transition-all shadow-md shadow-black/15 truncate"
+            />
+          </div>
 
-        {/* ── Section tabs ── */}
-        <div className="flex items-center gap-1.5 mb-2">
-          {SECTION_TABS.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeSection === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onSwitchSection(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-os-body font-medium border whitespace-nowrap transition-all duration-200 ${
-                  isActive
-                    ? "bg-foreground text-background border-foreground shadow-sm"
-                    : "bg-card/80 text-muted-foreground border-border/20 hover:bg-muted/40 hover:text-foreground"
-                }`}
-              >
-                <Icon size={14} />
-                {tab.label}
-              </button>
-            );
-          })}
+          {/* Section tabs (right side) */}
+          <div className="flex items-center gap-1 shrink-0">
+            {SECTION_TABS.map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeSection === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onSwitchSection(tab.id)}
+                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-os-body font-medium border whitespace-nowrap transition-all duration-200 ${
+                    isActive
+                      ? "bg-foreground text-background border-foreground shadow-sm"
+                      : "bg-card/80 text-muted-foreground border-border/20 hover:bg-muted/40 hover:text-foreground"
+                  }`}
+                >
+                  <Icon size={14} />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
