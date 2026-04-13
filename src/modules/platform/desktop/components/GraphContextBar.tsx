@@ -55,7 +55,7 @@ export default function GraphContextBar({ appId, onViewGraph }: GraphContextBarP
       onViewGraph();
     } else {
       // Open SovereignDB via OS event
-      window.dispatchEvent(new CustomEvent("uor:open-app", { detail: "sovereign-db" }));
+      window.dispatchEvent(new CustomEvent("uor:open-app", { detail: "myspace" }));
     }
   }, [appId, onViewGraph, push]);
 

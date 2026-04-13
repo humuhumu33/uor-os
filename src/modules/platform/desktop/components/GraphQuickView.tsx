@@ -117,12 +117,12 @@ export default function GraphQuickView({ open, onClose, centerLabel, centerAddre
   }, [onClose]);
 
   const handleNodeClick = useCallback((id: string) => {
-    window.dispatchEvent(new CustomEvent("uor:open-app", { detail: "sovereign-db" }));
+    window.dispatchEvent(new CustomEvent("uor:open-app", { detail: "myspace" }));
     onClose();
   }, [onClose]);
 
   const handleFullGraph = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("uor:open-app", { detail: "sovereign-db" }));
+    window.dispatchEvent(new CustomEvent("uor:open-app", { detail: "myspace" }));
     onClose();
   }, [onClose]);
 
