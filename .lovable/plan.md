@@ -1,70 +1,79 @@
 
 
-# Tag-First Content Organization for MySpace
+# "Own Your ___" Branded Identity System
 
 ## Vision
 
-Transform the current type-based filter chips into a full **tag-first** content system inspired by TagSpaces. Instead of organizing by file location, everything is tagged — notes, chats, photos, videos, links — and users find content by its tags. This aligns perfectly with UOR's content-addressable philosophy: you don't care *where* something is stored, you find it by *what it is*.
+A cohesive branding motif across all apps: each section greets users with a contextual "Own your ___" tagline, creating a rhythmic, memorable identity. Plus a subtle "Powered by UOR. With &hearts;." signature at the bottom of every app.
 
 ## What Changes
 
-### 1. Tag Library in the Sidebar
+### 1. App Tagline Map
 
-Add a collapsible **Tag Library** section in the sidebar (between Pinned and Pages), showing all tags grouped into smart categories:
+A single shared config mapping app IDs to their tagline:
 
-- **Smart Tags** (auto-generated): `today`, `this-week`, `recent`, `untagged`
-- **Content Types** (the current filter types become tags): `notes`, `chats`, `photos`, `videos`, `links`, `audio`, `daily`
-- **User Tags** (custom, from `#hashtag` in notes or manually assigned): whatever the user creates
+```text
+sovereign-db  → "Own your data."
+oracle        → "Own your intelligence."
+vault         → "Own your identity."
+messenger     → "Own your conversations."
+library       → "Own your knowledge."
+media         → "Own your entertainment."
+app-hub       → "Own your platform."
+system-monitor→ "Own your infrastructure."
+```
 
-Each tag is a color-coded pill (like TagSpaces). Clicking a tag filters the home view to show only matching items. Multiple tags can be selected for intersection filtering.
+Future wallet app would get: "Own your money."
 
-### 2. Inline Tag Chips on Cards
+### 2. SovereignDB / MySpace Header Enhancement
 
-Each card in the home grid view gets small color-coded tag pills below the title showing its tags (type tag + any custom hashtags). This makes the tagging visible and tangible.
+In `SovereignDBApp.tsx`, add the tagline next to "MySpace" in the header bar. It fades in with a subtle animation, appearing as elegant secondary text:
 
-### 3. Tag Management
+```text
+[●] MySpace                    Own your data.        Workspace  Graph  Console
+```
 
-- **Add tags to items**: Click a `+` on any card or in the note properties panel to add/remove tags
-- **Create custom tags**: Type a new tag name to create it, pick a color from a preset palette
-- **Tag colors**: Stored in localStorage as a `tag → color` map; sensible defaults for built-in types
+The tagline uses `text-muted-foreground/40 text-[13px] italic tracking-wide` — visible but not competing with the app name.
 
-### 4. Home View Filter Upgrade
+### 3. Per-Section Tagline Variation (MySpace)
 
-The current filter chips row evolves into a tag-aware filter bar:
-- Still shows the type filters as before (they're now "type tags")
-- Adds a `+ Tag` button at the end to pick from custom tags
-- Active tags stack — selecting `notes` + `project-x` shows only notes tagged `project-x`
-- A small "×" clears all active tag filters
+Within MySpace, the tagline subtly shifts based on the active tab:
+- **Workspace** → "Own your data."
+- **Graph** → "Own your connections."
+- **Console** → "Own your infrastructure."
 
-### 5. Tag Persistence via Hypergraph
+This creates the "drum" effect even within a single app. The text cross-fades on tab switch (CSS transition on opacity).
 
-Tags already exist as `workspace:tag` edges (lines 184-209 in SdbConsumerPages). This plan extends that:
-- Each item's tags are read from its `workspace:tag` edges
-- Custom tag metadata (color, group) stored as `workspace:tag-meta` edges
-- Smart tags computed at render time (no storage needed)
+### 4. Hero Banner Tagline Overlay
+
+In `SdbHomeView.tsx`, overlay the "Own your data." tagline on the hero banner as a large, cinematic watermark-style text — `text-[28px] font-light tracking-[0.15em] text-white/40` — centered, creating an Apple-keynote feel.
+
+### 5. "Powered by UOR" Footer Signature
+
+Add to `SdbStatusBar.tsx` (the bottom bar of every app that uses it) a right-aligned signature:
+
+```text
+notes: 3 | connections: 2 | ...          Powered by UOR. With ❤️.
+```
+
+Styling: `text-[11px] text-muted-foreground/25` — barely there, discovered rather than imposed. The heart is a subtle `text-rose-400/40`.
+
+For apps that don't use `SdbStatusBar`, create a tiny reusable `<UorSignature />` component that can be dropped into any app footer.
 
 ## Files to Change
 
 | File | What |
 |------|------|
-| `SdbConsumerPages.tsx` | Add Tag Library sidebar section; load tag colors; pass tags to HomeView |
-| `SdbHomeView.tsx` | Upgrade filter bar to support multi-tag selection; show tag pills on cards |
-| New: `SdbTagLibrary.tsx` | Extracted component for the sidebar tag library with groups, pills, color picker |
-| New: `SdbTagChip.tsx` | Small reusable color-coded tag pill component |
+| New: `src/modules/platform/core/components/UorSignature.tsx` | Reusable "Powered by UOR. With heart." component |
+| New: `src/modules/platform/core/lib/app-taglines.ts` | Tagline map: app-id to "Own your ___" string |
+| `SovereignDBApp.tsx` | Add tagline in header, shift per-section |
+| `SdbHomeView.tsx` | Add cinematic tagline overlay on hero banner |
+| `SdbStatusBar.tsx` | Add UorSignature to the right end |
 
-## UI Details
+## Technical Details
 
-- Tag pills: `px-2 py-0.5 rounded-full text-[11px] font-medium` with a colored background at 20% opacity and matching text
-- Tag Library section header: same style as Recents/Pinned (`text-[12px] uppercase tracking-wider`)
-- Tag groups are collapsible with a chevron
-- Color palette: 10 preset colors (emerald, amber, rose, blue, violet, red, orange, cyan, pink, slate) — user picks when creating a tag
-- Multi-select: active tags get a subtle ring/glow; clicking again deselects
-
-## Technical Notes
-
-- No new dependencies — all CSS + existing hypergraph storage
-- Smart tags (today, this-week, recent) computed from `createdAt`/`updatedAt` timestamps
-- Hashtags parsed from note content (already implemented) automatically appear in the Tag Library
-- The `workspace:tag` edge label is already used; tag-meta edges are new but follow the same pattern
-- Content types (note, chat, photo, etc.) treated as implicit tags — no separate storage needed, derived from `TreeItem.type`
+- Tagline transitions: `transition-opacity duration-500` with key-based remount for cross-fade
+- No new dependencies
+- `UorSignature` is a 5-line component: `<span>Powered by UOR. With <span class="text-rose-400/40">❤️</span>.</span>`
+- Tagline map is a plain `Record<string, string>` export, easily extended as new apps are added
 
