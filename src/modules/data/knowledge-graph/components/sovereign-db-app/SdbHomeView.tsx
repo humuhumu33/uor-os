@@ -301,7 +301,7 @@ export function SdbHomeView({
         {/* ── Section header ── */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <h2 className="text-[17px] font-semibold text-foreground tracking-tight">Workspace</h2>
+            <h2 className="text-[17px] font-semibold text-foreground tracking-tight">MySpace</h2>
             <button
               onClick={onCreateNote}
               className="w-7 h-7 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 flex items-center justify-center transition-colors"
