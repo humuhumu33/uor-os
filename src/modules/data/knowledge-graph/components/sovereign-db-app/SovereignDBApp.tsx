@@ -137,7 +137,7 @@ const SovereignDBApp = () => {
               />
             )}
             {section === "graph" && (
-              <SdbConsumerGraph db={db} onNavigateSection={handleSectionChange} />
+              <SdbConsumerGraph db={db} onNavigateSection={handleSectionChange} globalSearch={globalSearch} />
             )}
             {section === "console" && (
               <div className="h-full overflow-auto">
