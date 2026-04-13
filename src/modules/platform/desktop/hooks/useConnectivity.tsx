@@ -58,6 +58,8 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const { mode: syncMode, setMode: setSyncMode, activeProviderId, isMigrating } = useSyncMode();
 
+  const prevOnlineRef = useRef(online);
+
   useEffect(() => {
     const goOnline = () => setOnline(true);
     const goOffline = () => setOnline(false);
@@ -68,6 +70,24 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("offline", goOffline);
     };
   }, []);
+
+  // Toast on connectivity transitions (skip initial mount)
+  useEffect(() => {
+    if (prevOnlineRef.current === online) return;
+    prevOnlineRef.current = online;
+
+    if (online) {
+      toast.success("Back online", {
+        description: "Cloud sync resumed",
+        duration: 3000,
+      });
+    } else {
+      toast("You're offline", {
+        description: "Local data fully available — changes sync when reconnected",
+        duration: 4000,
+      });
+    }
+  }, [online]);
 
   useEffect(() => {
     return syncBridge.subscribeSyncState((state) => {
