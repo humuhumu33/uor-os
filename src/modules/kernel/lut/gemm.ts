@@ -351,7 +351,9 @@ export function quantizedMatrixToBlob(
   label?: string,
 ): HoloBlob {
   const raw = serializeQuantizedMatrix(qm);
-  const b64 = btoa(String.fromCharCode(...raw));
+  let binary = "";
+  for (let i = 0; i < raw.length; i++) binary += String.fromCharCode(raw[i]);
+  const b64 = btoa(binary);
   return {
     id: `urn:uor:weight:${qm.mode.toLowerCase()}:${qm.contentHash.slice(0, 16)}`,
     mimeType: "application/x-uor-weight-matrix",
