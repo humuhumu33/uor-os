@@ -769,48 +769,8 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props
 
       {/* ── Sidebar ───────────────────────── */}
       <aside className="w-[220px] shrink-0 border-r border-border/20 bg-muted/8 flex flex-col overflow-hidden">
-        {/* Workspace selector */}
-        <div className="px-3 py-2.5 border-b border-border/15">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider flex-1">MySpace</span>
-            <button
-              onClick={() => createWorkspace()}
-              className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-              title="New workspace"
-            >
-              <IconPlus size={11} />
-            </button>
-          </div>
-          {workspaces.map(ws => (
-            <button
-              key={ws.id}
-              onClick={() => { setActiveWorkspaceId(ws.id); setSelectedId(null); }}
-              className={`flex items-center gap-2 w-full px-2.5 py-[6px] rounded-lg text-os-body transition-colors ${
-                activeWorkspaceId === ws.id
-                  ? "bg-primary/10 text-foreground font-medium"
-                  : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
-              }`}
-            >
-              <span className="text-[12px]">{ws.icon || "🏠"}</span>
-              <span className="truncate">{ws.name}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Header with Upload */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-border/15">
-          <button
-            onClick={() => uploadRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-os-body font-medium transition-all hover:shadow-sm"
-            title="Upload files"
-          >
-            <IconUpload size={14} />
-            Upload
-          </button>
-        </div>
-
-        {/* Quick actions */}
-        <div className="px-3 py-2 space-y-0.5">
+        {/* ── 1. Home & Search ── */}
+        <div className="px-3 py-2.5 space-y-0.5">
           <button
             onClick={() => setSelectedId(null)}
             className={`flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-lg text-os-body transition-colors ${
@@ -832,57 +792,37 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props
 
         <div className="mx-3 border-t border-border/10" />
 
-        {/* Scrollable sections */}
+        {/* ── 2. Workspaces & Folders ── */}
         <div className="flex-1 min-h-0 overflow-auto px-3 py-2">
-          {/* Recents */}
-          {recentItems.length > 0 && (
-            <div className="mb-3">
-              <div className="flex items-center gap-1.5 px-2.5 pb-1.5 pt-1">
-                <IconClock size={12} className="text-muted-foreground" />
-                <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider">Recents</span>
-              </div>
-              {recentItems.map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => setSelectedId(item.id)}
-                  className={`flex items-center gap-2 w-full px-2.5 py-[6px] rounded-lg text-os-body transition-colors ${
-                    selectedId === item.id ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
-                  }`}
-                >
-                  <span className="w-4 flex items-center justify-center text-[12px] shrink-0">
-                    {item.icon || PAGE_ICONS[item.type] || "📄"}
-                  </span>
-                  <span className="truncate">{item.name}</span>
-                </button>
-              ))}
+          {/* Workspace selector */}
+          <div className="mb-3">
+            <div className="flex items-center gap-2 mb-1.5 px-2.5">
+              <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider flex-1">Workspaces</span>
+              <button
+                onClick={() => createWorkspace()}
+                className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+                title="New workspace"
+              >
+                <IconPlus size={11} />
+              </button>
             </div>
-          )}
+            {workspaces.map(ws => (
+              <button
+                key={ws.id}
+                onClick={() => { setActiveWorkspaceId(ws.id); setSelectedId(null); }}
+                className={`flex items-center gap-2 w-full px-2.5 py-[6px] rounded-lg text-os-body transition-colors ${
+                  activeWorkspaceId === ws.id
+                    ? "bg-primary/10 text-foreground font-medium"
+                    : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                }`}
+              >
+                <span className="text-[12px]">{ws.icon || "🏠"}</span>
+                <span className="truncate">{ws.name}</span>
+              </button>
+            ))}
+          </div>
 
-          {/* Pinned */}
-          {favoriteItems.length > 0 && (
-            <div className="mb-3">
-              <div className="flex items-center gap-1.5 px-2.5 pb-1.5 pt-1">
-                <IconStar size={12} className="text-muted-foreground" />
-                <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider">Pinned</span>
-              </div>
-              {favoriteItems.map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => setSelectedId(item.id)}
-                  className={`flex items-center gap-2 w-full px-2.5 py-[6px] rounded-lg text-os-body transition-colors ${
-                    selectedId === item.id ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
-                  }`}
-                >
-                  <span className="w-4 flex items-center justify-center text-[12px] shrink-0">
-                    {item.icon || PAGE_ICONS[item.type] || "📄"}
-                  </span>
-                  <span className="truncate">{item.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Folders & Pages */}
+          {/* Folders */}
           <div className="mb-3">
             <div className="flex items-center justify-between px-2.5 pb-1.5 pt-1">
               <div className="flex items-center gap-1.5">
@@ -897,9 +837,38 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props
               </button>
             </div>
             <nav>
-              {rootItems.length === 0 ? (
-                <div className="px-2.5 py-6 text-center">
-                  <p className="text-os-body text-muted-foreground mb-2">No pages yet</p>
+              {rootItems.filter(i => i.type === "folder").map(i => renderItem(i))}
+            </nav>
+          </div>
+
+          {/* ── 3. Files ── */}
+          <div className="mb-3">
+            <div className="flex items-center justify-between px-2.5 pb-1.5 pt-1">
+              <div className="flex items-center gap-1.5">
+                <IconFile size={12} className="text-muted-foreground" />
+                <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider">Files</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => uploadRef.current?.click()}
+                  className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+                  title="Upload"
+                >
+                  <IconUpload size={12} />
+                </button>
+                <button
+                  onClick={() => createNote()}
+                  className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+                  title="New page"
+                >
+                  <IconPlus size={12} />
+                </button>
+              </div>
+            </div>
+            <nav>
+              {rootItems.filter(i => i.type !== "folder").length === 0 ? (
+                <div className="px-2.5 py-4 text-center">
+                  <p className="text-os-body text-muted-foreground mb-2">No files yet</p>
                   <button
                     onClick={() => createNote()}
                     className="text-os-body text-primary hover:text-primary transition-colors"
@@ -908,42 +877,9 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props
                   </button>
                 </div>
               ) : (
-                rootItems.map(i => renderItem(i))
+                rootItems.filter(i => i.type !== "folder").map(i => renderItem(i))
               )}
             </nav>
-          </div>
-
-          {/* Daily Notes */}
-          <div className="mb-3">
-            <SdbDailyNoteSection db={db} onSelectDaily={navigateTo} selectedId={selectedId} />
-          </div>
-        </div>
-
-        {/* Bottom: Tags + Trash + Settings */}
-        <div className="mt-auto border-t border-border/10">
-          {/* Tag Library — moved to bottom */}
-          <div className="px-3 py-2">
-            <SdbTagLibrary
-              userTags={userTags}
-              typeCounts={typeCounts}
-              smartCounts={smartCounts}
-              activeTags={activeTags}
-              onToggleTag={toggleTag}
-              tagColors={tagColors}
-              onSetTagColor={handleSetTagColor}
-              onCreateTag={handleCreateTag}
-            />
-          </div>
-          <div className="mx-3 border-t border-border/10" />
-          <div className="px-3 py-2 space-y-0.5">
-            <button className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors">
-              <IconTrash size={15} className="shrink-0" />
-              Trash
-            </button>
-            <button className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors">
-              <IconSettings size={15} className="shrink-0" />
-              Settings
-            </button>
           </div>
         </div>
       </aside>
