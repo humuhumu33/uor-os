@@ -9,6 +9,7 @@ import {
   IconGraph, IconSun, IconLayoutBoard, IconSearch,
   IconStar, IconStarFilled, IconDots,
   IconHome, IconSettings, IconClock, IconUpload,
+  IconPhoto, IconMoodSmile, IconMessage,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
@@ -23,6 +24,9 @@ import { SdbNoteProperties } from "./SdbNoteProperties";
 import { SdbOutline } from "./SdbOutline";
 import { SdbHomeView } from "./SdbHomeView";
 import { SdbTagLibrary } from "./SdbTagLibrary";
+import { SdbNoteCover, SdbCoverGallery } from "./SdbNoteCover";
+import { SdbIconPicker } from "./SdbIconPicker";
+import { SdbNoteComments, type NoteComment } from "./SdbNoteComments";
 
 import type { AppSection } from "./SovereignDBApp";
 
@@ -70,9 +74,14 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     } catch { return new Set(); }
   });
   const [showProperties, setShowProperties] = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const [showCoverGallery, setShowCoverGallery] = useState(false);
 
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [noteTitle, setNoteTitle] = useState("");
+  const [noteIcon, setNoteIcon] = useState("");
+  const [noteCover, setNoteCover] = useState<string | null>(null);
+  const [noteComments, setNoteComments] = useState<NoteComment[]>([]);
 
   // Tag system state
   const [activeTags, setActiveTags] = useState<Set<string>>(new Set());
@@ -148,6 +157,14 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   useEffect(() => {
     if (selected && (selected.type === "note" || selected.type === "daily")) {
       setNoteTitle(selected.name);
+      setNoteIcon(String(selected.edge.properties.icon || selected.icon || ""));
+      setNoteCover(selected.edge.properties.coverUrl ? String(selected.edge.properties.coverUrl) : null);
+      // Load comments
+      try {
+        const stored = selected.edge.properties.comments;
+        setNoteComments(stored ? JSON.parse(String(stored)) : []);
+      } catch { setNoteComments([]); }
+
       const storedBlocks = selected.edge.properties.blocks;
       if (storedBlocks) {
         try {
@@ -234,6 +251,9 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
       {
         ...selected.edge.properties,
         title: noteTitle,
+        icon: noteIcon,
+        coverUrl: noteCover || "",
+        comments: JSON.stringify(noteComments),
         content,
         blocks: JSON.stringify(blocks),
         updatedAt: Date.now(),
@@ -242,13 +262,23 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     await syncLinks(selected.id, blocks);
     await reload();
     await reloadDaily();
-  }, [db, selected, noteTitle, blocks, reload, reloadDaily, syncLinks]);
+  }, [db, selected, noteTitle, noteIcon, noteCover, noteComments, blocks, reload, reloadDaily, syncLinks]);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout>>();
   const handleBlocksChange = useCallback((newBlocks: Block[]) => {
     setBlocks(newBlocks);
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {}, 1500);
+  }, []);
+
+  const addComment = useCallback((text: string) => {
+    const comment: NoteComment = {
+      id: crypto.randomUUID().slice(0, 8),
+      text,
+      createdAt: Date.now(),
+      author: "You",
+    };
+    setNoteComments(prev => [...prev, comment]);
   }, []);
 
   const createFolder = useCallback(async () => {
@@ -778,12 +808,70 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
 
             {/* Page content */}
             <div className="flex-1 overflow-auto">
+              {/* Cover image */}
+              <SdbNoteCover
+                coverUrl={noteCover}
+                onChangeCover={(url) => { setNoteCover(url); }}
+              />
+
               <div className="max-w-[720px] mx-auto px-16 py-12">
-                <div className="mb-2">
-                  <span className="text-[40px] cursor-default select-none">
-                    {selected.icon || PAGE_ICONS[selected.type] || "📄"}
-                  </span>
+                {/* Icon with picker */}
+                <div className="relative mb-2 inline-block">
+                  <button
+                    onClick={() => setShowIconPicker(true)}
+                    className="text-[40px] cursor-pointer select-none hover:opacity-80 transition-opacity"
+                  >
+                    {noteIcon || PAGE_ICONS[selected.type] || "📄"}
+                  </button>
+                  {showIconPicker && (
+                    <SdbIconPicker
+                      currentIcon={noteIcon}
+                      onSelectIcon={(emoji) => { setNoteIcon(emoji); }}
+                      onRemoveIcon={() => setNoteIcon("")}
+                      onClose={() => setShowIconPicker(false)}
+                    />
+                  )}
                 </div>
+
+                {/* Notion-style action buttons (shown when no cover/icon set) */}
+                <div className="flex items-center gap-3 mb-3">
+                  {!noteIcon && (
+                    <button
+                      onClick={() => setShowIconPicker(true)}
+                      className="flex items-center gap-1.5 text-os-body text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2 py-1 rounded-md transition-colors"
+                    >
+                      <IconMoodSmile size={15} />
+                      Add icon
+                    </button>
+                  )}
+                  {!noteCover && (
+                    <button
+                      onClick={() => setShowCoverGallery(true)}
+                      className="flex items-center gap-1.5 text-os-body text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2 py-1 rounded-md transition-colors"
+                    >
+                      <IconPhoto size={15} />
+                      Add cover
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById("note-comments-section");
+                      el?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="flex items-center gap-1.5 text-os-body text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2 py-1 rounded-md transition-colors"
+                  >
+                    <IconMessage size={15} />
+                    Add comment
+                  </button>
+                </div>
+
+                {/* Cover gallery modal */}
+                {showCoverGallery && (
+                  <SdbCoverGallery
+                    onSelect={(url) => { setNoteCover(url); setShowCoverGallery(false); }}
+                    onClose={() => setShowCoverGallery(false)}
+                  />
+                )}
 
                 <input
                   value={noteTitle}
@@ -814,6 +902,14 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                   />
                 </div>
 
+                {/* Comments section */}
+                <div id="note-comments-section">
+                  <SdbNoteComments
+                    comments={noteComments}
+                    onAddComment={addComment}
+                  />
+                </div>
+
                 <SdbBacklinks
                   currentNoteId={selected.id}
                   currentNoteTitle={noteTitle}
@@ -836,6 +932,8 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
 
                 <div className="mt-8 pt-4 border-t border-border/15 flex items-center gap-3 text-os-body text-muted-foreground">
                   <span>{blocks.length} blocks</span>
+                  <span>·</span>
+                  <span>{noteComments.length} comment{noteComments.length !== 1 ? "s" : ""}</span>
                   <span>·</span>
                   <span>{selected.edge.properties.updatedAt
                     ? new Date(Number(selected.edge.properties.updatedAt)).toLocaleString()
