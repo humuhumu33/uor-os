@@ -4,6 +4,7 @@
  * Three subtle dots: Immersive · Dark · Light.
  * Click or press 1/2/3 to switch. Hover reveals label.
  * Theme-aware: uses dark tones on light backgrounds.
+ * Includes "Powered by UOR. With ❤️." signature below.
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -54,7 +55,7 @@ export default function DesktopThemeDots({ windows = [] }: Props) {
 
   return (
     <div
-      className="fixed bottom-4 inset-x-0 z-[195] flex justify-center pointer-events-none"
+      className="fixed bottom-4 inset-x-0 z-[195] flex flex-col items-center pointer-events-none gap-2"
       style={{
         opacity: hasVisibleWindows ? 0 : 1,
         transition: "opacity 400ms ease-out",
@@ -111,6 +112,14 @@ export default function DesktopThemeDots({ windows = [] }: Props) {
           );
         })}
       </div>
+      {/* UOR Signature */}
+      <span
+        className="text-[11px] font-mono select-none pointer-events-none"
+        style={{ color: labelColor }}
+      >
+        Powered by UOR. With{" "}
+        <span className="text-rose-400">❤️</span>.
+      </span>
     </div>
   );
 }
