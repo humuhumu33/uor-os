@@ -104,8 +104,10 @@ export async function validateChecksums(
     if (!data) continue;
 
     if (typeof globalThis.crypto?.subtle?.digest === "function") {
+      const copy = new ArrayBuffer(data.byteLength);
+      new Uint8Array(copy).set(data);
       const hash = new Uint8Array(
-        await globalThis.crypto.subtle.digest("SHA-256", data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)),
+        await globalThis.crypto.subtle.digest("SHA-256", copy),
       );
       let match = true;
       for (let i = 0; i < 32; i++) {
