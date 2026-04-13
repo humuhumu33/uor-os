@@ -722,14 +722,8 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props
     e.preventDefault();
     dragCounter.current = 0;
     setIsDraggingOver(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleUpload(files);
-      toast.success(
-        files.length === 1
-          ? `"${files[0].name}" uploaded`
-          : `${files.length} files uploaded`
-      );
+    if (e.dataTransfer.files.length > 0) {
+      handleUpload(e.dataTransfer.files);
     }
   }, [handleUpload]);
 
