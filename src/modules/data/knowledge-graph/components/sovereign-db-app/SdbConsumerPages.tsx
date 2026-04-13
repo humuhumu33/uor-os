@@ -4,6 +4,7 @@
  */
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import {
   IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash,
@@ -39,6 +40,8 @@ interface Props {
   onNavigateSection?: (section: AppSection) => void;
   activeSection?: AppSection;
   globalSearch?: string;
+  sidebarTarget?: HTMLDivElement | null;
+  sidebarCollapsed?: boolean;
 }
 
 interface TreeItem {
@@ -68,7 +71,7 @@ function loadTagColors(): Record<string, string> {
   } catch { return {}; }
 }
 
-export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalSearch }: Props) {
+export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalSearch, sidebarTarget, sidebarCollapsed }: Props) {
   const [items, setItems] = useState<TreeItem[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
