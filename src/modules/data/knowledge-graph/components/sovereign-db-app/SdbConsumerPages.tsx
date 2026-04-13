@@ -27,6 +27,9 @@ import { SdbTagLibrary } from "./SdbTagLibrary";
 import { SdbNoteCover, SdbCoverGallery } from "./SdbNoteCover";
 import { SdbIconPicker } from "./SdbIconPicker";
 import { SdbNoteComments, type NoteComment } from "./SdbNoteComments";
+import { SdbSidebarPanel } from "./SdbSidebarPanel";
+import type { BlockRefResolver, BlockRefInfo } from "./SdbBlockRef";
+import type { Block } from "./SdbBlockEditor";
 
 import type { AppSection } from "./SovereignDBApp";
 
