@@ -7,6 +7,7 @@ import { VitePWA } from "vite-plugin-pwa";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 import { componentTagger } from "lovable-tagger";
+import { visualizer } from "rollup-plugin-visualizer";
 
 export default defineConfig(({ mode }) => {
   const isGitHubPages = process.env.GITHUB_PAGES === "true";
@@ -28,6 +29,7 @@ export default defineConfig(({ mode }) => {
     topLevelAwait(),
     react(),
     mode === "development" && componentTagger(),
+    process.env.ANALYZE && visualizer({ open: true, gzipSize: true, filename: "dist/bundle-report.html" }),
     VitePWA({
       strategies: "injectManifest",
       srcDir: "src",
