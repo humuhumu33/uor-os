@@ -942,18 +942,15 @@ const OraclePage = () => {
               <div className="flex justify-start px-4 md:px-6 max-w-3xl mx-auto w-full">
                 <AnimatePresence mode="wait">
                   {showTypingDots ? (
-                    <motion.div
-                      key="typing"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="flex gap-[5px] items-center px-3 py-2"
-                    >
-                      <span className="typing-dot w-[6px] h-[6px] rounded-full bg-muted-foreground/40" style={{ animationDelay: "0ms" }} />
-                      <span className="typing-dot w-[6px] h-[6px] rounded-full bg-muted-foreground/40" style={{ animationDelay: "160ms" }} />
-                      <span className="typing-dot w-[6px] h-[6px] rounded-full bg-muted-foreground/40" style={{ animationDelay: "320ms" }} />
-                    </motion.div>
-                  ) : (verifying || refiningIteration !== null) ? (
+                     <div
+                       key="typing"
+                       className="flex gap-[10px] items-center px-3 py-3 animate-fade-in"
+                     >
+                       <span className="typing-dot w-[4px] h-[4px] rounded-full bg-foreground/20" style={{ animationDelay: "0ms" }} />
+                       <span className="typing-dot w-[4px] h-[4px] rounded-full bg-foreground/20" style={{ animationDelay: "300ms" }} />
+                       <span className="typing-dot w-[4px] h-[4px] rounded-full bg-foreground/20" style={{ animationDelay: "600ms" }} />
+                     </div>
+                   ) : (verifying || refiningIteration !== null) ? (
                     <motion.div
                       key="verifying"
                       initial={{ opacity: 0 }}
