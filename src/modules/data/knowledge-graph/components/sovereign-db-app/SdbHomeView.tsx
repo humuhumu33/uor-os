@@ -107,13 +107,14 @@ function relativeTime(ts: number): string {
 export function SdbHomeView({
   items, allEdges, recentIds, onSelect, onCreateNote, onCreateFolder, onCreateDaily, onSwitchGraph,
   activeTags, onToggleTag, tagColors, itemTagsMap, globalSearch = "",
-  activeFolderId, onNavigateFolder,
+  activeFolderId, onNavigateFolder, onMoveItem,
 }: Props) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("recent");
   const [view, setView] = useState<"grid" | "list">("grid");
   const search = globalSearch;
   const [showNewMenu, setShowNewMenu] = useState(false);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [showSort, setShowSort] = useState(false);
 
   const smartTags = new Set(["today", "this-week", "recent", "untagged"]);
