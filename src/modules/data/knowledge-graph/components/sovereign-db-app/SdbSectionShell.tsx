@@ -4,7 +4,8 @@
  * Eden-inspired: clean, spacious, balanced.
  */
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   IconSearch, IconLayout, IconGraph, IconTerminal2, IconAdjustments,
 } from "@tabler/icons-react";
