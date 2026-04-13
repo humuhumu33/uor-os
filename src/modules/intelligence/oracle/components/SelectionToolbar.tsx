@@ -135,7 +135,7 @@ const SelectionToolbar = ({ containerRef, onAction }: SelectionToolbarProps) => 
             ))}
           </div>
         </TooltipProvider>
-      ),
+    ,
     document.body,
   );
 };

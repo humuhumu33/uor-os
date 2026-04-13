@@ -112,8 +112,10 @@ const LensManager: React.FC<LensManagerProps> = ({
   if (!open) return null;
 
   return (
-          {/* Backdrop */}
-          <div
+  return (
+    <>
+      {/* Backdrop */}
+      <div
       onClick={onClose}
             className="fixed inset-0 z-50"
             style={{ background: immersive ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.25)" }}

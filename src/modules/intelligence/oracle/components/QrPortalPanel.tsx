@@ -230,7 +230,7 @@ const QrPortalPanel: React.FC<QrPortalPanelProps> = ({
             )}
           </div>
         </div>
-      ),
+    ,
     document.body
   );
 };
