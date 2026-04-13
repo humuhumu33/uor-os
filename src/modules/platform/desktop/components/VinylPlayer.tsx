@@ -73,7 +73,7 @@ const loadSCApi = (): Promise<void> => {
   });
 };
 
-const DISC_SIZE = 28;
+const DISC_SIZE = 36;
 const GROOVE_COUNT = 4;
 
 export default function VinylPlayer() {
