@@ -94,7 +94,7 @@ export function SdbSectionShell({
           </div>
 
           {/* Section tabs (right side) */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0">
             {SECTION_TABS.map(tab => {
               const Icon = tab.icon;
               const isActive = activeSection === tab.id;
@@ -102,13 +102,13 @@ export function SdbSectionShell({
                 <button
                   key={tab.id}
                   onClick={() => onSwitchSection(tab.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-os-body font-medium border whitespace-nowrap transition-all duration-200 ${
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] whitespace-nowrap transition-all duration-200 ${
                     isActive
-                      ? "bg-foreground text-background border-foreground shadow-sm"
-                      : "bg-card/80 text-muted-foreground border-border/20 hover:bg-muted/40 hover:text-foreground"
+                      ? "text-foreground/90 bg-foreground/[0.08]"
+                      : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/[0.04]"
                   }`}
                 >
-                  <Icon size={14} />
+                  <Icon size={13} stroke={isActive ? 2 : 1.5} />
                   <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               );
