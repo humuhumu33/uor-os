@@ -60,7 +60,7 @@ function buildDegreeMap(links: GLink[]): Map<string, number> {
 
 export function SdbGraph3D({
   nodes, links, layoutMode, onNodeClick, onNodeRightClick, onBackgroundClick,
-  width, height, gpuAvailable, highlightSignClass,
+  width, height, gpuAvailable, highlightSignClass, highlightedNodeIds,
 }: Props) {
   const fgRef = useRef<any>(null);
   const [hovered, setHovered] = useState<string | null>(null);
