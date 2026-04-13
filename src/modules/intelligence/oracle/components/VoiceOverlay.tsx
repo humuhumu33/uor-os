@@ -207,7 +207,9 @@ export default function VoiceOverlay({ open, onClose, onSubmit }: Props) {
   const displayText = cleaning ? "Cleaning up…" : (final || interim);
   const isFinalText = !!final && !interim;
 
-  return ({open && (
+  if (!open) return null;
+
+  return (
         <div
           className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
         >
@@ -332,5 +334,5 @@ export default function VoiceOverlay({ open, onClose, onSubmit }: Props) {
             </div>
           )}
         </div>
-      )});
+  );
 }

@@ -85,7 +85,9 @@ export default function FloatingDictationPill({
     ? "ElevenLabs"
     : "Browser";
 
-  return ({show && (
+  if (!show) return null;
+
+  return (
         <div
           className="fixed bottom-20 left-1/2 z-[210] -translate-x-1/2 pointer-events-auto"
         >
@@ -177,5 +179,5 @@ export default function FloatingDictationPill({
             </span>
           </div>
         </div>
-      )});
+  );
 }

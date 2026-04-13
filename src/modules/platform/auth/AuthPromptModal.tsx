@@ -138,7 +138,9 @@ export default function AuthPromptModal({ open, onClose, context = "default" }: 
     "placeholder:text-[rgba(255,255,255,0.28)] " +
     "focus:border-[rgba(255,255,255,0.22)] focus:bg-[rgba(255,255,255,0.06)]";
 
-  return ({open && (
+  if (!open) return null;
+
+  return (
         <>
           {/* Backdrop */}
           <div
@@ -327,5 +329,5 @@ export default function AuthPromptModal({ open, onClose, context = "default" }: 
             </div>
           </div>
         </>
-      )});
+  );
 }
