@@ -10,6 +10,7 @@ import { RingCoreModule } from "@/modules/kernel/ring-core/ring-module";
 import { MorphismModule } from "@/modules/kernel/morphism/morphism-module";
 import { TraceModule } from "@/modules/verify/trace-module";
 import { CertificateModule } from "@/modules/identity/addressing/certificate/certificate-module";
+import { UORRing } from "@/modules/kernel/ring-core/ring";
 
 // ── Generic Base Class Tests ────────────────────────────────────────────────
 
@@ -146,7 +147,6 @@ describe("RingCoreModule (UorModule<ByteTuple>)", () => {
 
 describe("MorphismModule (UorModule<TransformRecord>)", () => {
   it("transform is observed", () => {
-    const { UORRing } = require("@/modules/kernel/ring-core/ring");
     const morph = new MorphismModule();
     const r0 = new UORRing(0);
     const r1 = new UORRing(1);
