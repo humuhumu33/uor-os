@@ -122,10 +122,8 @@ function DesktopShellInner() {
   }, [wm]);
 
   const handleHideAll = useCallback(() => {
-    wm.windows.forEach(w => {
-      if (!w.minimized) wm.minimizeWindow(w.id);
-    });
-  }, [wm]);
+    setDesktopMode(prev => !prev);
+  }, []);
 
   const handleCloseWindow = useCallback(() => {
     if (wm.activeWindowId) wm.closeWindow(wm.activeWindowId);
