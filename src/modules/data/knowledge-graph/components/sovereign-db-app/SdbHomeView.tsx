@@ -3,7 +3,7 @@
  * search bar, filter chips, and beautiful preview cards.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import {
   IconSearch, IconPlus, IconFile, IconCalendarEvent,
   IconFolder, IconLayoutGrid, IconList, IconSortDescending,
