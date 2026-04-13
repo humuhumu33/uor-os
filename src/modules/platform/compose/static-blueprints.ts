@@ -120,30 +120,32 @@ export const STATIC_BLUEPRINTS: AppBlueprint[] = [
     resources: { workers: 1 },
   },
 
-  // ── EXCHANGE ────────────────────────────────────────────────────────────
+  // ── SOVEREIGN DB ─────────────────────────────────────────────────────
 
   {
     "@context": CTX,
     "@type": TYPE,
-    name: "messenger",
+    name: "sovereign-db",
     version: "1.0.0",
     requires: [
-      "conduit/send", "conduit/receive", "cert/issue", "cert/verify",
-      "vault/encrypt", "vault/decrypt", "store/put", "store/get",
+      "graph/query", "graph/insert", "graph/sparql", "graph/cypher",
+      "graph/traverse", "graph/algorithms",
     ],
-    permissions: ["conduit/", "cert/", "vault/", "store/"],
+    permissions: ["graph/"],
     morphisms: [
-      { method: "conduit/send", description: "Send an encrypted message" },
+      { method: "graph/query", description: "Query the hypergraph database" },
+      { method: "graph/cypher", description: "Execute Cypher queries" },
     ],
-    fastPath: ["store/get", "cert/verify"],
-    ui: { component: "@/modules/intelligence/messenger/pages/MessengerPage", lazy: true },
-    defaultSize: { w: 700, h: 560 },
-    color: "hsl(160 60% 50%)",
-    category: "EXCHANGE",
-    description: "Sovereign encrypted messaging with bridge support",
-    keywords: ["chat", "message", "send", "messenger", "telegram", "whatsapp", "dm"],
-    iconName: "MessageCircle",
-    resources: { workers: 1, callBudget: { maxPerSecond: 100 } },
+    fastPath: ["graph/query", "graph/cypher"],
+    autoStart: false,
+    ui: { component: "@/modules/data/knowledge-graph/components/sovereign-db-app/SovereignDBApp", lazy: true },
+    defaultSize: { w: 1200, h: 800 },
+    color: "hsl(160 65% 45%)",
+    category: "OBSERVE",
+    description: "Full-featured hypergraph database explorer with Cypher, SPARQL, algorithms, and visual browsing",
+    keywords: ["database", "db", "sovereign", "hypergraph", "cypher", "sparql", "query", "graph", "neo4j", "explorer"],
+    iconName: "Network",
+    resources: { callBudget: { maxPerSecond: 200 } },
   },
 
   // ── IDENTITY ────────────────────────────────────────────────────────────
@@ -338,32 +340,30 @@ export const STATIC_BLUEPRINTS: AppBlueprint[] = [
     resources: { callBudget: { maxPerSecond: 30 } },
   },
 
-  // ── SOVEREIGN DB ─────────────────────────────────────────────────────
+  // ── EXCHANGE ────────────────────────────────────────────────────────────
 
   {
     "@context": CTX,
     "@type": TYPE,
-    name: "sovereign-db",
+    name: "messenger",
     version: "1.0.0",
     requires: [
-      "graph/query", "graph/insert", "graph/sparql", "graph/cypher",
-      "graph/traverse", "graph/algorithms",
+      "conduit/send", "conduit/receive", "cert/issue", "cert/verify",
+      "vault/encrypt", "vault/decrypt", "store/put", "store/get",
     ],
-    permissions: ["graph/"],
+    permissions: ["conduit/", "cert/", "vault/", "store/"],
     morphisms: [
-      { method: "graph/query", description: "Query the hypergraph database" },
-      { method: "graph/cypher", description: "Execute Cypher queries" },
+      { method: "conduit/send", description: "Send an encrypted message" },
     ],
-    fastPath: ["graph/query", "graph/cypher"],
-    autoStart: false,
-    ui: { component: "@/modules/data/knowledge-graph/components/sovereign-db-app/SovereignDBApp", lazy: true },
-    defaultSize: { w: 1200, h: 800 },
-    color: "hsl(160 65% 45%)",
-    category: "OBSERVE",
-    description: "Full-featured hypergraph database explorer with Cypher, SPARQL, algorithms, and visual browsing",
-    keywords: ["database", "db", "sovereign", "hypergraph", "cypher", "sparql", "query", "graph", "neo4j", "explorer"],
-    iconName: "Network",
-    resources: { callBudget: { maxPerSecond: 200 } },
+    fastPath: ["store/get", "cert/verify"],
+    ui: { component: "@/modules/intelligence/messenger/pages/MessengerPage", lazy: true },
+    defaultSize: { w: 700, h: 560 },
+    color: "hsl(160 60% 50%)",
+    category: "EXCHANGE",
+    description: "Sovereign encrypted messaging with bridge support",
+    keywords: ["chat", "message", "send", "messenger", "telegram", "whatsapp", "dm"],
+    iconName: "MessageCircle",
+    resources: { workers: 1, callBudget: { maxPerSecond: 100 } },
   },
 
   // ── DOWNLOAD ──────────────────────────────────────────────────────────
