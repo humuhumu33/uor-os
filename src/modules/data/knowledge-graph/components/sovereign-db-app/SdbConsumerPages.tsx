@@ -637,17 +637,11 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
           <span className="text-os-body font-semibold text-foreground truncate flex-1">Workspace</span>
           <button
             onClick={() => uploadRef.current?.click()}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-muted-foreground hover:bg-muted/40 hover:text-foreground text-os-body transition-colors"
-            title="Upload files"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-os-body font-medium transition-all hover:shadow-sm"
+            title="Upload files or create a new page"
           >
             <IconUpload size={14} />
-          </button>
-          <button
-            onClick={() => createNote()}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/15 text-os-body font-medium transition-colors"
-          >
-            <IconPlus size={13} />
-            New
+            Upload
           </button>
         </div>
 
