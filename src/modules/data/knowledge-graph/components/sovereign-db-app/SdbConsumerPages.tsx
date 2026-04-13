@@ -1263,7 +1263,6 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
                 {workspaces.find(w => w.id === activeWorkspaceId)?.name || "Workspace"}
               </span>
             )}
-            )}
             {!sidebarCollapsed && (
               <div className="flex items-center gap-0.5">
                 <button onClick={() => createNote()} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="New page">
