@@ -116,7 +116,7 @@ function pickBanner(): string {
 
 export function SdbHomeView({
   items, allEdges, recentIds, onSelect, onCreateNote, onCreateDaily, onSwitchGraph,
-  activeTags, onToggleTag, tagColors, itemTagsMap,
+  activeTags, onToggleTag, tagColors, itemTagsMap, activeSection, onSwitchSection,
 }: Props) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("recent");
