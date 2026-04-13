@@ -493,6 +493,61 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
       );
     }
 
+    // Embed block — transclusion of another block
+    if (blockType === "embed") {
+      const embedId = block.embedBlockId || block.text;
+      return (
+        <div
+          key={block.id}
+          className={`relative group py-1 transition-opacity ${isDragging ? "opacity-30" : ""}`}
+          onMouseEnter={() => setHoveredIdx(idx)}
+          onMouseLeave={() => setHoveredIdx(null)}
+          onDragOver={e => handleDragOver(idx, e)}
+          onDrop={e => handleDrop(idx, e)}
+          style={{ paddingLeft: `${block.indent * 24}px` }}
+        >
+          {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+          <div className="flex items-start">
+            <div className={`flex items-center gap-0.5 mt-2 mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
+              <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
+                <IconPlus size={14} className="text-muted-foreground" />
+              </button>
+              <div
+                draggable
+                onDragStart={e => handleDragStart(idx, e)}
+                onDragEnd={handleDragEnd}
+                className="p-0.5 cursor-grab active:cursor-grabbing"
+              >
+                <IconGripVertical size={14} className="text-muted-foreground" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              {resolveBlockRef && embedId ? (
+                <SdbBlockEmbed
+                  blockId={embedId}
+                  resolver={resolveBlockRef}
+                  onNavigate={(noteId) => onBlockRefClick?.(noteId)}
+                />
+              ) : (
+                <div className="px-4 py-3 rounded-lg border border-dashed border-border/30 text-os-body text-muted-foreground">
+                  <input
+                    value={block.text}
+                    onChange={(e) => {
+                      const next = [...blocks];
+                      next[idx] = { ...next[idx], text: e.target.value, embedBlockId: e.target.value };
+                      onChange(next);
+                    }}
+                    placeholder="Enter block ID to embed..."
+                    className="w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground/40"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // Placeholder text
     const placeholder = idx === 0 && blocks.length <= 1
       ? "Press '/' for commands, or just start typing..."
