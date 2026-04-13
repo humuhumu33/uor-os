@@ -1000,6 +1000,19 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
           </>
         )}
       </main>
+
+      {/* Roam-style right sidebar panel */}
+      {sidebarPages.length > 0 && (
+        <SdbSidebarPanel
+          pages={sidebarPages}
+          onRemovePage={(id) => setSidebarPages(prev => prev.filter(p => p.id !== id))}
+          onNavigateMain={async (id) => {
+            await saveNote();
+            navigateTo(id);
+          }}
+          onClose={() => setSidebarPages([])}
+        />
+      )}
     </div>
   );
 }
