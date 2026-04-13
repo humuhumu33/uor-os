@@ -118,7 +118,10 @@ export function SdbSectionShell({
       </div>
 
       {/* ── Section content (all sections mounted, display-toggled) ── */}
-      <div className="flex-1 min-h-0 overflow-hidden relative">
+      <div
+        className="flex-1 min-h-0 overflow-hidden relative"
+        onScrollCapture={handleScroll}
+      >
         {children}
       </div>
     </div>
