@@ -29,6 +29,7 @@ import { generateHandoffLink } from "@/modules/platform/desktop/lib/handoff";
 
 interface Props {
   windows: WindowState[];
+  desktopMode?: boolean;
   onSearch?: (query: string) => void;
   onOpenApp?: (appId: string) => void;
 }
@@ -67,7 +68,7 @@ function getGreeting(): string {
 
 /** Adaptive clock font sizes — Pretext picks the largest that fits on 1 line */
 
-export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) {
+export default function DesktopWidgets({ windows, desktopMode = false, onSearch, onOpenApp }: Props) {
   const [time, setTime] = useState(new Date());
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -233,9 +234,8 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
     : isLight ? "1px solid rgba(0,0,0,0.10)" : "1px solid rgba(255,255,255,0.06)";
   const btnIconColor = isImmersive ? "text-white" : isLight ? "text-black/70" : "text-white/70";
 
-  const widgetOpacity = hasMaximized ? 0 : 1;
-  const clockOpacity = hasAnyWindows ? 0.4 : 1;
-
+  const widgetOpacity = desktopMode ? 1 : hasMaximized ? 0 : 1;
+  const clockOpacity = desktopMode ? 1 : hasAnyWindows ? 0.4 : 1;
   return (
     <div
       className="fixed inset-0 z-[5] flex flex-col items-center pointer-events-none contain-layout"
