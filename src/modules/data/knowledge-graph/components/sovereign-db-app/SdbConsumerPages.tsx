@@ -940,8 +940,11 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                     blocks={blocks}
                     onChange={handleBlocksChange}
                     onWikiLinkClick={handleWikiLinkClick}
+                    onBlockRefClick={async (noteId) => { await saveNote(); navigateTo(noteId); }}
+                    onShiftClick={openInSidebar}
                     noteNames={noteNames}
                     getPreview={getPreview}
+                    resolveBlockRef={resolveBlockRef}
                   />
                 </div>
 
@@ -960,6 +963,16 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                   onNavigate={async (noteId) => {
                     await saveNote();
                     navigateTo(noteId);
+                  }}
+                  onLinkUnlinked={async (noteId, noteTitle_) => {
+                    // Create a [[link]] from the unlinked note to this one
+                    await db.addEdge([noteId, selected.id], "workspace:link", {
+                      relation: "references",
+                      sourceTitle: noteTitle_,
+                      targetTitle: noteTitle,
+                      createdAt: Date.now(),
+                    });
+                    await reload();
                   }}
                 />
 
