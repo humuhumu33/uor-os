@@ -33,6 +33,14 @@ import { SdbSidebarPanel } from "./SdbSidebarPanel";
 import type { BlockRefResolver, BlockRefInfo } from "./SdbBlockRef";
 import { SdbMediaPreview } from "./SdbMediaPreview";
 
+// Cover images for demo content
+import coverOs from "@/assets/covers/cover-os.jpg";
+import coverAtlas from "@/assets/covers/cover-atlas.jpg";
+import coverResources from "@/assets/covers/cover-resources.jpg";
+import coverGraph from "@/assets/covers/cover-graph.jpg";
+import coverWelcome from "@/assets/covers/cover-welcome.jpg";
+import coverProjects from "@/assets/covers/cover-projects.jpg";
+
 import type { AppSection } from "./SovereignDBApp";
 
 interface Props {
