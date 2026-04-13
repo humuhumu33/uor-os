@@ -36,52 +36,55 @@ export function SdbStatusBar({ db, startTime, section = "workspace" }: Props) {
   const wsTags = new Set(edges.filter(e => e.label === "workspace:tag").map(e => String(e.properties.tag || "")));
 
   return (
-    <footer className="flex items-center gap-4 h-8 px-5 border-t border-border bg-card text-os-body text-muted-foreground shrink-0 font-mono">
-      {section === "workspace" ? (
-        <>
-          <span>{wsNotes.length} notes</span>
-          <span className="w-px h-3 bg-border" />
-          <span>{wsLinks.length} connections</span>
-          <span className="w-px h-3 bg-border" />
-          <span>{wsTags.size} tags</span>
-        </>
-      ) : section === "graph" ? (
-        <>
-          <span>Nodes: <strong className="text-foreground">{nodeSet.size.toLocaleString()}</strong></span>
-          <span className="w-px h-3 bg-border" />
-          <span>Edges: <strong className="text-foreground">{edges.length.toLocaleString()}</strong></span>
-          <span className="w-px h-3 bg-border" />
-          <span>Labels: <strong className="text-foreground">{labels.size}</strong></span>
-        </>
-      ) : (
-        <>
-          <span>Edges: <strong className="text-foreground">{edges.length.toLocaleString()}</strong></span>
-          <span className="w-px h-3 bg-border" />
-          <span>Nodes: <strong className="text-foreground">{nodeSet.size.toLocaleString()}</strong></span>
-          <span className="w-px h-3 bg-border" />
-          <span>Labels: <strong className="text-foreground">{labels.size}</strong></span>
-        </>
-      )}
-      <span className="w-px h-3 bg-border" />
-      <span>Uptime: <strong className="text-foreground">{uptime}</strong></span>
-      {db && (
-        <>
-          {partitionRouter.size > 0 && (
-            <>
-              <span className="w-px h-3 bg-border" />
-              <span>Partitions: <strong className="text-foreground">{partitionRouter.size}</strong></span>
-            </>
-          )}
-          <span className="ml-auto flex items-center gap-2 text-os-body">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span className="text-muted-foreground">{db.backend}</span>
-            <span className="text-muted-foreground">·</span>
-            <span className="text-muted-foreground">{providerRegistry.size} providers</span>
-          </span>
-        </>
-      )}
-      {!db && <span className="ml-auto" />}
-      <UorSignature className={db ? "" : "ml-auto"} />
+    <footer className="flex flex-col shrink-0 border-t border-border bg-card text-os-body text-muted-foreground font-mono">
+      <div className="flex items-center gap-4 h-8 px-5">
+        {section === "workspace" ? (
+          <>
+            <span>{wsNotes.length} notes</span>
+            <span className="w-px h-3 bg-border" />
+            <span>{wsLinks.length} connections</span>
+            <span className="w-px h-3 bg-border" />
+            <span>{wsTags.size} tags</span>
+          </>
+        ) : section === "graph" ? (
+          <>
+            <span>Nodes: <strong className="text-foreground">{nodeSet.size.toLocaleString()}</strong></span>
+            <span className="w-px h-3 bg-border" />
+            <span>Edges: <strong className="text-foreground">{edges.length.toLocaleString()}</strong></span>
+            <span className="w-px h-3 bg-border" />
+            <span>Labels: <strong className="text-foreground">{labels.size}</strong></span>
+          </>
+        ) : (
+          <>
+            <span>Edges: <strong className="text-foreground">{edges.length.toLocaleString()}</strong></span>
+            <span className="w-px h-3 bg-border" />
+            <span>Nodes: <strong className="text-foreground">{nodeSet.size.toLocaleString()}</strong></span>
+            <span className="w-px h-3 bg-border" />
+            <span>Labels: <strong className="text-foreground">{labels.size}</strong></span>
+          </>
+        )}
+        <span className="w-px h-3 bg-border" />
+        <span>Uptime: <strong className="text-foreground">{uptime}</strong></span>
+        {db && (
+          <>
+            {partitionRouter.size > 0 && (
+              <>
+                <span className="w-px h-3 bg-border" />
+                <span>Partitions: <strong className="text-foreground">{partitionRouter.size}</strong></span>
+              </>
+            )}
+            <span className="ml-auto flex items-center gap-2 text-os-body">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="text-muted-foreground">{db.backend}</span>
+              <span className="text-muted-foreground">·</span>
+              <span className="text-muted-foreground">{providerRegistry.size} providers</span>
+            </span>
+          </>
+        )}
+      </div>
+      <div className="flex items-center justify-center h-7 px-5">
+        <UorSignature />
+      </div>
     </footer>
   );
 }
