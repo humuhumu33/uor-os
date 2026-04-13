@@ -15,12 +15,14 @@ import {
   IconH1, IconH2, IconH3, IconList, IconCheckbox, IconMinus,
   IconBlockquote, IconInfoCircle, IconTypography,
   IconListNumbers, IconCode, IconChevronRight, IconChevronDown,
+  IconTable,
 } from "@tabler/icons-react";
 import { SdbBlockLexical } from "./SdbBlockLexical";
+import { SdbTableBlock, createDefaultTable, type TableData } from "./SdbTableBlock";
 import type { LexicalEditor } from "lexical";
 import { $getRoot, $createParagraphNode, $createTextNode } from "lexical";
 
-export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle";
+export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "table";
 
 export interface Block {
   id: string;
@@ -31,6 +33,7 @@ export interface Block {
   type?: BlockType;
   checked?: boolean;
   collapsed?: boolean;
+  tableData?: TableData;
 }
 
 interface Props {
@@ -59,6 +62,7 @@ const SLASH_COMMANDS: { type: BlockType; label: string; description: string; ico
   { type: "callout", label: "Callout", description: "Highlighted info block", icon: IconInfoCircle, keywords: ["callout", "info", "note", "tip"] },
   { type: "code", label: "Code", description: "Code block", icon: IconCode, keywords: ["code", "snippet", "pre"] },
   { type: "toggle", label: "Toggle", description: "Collapsible section", icon: IconChevronRight, keywords: ["toggle", "collapse", "expand", "accordion"] },
+  { type: "table", label: "Table", description: "Add a simple table", icon: IconTable, keywords: ["table", "grid", "spreadsheet", "rows", "columns"] },
 ];
 
 /** Hover preview for [[wiki-links]] — rendered outside Lexical */
@@ -139,21 +143,24 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
       type: type === "text" ? undefined : type,
       checked: type === "todo" ? false : undefined,
       collapsed: type === "toggle" ? false : undefined,
+      tableData: type === "table" ? createDefaultTable() : undefined,
     };
     onChange(next);
     setSlashMenu(null);
-    // Re-focus this block
-    setTimeout(() => {
-      const editor = editorsRef.current.get(idx);
-      if (editor) {
-        editor.update(() => {
-          const root = $getRoot();
-          root.clear();
-          root.append($createParagraphNode());
-        });
-        editor.focus();
-      }
-    }, 50);
+    // Re-focus this block (skip for table — no Lexical instance)
+    if (type !== "table") {
+      setTimeout(() => {
+        const editor = editorsRef.current.get(idx);
+        if (editor) {
+          editor.update(() => {
+            const root = $getRoot();
+            root.clear();
+            root.append($createParagraphNode());
+          });
+          editor.focus();
+        }
+      }, 50);
+    }
   }, [blocks, onChange]);
 
   const addBlockBelow = useCallback((idx: number) => {
@@ -342,6 +349,49 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
               </div>
             </div>
             <hr className="flex-1 border-border/50" />
+          </div>
+        </div>
+      );
+    }
+
+    // Table block
+    if (blockType === "table") {
+      const tableData = block.tableData || { headers: ["Column 1", "Column 2", "Column 3"], rows: [["", "", ""], ["", "", ""]] };
+      return (
+        <div
+          key={block.id}
+          className={`relative group py-1 transition-opacity ${isDragging ? "opacity-30" : ""}`}
+          onMouseEnter={() => setHoveredIdx(idx)}
+          onMouseLeave={() => setHoveredIdx(null)}
+          onDragOver={e => handleDragOver(idx, e)}
+          onDrop={e => handleDrop(idx, e)}
+          style={{ paddingLeft: `${block.indent * 24}px` }}
+        >
+          {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+          <div className="flex items-start">
+            <div className={`flex items-center gap-0.5 mt-2 mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
+              <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
+                <IconPlus size={14} className="text-muted-foreground" />
+              </button>
+              <div
+                draggable
+                onDragStart={e => handleDragStart(idx, e)}
+                onDragEnd={handleDragEnd}
+                className="p-0.5 cursor-grab active:cursor-grabbing"
+              >
+                <IconGripVertical size={14} className="text-muted-foreground" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <SdbTableBlock
+                data={tableData}
+                onChange={(newData) => {
+                  const next = [...blocks];
+                  next[idx] = { ...next[idx], tableData: newData };
+                  onChange(next);
+                }}
+              />
+            </div>
           </div>
         </div>
       );
