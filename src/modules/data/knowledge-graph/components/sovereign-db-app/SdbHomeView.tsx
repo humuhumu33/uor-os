@@ -1,12 +1,12 @@
 /**
- * SdbHomeView — Notion-style home dashboard.
- * Shows quick actions, recent history, most-connected notes, and discover tags.
+ * SdbHomeView — Eden-inspired clean workspace home.
+ * Search bar, filter chips, card grid with color thumbnails.
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
-  IconClock, IconLink, IconHash, IconGraph, IconSun, IconPlus,
-  IconFile, IconTemplate,
+  IconSearch, IconPlus, IconFile, IconCalendarEvent,
+  IconFolder, IconLayoutGrid, IconList, IconSortDescending,
 } from "@tabler/icons-react";
 import type { Hyperedge } from "../../hypergraph";
 
@@ -27,6 +27,30 @@ interface Props {
   onSwitchGraph: () => void;
 }
 
+type FilterType = "all" | "note" | "daily" | "folder";
+type SortType = "recent" | "name" | "created";
+
+const PASTEL_COLORS = [
+  "from-blue-400/20 to-blue-500/10",
+  "from-purple-400/20 to-purple-500/10",
+  "from-emerald-400/20 to-emerald-500/10",
+  "from-amber-400/20 to-amber-500/10",
+  "from-rose-400/20 to-rose-500/10",
+  "from-indigo-400/20 to-indigo-500/10",
+];
+
+const DOT_COLORS = [
+  "bg-blue-400", "bg-purple-400", "bg-emerald-400",
+  "bg-amber-400", "bg-rose-400", "bg-indigo-400",
+];
+
+const FILTERS: { key: FilterType; label: string }[] = [
+  { key: "all", label: "All items" },
+  { key: "note", label: "Notes" },
+  { key: "daily", label: "Daily" },
+  { key: "folder", label: "Folders" },
+];
+
 function relativeTime(ts: number): string {
   const diff = Date.now() - ts;
   const secs = Math.floor(diff / 1000);
@@ -39,194 +63,201 @@ function relativeTime(ts: number): string {
   return `${days}d ago`;
 }
 
+function colorIndex(name: string): number {
+  return (name.charCodeAt(0) || 0) % PASTEL_COLORS.length;
+}
+
+const TYPE_ICON: Record<string, typeof IconFile> = {
+  note: IconFile,
+  daily: IconCalendarEvent,
+  folder: IconFolder,
+};
+
 export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote, onCreateDaily, onSwitchGraph }: Props) {
-  const notes = useMemo(() => items.filter(i => i.type === "note" || i.type === "daily"), [items]);
+  const [filter, setFilter] = useState<FilterType>("all");
+  const [sort, setSort] = useState<SortType>("recent");
+  const [view, setView] = useState<"grid" | "list">("grid");
+  const [search, setSearch] = useState("");
+  const [showSort, setShowSort] = useState(false);
 
-  const history = useMemo(() => {
-    return recentIds
-      .map(id => notes.find(n => n.id === id))
-      .filter(Boolean)
-      .slice(0, 8) as NoteItem[];
-  }, [recentIds, notes]);
-
-  const mostConnected = useMemo(() => {
-    const linkEdges = allEdges.filter(e => e.label === "workspace:link");
-    const inbound: Record<string, number> = {};
-    for (const e of linkEdges) {
-      const target = e.nodes[1];
-      inbound[target] = (inbound[target] || 0) + 1;
+  const filtered = useMemo(() => {
+    let list = items;
+    if (filter !== "all") list = list.filter(i => i.type === filter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(i => i.name.toLowerCase().includes(q));
     }
-    return notes
-      .map(n => ({ ...n, links: inbound[n.id] || 0 }))
-      .filter(n => n.links > 0)
-      .sort((a, b) => b.links - a.links)
-      .slice(0, 6);
-  }, [notes, allEdges]);
-
-  const topTags = useMemo(() => {
-    const tagEdges = allEdges.filter(e => e.label === "workspace:tag");
-    const counts: Record<string, number> = {};
-    for (const e of tagEdges) {
-      const tag = String(e.properties.tag || "");
-      if (tag) counts[tag] = (counts[tag] || 0) + 1;
-    }
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 12)
-      .map(([tag, count]) => ({ tag, count }));
-  }, [allEdges]);
-
-  const hasContent = history.length > 0 || mostConnected.length > 0 || topTags.length > 0;
+    const sorted = [...list];
+    if (sort === "recent") sorted.sort((a, b) => b.updatedAt - a.updatedAt);
+    else if (sort === "name") sorted.sort((a, b) => a.name.localeCompare(b.name));
+    else sorted.sort((a, b) => a.updatedAt - b.updatedAt);
+    return sorted;
+  }, [items, filter, sort, search]);
 
   return (
-    <div className="max-w-[720px] mx-auto px-16 py-16">
-      {/* Header */}
-      <h1 className="text-[28px] font-bold text-foreground mb-1 tracking-tight">Home</h1>
-      <p className="text-[15px] text-muted-foreground/50 mb-8">Your knowledge space</p>
+    <div className="flex-1 overflow-auto">
+      <div className="max-w-[960px] mx-auto px-8 py-8">
+        {/* Search bar */}
+        <div className="relative mb-6">
+          <IconSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/40" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search anything…"
+            className="w-full pl-11 pr-4 py-3 text-[15px] bg-muted/30 border border-border/30 rounded-xl
+              text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20
+              focus:border-primary/30 transition-all"
+          />
+        </div>
 
-      {/* Quick actions */}
-      <div className="flex items-center gap-3 mb-10">
-        <button
-          onClick={onCreateDaily}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border/50 bg-card text-[14px] text-foreground hover:bg-muted/40 transition-colors"
-        >
-          <IconSun size={16} className="text-amber-400" />
-          Today's Note
-        </button>
-        <button
-          onClick={onCreateNote}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border/50 bg-card text-[14px] text-foreground hover:bg-muted/40 transition-colors"
-        >
-          <IconPlus size={16} className="text-muted-foreground/60" />
-          New Page
-        </button>
-        <button
-          onClick={onSwitchGraph}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border/50 bg-card text-[14px] text-foreground hover:bg-muted/40 transition-colors"
-        >
-          <IconGraph size={16} className="text-primary/60" />
-          Graph View
-        </button>
-      </div>
+        {/* Filter chips */}
+        <div className="flex items-center gap-2 mb-8">
+          {FILTERS.map(f => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`px-4 py-1.5 rounded-full text-[13px] font-medium border transition-all ${
+                filter === f.key
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-transparent text-muted-foreground border-border/40 hover:bg-muted/40 hover:text-foreground"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
 
-      {!hasContent ? (
-        <div className="py-12">
-          <div className="grid grid-cols-2 gap-4 mb-10">
-            {[
-              { title: "Getting Started", desc: "Learn the basics of your knowledge workspace", icon: "🚀" },
-              { title: "Meeting Notes", desc: "Template for capturing meeting discussions", icon: "📝" },
-              { title: "Project Tracker", desc: "Organize tasks and milestones", icon: "📊" },
-              { title: "Reading List", desc: "Track articles and books to read", icon: "📚" },
-            ].map(tmpl => (
-              <button
-                key={tmpl.title}
-                onClick={onCreateNote}
-                className="flex items-start gap-3 p-4 rounded-xl border border-border/40 bg-card hover:bg-muted/30 transition-colors text-left group"
-              >
-                <span className="text-[24px] mt-0.5">{tmpl.icon}</span>
-                <div>
-                  <div className="text-[14px] font-medium text-foreground group-hover:text-primary transition-colors">{tmpl.title}</div>
-                  <div className="text-[13px] text-muted-foreground/50 mt-0.5">{tmpl.desc}</div>
-                </div>
-              </button>
-            ))}
+        {/* Workspace header */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <h2 className="text-[16px] font-semibold text-foreground">Workspace</h2>
+            <button
+              onClick={onCreateNote}
+              className="w-6 h-6 rounded-md bg-primary/10 text-primary hover:bg-primary/20 flex items-center justify-center transition-colors"
+            >
+              <IconPlus size={14} />
+            </button>
           </div>
-
-          <p className="text-[14px] text-muted-foreground/40 text-center">
-            Create your first page or start with today's daily note.
-            <br />
-            Link ideas with <span className="font-mono text-primary/50">[[wiki-links]]</span> — your thoughts connect automatically.
-          </p>
+          <div className="flex items-center gap-2">
+            {/* Sort dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSort(s => !s)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] text-muted-foreground hover:bg-muted/40 transition-colors"
+              >
+                <IconSortDescending size={14} />
+                {sort === "recent" ? "Last opened" : sort === "name" ? "Name" : "Created"}
+              </button>
+              {showSort && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowSort(false)} />
+                  <div className="absolute right-0 top-full mt-1 z-20 bg-card border border-border/50 rounded-lg shadow-lg py-1 min-w-[140px]">
+                    {(["recent", "name", "created"] as SortType[]).map(s => (
+                      <button
+                        key={s}
+                        onClick={() => { setSort(s); setShowSort(false); }}
+                        className={`w-full px-3 py-1.5 text-left text-[13px] hover:bg-muted/40 transition-colors ${
+                          sort === s ? "text-primary" : "text-foreground/70"
+                        }`}
+                      >
+                        {s === "recent" ? "Last opened" : s === "name" ? "Name" : "Created"}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            {/* View toggle */}
+            <div className="flex items-center border border-border/30 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setView("grid")}
+                className={`p-1.5 transition-colors ${view === "grid" ? "bg-muted/60 text-foreground" : "text-muted-foreground/40 hover:text-foreground"}`}
+              >
+                <IconLayoutGrid size={14} />
+              </button>
+              <button
+                onClick={() => setView("list")}
+                className={`p-1.5 transition-colors ${view === "list" ? "bg-muted/60 text-foreground" : "text-muted-foreground/40 hover:text-foreground"}`}
+              >
+                <IconList size={14} />
+              </button>
+            </div>
+          </div>
         </div>
-      ) : (
-        <div className="space-y-10">
-          {/* Recent */}
-          {history.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <IconClock size={15} className="text-muted-foreground/40" />
-                <h3 className="text-[13px] font-medium text-muted-foreground/50">Recently Visited</h3>
-              </div>
-              <div className="space-y-0.5">
-                {history.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => onSelect(item.id)}
-                    className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-left hover:bg-muted/30 transition-colors group"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <IconFile size={16} className="text-muted-foreground/30 shrink-0" />
-                      <span className="text-[14px] text-foreground/80 truncate group-hover:text-foreground transition-colors">{item.name}</span>
-                    </div>
-                    <span className="text-[12px] text-muted-foreground/30 font-mono shrink-0 ml-3">
-                      {relativeTime(item.updatedAt)}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
 
-          {/* Most Connected */}
-          {mostConnected.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <IconLink size={15} className="text-muted-foreground/40" />
-                <h3 className="text-[13px] font-medium text-muted-foreground/50">Most Connected</h3>
-              </div>
-              <div className="space-y-0.5">
-                {mostConnected.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => onSelect(item.id)}
-                    className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-left hover:bg-muted/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <IconFile size={16} className="text-muted-foreground/30 shrink-0" />
-                      <span className="text-[14px] text-foreground/80 truncate">{item.name}</span>
+        {/* Content */}
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
+              <IconFile size={28} className="text-muted-foreground/30" />
+            </div>
+            <p className="text-[15px] text-muted-foreground/50 mb-4">
+              {search ? "No results found" : "Create your first page"}
+            </p>
+            {!search && (
+              <button
+                onClick={onCreateNote}
+                className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-[14px] font-medium hover:bg-primary/90 transition-colors"
+              >
+                New Page
+              </button>
+            )}
+          </div>
+        ) : view === "grid" ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filtered.map(item => {
+              const ci = colorIndex(item.name);
+              const Icon = TYPE_ICON[item.type] || IconFile;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onSelect(item.id)}
+                  className="group text-left rounded-xl border border-border/30 bg-card overflow-hidden
+                    hover:-translate-y-0.5 hover:shadow-md hover:border-border/50 transition-all duration-200"
+                >
+                  {/* Color preview */}
+                  <div className={`h-[120px] bg-gradient-to-br ${PASTEL_COLORS[ci]} flex items-center justify-center`}>
+                    <Icon size={32} className="text-foreground/10" />
+                  </div>
+                  {/* Info */}
+                  <div className="px-3 py-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${DOT_COLORS[ci]}`} />
+                      <span className="text-[13px] font-medium text-foreground truncate">{item.name}</span>
                     </div>
-                    <span className="flex items-center gap-1 text-[12px] text-primary/50 font-mono shrink-0 ml-3">
-                      <IconLink size={12} />
-                      {item.links}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Tags */}
-          {topTags.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <IconHash size={15} className="text-muted-foreground/40" />
-                <h3 className="text-[13px] font-medium text-muted-foreground/50">Tags</h3>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {topTags.map(({ tag, count }) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/20 text-[13px] text-foreground/60 border border-border/30 hover:bg-muted/40 transition-colors cursor-default"
-                  >
-                    <span className="text-purple-400">#</span>
-                    {tag}
-                    <span className="text-[11px] text-muted-foreground/30 font-mono">{count}</span>
+                    <span className="text-[11px] text-muted-foreground/40 font-mono">{relativeTime(item.updatedAt)}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          /* List view */
+          <div className="space-y-0.5">
+            {filtered.map(item => {
+              const ci = colorIndex(item.name);
+              const Icon = TYPE_ICON[item.type] || IconFile;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onSelect(item.id)}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-muted/30 transition-colors group"
+                >
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${DOT_COLORS[ci]}`} />
+                  <Icon size={16} className="text-muted-foreground/40 shrink-0" />
+                  <span className="text-[14px] text-foreground/80 truncate flex-1 text-left group-hover:text-foreground transition-colors">
+                    {item.name}
                   </span>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Atlas teaser */}
-          <button
-            onClick={onSwitchGraph}
-            className="inline-flex items-center gap-2 text-[13px] text-primary/50 hover:text-primary transition-colors"
-          >
-            <IconGraph size={15} />
-            Explore the Ontological Graph →
-          </button>
-        </div>
-      )}
+                  <span className="text-[12px] text-muted-foreground/30 font-mono shrink-0">
+                    {relativeTime(item.updatedAt)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
