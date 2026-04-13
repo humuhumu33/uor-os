@@ -64,11 +64,18 @@ const PAGE_ICONS: Record<string, string> = {
   folder: "📁",
 };
 
+const DEFAULT_TAG_COLORS: Record<string, string> = {
+  "getting-started": "hsl(160, 70%, 45%)",
+  "uor": "hsl(210, 80%, 55%)",
+  "atlas": "hsl(270, 60%, 55%)",
+  "architecture": "hsl(40, 85%, 50%)",
+};
+
 function loadTagColors(): Record<string, string> {
   try {
     const v = localStorage.getItem("sdb-tag-colors");
-    return v ? JSON.parse(v) : {};
-  } catch { return {}; }
+    return v ? { ...DEFAULT_TAG_COLORS, ...JSON.parse(v) } : DEFAULT_TAG_COLORS;
+  } catch { return DEFAULT_TAG_COLORS; }
 }
 
 export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalSearch, sidebarTarget, sidebarCollapsed }: Props) {
