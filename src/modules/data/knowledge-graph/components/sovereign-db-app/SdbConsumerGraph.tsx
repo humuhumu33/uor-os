@@ -28,6 +28,7 @@ interface Props {
   globalSearch?: string;
   sidebarTarget?: HTMLDivElement | null;
   sidebarCollapsed?: boolean;
+  activeSection?: AppSection;
 }
 
 const COLORS: Record<string, string> = {
@@ -49,7 +50,7 @@ const SIGN_CLASS_LEGEND = [
   { name: "SC₇", color: "hsl(270, 60%, 60%)" },
 ];
 
-export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "", sidebarTarget, sidebarCollapsed }: Props) {
+export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "", sidebarTarget, sidebarCollapsed, activeSection }: Props) {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("force");
   const [filters, setFilters] = useState<GraphFilter>({
     types: new Map(),
@@ -296,7 +297,7 @@ export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "", sid
 
   return (
     <div ref={containerRef} className="relative w-full h-full">
-      {sidebarTarget && createPortal(graphSidebarContent, sidebarTarget)}
+      {sidebarTarget && activeSection === "graph" && createPortal(graphSidebarContent, sidebarTarget)}
       {!show2D ? (
         /* ── 3D immersive view (default) ── */
         <SdbGraph3D
