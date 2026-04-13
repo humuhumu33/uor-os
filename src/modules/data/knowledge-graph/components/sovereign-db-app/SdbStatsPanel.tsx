@@ -38,7 +38,7 @@ export function SdbStatsPanel({ db }: Props) {
 
   return (
     <div className="p-5 space-y-6 overflow-auto h-full">
-      <h2 className="text-[15px] font-semibold">Database Statistics</h2>
+      <h2 className="text-os-body font-semibold">Database Statistics</h2>
 
       {/* ── Metric cards ──── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -55,20 +55,20 @@ export function SdbStatsPanel({ db }: Props) {
       {/* ── Label distribution ──── */}
       {stats.labels.length > 0 && (
         <section>
-          <h3 className="text-[13px] font-semibold mb-2">Label Distribution</h3>
+          <h3 className="text-os-body font-semibold mb-2">Label Distribution</h3>
           <div className="space-y-1.5">
             {stats.labels.map(([label, count]) => {
               const pct = stats.edgeCount > 0 ? (count / stats.edgeCount) * 100 : 0;
               return (
                 <div key={label} className="flex items-center gap-3">
-                  <span className="w-32 truncate text-[12px] font-mono text-foreground">{label}</span>
+                  <span className="w-32 truncate text-os-body font-mono text-foreground">{label}</span>
                   <div className="flex-1 h-5 bg-muted/50 rounded overflow-hidden">
                     <div
                       className="h-full bg-primary/30 rounded"
                       style={{ width: `${Math.max(pct, 2)}%` }}
                     />
                   </div>
-                  <span className="text-[11px] text-muted-foreground font-mono w-12 text-right">
+                  <span className="text-os-body text-muted-foreground font-mono w-12 text-right">
                     {count}
                   </span>
                 </div>
@@ -81,12 +81,12 @@ export function SdbStatsPanel({ db }: Props) {
       {/* ── Arity distribution ──── */}
       {stats.arityDist.length > 0 && (
         <section>
-          <h3 className="text-[13px] font-semibold mb-2">Arity Distribution</h3>
+          <h3 className="text-os-body font-semibold mb-2">Arity Distribution</h3>
           <div className="flex gap-2 flex-wrap">
             {stats.arityDist.map(([arity, count]) => (
               <div key={arity} className="flex flex-col items-center px-3 py-2 rounded-lg border border-border bg-card min-w-[60px]">
                 <span className="text-lg font-bold text-foreground">{count}</span>
-                <span className="text-[10px] text-muted-foreground">{arity}-ary</span>
+                <span className="text-os-body text-muted-foreground">{arity}-ary</span>
               </div>
             ))}
           </div>
@@ -100,7 +100,7 @@ function MetricCard({ label, value }: { label: string; value: string | number })
   return (
     <div className="rounded-lg border border-border bg-card p-3.5 text-center">
       <p className="text-xl font-bold text-foreground">{typeof value === "number" ? value.toLocaleString() : value}</p>
-      <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
+      <p className="text-os-body text-muted-foreground mt-0.5">{label}</p>
     </div>
   );
 }
