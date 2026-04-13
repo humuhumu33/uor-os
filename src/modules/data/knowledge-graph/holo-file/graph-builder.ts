@@ -103,7 +103,7 @@ export class HoloGraphBuilder {
     const vertexMap = new Map<string, number>();
 
     for (const n of fusionNodes) {
-      const contentHash = sha256hexSync(new Uint8Array(n.lut.table));
+      const contentHash = sha256hexSync(Array.from(n.lut.table).join(","));
       const vertex = engine.resolve(contentHash);
       if (vertex !== null) vertexMap.set(n.id, vertex);
     }
