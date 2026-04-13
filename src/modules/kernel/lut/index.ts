@@ -37,6 +37,9 @@ export {
   sin,
   cos,
   step,
+  softmaxApprox,
+  layernormApprox,
+  rmsNorm,
   type LutOpName,
 } from "./ops";
 
@@ -68,3 +71,30 @@ export {
   type GemmBookletSet,
   type LutGemmLayer,
 } from "./gemm";
+
+export {
+  buildLinearLayer,
+  executeLinearLayer,
+  buildLayerNormLut,
+  buildLayerNormLuts,
+  buildRmsNormLut,
+  buildSoftmaxLut,
+  buildAttentionHead,
+  buildFeedForward,
+  buildTransformerBlock,
+  buildTransformerModel,
+  lookupEmbedding,
+  quantizeActivation,
+  applyLutElementWise,
+  forwardPass,
+  sampleGreedy,
+  sampleTopK,
+  type TransformerConfig,
+  type TransformerWeights,
+  type LayerWeights,
+  type LutLinearLayer,
+  type LutAttentionHead,
+  type LutFeedForward,
+  type LutTransformerBlock,
+  type LutTransformerModel,
+} from "./transformer";

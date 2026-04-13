@@ -163,19 +163,39 @@ export function step(): ElementWiseView {
   return fromFunction(x => x >= 0 ? 1 : 0, "step");
 }
 
+/** Softmax approximation: per-element exp(x) for LUT-compatible softmax */
+export function softmaxApprox(): ElementWiseView {
+  return fromFunction(x => Math.exp(x), "softmax_approx", -4, 4, 0, 55);
+}
+
+/** LayerNorm approximation: identity-like normalization for LUT domain */
+export function layernormApprox(): ElementWiseView {
+  return fromFunction(x => Math.tanh(x * 0.5) * 2, "layernorm_approx", -4, 4, -4, 4);
+}
+
+/** RMS Norm: x / sqrt(x² + eps) — element-wise approximation */
+export function rmsNorm(): ElementWiseView {
+  return fromFunction(
+    x => x / Math.sqrt(x * x + 1e-6),
+    "rms_norm", -4, 4, -1, 1,
+  );
+}
+
 // ── Op Registry ─────────────────────────────────────────────────────────────
 
 export type LutOpName =
   | "sigmoid" | "tanh" | "relu" | "leaky_relu" | "gelu" | "silu"
   | "softplus" | "elu" | "hard_sigmoid" | "hard_tanh"
   | "abs" | "square" | "cube" | "reciprocal"
-  | "exp" | "log" | "sqrt" | "sin" | "cos" | "step";
+  | "exp" | "log" | "sqrt" | "sin" | "cos" | "step"
+  | "softmax_approx" | "layernorm_approx" | "rms_norm";
 
 const OP_FACTORIES: Record<LutOpName, () => ElementWiseView> = {
   sigmoid, tanh, relu, leaky_relu: leakyRelu, gelu, silu,
   softplus, elu, hard_sigmoid: hardSigmoid, hard_tanh: hardTanh,
   abs, square, cube, reciprocal,
   exp, log, sqrt, sin, cos, step,
+  softmax_approx: softmaxApprox, layernorm_approx: layernormApprox, rms_norm: rmsNorm,
 };
 
 /**
