@@ -117,16 +117,35 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   }, []);
 
   const reload = useCallback(async () => {
+    const workspaces = await db.byLabel("workspace:workspace");
     const folders = await db.byLabel("workspace:folder");
     const notes = await db.byLabel("workspace:note");
     const daily = await db.byLabel("workspace:daily");
+
+    // Auto-create default workspace if none exist
+    if (workspaces.length === 0) {
+      await db.addEdge(["root", "ws:default"], "workspace:workspace", {
+        name: "My Workspace",
+        createdAt: Date.now(),
+      });
+      const ws2 = await db.byLabel("workspace:workspace");
+      workspaces.push(...ws2);
+    }
+
     const all: TreeItem[] = [
+      ...workspaces.map(e => ({
+        id: e.nodes[1] || e.id,
+        edge: e,
+        type: "workspace" as const,
+        name: String(e.properties.name || "Workspace"),
+        icon: String(e.properties.icon || ""),
+      })),
       ...folders.map(e => ({
         id: e.nodes[1] || e.id,
         edge: e,
         type: "folder" as const,
         name: String(e.properties.name || "Untitled"),
-        parentId: e.nodes[0] === "ws:root" ? undefined : e.nodes[0],
+        parentId: e.nodes[0],
         icon: String(e.properties.icon || ""),
       })),
       ...notes.map(e => ({
@@ -142,11 +161,18 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
         edge: e,
         type: "daily" as const,
         name: String(e.properties.title || e.properties.date || "Daily"),
+        parentId: e.nodes[0],
         icon: String(e.properties.icon || ""),
       })),
     ];
     setItems(all);
-  }, [db]);
+
+    // Auto-select first workspace if none active
+    if (!activeWorkspaceId) {
+      const first = all.find(i => i.type === "workspace");
+      if (first) setActiveWorkspaceId(first.id);
+    }
+  }, [db, activeWorkspaceId]);
 
   useEffect(() => { reload(); }, [reload]);
 
