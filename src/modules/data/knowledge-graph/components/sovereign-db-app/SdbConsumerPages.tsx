@@ -33,6 +33,14 @@ import { SdbSidebarPanel } from "./SdbSidebarPanel";
 import type { BlockRefResolver, BlockRefInfo } from "./SdbBlockRef";
 import { SdbMediaPreview } from "./SdbMediaPreview";
 
+// Cover images for demo content
+import coverOs from "@/assets/covers/cover-os.jpg";
+import coverAtlas from "@/assets/covers/cover-atlas.jpg";
+import coverResources from "@/assets/covers/cover-resources.jpg";
+import coverGraph from "@/assets/covers/cover-graph.jpg";
+import coverWelcome from "@/assets/covers/cover-welcome.jpg";
+import coverProjects from "@/assets/covers/cover-projects.jpg";
+
 import type { AppSection } from "./SovereignDBApp";
 
 interface Props {
@@ -69,6 +77,14 @@ const DEFAULT_TAG_COLORS: Record<string, string> = {
   "uor": "hsl(210, 80%, 55%)",
   "atlas": "hsl(270, 60%, 55%)",
   "architecture": "hsl(40, 85%, 50%)",
+  "guide": "hsl(190, 70%, 45%)",
+  "knowledge-graph": "hsl(220, 75%, 50%)",
+  "hypergraph": "hsl(300, 55%, 50%)",
+  "reference": "hsl(25, 80%, 50%)",
+  "ipfs": "hsl(200, 70%, 50%)",
+  "linked-data": "hsl(170, 65%, 40%)",
+  "projects": "hsl(340, 70%, 55%)",
+  "ideas": "hsl(50, 80%, 50%)",
 };
 
 function loadTagColors(): Record<string, string> {
@@ -148,27 +164,37 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
     // Seed demo content if workspace is empty (no folders AND no notes)
     if (folders.length === 0 && notes.length === 0) {
       const wsId = workspaces[0]?.nodes?.[1] || "ws:default";
+      const now = Date.now();
+      const dayMs = 86_400_000;
 
-      // ── Seed: "UOR OS" folder with nested "Atlas" subfolder ──
+      // ── Folder: "UOR OS" with cover ──
       const osFolderId = "folder:uor-os";
-      const atlasFolderId = "folder:atlas";
       await db.addEdge([wsId, osFolderId], "workspace:folder", {
-        name: "UOR OS",
-        icon: "🖥️",
-        createdAt: Date.now(),
-      });
-      await db.addEdge([osFolderId, atlasFolderId], "workspace:folder", {
-        name: "Atlas Engine",
-        icon: "🌐",
-        createdAt: Date.now(),
+        name: "UOR OS", icon: "🖥️", coverUrl: coverOs, createdAt: now,
       });
 
-      // ── Seed note: "Welcome to UOR OS" inside UOR OS folder ──
+      // ── Folder: "Atlas Engine" nested inside UOR OS ──
+      const atlasFolderId = "folder:atlas";
+      await db.addEdge([osFolderId, atlasFolderId], "workspace:folder", {
+        name: "Atlas Engine", icon: "🌐", coverUrl: coverAtlas, createdAt: now,
+      });
+
+      // ── Folder: "Resources" with cover ──
+      const resourcesFolderId = "folder:resources";
+      await db.addEdge([wsId, resourcesFolderId], "workspace:folder", {
+        name: "Resources", icon: "📚", coverUrl: coverResources, createdAt: now,
+      });
+
+      // ── Folder: "Projects" with cover ──
+      const projectsFolderId = "folder:projects";
+      await db.addEdge([wsId, projectsFolderId], "workspace:folder", {
+        name: "Projects", icon: "🎯", coverUrl: coverProjects, createdAt: now,
+      });
+
+      // ── Note: "Welcome to UOR OS" (inside UOR OS) ──
       const welcomeNoteId = "note:welcome";
       await db.addEdge([osFolderId, welcomeNoteId], "workspace:note", {
-        title: "Welcome to UOR OS",
-        icon: "👋",
-        content: "",
+        title: "Welcome to UOR OS", icon: "👋", content: "", coverUrl: coverWelcome,
         blocks: JSON.stringify([
           { id: "b0", text: "Welcome to UOR OS — your sovereign knowledge operating system.", indent: 0, children: [] },
           { id: "b1", text: "", indent: 0, children: [] },
@@ -177,18 +203,17 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
           { id: "b4", text: "📂 Explore the UOR OS folder to learn about the system architecture.", indent: 0, children: [] },
           { id: "b5", text: "🌐 Open the Atlas Engine folder to see the E₈ computational substrate.", indent: 0, children: [] },
           { id: "b6", text: "📊 Switch to the Graph view to see how everything connects.", indent: 0, children: [] },
+          { id: "b7", text: "", indent: 0, children: [] },
+          { id: "b8", text: "Use [[Atlas Engine Overview]] to learn about the mathematical foundation.", indent: 0, children: [] },
         ]),
         tags: JSON.stringify(["getting-started", "uor"]),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        createdAt: now, updatedAt: now,
       });
 
-      // ── Seed note: "Atlas Overview" inside Atlas subfolder ──
+      // ── Note: "Atlas Engine Overview" (inside Atlas) ──
       const atlasNoteId = "note:atlas-overview";
       await db.addEdge([atlasFolderId, atlasNoteId], "workspace:note", {
-        title: "Atlas Engine Overview",
-        icon: "🔮",
-        content: "",
+        title: "Atlas Engine Overview", icon: "🔮", content: "", coverUrl: coverAtlas,
         blocks: JSON.stringify([
           { id: "b0", text: "The Atlas Engine is a 96-vertex E₈ computational substrate.", indent: 0, children: [] },
           { id: "b1", text: "", indent: 0, children: [] },
@@ -197,85 +222,138 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
           { id: "b4", text: "Toggle the Atlas Layer in the Graph view to visualize the full vertex structure.", indent: 0, children: [] },
         ]),
         tags: JSON.stringify(["atlas", "architecture"]),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        createdAt: now - dayMs * 1, updatedAt: now - dayMs * 1,
       });
 
-      // ── Seed tags as hyperedges so they appear in the graph ──
-      await db.addEdge([welcomeNoteId, "tag:getting-started"], "workspace:tag", { tag: "getting-started" });
-      await db.addEdge([welcomeNoteId, "tag:uor"], "workspace:tag", { tag: "uor" });
-      await db.addEdge([atlasNoteId, "tag:atlas"], "workspace:tag", { tag: "atlas" });
-      await db.addEdge([atlasNoteId, "tag:architecture"], "workspace:tag", { tag: "architecture" });
-
-      // ── Seed: "Resources" folder with sample bookmarks ──
-      const resourcesFolderId = "folder:resources";
-      await db.addEdge([wsId, resourcesFolderId], "workspace:folder", {
-        name: "Resources",
-        icon: "📚",
-        createdAt: Date.now(),
+      // ── Note: "Knowledge Graph Guide" (inside UOR OS) ──
+      const graphGuideId = "note:graph-guide";
+      await db.addEdge([osFolderId, graphGuideId], "workspace:note", {
+        title: "Knowledge Graph Guide", icon: "📊", content: "", coverUrl: coverGraph,
+        blocks: JSON.stringify([
+          { id: "b0", text: "The Knowledge Graph is your second brain — a living map of connections between ideas.", indent: 0, children: [] },
+          { id: "b1", text: "", indent: 0, children: [] },
+          { id: "b2", text: "Every note, link, and tag creates a node. Every [[wiki link]] creates an edge.", indent: 0, children: [] },
+          { id: "b3", text: "", indent: 0, children: [] },
+          { id: "b4", text: "Use #tags to categorize and filter. Use backlinks to discover hidden connections.", indent: 0, children: [] },
+          { id: "b5", text: "", indent: 0, children: [] },
+          { id: "b6", text: "Try switching to the Graph view to explore your knowledge visually.", indent: 0, children: [] },
+        ]),
+        tags: JSON.stringify(["guide", "knowledge-graph"]),
+        createdAt: now - dayMs * 2, updatedAt: now - dayMs * 0.5,
       });
 
-      // Bookmark notes inside Resources
+      // ── Note: "Hypergraph Architecture" (inside Atlas) ──
+      const hyperNoteId = "note:hypergraph-arch";
+      await db.addEdge([atlasFolderId, hyperNoteId], "workspace:note", {
+        title: "Hypergraph Architecture", icon: "🧬", content: "",
+        blocks: JSON.stringify([
+          { id: "b0", text: "SovereignDB uses hypergraph edges — n-ary relations that can connect any number of nodes.", indent: 0, children: [] },
+          { id: "b1", text: "", indent: 0, children: [] },
+          { id: "b2", text: "Unlike traditional triple stores, hyperedges can represent complex relationships like:", indent: 0, children: [] },
+          { id: "b3", text: "• A meeting between three people at a specific time and place", indent: 1, children: [] },
+          { id: "b4", text: "• A chemical reaction with multiple reactants and products", indent: 1, children: [] },
+          { id: "b5", text: "• A transaction involving sender, receiver, amount, and timestamp", indent: 1, children: [] },
+        ]),
+        tags: JSON.stringify(["architecture", "hypergraph"]),
+        createdAt: now - dayMs * 3, updatedAt: now - dayMs * 2,
+      });
+
+      // ── Bookmark notes inside Resources ──
       const bookmark1Id = "note:res-wikipedia";
       await db.addEdge([resourcesFolderId, bookmark1Id], "workspace:note", {
-        title: "Wikipedia — Knowledge Graph",
-        icon: "🔗",
-        content: "",
+        title: "Wikipedia — Knowledge Graph", icon: "🔗", content: "",
         blocks: JSON.stringify([
           { id: "b0", text: "Reference article on knowledge graphs and semantic networks.", indent: 0, children: [] },
           { id: "b1", text: "", indent: 0, children: [] },
           { id: "b2", text: "🔗 https://en.wikipedia.org/wiki/Knowledge_graph", indent: 0, children: [] },
         ]),
         tags: JSON.stringify(["reference", "knowledge-graph"]),
-        bookmark: JSON.stringify({ url: "https://en.wikipedia.org/wiki/Knowledge_graph", title: "Knowledge Graph — Wikipedia", description: "A knowledge graph formally represents semantics by describing entities and their relationships." }),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        bookmark: JSON.stringify({ url: "https://en.wikipedia.org/wiki/Knowledge_graph", title: "Knowledge Graph — Wikipedia" }),
+        createdAt: now - dayMs * 5, updatedAt: now - dayMs * 5,
       });
 
       const bookmark2Id = "note:res-ipfs";
       await db.addEdge([resourcesFolderId, bookmark2Id], "workspace:note", {
-        title: "IPFS Documentation",
-        icon: "🔗",
-        content: "",
+        title: "IPFS Documentation", icon: "🔗", content: "",
         blocks: JSON.stringify([
           { id: "b0", text: "InterPlanetary File System — content-addressed, peer-to-peer storage.", indent: 0, children: [] },
           { id: "b1", text: "", indent: 0, children: [] },
           { id: "b2", text: "🔗 https://docs.ipfs.tech", indent: 0, children: [] },
         ]),
         tags: JSON.stringify(["reference", "ipfs"]),
-        bookmark: JSON.stringify({ url: "https://docs.ipfs.tech", title: "IPFS Docs", description: "Learn how to build with the InterPlanetary File System." }),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        bookmark: JSON.stringify({ url: "https://docs.ipfs.tech", title: "IPFS Docs" }),
+        createdAt: now - dayMs * 4, updatedAt: now - dayMs * 4,
       });
 
       const bookmark3Id = "note:res-jsonld";
       await db.addEdge([resourcesFolderId, bookmark3Id], "workspace:note", {
-        title: "JSON-LD Specification",
-        icon: "🔗",
-        content: "",
+        title: "JSON-LD Specification", icon: "🔗", content: "",
         blocks: JSON.stringify([
           { id: "b0", text: "JSON-LD is a method of encoding linked data using JSON.", indent: 0, children: [] },
           { id: "b1", text: "", indent: 0, children: [] },
           { id: "b2", text: "🔗 https://json-ld.org", indent: 0, children: [] },
         ]),
         tags: JSON.stringify(["reference", "linked-data"]),
-        bookmark: JSON.stringify({ url: "https://json-ld.org", title: "JSON-LD", description: "JSON for Linking Data — a lightweight Linked Data format." }),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        bookmark: JSON.stringify({ url: "https://json-ld.org", title: "JSON-LD" }),
+        createdAt: now - dayMs * 3, updatedAt: now - dayMs * 3,
       });
 
-      // Tags for resource notes
-      await db.addEdge([bookmark1Id, "tag:reference"], "workspace:tag", { tag: "reference" });
-      await db.addEdge([bookmark1Id, "tag:knowledge-graph"], "workspace:tag", { tag: "knowledge-graph" });
-      await db.addEdge([bookmark2Id, "tag:reference"], "workspace:tag", { tag: "reference" });
-      await db.addEdge([bookmark2Id, "tag:ipfs"], "workspace:tag", { tag: "ipfs" });
-      await db.addEdge([bookmark3Id, "tag:reference"], "workspace:tag", { tag: "reference" });
-      await db.addEdge([bookmark3Id, "tag:linked-data"], "workspace:tag", { tag: "linked-data" });
+      // ── Note: "Project Ideas" (inside Projects) ──
+      const projectIdeasId = "note:project-ideas";
+      await db.addEdge([projectsFolderId, projectIdeasId], "workspace:note", {
+        title: "Project Ideas", icon: "💡", content: "",
+        blocks: JSON.stringify([
+          { id: "b0", text: "Ideas for building on top of UOR OS:", indent: 0, children: [] },
+          { id: "b1", text: "", indent: 0, children: [] },
+          { id: "b2", text: "☐ Build a personal CRM using the hypergraph", indent: 0, children: [] },
+          { id: "b3", text: "☐ Create a research paper organizer with semantic search", indent: 0, children: [] },
+          { id: "b4", text: "☐ Design a recipe database with ingredient connections", indent: 0, children: [] },
+          { id: "b5", text: "☐ Map out a learning curriculum with prerequisites", indent: 0, children: [] },
+        ]),
+        tags: JSON.stringify(["projects", "ideas"]),
+        createdAt: now - dayMs * 1, updatedAt: now,
+      });
+
+      // ── Note: "Quick Start" (root level — visible immediately) ──
+      const quickStartId = "note:quick-start";
+      await db.addEdge([wsId, quickStartId], "workspace:note", {
+        title: "Quick Start", icon: "⚡", content: "", coverUrl: coverWelcome,
+        blocks: JSON.stringify([
+          { id: "b0", text: "Welcome! Here's how to get started:", indent: 0, children: [] },
+          { id: "b1", text: "", indent: 0, children: [] },
+          { id: "b2", text: "1. Browse the sidebar to explore folders and notes", indent: 0, children: [] },
+          { id: "b3", text: "2. Use ⌘K to quickly find or create anything", indent: 0, children: [] },
+          { id: "b4", text: "3. Type [[ to link notes together", indent: 0, children: [] },
+          { id: "b5", text: "4. Use # to add tags for organization", indent: 0, children: [] },
+          { id: "b6", text: "5. Switch to the Graph view to visualize connections", indent: 0, children: [] },
+        ]),
+        tags: JSON.stringify(["getting-started"]),
+        createdAt: now, updatedAt: now,
+      });
+
+      // ── Seed tags as hyperedges ──
+      const tagPairs: [string, string][] = [
+        [welcomeNoteId, "getting-started"], [welcomeNoteId, "uor"],
+        [atlasNoteId, "atlas"], [atlasNoteId, "architecture"],
+        [graphGuideId, "guide"], [graphGuideId, "knowledge-graph"],
+        [hyperNoteId, "architecture"], [hyperNoteId, "hypergraph"],
+        [bookmark1Id, "reference"], [bookmark1Id, "knowledge-graph"],
+        [bookmark2Id, "reference"], [bookmark2Id, "ipfs"],
+        [bookmark3Id, "reference"], [bookmark3Id, "linked-data"],
+        [projectIdeasId, "projects"], [projectIdeasId, "ideas"],
+        [quickStartId, "getting-started"],
+      ];
+      for (const [noteId, tag] of tagPairs) {
+        await db.addEdge([noteId, `tag:${tag}`], "workspace:tag", { tag });
+      }
 
       // ── Seed cross-links ──
       await db.addEdge([welcomeNoteId, atlasNoteId], "workspace:link", { relation: "references" });
+      await db.addEdge([welcomeNoteId, graphGuideId], "workspace:link", { relation: "see-also" });
       await db.addEdge([welcomeNoteId, bookmark1Id], "workspace:link", { relation: "see-also" });
+      await db.addEdge([atlasNoteId, hyperNoteId], "workspace:link", { relation: "extends" });
       await db.addEdge([atlasNoteId, bookmark3Id], "workspace:link", { relation: "uses" });
+      await db.addEdge([graphGuideId, quickStartId], "workspace:link", { relation: "related" });
 
       // Re-fetch after seeding
       const seededFolders = await db.byLabel("workspace:folder");
@@ -1090,13 +1168,15 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       <main className="flex-1 overflow-auto flex flex-col">
         {!selected || selected.type === "folder" ? (
           <SdbHomeView
-            items={items.filter(i => i.type !== "folder").map(i => ({
+            items={items.filter(i => i.type !== "workspace").map(i => ({
               id: i.id,
               name: i.name,
-              type: i.type as "note" | "daily",
+              type: i.type as "note" | "daily" | "folder",
               updatedAt: Number(i.edge.properties.updatedAt || i.edge.properties.createdAt || 0),
               fileDataUrl: i.edge.properties.fileDataUrl ? String(i.edge.properties.fileDataUrl) : undefined,
               fileMime: i.edge.properties.fileMime ? String(i.edge.properties.fileMime) : undefined,
+              coverUrl: i.edge.properties.coverUrl ? String(i.edge.properties.coverUrl) : undefined,
+              childCount: i.type === "folder" ? childrenOf(i.id).length : undefined,
             }))}
             allEdges={allEdges}
             recentIds={recentIds}
