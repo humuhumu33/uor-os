@@ -7,6 +7,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { providerRegistry } from "../provider-registry";
 import { switchProvider } from "../index";
 
