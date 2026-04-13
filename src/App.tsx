@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
+import { ErrorBoundary } from "@/modules/platform/core/ErrorBoundary";
 import { Toaster } from "@/modules/platform/core/ui/toaster";
 import { Toaster as Sonner } from "@/modules/platform/core/ui/sonner";
 import { TooltipProvider } from "@/modules/platform/core/ui/tooltip";
@@ -57,23 +58,25 @@ const App = () => {
               <Sonner />
               <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
                 <Suspense fallback={null}>
-                  <Routes>
-                    {/* The OS IS the homepage */}
-                    <Route path="/" element={<DesktopShell />} />
-                    <Route path="/oracle" element={<OraclePage />} />
-                    <Route path="/resolve" element={<ResolvePage />} />
-                    <Route path="/messenger" element={<MessengerPage />} />
-                    <Route path="/library" element={<LibraryPage />} />
-                    <Route path="/app-store" element={<AppStorePage />} />
-                    <Route path="/compliance" element={<ComplianceDashboardPage />} />
-                    <Route path="/download" element={<Navigate to="/" replace />} />
+                  <ErrorBoundary>
+                    <Routes>
+                      {/* The OS IS the homepage */}
+                      <Route path="/" element={<DesktopShell />} />
+                      <Route path="/oracle" element={<OraclePage />} />
+                      <Route path="/resolve" element={<ResolvePage />} />
+                      <Route path="/messenger" element={<MessengerPage />} />
+                      <Route path="/library" element={<LibraryPage />} />
+                      <Route path="/app-store" element={<AppStorePage />} />
+                      <Route path="/compliance" element={<ComplianceDashboardPage />} />
+                      <Route path="/download" element={<Navigate to="/" replace />} />
 
-                    {/* Legacy redirects */}
-                    <Route path="/os" element={<Navigate to="/" replace />} />
-                    <Route path="/desktop" element={<Navigate to="/" replace />} />
-                    <Route path="/search" element={<Navigate to="/" replace />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
+                      {/* Legacy redirects */}
+                      <Route path="/os" element={<Navigate to="/" replace />} />
+                      <Route path="/desktop" element={<Navigate to="/" replace />} />
+                      <Route path="/search" element={<Navigate to="/" replace />} />
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </ErrorBoundary>
                 </Suspense>
               </BrowserRouter>
             </TooltipProvider>
