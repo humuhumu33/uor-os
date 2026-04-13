@@ -738,13 +738,40 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
 
       {/* ── Sidebar ───────────────────────── */}
       <aside className="w-[220px] shrink-0 border-r border-border/20 bg-muted/8 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-border/15">
-          <span className="text-os-body font-semibold text-foreground truncate flex-1">Workspace</span>
+        {/* Workspace selector */}
+        <div className="px-3 py-2.5 border-b border-border/15">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider flex-1">Workspace</span>
+            <button
+              onClick={() => createWorkspace()}
+              className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+              title="New workspace"
+            >
+              <IconPlus size={11} />
+            </button>
+          </div>
+          {workspaces.map(ws => (
+            <button
+              key={ws.id}
+              onClick={() => { setActiveWorkspaceId(ws.id); setSelectedId(null); }}
+              className={`flex items-center gap-2 w-full px-2.5 py-[6px] rounded-lg text-os-body transition-colors ${
+                activeWorkspaceId === ws.id
+                  ? "bg-primary/10 text-foreground font-medium"
+                  : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+              }`}
+            >
+              <span className="text-[12px]">{ws.icon || "🏠"}</span>
+              <span className="truncate">{ws.name}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Header with Upload */}
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-border/15">
           <button
             onClick={() => uploadRef.current?.click()}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-os-body font-medium transition-all hover:shadow-sm"
-            title="Upload files or create a new page"
+            title="Upload files"
           >
             <IconUpload size={14} />
             Upload
