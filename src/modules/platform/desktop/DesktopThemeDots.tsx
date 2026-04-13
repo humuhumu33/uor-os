@@ -113,13 +113,16 @@ export default function DesktopThemeDots({ windows = [] }: Props) {
         })}
       </div>
       {/* UOR Signature */}
-      <span
-        className="text-[11px] font-mono select-none pointer-events-none"
-        style={{ color: labelColor }}
+      <a
+        href="https://uor.foundation"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-[13px] font-mono select-none pointer-events-auto hover:opacity-80 transition-opacity"
+        style={{ color: labelColor, pointerEvents: hasVisibleWindows ? "none" : "auto" }}
       >
         Powered by UOR. With{" "}
         <span className="text-rose-400">❤️</span>.
-      </span>
+      </a>
     </div>
   );
 }
