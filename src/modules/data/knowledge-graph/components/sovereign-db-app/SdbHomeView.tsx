@@ -117,12 +117,12 @@ function pickBanner(): string {
 
 export function SdbHomeView({
   items, allEdges, recentIds, onSelect, onCreateNote, onCreateDaily, onSwitchGraph,
-  activeTags, onToggleTag, tagColors, itemTagsMap, activeSection, onSwitchSection,
+  activeTags, onToggleTag, tagColors, itemTagsMap, globalSearch = "",
 }: Props) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("recent");
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [search, setSearch] = useState("");
+  const search = globalSearch;
   const [showSort, setShowSort] = useState(false);
   const [bannerLoaded, setBannerLoaded] = useState(false);
   const bannerRef = useRef<HTMLImageElement>(null);
