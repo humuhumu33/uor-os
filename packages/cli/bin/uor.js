@@ -734,30 +734,33 @@ function cmdHelp() {
   console.log(`    ${CYAN}uor${RESET} <command> [options]`);
   console.log();
   console.log(`  ${BOLD}COMMANDS${RESET}`);
-  console.log(`    ${CYAN}run${RESET} <app-ref>       Run an app from the graph registry`);
-  console.log(`    ${CYAN}build${RESET} [dir]          Build a directory into a graph image`);
-  console.log(`    ${CYAN}push${RESET} <app-ref>       Push a graph image to the registry`);
+  console.log(`    ${CYAN}boot${RESET} [dir]           ${BOLD}⭐ One-liner: build + seed kernel + run${RESET}`);
+  console.log(`    ${CYAN}run${RESET} <app-ref>        Run an app from the graph registry`);
+  console.log(`    ${CYAN}build${RESET} [dir]           Build a directory into a graph image`);
+  console.log(`    ${CYAN}push${RESET} <app-ref>        Push a graph image to the registry`);
   console.log(`                         ${DIM}--sync[=url]  sync to remote registry${RESET}`);
-  console.log(`    ${CYAN}pull${RESET} <app-ref>       Pull a graph image from the registry`);
+  console.log(`    ${CYAN}pull${RESET} <app-ref>        Pull a graph image from the registry`);
   console.log(`                         ${DIM}--sync[=url]  pull from remote registry${RESET}`);
-  console.log(`    ${CYAN}images${RESET}               List local graph images`);
-  console.log(`    ${CYAN}ps${RESET}                   List running sovereign processes`);
-  console.log(`    ${CYAN}inspect${RESET} <app-ref>    Inspect a graph image`);
-  console.log(`    ${CYAN}export${RESET} <app-ref>     Export a sovereign bundle (.uor.json)`);
-  console.log(`    ${CYAN}verify${RESET} <app-ref>     Verify graph image coherence`);
-  console.log(`    ${CYAN}version${RESET}              Print version`);
+  console.log(`    ${CYAN}images${RESET}                List local graph images`);
+  console.log(`    ${CYAN}ps${RESET}                    List running sovereign processes`);
+  console.log(`    ${CYAN}inspect${RESET} <app-ref>     Inspect a graph image`);
+  console.log(`    ${CYAN}export${RESET} <app-ref>      Export a sovereign bundle (.uor.json)`);
+  console.log(`    ${CYAN}verify${RESET} <app-ref>      Verify graph image coherence`);
+  console.log(`    ${CYAN}version${RESET}               Print version`);
+  console.log();
+  console.log(`  ${BOLD}QUICK START${RESET}`);
+  console.log(`    ${DIM}$${RESET} npx @uor/cli boot            ${DIM}# Boot OS from current directory${RESET}`);
+  console.log(`    ${DIM}$${RESET} npx @uor/cli boot ./my-app    ${DIM}# Boot OS from a specific app${RESET}`);
   console.log();
   console.log(`  ${BOLD}EXAMPLES${RESET}`);
   console.log(`    ${DIM}$${RESET} uor build ./my-app`);
   console.log(`    ${DIM}$${RESET} uor run my-app`);
-  console.log(`    ${DIM}$${RESET} uor run my-app:1.0.0`);
   console.log(`    ${DIM}$${RESET} uor inspect my-app`);
   console.log(`    ${DIM}$${RESET} uor export my-app > backup.uor.json`);
   console.log();
   console.log(`  ${BOLD}PHILOSOPHY${RESET}`);
-  console.log(`    Apps are subgraphs in a sovereign knowledge graph.`);
-  console.log(`    Every file is a content-addressed node. Every mutation`);
-  console.log(`    is an append-only delta. Share the graph, share the app.`);
+  console.log(`    The hypergraph IS the operating system.`);
+  console.log(`    One binary, one graph, any device. Same bundle → same system.`);
   console.log();
 }
 
@@ -787,6 +790,7 @@ function parseFlags(args) {
 const { positional: args, flags } = parseFlags(rawArgs);
 
 switch (command) {
+  case "boot":    cmdBoot(args[0], flags); break;
   case "run":     cmdRun(args[0]); break;
   case "build":   cmdBuild(args[0]); break;
   case "push":    cmdPush(args[0], flags); break;
