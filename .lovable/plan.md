@@ -1,51 +1,34 @@
 
 
-## Additional CI/CD Performance Improvements
+## Fix: SoundCloud "refused to connect"
 
-The consolidation from 4 jobs to 2 is already done. Here are further optimizations targeting both CI speed and build speed.
+### Root Cause
 
-### 1. Pin `actions/setup-node` built-in cache (eliminate separate cache step)
+The `Content-Security-Policy` meta tag in `index.html` (line 8) is the most likely culprit. While `frame-src` includes `https://w.soundcloud.com`, the SoundCloud widget player loads sub-resources and nested frames from additional domains (`*.sndcdn.com`, `api-v2.soundcloud.com`, consent frames, etc.) that may conflict with the restrictive `default-src 'self'` fallback. Additionally, SoundCloud may inspect the `Referer` header or `frame-ancestors` context and reject embedding from certain origins.
 
-Replace the manual `actions/cache@v4` block with `setup-node`'s built-in `cache: 'npm'` option. This is simpler and slightly faster (one fewer step per job). The built-in cache uses `package-lock.json` as key automatically.
+On the published site (`uor-os.lovable.app`), the hosting platform may layer additional CSP headers on top, creating a double restriction.
 
-### 2. Run lint and test in parallel within the check job
+### Plan
 
-Instead of sequential `eslint` → `vitest` → `audit`, run lint and test concurrently:
-```
-npx eslint . & npm test & wait
-```
-This shaves ~10-20s when both take meaningful time.
+**1. Relax the CSP meta tag** (`index.html`)
 
-### 3. Enable Vite build caching
+- Widen `frame-src` from `https://w.soundcloud.com` to `https:` — allowing any HTTPS iframe (SoundCloud's widget loads nested frames from varying subdomains)
+- Add `child-src https: blob:` as an explicit directive (some browsers fall back to `child-src` for iframes)
+- This is safe because iframe content runs in its own origin sandbox regardless of parent CSP
 
-Set `build.cache = true` (Vite 6 supports filesystem cache) or add a cache step for `.vite/` and `node_modules/.vite/` directories. This makes incremental builds significantly faster when only a few files change.
+**2. Add iframe error detection and retry** (`VinylPlayer.tsx`)
 
-### 4. Compress upload with faster artifact settings
+- Attach an `onError` handler to both iframes
+- If the iframe fails, show a small "Unable to load" message with a retry button instead of a broken embed
+- Add `referrerPolicy="no-referrer"` to both iframes to prevent SoundCloud from rejecting based on the referring origin
 
-Add `compression-level: 1` to `upload-pages-artifact` to speed up the upload step.
+**3. Align SoundCloudFab with VinylPlayer fixes** (`SoundCloudFab.tsx`)
 
-### 5. Skip checkout history
+- Apply the same `referrerPolicy="no-referrer"` and error handling to the SoundCloudFab component used in Footer, ResolvePage, and ImmersiveSearchView
 
-Add `fetch-depth: 1` to both `actions/checkout` steps for shallow clones (faster checkout on repos with history).
+### Files to modify
 
----
-
-## Technical Details
-
-**File: `.github/workflows/deploy.yml`**
-
-Changes to the `check` job:
-- Add `fetch-depth: 1` to checkout
-- Replace manual cache block with `cache: 'npm'` on `setup-node`
-- Change install to `npm ci` (always, since setup-node caches `~/.npm` not `node_modules`)
-- Run lint + test in parallel: `npx eslint . & npm test & wait`
-- Keep `npm audit --audit-level=critical || true` sequential after
-
-Changes to the `build-and-deploy` job:
-- Add `fetch-depth: 1` to checkout
-- Replace manual cache block with `cache: 'npm'` on `setup-node`
-- Add Vite cache: cache `.vite/` directory between builds
-- Add `compression-level: 1` to upload-pages-artifact
-
-**Estimated improvement**: ~15-30s additional savings on top of the consolidation already done. Incremental builds (when only a few files changed) will be significantly faster with Vite caching.
+- `index.html` — relax CSP `frame-src` and add `child-src`
+- `src/modules/platform/desktop/components/VinylPlayer.tsx` — add `referrerPolicy`, error handling
+- `src/modules/intelligence/oracle/components/SoundCloudFab.tsx` — same iframe fixes
 
