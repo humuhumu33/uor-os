@@ -63,6 +63,13 @@ export {
   type HoloExecutionResult,
 } from "./executor";
 
+export {
+  executeParallel,
+  type ParallelExecutionResult,
+  type ParallelExecutorOptions,
+  type CohortTrace,
+} from "./parallel-executor";
+
 // ── LUT-GEMM re-exports ────────────────────────────────────────────────────
 export {
   buildGemmLayer,
