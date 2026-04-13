@@ -4,6 +4,7 @@
  * Three subtle dots: Immersive · Dark · Light.
  * Click or press 1/2/3 to switch. Hover reveals label.
  * Theme-aware: uses dark tones on light backgrounds.
+ * Includes "Powered by UOR. With ❤️." signature below.
  */
 
 import { useState, useEffect, useCallback } from "react";
