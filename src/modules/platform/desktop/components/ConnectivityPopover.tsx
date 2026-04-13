@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Wifi, WifiOff, Database, Brain, Globe, Mic, Shield, RefreshCw, Loader2 } from "lucide-react";
 import { useConnectivity, type FeatureId } from "@/modules/platform/desktop/hooks/useConnectivity";
 import { grafeoStore as localGraphStore } from "@/modules/data/knowledge-graph/grafeo-store";
+import { providerRegistry } from "@/modules/data/knowledge-graph/persistence/provider-registry";
 import type { SyncMode } from "@/modules/data/knowledge-graph/persistence/hooks/useSyncMode";
 
 interface Props {
@@ -133,8 +134,11 @@ export default function ConnectivityPopover({ open, onClose, isLight }: Props) {
 
           {/* Footer: KG stats + last sync */}
           <div className={`px-4 py-2.5 border-t ${border}`}>
+            <p className={`text-[10px] ${textSecondary}`}>
+              Provider: <span className={`font-medium ${textPrimary}`}>{getProviderLabel(conn.activeProviderId)}</span>
+            </p>
             {kgStats && (
-              <p className={`text-[10px] ${textSecondary}`}>
+              <p className={`text-[10px] ${textSecondary} mt-0.5`}>
                 Knowledge Graph: {kgStats.nodes.toLocaleString()} nodes · {kgStats.edges.toLocaleString()} edges
               </p>
             )}
@@ -218,6 +222,18 @@ function SyncModeSelector({
 }
 
 /* ── Helpers ───────────────────────────────────────────────────────────── */
+
+const PROVIDER_LABELS: Record<string, string> = {
+  local: "GrafeoDB (Local)",
+  supabase: "Supabase (Cloud)",
+};
+
+function getProviderLabel(id: string): string {
+  if (PROVIDER_LABELS[id]) return PROVIDER_LABELS[id];
+  const entry = providerRegistry.get(id);
+  return entry?.provider.name ?? id;
+}
+
 
 function formatTimeAgo(ts: number): string {
   const diff = Math.floor((Date.now() - ts) / 1000);
