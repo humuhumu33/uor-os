@@ -5,7 +5,6 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, Shield, ShieldCheck, Download, X } from "lucide-react";
 import { getHologramStt } from "@/modules/identity/uns/core/hologram/stt-engine";
 import { getWhisperEngine, type WhisperLoadProgress } from "@/modules/identity/uns/core/hologram/whisper-engine";
@@ -208,15 +207,9 @@ export default function VoiceOverlay({ open, onClose, onSubmit }: Props) {
   const displayText = cleaning ? "Cleaning up…" : (final || interim);
   const isFinalText = !!final && !interim;
 
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
+  return ({open && (
+        <div
           className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
         >
           {/* Backdrop */}
           <div
@@ -233,11 +226,8 @@ export default function VoiceOverlay({ open, onClose, onSubmit }: Props) {
           </button>
 
           {/* Privacy badge */}
-          <motion.div
+          <div
             className="absolute top-6 left-6 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/20 bg-muted/10"
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
           >
             {privacy === "local" ? (
               <>
@@ -252,47 +242,31 @@ export default function VoiceOverlay({ open, onClose, onSubmit }: Props) {
                 </span>
               </>
             )}
-          </motion.div>
+          </div>
 
           {/* Shortcut hint */}
-          <motion.div
+          <div
             className="absolute top-6 left-1/2 -translate-x-1/2 z-10 text-xs text-muted-foreground/30 font-mono"
-            initial={{ y: -10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
           >
             Ring (⌘.) → V to toggle • Esc to cancel
-          </motion.div>
+          </div>
 
           {/* Mic orb */}
-          <motion.div
+          <div
             className="relative z-10 flex items-center justify-center"
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", damping: 20, stiffness: 200 }}
           >
             {/* Outer breathing ring — driven by real audio level */}
             {listening && (
-              <motion.div
+              <div
                 className="absolute rounded-full border-2 border-primary/20"
                 style={{ width: 120 + level * 60, height: 120 + level * 60 }}
-                animate={{
-                  scale: [1, 1 + level * 0.3, 1],
-                  opacity: [0.3, 0.1, 0.3],
-                }}
-                transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
               />
             )}
 
             {/* Inner pulsing ring */}
             {listening && (
-              <motion.div
+              <div
                 className="absolute w-24 h-24 rounded-full border border-primary/30"
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 0.2, 0.5],
-                }}
-                transition={{ duration: 0.8, repeat: Infinity }}
               />
             )}
 
@@ -309,23 +283,18 @@ export default function VoiceOverlay({ open, onClose, onSubmit }: Props) {
             >
               {listening ? <Mic size={32} /> : <MicOff size={32} />}
             </button>
-          </motion.div>
+          </div>
 
           {/* Live transcript */}
-          <motion.div
+          <div
             className="relative z-10 mt-8 max-w-lg px-6 text-center min-h-[48px]"
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.15 }}
           >
             {displayText ? (
               <p className={`text-xl font-medium leading-relaxed ${isFinalText || cleaning ? "text-foreground" : "text-foreground/50"}`}>
                 {displayText}
                 {!isFinalText && !cleaning && (
-                  <motion.span
+                  <span
                     className="inline-block w-0.5 h-5 bg-primary/60 ml-1 align-middle"
-                    animate={{ opacity: [1, 0, 1] }}
-                    transition={{ duration: 0.8, repeat: Infinity }}
                   />
                 )}
               </p>
@@ -334,20 +303,17 @@ export default function VoiceOverlay({ open, onClose, onSubmit }: Props) {
             ) : (
               <p className="text-muted-foreground/30 text-lg">Tap the mic to start</p>
             )}
-          </motion.div>
+          </div>
 
           {/* Whisper download prompt (only when using cloud) */}
           {!whisperReady && privacy === "cloud" && (
-            <motion.div
+            <div
               className="relative z-10 mt-12"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 0.7 }}
-              transition={{ delay: 0.5 }}
             >
               {whisperLoading ? (
                 <div className="flex items-center gap-3 px-4 py-2 rounded-full border border-border/20 bg-muted/10">
                   <div className="w-32 h-1.5 rounded-full bg-muted/20 overflow-hidden">
-                    <motion.div
+                    <div
                       className="h-full bg-primary/60 rounded-full"
                       style={{ width: `${whisperProgress}%` }}
                     />
@@ -363,10 +329,8 @@ export default function VoiceOverlay({ open, onClose, onSubmit }: Props) {
                   Download Whisper (40MB) for private on-device voice
                 </button>
               )}
-            </motion.div>
+            </div>
           )}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
+        </div>
+      )});
 }

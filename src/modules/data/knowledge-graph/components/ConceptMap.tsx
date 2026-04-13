@@ -5,7 +5,6 @@
  */
 
 import { useMemo } from "react";
-import { motion } from "framer-motion";
 
 export interface ConceptNode {
   id: string;
@@ -96,7 +95,7 @@ export default function ConceptMap({
       >
         {/* Edges */}
         {positions.map(({ node, x, y }) => (
-          <motion.line
+          <line
             key={`edge-${node.id}`}
             x1={cx}
             y1={cy}
@@ -105,23 +104,17 @@ export default function ConceptMap({
             stroke={getEdgeColor(center.id, node.id)}
             strokeWidth={1}
             strokeOpacity={0.3}
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
           />
         ))}
 
         {/* Center node */}
-        <motion.circle
+        <circle
           cx={cx}
           cy={cy}
           r={24}
           fill="hsl(220 15% 12%)"
           stroke="hsl(0 0% 40%)"
           strokeWidth={1.5}
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", duration: 0.4 }}
         />
         <text
           x={cx}
@@ -140,7 +133,7 @@ export default function ConceptMap({
             onClick={() => onNodeClick?.(node.id)}
             className="cursor-pointer"
           >
-            <motion.circle
+            <circle
               cx={x}
               cy={y}
               r={16}
@@ -148,23 +141,16 @@ export default function ConceptMap({
               stroke={getEdgeColor(center.id, node.id)}
               strokeWidth={1}
               strokeOpacity={0.5}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.15 + i * 0.04 }}
-              whileHover={{ scale: 1.2, strokeOpacity: 1 }}
             />
-            <motion.text
+            <text
               x={x}
               y={y + 1}
               textAnchor="middle"
               dominantBaseline="central"
               className="fill-zinc-400 text-[7px] font-mono pointer-events-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 + i * 0.04 }}
             >
               {node.label.length > 10 ? node.label.slice(0, 9) + "…" : node.label}
-            </motion.text>
+            </text>
 
             {/* Relation label on hover — rendered as title for simplicity */}
             <title>

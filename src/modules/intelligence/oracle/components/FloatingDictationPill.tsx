@@ -7,7 +7,6 @@
  * Extended for voice-to-voice: shows speaking state + reply toggle.
  */
 
-import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Loader2, X, Volume2 } from "lucide-react";
 import type { VoicePhase } from "@/modules/intelligence/oracle/hooks/useVoiceToVoice";
 import type { DictationState } from "@/modules/intelligence/oracle/hooks/useGlobalDictation";
@@ -33,11 +32,9 @@ function WaveformBars({ level, active }: { level: number; active: boolean }) {
           ? 4 + level * 12 * (1 + Math.sin(Date.now() / 200 + i * 1.5) * 0.3)
           : 3;
         return (
-          <motion.div
+          <div
             key={i}
             className="w-[2px] rounded-full bg-primary"
-            animate={{ height: Math.max(3, Math.min(16, height)) }}
-            transition={{ duration: 0.1, delay }}
           />
         );
       })}
@@ -51,18 +48,9 @@ function SpeakerWaveform() {
   return (
     <div className="flex items-center gap-[2px] h-4">
       {Array.from({ length: bars }).map((_, i) => (
-        <motion.div
+        <div
           key={i}
           className="w-[2px] rounded-full bg-accent"
-          animate={{
-            height: [4, 10 + Math.random() * 6, 4],
-          }}
-          transition={{
-            duration: 0.6 + i * 0.1,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 0.12,
-          }}
         />
       ))}
     </div>
@@ -97,15 +85,9 @@ export default function FloatingDictationPill({
     ? "ElevenLabs"
     : "Browser";
 
-  return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
+  return ({show && (
+        <div
           className="fixed bottom-20 left-1/2 z-[210] -translate-x-1/2 pointer-events-auto"
-          initial={{ y: 30, opacity: 0, scale: 0.9 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          exit={{ y: 20, opacity: 0, scale: 0.95 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
         >
           <div
             className="flex items-center gap-3 px-4 py-2.5 rounded-2xl border border-border/20 shadow-2xl"
@@ -187,18 +169,13 @@ export default function FloatingDictationPill({
           </div>
 
           {/* Keyboard hint */}
-          <motion.div
+          <div
             className="text-center mt-1.5"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
           >
             <span className="text-[10px] text-muted-foreground/20 font-mono">
               {isSpeaking ? "Press again to stop" : "Esc to cancel · ⌘⇧V to toggle"}
             </span>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
+          </div>
+        </div>
+      )});
 }

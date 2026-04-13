@@ -11,7 +11,6 @@ import { DESKTOP_APPS, type DesktopApp } from "@/modules/platform/desktop/lib/de
 import { getUserFacingCategories, type OsCategoryDescriptor } from "@/modules/platform/desktop/lib/os-taxonomy";
 import { CNCF_CATEGORIES } from "@/modules/interoperability/cncf-compat/categories";
 import type { CncfCategoryDescriptor } from "@/modules/interoperability/cncf-compat/types";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, CheckCircle, Clock, AlertCircle, ExternalLink, Star, Sparkles,
   Box, Workflow, Radar, Network, Radio, ArrowLeftRight,
@@ -69,9 +68,7 @@ function LargeAppCard({ app, badge }: { app: DesktopApp; badge?: string }) {
   }, [app.id]);
 
   return (
-    <motion.button
-      whileHover={{ scale: 1.02, y: -2 }}
-      whileTap={{ scale: 0.98 }}
+    <button
       onClick={launch}
       className={`${CARD_BASE} group relative flex flex-col p-5 text-left cursor-default overflow-hidden`}
     >
@@ -107,7 +104,7 @@ function LargeAppCard({ app, badge }: { app: DesktopApp; badge?: string }) {
         <span className="text-[10px] font-medium text-white/60">Open</span>
         <ExternalLink className="w-2.5 h-2.5 text-white/40" />
       </div>
-    </motion.button>
+    </button>
   );
 }
 
@@ -121,9 +118,7 @@ function CompactAppCard({ app }: { app: DesktopApp }) {
   }, [app.id]);
 
   return (
-    <motion.button
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.97 }}
+    <button
       onClick={launch}
       className={`${CARD_BASE} group flex items-center gap-3 p-3 text-left cursor-default`}
     >
@@ -138,7 +133,7 @@ function CompactAppCard({ app }: { app: DesktopApp }) {
         <p className="text-[10px] text-white/30 truncate">{app.description}</p>
       </div>
       <ExternalLink className="w-3 h-3 text-white/0 group-hover:text-white/30 transition-colors shrink-0" />
-    </motion.button>
+    </button>
   );
 }
 
@@ -152,9 +147,7 @@ function StoreAppCard({ app }: { app: DesktopApp }) {
   }, [app.id]);
 
   return (
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+    <button
       onClick={launch}
       className={`${CARD_BASE} group flex items-center gap-3.5 p-3.5 text-left cursor-default`}
     >
@@ -171,7 +164,7 @@ function StoreAppCard({ app }: { app: DesktopApp }) {
       <span className="shrink-0 px-3 py-1 rounded-full bg-white/[0.08] text-[10px] font-semibold text-white/70 group-hover:bg-white/[0.14] transition-colors">
         Open
       </span>
-    </motion.button>
+    </button>
   );
 }
 
@@ -378,10 +371,7 @@ function MaturityBadge({ maturity }: { maturity: CncfCategoryDescriptor["uorMatu
 function CncfCard({ cat }: { cat: CncfCategoryDescriptor }) {
   const Icon = CNCF_ICON_MAP[cat.iconKey] ?? Box;
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+    <div
       className={`${CARD_BASE} p-3.5`}
     >
       <div className="flex items-start justify-between mb-2">
@@ -404,7 +394,7 @@ function CncfCard({ cat }: { cat: CncfCategoryDescriptor }) {
           </span>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -543,21 +533,13 @@ export default function AppHub() {
       </div>
 
       {/* ── Content ───────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto p-5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
-        <AnimatePresence mode="wait">
-          <motion.div
+      <div className="flex-1 overflow-y-auto p-5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10"><div
             key={tab}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.2 }}
           >
             {tab === "my-apps" && <MyAppsTab searchQuery={searchQuery} />}
             {tab === "store" && <AppStoreTab searchQuery={searchQuery} />}
             {tab === "developer" && <DeveloperTab searchQuery={searchQuery} />}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+          </div></div>
     </div>
   );
 }
