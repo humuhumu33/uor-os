@@ -9,7 +9,7 @@ import {
   IconGraph, IconSun, IconLayoutBoard, IconSearch,
   IconStar, IconStarFilled, IconDots,
   IconHome, IconSettings, IconClock, IconUpload,
-  IconPhoto, IconMoodSmile, IconMessage,
+  IconPhoto, IconMoodSmile, IconMessage, IconLayoutSidebarRight,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
@@ -27,6 +27,8 @@ import { SdbTagLibrary } from "./SdbTagLibrary";
 import { SdbNoteCover, SdbCoverGallery } from "./SdbNoteCover";
 import { SdbIconPicker } from "./SdbIconPicker";
 import { SdbNoteComments, type NoteComment } from "./SdbNoteComments";
+import { SdbSidebarPanel } from "./SdbSidebarPanel";
+import type { BlockRefResolver, BlockRefInfo } from "./SdbBlockRef";
 
 import type { AppSection } from "./SovereignDBApp";
 
@@ -82,6 +84,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   const [noteIcon, setNoteIcon] = useState("");
   const [noteCover, setNoteCover] = useState<string | null>(null);
   const [noteComments, setNoteComments] = useState<NoteComment[]>([]);
+  const [sidebarPages, setSidebarPages] = useState<Array<{ id: string; title: string; blocks: Block[]; icon?: string }>>([]);
 
   // Tag system state
   const [activeTags, setActiveTags] = useState<Set<string>>(new Set());
@@ -188,6 +191,46 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     items.filter(i => i.type === "note" || i.type === "daily").map(i => i.name).filter(n => n !== "Untitled"),
     [items]
   );
+
+  /** Global block index — resolves any block ID to its content + source note */
+  const resolveBlockRef: BlockRefResolver = useCallback((blockId: string): BlockRefInfo | null => {
+    const noteEdges = allEdges.filter(e => e.label === "workspace:note" || e.label === "workspace:daily");
+    for (const edge of noteEdges) {
+      const stored = edge.properties.blocks;
+      if (!stored) continue;
+      try {
+        const noteBlocks: Block[] = JSON.parse(String(stored));
+        const found = noteBlocks.find(b => b.id === blockId);
+        if (found) {
+          return {
+            blockId,
+            text: found.text,
+            noteId: edge.nodes[1] || edge.id,
+            noteTitle: String(edge.properties.title || "Untitled"),
+          };
+        }
+      } catch { /* skip */ }
+    }
+    return null;
+  }, [allEdges]);
+
+  /** Open a note in the sidebar panel (Shift-click) */
+  const openInSidebar = useCallback((noteId: string) => {
+    if (sidebarPages.some(p => p.id === noteId)) return; // Already open
+    const item = items.find(i => i.id === noteId);
+    if (!item) return;
+    let pageBlocks: Block[] = [];
+    try {
+      const stored = item.edge.properties.blocks;
+      if (stored) pageBlocks = JSON.parse(String(stored));
+    } catch { /* */ }
+    setSidebarPages(prev => [...prev, {
+      id: noteId,
+      title: String(item.edge.properties.title || item.name),
+      blocks: pageBlocks,
+      icon: String(item.edge.properties.icon || item.icon || ""),
+    }]);
+  }, [items, sidebarPages]);
 
   const getPreview = useCallback((title: string): string | null => {
     const item = items.find(
@@ -803,6 +846,13 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                 >
                   <IconDots size={15} />
                 </button>
+                <button
+                  onClick={() => openInSidebar(selected.id)}
+                  className="p-1.5 rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Open in sidebar"
+                >
+                  <IconLayoutSidebarRight size={15} />
+                </button>
               </div>
             </div>
 
@@ -897,8 +947,11 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                     blocks={blocks}
                     onChange={handleBlocksChange}
                     onWikiLinkClick={handleWikiLinkClick}
+                    onBlockRefClick={async (noteId) => { await saveNote(); navigateTo(noteId); }}
+                    onShiftClick={openInSidebar}
                     noteNames={noteNames}
                     getPreview={getPreview}
+                    resolveBlockRef={resolveBlockRef}
                   />
                 </div>
 
@@ -917,6 +970,16 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                   onNavigate={async (noteId) => {
                     await saveNote();
                     navigateTo(noteId);
+                  }}
+                  onLinkUnlinked={async (noteId, noteTitle_) => {
+                    // Create a [[link]] from the unlinked note to this one
+                    await db.addEdge([noteId, selected.id], "workspace:link", {
+                      relation: "references",
+                      sourceTitle: noteTitle_,
+                      targetTitle: noteTitle,
+                      createdAt: Date.now(),
+                    });
+                    await reload();
                   }}
                 />
 
@@ -944,6 +1007,19 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
           </>
         )}
       </main>
+
+      {/* Roam-style right sidebar panel */}
+      {sidebarPages.length > 0 && (
+        <SdbSidebarPanel
+          pages={sidebarPages}
+          onRemovePage={(id) => setSidebarPages(prev => prev.filter(p => p.id !== id))}
+          onNavigateMain={async (id) => {
+            await saveNote();
+            navigateTo(id);
+          }}
+          onClose={() => setSidebarPages([])}
+        />
+      )}
     </div>
   );
 }

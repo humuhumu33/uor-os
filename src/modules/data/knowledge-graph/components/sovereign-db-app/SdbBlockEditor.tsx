@@ -15,15 +15,16 @@ import {
   IconH1, IconH2, IconH3, IconList, IconCheckbox, IconMinus,
   IconBlockquote, IconInfoCircle, IconTypography,
   IconListNumbers, IconCode, IconChevronRight, IconChevronDown,
-  IconTable, IconLink,
+  IconTable, IconLink, IconCornerDownRight,
 } from "@tabler/icons-react";
 import { SdbBlockLexical } from "./SdbBlockLexical";
 import { SdbTableBlock, createDefaultTable, type TableData } from "./SdbTableBlock";
 import { SdbBookmarkBlock, createBookmarkFromUrl, type BookmarkData } from "./SdbBookmarkBlock";
+import { SdbBlockRefChip, SdbBlockEmbed, parseBlockRefs, type BlockRefResolver } from "./SdbBlockRef";
 import type { LexicalEditor } from "lexical";
 import { $getRoot, $createParagraphNode, $createTextNode } from "lexical";
 
-export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "table" | "bookmark";
+export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "table" | "bookmark" | "embed";
 
 export interface Block {
   id: string;
@@ -36,14 +37,18 @@ export interface Block {
   collapsed?: boolean;
   tableData?: TableData;
   bookmarkData?: BookmarkData;
+  embedBlockId?: string; // For embed blocks — references another block
 }
 
 interface Props {
   blocks: Block[];
   onChange: (blocks: Block[]) => void;
   onWikiLinkClick?: (title: string) => void;
+  onBlockRefClick?: (noteId: string) => void;
+  onShiftClick?: (noteId: string) => void; // Shift-click opens in sidebar
   noteNames?: string[];
   getPreview?: (title: string) => string | null;
+  resolveBlockRef?: BlockRefResolver;
 }
 
 function genBlockId() {
@@ -66,6 +71,7 @@ const SLASH_COMMANDS: { type: BlockType; label: string; description: string; ico
   { type: "toggle", label: "Toggle", description: "Collapsible section", icon: IconChevronRight, keywords: ["toggle", "collapse", "expand", "accordion"] },
   { type: "table", label: "Table", description: "Add a simple table", icon: IconTable, keywords: ["table", "grid", "spreadsheet", "rows", "columns"] },
   { type: "bookmark", label: "Bookmark", description: "Save a link with preview", icon: IconLink, keywords: ["bookmark", "link", "url", "embed", "web"] },
+  { type: "embed", label: "Block Embed", description: "Embed another block's content", icon: IconCornerDownRight, keywords: ["embed", "ref", "reference", "block", "transclusion"] },
 ];
 
 /** Hover preview for [[wiki-links]] — rendered outside Lexical */
@@ -103,7 +109,7 @@ function getNumberedIndex(blocks: Block[], idx: number): number {
   return count;
 }
 
-export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = [], getPreview }: Props) {
+export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefClick, onShiftClick, noteNames = [], getPreview, resolveBlockRef }: Props) {
   const [slashMenu, setSlashMenu] = useState<{ idx: number; query: string } | null>(null);
   const [slashActiveIdx, setSlashActiveIdx] = useState(0);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
@@ -481,6 +487,61 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
                   onChange(next);
                 }}
               />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Embed block — transclusion of another block
+    if (blockType === "embed") {
+      const embedId = block.embedBlockId || block.text;
+      return (
+        <div
+          key={block.id}
+          className={`relative group py-1 transition-opacity ${isDragging ? "opacity-30" : ""}`}
+          onMouseEnter={() => setHoveredIdx(idx)}
+          onMouseLeave={() => setHoveredIdx(null)}
+          onDragOver={e => handleDragOver(idx, e)}
+          onDrop={e => handleDrop(idx, e)}
+          style={{ paddingLeft: `${block.indent * 24}px` }}
+        >
+          {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+          <div className="flex items-start">
+            <div className={`flex items-center gap-0.5 mt-2 mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
+              <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
+                <IconPlus size={14} className="text-muted-foreground" />
+              </button>
+              <div
+                draggable
+                onDragStart={e => handleDragStart(idx, e)}
+                onDragEnd={handleDragEnd}
+                className="p-0.5 cursor-grab active:cursor-grabbing"
+              >
+                <IconGripVertical size={14} className="text-muted-foreground" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              {resolveBlockRef && embedId ? (
+                <SdbBlockEmbed
+                  blockId={embedId}
+                  resolver={resolveBlockRef}
+                  onNavigate={(noteId) => onBlockRefClick?.(noteId)}
+                />
+              ) : (
+                <div className="px-4 py-3 rounded-lg border border-dashed border-border/30 text-os-body text-muted-foreground">
+                  <input
+                    value={block.text}
+                    onChange={(e) => {
+                      const next = [...blocks];
+                      next[idx] = { ...next[idx], text: e.target.value, embedBlockId: e.target.value };
+                      onChange(next);
+                    }}
+                    placeholder="Enter block ID to embed..."
+                    className="w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground/40"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
