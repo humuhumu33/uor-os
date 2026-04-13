@@ -36,8 +36,7 @@ interface Props {
   onToggleTag: (tag: string) => void;
   tagColors: Record<string, string>;
   itemTagsMap: Record<string, string[]>;
-  activeSection?: AppSection;
-  onSwitchSection?: (section: AppSection) => void;
+  globalSearch?: string;
 }
 
 type FilterType = "all" | "note" | "daily" | "folder" | "chat" | "photo" | "video" | "link" | "audio";
