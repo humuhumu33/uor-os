@@ -185,8 +185,7 @@ const ReaderToolbar: React.FC<ReaderToolbarProps> = ({
   );
 
   /* ── Search history dropdown ── */
-  const HistoryDropdown = () => (
-          {historyOpen && (
+  const HistoryDropdown = () => historyOpen ? (
         <div
           ref={historyRef}
           className="absolute right-0 top-full mt-1.5 z-50 rounded-xl overflow-hidden"

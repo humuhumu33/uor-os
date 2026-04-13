@@ -155,8 +155,8 @@ const QrPortalPanel: React.FC<QrPortalPanelProps> = ({
     right = Math.max(8, window.innerWidth - rect.right);
   }
 
+  if (!open) return null;
   return createPortal(
-          {open && (
         <div
           ref={panelRef}
           className="fixed z-[9999] rounded-2xl overflow-hidden"
@@ -230,7 +230,7 @@ const QrPortalPanel: React.FC<QrPortalPanelProps> = ({
             )}
           </div>
         </div>
-      )},
+      ),
     document.body
   );
 };

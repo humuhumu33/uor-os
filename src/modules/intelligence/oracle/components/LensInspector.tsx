@@ -500,7 +500,7 @@ const LensInspector: React.FC<LensInspectorProps> = ({
             )}
           </div>
         </div>
-      )}
+      )
   );
 };
 

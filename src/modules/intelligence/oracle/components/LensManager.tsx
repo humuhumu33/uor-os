@@ -109,9 +109,9 @@ const LensManager: React.FC<LensManagerProps> = ({
   const cls = (base: string, immersiveClass: string, lightClass: string) =>
     `${base} ${immersive ? immersiveClass : lightClass}`;
 
+  if (!open) return null;
+
   return (
-          {open && (
-        <>
           {/* Backdrop */}
           <div
       onClick={onClose}
@@ -202,7 +202,7 @@ const LensManager: React.FC<LensManagerProps> = ({
             </div>
           </div>
         </>
-      )}
+      )
   );
 };
 
