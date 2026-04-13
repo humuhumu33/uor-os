@@ -114,24 +114,25 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
     <div className="flex-1 overflow-auto">
       {/* ── Hero Banner ── */}
       <div className="relative w-full h-[140px] overflow-hidden">
-        {/* Animated gradient layers */}
+        {/* Unsplash background photo — rotates per visit */}
+        <img
+          ref={bannerRef}
+          src={bannerUrl}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+          style={{ opacity: bannerLoaded ? 1 : 0 }}
+          onLoad={() => setBannerLoaded(true)}
+          draggable={false}
+        />
+        {/* Animated gradient overlay */}
         <div
           className="absolute inset-0"
           style={{
-            background: "linear-gradient(135deg, hsl(160 40% 12%), hsl(200 50% 18%), hsl(260 30% 15%), hsl(160 40% 12%))",
+            background: "linear-gradient(135deg, hsl(160 40% 12% / 0.5), hsl(200 50% 18% / 0.4), hsl(260 30% 15% / 0.4), hsl(160 40% 12% / 0.5))",
             backgroundSize: "400% 400%",
             animation: "sdb-gradient-drift 12s ease-in-out infinite",
           }}
         />
-        <div
-          className="absolute inset-0 opacity-40"
-          style={{
-            background: "radial-gradient(ellipse at 30% 50%, hsl(170 60% 30% / 0.5), transparent 60%), radial-gradient(ellipse at 80% 30%, hsl(220 50% 35% / 0.4), transparent 50%)",
-            animation: "sdb-orb-float 8s ease-in-out infinite alternate",
-          }}
-        />
-        {/* Subtle grain texture */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
         {/* Bottom fade */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
@@ -141,10 +142,6 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
             25% { background-position: 100% 25%; }
             50% { background-position: 50% 100%; }
             75% { background-position: 25% 0%; }
-          }
-          @keyframes sdb-orb-float {
-            0% { transform: translateX(0) translateY(0) scale(1); }
-            100% { transform: translateX(20px) translateY(-10px) scale(1.1); }
           }
         `}</style>
       </div>
