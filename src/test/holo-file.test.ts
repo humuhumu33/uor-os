@@ -230,7 +230,7 @@ describe("LUT composition", () => {
 describe("LUT ops registry", () => {
   it("all ops are available", () => {
     const ops = availableOps();
-    expect(ops.length).toBe(20);
+    expect(ops.length).toBe(23);
     expect(ops).toContain("sigmoid");
     expect(ops).toContain("relu");
     expect(ops).toContain("gelu");

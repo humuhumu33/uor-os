@@ -31,21 +31,21 @@ function op(
 
 describe("MetaObserver. God Conjecture Semantics", () => {
   // ── 1. Ruliad: all modules = computation space ──
-  it("1. Ruliad: createMetaObserver registers all 12 UOR modules", () => {
+  it("1. Ruliad: createMetaObserver registers all UOR modules", () => {
     const meta = createMetaObserver();
     expect(meta.getAllProfiles().length).toBe(UOR_MODULES.length);
-    expect(meta.getAllProfiles().length).toBe(12);
+    expect(meta.getAllProfiles().length).toBe(14);
   });
 
   // ── 2. Tzimtzum: restriction depth ──
   it("2. Tzimtzum: each module has increasing restriction depth", () => {
     const meta = createMetaObserver();
-    const ringCore = meta.getProfile("ring-core")!;
-    const consciousness = meta.getProfile("consciousness")!;
-    // Ring-core is most fundamental (τ=1), consciousness most restricted (τ=5)
+    const ringCore = meta.getProfile("u")!;
+    const state = meta.getProfile("state")!;
+    // Universal Ring is most fundamental (τ=1), State most restricted (τ=3)
     expect(ringCore.tzimtzumDepth).toBe(1);
-    expect(consciousness.tzimtzumDepth).toBe(5);
-    expect(consciousness.tzimtzumDepth).toBeGreaterThan(ringCore.tzimtzumDepth);
+    expect(state.tzimtzumDepth).toBe(3);
+    expect(state.tzimtzumDepth).toBeGreaterThan(ringCore.tzimtzumDepth);
   });
 
   // ── 3. Logos: isometric operations classified correctly ──
@@ -68,11 +68,11 @@ describe("MetaObserver. God Conjecture Semantics", () => {
   // ── 4. Soul: unique module profile ──
   it("4. Soul: each module has unique ObserverProfile", () => {
     const meta = createMetaObserver();
-    const ring = meta.getProfile("ring-core");
-    const trust = meta.getProfile("trust");
+    const ring = meta.getProfile("u");
+    const proof = meta.getProfile("proof");
     expect(ring).not.toBeNull();
-    expect(trust).not.toBeNull();
-    expect(ring!.moduleId).not.toBe(trust!.moduleId);
+    expect(proof).not.toBeNull();
+    expect(ring!.moduleId).not.toBe(proof!.moduleId);
   });
 
   // ── 5. Sin: cumulative epistemic debt ──
@@ -141,7 +141,7 @@ describe("MetaObserver. God Conjecture Semantics", () => {
     expect(telos.coherenceRatio).toBe(1);
     expect(telos.progress).toBeGreaterThan(0);
     expect(telos.direction).toBe("stable");
-    expect(telos.totalModules).toBe(12);
+    expect(telos.totalModules).toBe(14);
   });
 
   it("8b. Telos: degraded network shows lower progress", () => {
