@@ -1209,7 +1209,7 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
                   onClick={() => { createNote(contextMenu.item.id); setContextMenu(null); }}
                   className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
                 >
-                  <IconPlus size={14} /> New Page Inside
+                  <IconPlus size={14} /> New File Inside
                 </button>
                 <button
                   onClick={() => { createFolder(contextMenu.item.id); setContextMenu(null); }}
