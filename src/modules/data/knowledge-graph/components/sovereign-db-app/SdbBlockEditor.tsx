@@ -1,63 +1,36 @@
 /**
- * SdbBlockEditor — Notion-style block editor with slash commands.
+ * SdbBlockEditor — Notion-style block editor powered by Lexical.
  * ═══════════════════════════════════════════════════════════════
  *
- * Clean paragraph blocks by default, with `/` slash command menu
- * for block type switching. Hover handles for drag & add.
+ * Each block is an independent Lexical rich text instance supporting
+ * inline formatting, markdown shortcuts, and a floating toolbar.
+ * Slash commands, [[wiki-links]], #hashtags, drag-and-drop reordering.
  *
  * @product SovereignDB
  */
 
-import { useState, useCallback, useRef, useEffect, useMemo, type KeyboardEvent } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import {
   IconSearch, IconFile, IconPlus, IconGripVertical,
   IconH1, IconH2, IconH3, IconList, IconCheckbox, IconMinus,
   IconBlockquote, IconInfoCircle, IconTypography,
+  IconListNumbers, IconCode, IconChevronRight, IconChevronDown,
 } from "@tabler/icons-react";
+import { SdbBlockLexical } from "./SdbBlockLexical";
+import type { LexicalEditor } from "lexical";
+import { $getRoot, $createParagraphNode, $createTextNode } from "lexical";
 
-/** Hover preview for [[wiki-links]] */
-function LinkWithPreview({ title, onClick, noteNames, getPreview }: {
-  title: string;
-  onClick: (t: string) => void;
-  noteNames: string[];
-  getPreview?: (title: string) => string | null;
-}) {
-  const [showPreview, setShowPreview] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
-  const preview = getPreview?.(title);
-  const exists = noteNames.some(n => n.toLowerCase() === title.toLowerCase());
-
-  return (
-    <span
-      className="relative inline-block"
-      onMouseEnter={() => { timerRef.current = setTimeout(() => setShowPreview(true), 300); }}
-      onMouseLeave={() => { clearTimeout(timerRef.current); setShowPreview(false); }}
-    >
-      <button
-        onClick={(e) => { e.stopPropagation(); onClick(title); }}
-        className={`font-medium cursor-pointer ${exists ? "text-primary hover:underline" : "text-primary/50 hover:underline"}`}
-      >
-        {title}
-      </button>
-      {showPreview && preview && (
-        <div className="absolute left-0 top-full z-50 w-56 bg-card border border-border rounded-lg shadow-2xl p-3 mt-1 animate-in fade-in duration-150 pointer-events-none">
-          <p className="text-[12px] font-semibold text-foreground mb-1 truncate">{title}</p>
-          <p className="text-[12px] text-muted-foreground/80 leading-relaxed line-clamp-3">{preview}</p>
-        </div>
-      )}
-    </span>
-  );
-}
-
-export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout";
+export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle";
 
 export interface Block {
   id: string;
   text: string;
+  richText?: string;
   indent: number;
   children: string[];
   type?: BlockType;
   checked?: boolean;
+  collapsed?: boolean;
 }
 
 interface Props {
@@ -79,77 +52,72 @@ const SLASH_COMMANDS: { type: BlockType; label: string; description: string; ico
   { type: "h2", label: "Heading 2", description: "Medium section heading", icon: IconH2, keywords: ["heading", "h2", "subtitle"] },
   { type: "h3", label: "Heading 3", description: "Small section heading", icon: IconH3, keywords: ["heading", "h3"] },
   { type: "bullet", label: "Bulleted List", description: "Simple bullet point", icon: IconList, keywords: ["bullet", "list", "ul"] },
+  { type: "numbered", label: "Numbered List", description: "Numbered list item", icon: IconListNumbers, keywords: ["numbered", "ordered", "ol", "number"] },
   { type: "todo", label: "To-do", description: "Checkbox task item", icon: IconCheckbox, keywords: ["todo", "checkbox", "task", "check"] },
   { type: "divider", label: "Divider", description: "Visual separator", icon: IconMinus, keywords: ["divider", "separator", "hr", "line"] },
   { type: "quote", label: "Quote", description: "Capture a quote", icon: IconBlockquote, keywords: ["quote", "blockquote"] },
   { type: "callout", label: "Callout", description: "Highlighted info block", icon: IconInfoCircle, keywords: ["callout", "info", "note", "tip"] },
+  { type: "code", label: "Code", description: "Code block", icon: IconCode, keywords: ["code", "snippet", "pre"] },
+  { type: "toggle", label: "Toggle", description: "Collapsible section", icon: IconChevronRight, keywords: ["toggle", "collapse", "expand", "accordion"] },
 ];
 
-/** Render text with [[links]] and #tags highlighted */
-function renderBlockText(text: string, onLinkClick?: (t: string) => void, noteNames: string[] = [], getPreview?: (title: string) => string | null) {
-  const parts: (string | JSX.Element)[] = [];
-  const combined = /(\[\[([^\]]+)\]\])|(#[a-zA-Z][\w-]{1,48})/g;
-  let last = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = combined.exec(text)) !== null) {
-    if (match.index > last) parts.push(text.slice(last, match.index));
-    if (match[1]) {
-      const title = match[2];
-      parts.push(
-        <LinkWithPreview
-          key={match.index}
-          title={title}
-          onClick={t => onLinkClick?.(t)}
-          noteNames={noteNames}
-          getPreview={getPreview}
-        />
-      );
-    } else if (match[3]) {
-      parts.push(
-        <span key={match.index} className="text-purple-400 font-medium">
-          {match[3]}
-        </span>
-      );
-    }
-    last = match.index + match[0].length;
-  }
-  if (last < text.length) parts.push(text.slice(last));
-  return parts;
+/** Hover preview for [[wiki-links]] — rendered outside Lexical */
+function LinkPreviewTooltip({ title, getPreview }: { title: string; getPreview?: (t: string) => string | null }) {
+  const preview = getPreview?.(title);
+  if (!preview) return null;
+  return (
+    <div className="absolute left-0 top-full z-50 w-56 bg-card border border-border rounded-lg shadow-2xl p-3 mt-1 animate-in fade-in duration-150 pointer-events-none">
+      <p className="text-[12px] font-semibold text-foreground mb-1 truncate">{title}</p>
+      <p className="text-[12px] text-muted-foreground/80 leading-relaxed line-clamp-3">{preview}</p>
+    </div>
+  );
 }
 
-/** Get block-type-specific styles */
-function blockTypeClasses(type: BlockType | undefined): string {
+/** Get block-type heading class for the wrapper */
+function blockWrapperClass(type: BlockType | undefined): string {
   switch (type) {
-    case "h1": return "text-[30px] font-bold leading-tight";
-    case "h2": return "text-[24px] font-semibold leading-tight";
-    case "h3": return "text-[20px] font-semibold leading-snug";
-    case "quote": return "text-[15px] leading-[1.75] italic text-foreground/70 border-l-2 border-foreground/20 pl-4";
-    case "callout": return "text-[15px] leading-[1.75] bg-muted/30 rounded-lg px-4 py-3 border border-border/30";
-    default: return "text-[15px] leading-[1.75]";
+    case "quote": return "border-l-2 border-foreground/20 pl-4";
+    case "callout": return "bg-muted/30 rounded-lg px-4 py-3 border border-border/30";
+    case "code": return "bg-muted/20 rounded-lg px-4 py-3 font-mono text-[14px]";
+    default: return "";
   }
+}
+
+/** Compute numbered list index */
+function getNumberedIndex(blocks: Block[], idx: number): number {
+  let count = 1;
+  for (let i = idx - 1; i >= 0; i--) {
+    if (blocks[i].type === "numbered" && blocks[i].indent === blocks[idx].indent) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  return count;
 }
 
 export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = [], getPreview }: Props) {
-  const [focusIdx, setFocusIdx] = useState(0);
-  const [editing, setEditing] = useState<number | null>(null);
-  const [autocomplete, setAutocomplete] = useState<{ idx: number; query: string; pos: number } | null>(null);
-  const [acActiveIdx, setAcActiveIdx] = useState(0);
   const [slashMenu, setSlashMenu] = useState<{ idx: number; query: string } | null>(null);
   const [slashActiveIdx, setSlashActiveIdx] = useState(0);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const inputRefs = useRef<Map<number, HTMLTextAreaElement>>(new Map());
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
-  // Focus management
+  const editorsRef = useRef<Map<number, LexicalEditor>>(new Map());
+  const blockCountRef = useRef(blocks.length);
+
+  // Track newly created block index for auto-focus
+  const [focusNewIdx, setFocusNewIdx] = useState<number | null>(null);
+
   useEffect(() => {
-    if (editing !== null) {
-      const el = inputRefs.current.get(editing);
-      if (el) {
-        el.focus();
-        el.selectionStart = el.selectionEnd = el.value.length;
+    if (focusNewIdx !== null) {
+      const editor = editorsRef.current.get(focusNewIdx);
+      if (editor) {
+        editor.focus();
+        setFocusNewIdx(null);
       }
     }
-  }, [editing, blocks.length]);
+  }, [focusNewIdx, blocks.length]);
 
   // Filtered slash commands
   const filteredSlash = useMemo(() => {
@@ -164,55 +132,28 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
 
   const applySlashCommand = useCallback((idx: number, type: BlockType) => {
     const next = [...blocks];
-    if (type === "divider") {
-      next[idx] = { ...next[idx], text: "", type: "divider" };
-    } else {
-      next[idx] = { ...next[idx], text: "", type, checked: type === "todo" ? false : undefined };
-    }
+    next[idx] = {
+      ...next[idx],
+      text: "",
+      richText: undefined,
+      type: type === "text" ? undefined : type,
+      checked: type === "todo" ? false : undefined,
+      collapsed: type === "toggle" ? false : undefined,
+    };
     onChange(next);
     setSlashMenu(null);
-    setEditing(idx);
-  }, [blocks, onChange]);
-
-  const updateBlock = useCallback((idx: number, text: string) => {
-    const next = [...blocks];
-    next[idx] = { ...next[idx], text };
-    onChange(next);
-
-    // Check for slash command trigger
-    if (text === "/") {
-      setSlashMenu({ idx, query: "" });
-      setSlashActiveIdx(0);
-      setAutocomplete(null);
-      return;
-    }
-    if (text.startsWith("/") && slashMenu?.idx === idx) {
-      setSlashMenu({ idx, query: text.slice(1) });
-      setSlashActiveIdx(0);
-      return;
-    }
-    if (!text.startsWith("/")) {
-      setSlashMenu(null);
-    }
-
-    // Check for [[ autocomplete trigger
-    const cursorPos = text.lastIndexOf("[[");
-    if (cursorPos !== -1) {
-      const afterBrackets = text.slice(cursorPos + 2);
-      const closeBracket = afterBrackets.indexOf("]]");
-      if (closeBracket === -1 && !afterBrackets.includes("\n")) {
-        setAutocomplete({ idx, query: afterBrackets, pos: cursorPos });
-        setAcActiveIdx(0);
-        return;
+    // Re-focus this block
+    setTimeout(() => {
+      const editor = editorsRef.current.get(idx);
+      if (editor) {
+        editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          root.append($createParagraphNode());
+        });
+        editor.focus();
       }
-    }
-    setAutocomplete(null);
-  }, [blocks, onChange, slashMenu]);
-
-  const toggleTodo = useCallback((idx: number) => {
-    const next = [...blocks];
-    next[idx] = { ...next[idx], checked: !next[idx].checked };
-    onChange(next);
+    }, 50);
   }, [blocks, onChange]);
 
   const addBlockBelow = useCallback((idx: number) => {
@@ -221,172 +162,184 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
     const next = [...blocks];
     next.splice(idx + 1, 0, newBlock);
     onChange(next);
-    setEditing(idx + 1);
-    setFocusIdx(idx + 1);
+    setFocusNewIdx(idx + 1);
   }, [blocks, onChange]);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>, idx: number) => {
-    const block = blocks[idx];
+  const handleTextChange = useCallback((idx: number, plain: string, richJson: string) => {
+    // Check for slash command
+    if (plain === "/") {
+      setSlashMenu({ idx, query: "" });
+      setSlashActiveIdx(0);
+      return;
+    }
+    if (plain.startsWith("/") && slashMenu?.idx === idx) {
+      setSlashMenu({ idx, query: plain.slice(1) });
+      setSlashActiveIdx(0);
+    } else if (!plain.startsWith("/") && slashMenu?.idx === idx) {
+      setSlashMenu(null);
+    }
 
-    // Slash menu navigation
-    if (slashMenu && slashMenu.idx === idx) {
+    // Update block data without re-rendering the Lexical instance
+    const block = blocks[idx];
+    if (block && (block.text !== plain || block.richText !== richJson)) {
+      const next = [...blocks];
+      next[idx] = { ...next[idx], text: plain, richText: richJson };
+      onChange(next);
+    }
+  }, [blocks, onChange, slashMenu]);
+
+  const handleEnter = useCallback((idx: number) => {
+    if (slashMenu && slashMenu.idx === idx && filteredSlash.length > 0) {
+      applySlashCommand(idx, filteredSlash[slashActiveIdx].type);
+      return;
+    }
+    addBlockBelow(idx);
+  }, [slashMenu, filteredSlash, slashActiveIdx, applySlashCommand, addBlockBelow]);
+
+  const handleBackspaceEmpty = useCallback((idx: number) => {
+    const block = blocks[idx];
+    // If block has a type, reset to text first
+    if (block.type && block.type !== "text") {
+      const next = [...blocks];
+      next[idx] = { ...block, type: undefined, checked: undefined, collapsed: undefined };
+      onChange(next);
+      return;
+    }
+    if (blocks.length <= 1) return;
+    const next = blocks.filter((_, i) => i !== idx);
+    onChange(next);
+    const prevIdx = Math.max(0, idx - 1);
+    setFocusNewIdx(prevIdx);
+  }, [blocks, onChange]);
+
+  const handleArrowUp = useCallback((idx: number): boolean => {
+    if (idx <= 0) return false;
+    const prevEditor = editorsRef.current.get(idx - 1);
+    if (prevEditor) {
+      prevEditor.focus();
+      return true;
+    }
+    return false;
+  }, []);
+
+  const handleArrowDown = useCallback((idx: number): boolean => {
+    if (idx >= blocks.length - 1) return false;
+    const nextEditor = editorsRef.current.get(idx + 1);
+    if (nextEditor) {
+      nextEditor.focus();
+      return true;
+    }
+    return false;
+  }, [blocks.length]);
+
+  const handleIndent = useCallback((idx: number, shift: boolean) => {
+    const next = [...blocks];
+    const block = next[idx];
+    const maxIndent = idx > 0 ? blocks[idx - 1].indent + 1 : 0;
+    if (shift) {
+      next[idx] = { ...block, indent: Math.max(0, block.indent - 1) };
+    } else {
+      next[idx] = { ...block, indent: Math.min(maxIndent, block.indent + 1) };
+    }
+    onChange(next);
+  }, [blocks, onChange]);
+
+  const toggleTodo = useCallback((idx: number) => {
+    const next = [...blocks];
+    next[idx] = { ...next[idx], checked: !next[idx].checked };
+    onChange(next);
+  }, [blocks, onChange]);
+
+  const toggleCollapse = useCallback((idx: number) => {
+    const next = [...blocks];
+    next[idx] = { ...next[idx], collapsed: !next[idx].collapsed };
+    onChange(next);
+  }, [blocks, onChange]);
+
+  // ── Drag and drop ──
+  const handleDragStart = useCallback((idx: number, e: React.DragEvent) => {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(idx));
+  }, []);
+
+  const handleDragOver = useCallback((idx: number, e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverIdx(idx);
+  }, []);
+
+  const handleDrop = useCallback((targetIdx: number, e: React.DragEvent) => {
+    e.preventDefault();
+    if (dragIdx === null || dragIdx === targetIdx) {
+      setDragIdx(null);
+      setDragOverIdx(null);
+      return;
+    }
+    const next = [...blocks];
+    const [moved] = next.splice(dragIdx, 1);
+    const insertAt = targetIdx > dragIdx ? targetIdx - 1 : targetIdx;
+    next.splice(insertAt, 0, moved);
+    onChange(next);
+    setDragIdx(null);
+    setDragOverIdx(null);
+  }, [blocks, onChange, dragIdx]);
+
+  const handleDragEnd = useCallback(() => {
+    setDragIdx(null);
+    setDragOverIdx(null);
+  }, []);
+
+  // Handle slash menu keyboard navigation via global keydown
+  useEffect(() => {
+    if (!slashMenu) return;
+    const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowDown" && filteredSlash.length > 0) {
         e.preventDefault();
         setSlashActiveIdx(i => Math.min(i + 1, filteredSlash.length - 1));
-        return;
-      }
-      if (e.key === "ArrowUp" && filteredSlash.length > 0) {
+      } else if (e.key === "ArrowUp" && filteredSlash.length > 0) {
         e.preventDefault();
         setSlashActiveIdx(i => Math.max(i - 1, 0));
-        return;
-      }
-      if (e.key === "Enter" && filteredSlash.length > 0) {
-        e.preventDefault();
-        applySlashCommand(idx, filteredSlash[slashActiveIdx].type);
-        return;
-      }
-      if (e.key === "Escape") {
+      } else if (e.key === "Escape") {
         setSlashMenu(null);
-        return;
       }
-    }
-
-    // Autocomplete navigation & selection
-    if (autocomplete && autocomplete.idx === idx) {
-      const filtered = noteNames.filter(n => !autocomplete.query || n.toLowerCase().includes(autocomplete.query.toLowerCase()));
-      const showCreate = autocomplete.query && !filtered.some(n => n.toLowerCase() === autocomplete.query.toLowerCase());
-      const totalAc = filtered.length + (showCreate ? 1 : 0);
-
-      if (e.key === "ArrowDown" && totalAc > 0) {
-        e.preventDefault();
-        setAcActiveIdx(i => Math.min(i + 1, totalAc - 1));
-        return;
-      }
-      if (e.key === "ArrowUp" && totalAc > 0) {
-        e.preventDefault();
-        setAcActiveIdx(i => Math.max(i - 1, 0));
-        return;
-      }
-      if (e.key === "Enter" && totalAc > 0) {
-        e.preventDefault();
-        if (acActiveIdx < filtered.length) {
-          doAutocomplete(filtered[acActiveIdx]);
-        } else if (showCreate) {
-          doAutocomplete(autocomplete.query);
-        }
-        return;
-      }
-      if (e.key === "Tab" && totalAc > 0) {
-        e.preventDefault();
-        if (filtered.length > 0) {
-          doAutocomplete(filtered[acActiveIdx < filtered.length ? acActiveIdx : 0]);
-        }
-        return;
-      }
-    }
-
-    if (e.key === "Escape") {
-      setAutocomplete(null);
-      setSlashMenu(null);
-      return;
-    }
-
-    if (e.key === "Enter" && !e.shiftKey && !autocomplete && !slashMenu) {
-      e.preventDefault();
-      const newBlock: Block = { id: genBlockId(), text: "", indent: block.indent, children: [] };
-      const next = [...blocks];
-      next.splice(idx + 1, 0, newBlock);
-      onChange(next);
-      setEditing(idx + 1);
-      setFocusIdx(idx + 1);
-    }
-
-    if (e.key === "Backspace" && block.text === "" && blocks.length > 1) {
-      // If block has a type, reset to text first
-      if (block.type && block.type !== "text") {
-        e.preventDefault();
-        const next = [...blocks];
-        next[idx] = { ...block, type: undefined, checked: undefined };
-        onChange(next);
-        return;
-      }
-      e.preventDefault();
-      const next = blocks.filter((_, i) => i !== idx);
-      onChange(next);
-      setEditing(Math.max(0, idx - 1));
-      setFocusIdx(Math.max(0, idx - 1));
-    }
-
-    if (e.key === "Tab") {
-      e.preventDefault();
-      const next = [...blocks];
-      const maxIndent = idx > 0 ? blocks[idx - 1].indent + 1 : 0;
-      if (e.shiftKey) {
-        next[idx] = { ...block, indent: Math.max(0, block.indent - 1) };
-      } else {
-        next[idx] = { ...block, indent: Math.min(maxIndent, block.indent + 1) };
-      }
-      onChange(next);
-    }
-
-    if (e.key === "ArrowUp" && idx > 0) {
-      const el = e.currentTarget;
-      if (el.selectionStart === 0) {
-        e.preventDefault();
-        setEditing(idx - 1);
-        setFocusIdx(idx - 1);
-      }
-    }
-
-    if (e.key === "ArrowDown" && idx < blocks.length - 1) {
-      const el = e.currentTarget;
-      if (el.selectionStart === el.value.length) {
-        e.preventDefault();
-        setEditing(idx + 1);
-        setFocusIdx(idx + 1);
-      }
-    }
-  }, [blocks, onChange, autocomplete, noteNames, slashMenu, filteredSlash, slashActiveIdx, acActiveIdx, applySlashCommand]);
-
-  // Shared autocomplete insert logic
-  const doAutocomplete = useCallback((name: string) => {
-    if (!autocomplete) return;
-    const block = blocks[autocomplete.idx];
-    const text = block.text;
-    const before = text.slice(0, autocomplete.pos);
-    const after = text.slice(autocomplete.pos + 2 + autocomplete.query.length);
-    updateBlock(autocomplete.idx, `${before}[[${name}]]${after}`);
-    setAutocomplete(null);
-    setEditing(autocomplete.idx);
-  }, [autocomplete, blocks, updateBlock]);
-
-  const acFiltered = autocomplete
-    ? noteNames.filter(n => !autocomplete.query || n.toLowerCase().includes(autocomplete.query.toLowerCase())).slice(0, 8)
-    : [];
-  const acShowCreate = autocomplete?.query && !acFiltered.some(n => n.toLowerCase() === autocomplete.query.toLowerCase());
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [slashMenu, filteredSlash]);
 
   const renderBlock = (block: Block, idx: number) => {
     const blockType = block.type || "text";
-    const isEditing = editing === idx;
     const isHovered = hoveredIdx === idx;
+    const isDragging = dragIdx === idx;
+    const isDragOver = dragOverIdx === idx && dragIdx !== idx;
 
     // Divider block
     if (blockType === "divider") {
       return (
         <div
           key={block.id}
-          className="relative group py-2"
+          className={`relative group py-2 transition-opacity ${isDragging ? "opacity-30" : ""}`}
           onMouseEnter={() => setHoveredIdx(idx)}
           onMouseLeave={() => setHoveredIdx(null)}
+          onDragOver={e => handleDragOver(idx, e)}
+          onDrop={e => handleDrop(idx, e)}
           style={{ paddingLeft: `${block.indent * 24}px` }}
         >
+          {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
           <div className="flex items-center">
-            {/* Hover handles */}
             <div className={`flex items-center gap-0.5 mr-1 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
               <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
                 <IconPlus size={14} className="text-muted-foreground" />
               </button>
-              <IconGripVertical size={14} className="text-muted-foreground cursor-grab" />
+              <div
+                draggable
+                onDragStart={e => handleDragStart(idx, e)}
+                onDragEnd={handleDragEnd}
+                className="p-0.5 cursor-grab active:cursor-grabbing"
+              >
+                <IconGripVertical size={14} className="text-muted-foreground" />
+              </div>
             </div>
             <hr className="flex-1 border-border/50" />
           </div>
@@ -394,7 +347,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
       );
     }
 
-    // Determine placeholder
+    // Placeholder text
     const placeholder = idx === 0 && blocks.length <= 1
       ? "Press '/' for commands, or just start typing..."
       : "Type '/' for commands...";
@@ -402,11 +355,15 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
     return (
       <div
         key={block.id}
-        className="relative group"
+        className={`relative group transition-opacity ${isDragging ? "opacity-30" : ""}`}
         onMouseEnter={() => setHoveredIdx(idx)}
         onMouseLeave={() => setHoveredIdx(null)}
+        onDragOver={e => handleDragOver(idx, e)}
+        onDrop={e => handleDrop(idx, e)}
         style={{ paddingLeft: `${block.indent * 24}px` }}
       >
+        {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+
         <div className="flex items-start">
           {/* Hover handles */}
           <div className={`flex items-center gap-0.5 mt-[5px] mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
@@ -417,7 +374,13 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
             >
               <IconPlus size={14} className="text-muted-foreground" />
             </button>
-            <div className="p-0.5 cursor-grab active:cursor-grabbing" title="Drag to reorder">
+            <div
+              draggable
+              onDragStart={e => handleDragStart(idx, e)}
+              onDragEnd={handleDragEnd}
+              className="p-0.5 cursor-grab active:cursor-grabbing"
+              title="Drag to reorder"
+            >
               <IconGripVertical size={14} className="text-muted-foreground" />
             </div>
           </div>
@@ -445,42 +408,44 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
             <span className="mt-[11px] mr-2.5 w-1.5 h-1.5 rounded-full bg-foreground/40 shrink-0" />
           )}
 
-          {/* Content */}
-          <div className={`flex-1 min-w-0 relative ${blockTypeClasses(blockType)}`}>
-            {isEditing ? (
-              <textarea
-                ref={el => { if (el) inputRefs.current.set(idx, el); }}
-                value={block.text}
-                onChange={e => updateBlock(idx, e.target.value)}
-                onKeyDown={e => handleKeyDown(e, idx)}
-                onBlur={() => { if (!autocomplete && !slashMenu) setEditing(null); }}
-                rows={1}
-                placeholder={placeholder}
-                className={`w-full text-foreground bg-transparent border-none outline-none resize-none py-1 placeholder:text-muted-foreground/30 ${
-                  blockType === "h1" ? "text-[30px] font-bold leading-tight" :
-                  blockType === "h2" ? "text-[24px] font-semibold leading-tight" :
-                  blockType === "h3" ? "text-[20px] font-semibold leading-snug" :
-                  "text-[15px] leading-[1.75]"
-                } ${block.checked ? "line-through text-muted-foreground/50" : ""}`}
-                style={{ minHeight: "28px", height: "auto" }}
-                onInput={e => {
-                  const t = e.currentTarget;
-                  t.style.height = "auto";
-                  t.style.height = t.scrollHeight + "px";
-                }}
-              />
-            ) : (
-              <div
-                onClick={() => { setEditing(idx); setFocusIdx(idx); }}
-                className={`py-1 cursor-text min-h-[28px] whitespace-pre-wrap break-words ${
-                  block.checked ? "line-through text-muted-foreground/50" : "text-foreground/90"
-                }`}
-              >
-                {block.text
-                  ? renderBlockText(block.text, onWikiLinkClick, noteNames, getPreview)
-                  : <span className="text-muted-foreground/30">{placeholder}</span>}
-              </div>
-            )}
+          {/* Numbered list */}
+          {blockType === "numbered" && (
+            <span className="mt-[5px] mr-2 text-[14px] text-muted-foreground/70 tabular-nums shrink-0 w-5 text-right">
+              {getNumberedIndex(blocks, idx)}.
+            </span>
+          )}
+
+          {/* Toggle */}
+          {blockType === "toggle" && (
+            <button
+              onClick={() => toggleCollapse(idx)}
+              className="mt-[6px] mr-1.5 text-muted-foreground/60 hover:text-foreground transition-colors shrink-0"
+            >
+              {block.collapsed
+                ? <IconChevronRight size={16} />
+                : <IconChevronDown size={16} />
+              }
+            </button>
+          )}
+
+          {/* Content — Lexical editor */}
+          <div className={`flex-1 min-w-0 relative ${blockWrapperClass(block.type)} ${
+            block.checked ? "line-through text-muted-foreground/50" : ""
+          }`}>
+            <SdbBlockLexical
+              blockId={block.id}
+              initialText={block.text}
+              initialRichText={block.richText}
+              placeholder={placeholder}
+              autoFocus={idx === 0 && blocks.length <= 1}
+              onTextChange={(plain, richJson) => handleTextChange(idx, plain, richJson)}
+              onEnter={() => handleEnter(idx)}
+              onBackspaceEmpty={() => handleBackspaceEmpty(idx)}
+              onArrowUp={() => handleArrowUp(idx)}
+              onArrowDown={() => handleArrowDown(idx)}
+              onIndent={(shift) => handleIndent(idx, shift)}
+              editorRef={(editor) => { editorsRef.current.set(idx, editor); }}
+            />
 
             {/* Slash command menu */}
             {slashMenu && slashMenu.idx === idx && filteredSlash.length > 0 && (
@@ -511,48 +476,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
                 })}
               </div>
             )}
-
-            {/* Autocomplete dropdown */}
-            {autocomplete && autocomplete.idx === idx && (acFiltered.length > 0 || acShowCreate) && (
-              <div className="absolute left-0 top-full z-50 w-64 bg-card border border-border rounded-lg shadow-2xl py-1 mt-1 animate-in fade-in duration-150">
-                <div className="px-3 py-1.5 flex items-center gap-2 border-b border-border/30 mb-1">
-                  <IconSearch size={12} className="text-muted-foreground/40" />
-                  <span className="text-[12px] text-muted-foreground/60">
-                    {autocomplete.query ? `Linking to "${autocomplete.query}"` : "Link to a page…"}
-                  </span>
-                </div>
-                {acFiltered.map((name, i) => (
-                  <button
-                    key={name}
-                    onMouseDown={e => { e.preventDefault(); doAutocomplete(name); }}
-                    onMouseEnter={() => setAcActiveIdx(i)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[13px] transition-colors truncate ${
-                      i === acActiveIdx ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted/50"
-                    }`}
-                  >
-                    <IconFile size={14} className="shrink-0 opacity-50" />
-                    {name}
-                  </button>
-                ))}
-                {acShowCreate && (
-                  <button
-                    onMouseDown={e => { e.preventDefault(); doAutocomplete(autocomplete.query); }}
-                    onMouseEnter={() => setAcActiveIdx(acFiltered.length)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[13px] transition-colors ${
-                      acActiveIdx === acFiltered.length ? "bg-primary/10 text-primary" : "text-primary/70 hover:bg-muted/50"
-                    }`}
-                  >
-                    <IconPlus size={14} className="shrink-0" />
-                    Create "[[{autocomplete.query}]]"
-                  </button>
-                )}
-                <div className="px-3 pt-1.5 pb-1 border-t border-border/30 mt-1 flex gap-3 text-[11px] text-muted-foreground/50">
-                  <span>↑↓ Navigate</span>
-                  <span>↵ Select</span>
-                  <span>Esc Close</span>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -567,9 +490,9 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
         <button
           onClick={() => {
             onChange([{ id: genBlockId(), text: "", indent: 0, children: [] }]);
-            setEditing(0);
+            setFocusNewIdx(0);
           }}
-          className="text-[15px] text-muted-foreground/30 hover:text-muted-foreground/50 transition-colors py-2"
+          className="text-[15px] text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors py-2"
         >
           Press '/' for commands, or just start typing...
         </button>
