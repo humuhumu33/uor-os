@@ -227,7 +227,7 @@ export function SdbHomeView({
           />
         </div>
 
-        {/* ── Filter chips + active tags ── */}
+        {/* ── Filter chips + section tabs ── */}
         <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1">
           {FILTERS.map(f => (
             <button
@@ -243,6 +243,34 @@ export function SdbHomeView({
               {f.label}
             </button>
           ))}
+
+          {/* Section tabs — right-aligned */}
+          {onSwitchSection && (
+            <div className="ml-auto flex items-center gap-1 shrink-0 pl-3 border-l border-border/20">
+              {([
+                { id: "workspace" as AppSection, label: "Workspace", icon: IconLayout },
+                { id: "graph" as AppSection, label: "Graph", icon: IconGraph },
+                { id: "console" as AppSection, label: "Console", icon: IconTerminal2 },
+              ]).map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeSection === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => onSwitchSection(tab.id)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-os-body font-medium whitespace-nowrap transition-all ${
+                      isActive
+                        ? "bg-foreground/10 text-foreground"
+                        : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                    }`}
+                  >
+                    <Icon size={14} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Active tag pills */}
