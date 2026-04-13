@@ -467,33 +467,33 @@ export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "", sid
           </>
         )}
 
-        <div className="border-t border-border/8 my-1" />
+        <div className="mx-3 my-1 border-t border-border/10" />
 
         {/* ── Zoom controls ── */}
         <div className="py-1.5 space-y-0.5">
-          <button onClick={handleZoomIn} className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/[0.03] transition-colors">
-            <IconZoomIn size={15} stroke={1.5} />
-            {!sidebarCollapsed && <span>Zoom In</span>}
+          <button onClick={handleZoomIn} className="flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors">
+            <IconZoomIn size={18} stroke={1.5} className="shrink-0" />
+            {!sidebarCollapsed && <span className="truncate">Zoom In</span>}
           </button>
-          <button onClick={handleZoomOut} className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/[0.03] transition-colors">
-            <IconZoomOut size={15} stroke={1.5} />
-            {!sidebarCollapsed && <span>Zoom Out</span>}
+          <button onClick={handleZoomOut} className="flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors">
+            <IconZoomOut size={18} stroke={1.5} className="shrink-0" />
+            {!sidebarCollapsed && <span className="truncate">Zoom Out</span>}
           </button>
-          <button onClick={handleFitAll} className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/[0.03] transition-colors">
-            <IconFocusCentered size={15} stroke={1.5} />
-            {!sidebarCollapsed && <span>Fit All</span>}
+          <button onClick={handleFitAll} className="flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors">
+            <IconFocusCentered size={18} stroke={1.5} className="shrink-0" />
+            {!sidebarCollapsed && <span className="truncate">Fit All</span>}
           </button>
         </div>
 
         {/* ── Stats ── */}
         {!sidebarCollapsed && (
-          <div className="py-2 border-t border-border/8 mt-1">
+          <div className="px-4 py-2 border-t border-border/10 mt-1">
             <div className="text-[11px] text-muted-foreground/30 space-y-0.5">
               <p>{mergedNodes.length} nodes · {mergedLinks.length} connections</p>
             </div>
           </div>
         )}
-      </div>
+      </nav>
     </div>
   );
 
