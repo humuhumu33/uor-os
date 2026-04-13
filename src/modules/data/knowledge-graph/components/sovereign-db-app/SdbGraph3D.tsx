@@ -29,6 +29,8 @@ interface Props {
   gpuAvailable?: boolean;
   /** When set, dims all nodes except those matching this sign class index */
   highlightSignClass?: number | null;
+  /** Set of node IDs to highlight (from global search) */
+  highlightedNodeIds?: Set<string>;
 }
 
 /* ── helpers ──────────────────────────────────────────────────── */
