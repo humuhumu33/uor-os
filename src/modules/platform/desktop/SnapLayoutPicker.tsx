@@ -148,12 +148,12 @@ export default function SnapLayoutPicker({ windows, onSnapMultiple }: Props) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className={`flex items-center justify-center w-[28px] h-[28px] rounded-md shrink-0 transition-colors duration-150
-            ${isLight ? "hover:bg-black/[0.05]" : "hover:bg-white/[0.06]"}
+          className={`flex items-center justify-center w-[32px] h-[32px] rounded-lg shrink-0 transition-all duration-150
+            ${isLight ? "hover:bg-black/[0.06] active:bg-black/[0.10]" : "hover:bg-white/[0.07] active:bg-white/[0.12]"}
           `}
           title="Snap layouts"
         >
-          <LayoutGrid className={`w-[14px] h-[14px] ${isLight ? "text-black/40" : "text-white/40"}`} />
+          <LayoutGrid className={`w-[15px] h-[15px] ${isLight ? "text-black/45" : "text-white/45"}`} />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

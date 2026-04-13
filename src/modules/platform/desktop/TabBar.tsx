@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useConnectivity } from "@/modules/platform/desktop/hooks/useConnectivity";
 import ConnectivityPopover from "@/modules/platform/desktop/components/ConnectivityPopover";
 import {
-  X, Plus, Search, Home, User, Pin, Layers, SplitSquareHorizontal,
+  X, Home, User, Pin, Layers, SplitSquareHorizontal,
   Keyboard, Monitor, Moon, Sun, Sparkles, EyeOff, Info, Maximize, Minimize2,
 } from "lucide-react";
 
@@ -18,10 +18,8 @@ import type { WindowState } from "@/modules/platform/desktop/hooks/useWindowMana
 import { getApp, DESKTOP_APPS } from "@/modules/platform/desktop/lib/desktop-apps";
 import { OS_TAXONOMY, type OsCategory } from "@/modules/platform/desktop/lib/os-taxonomy";
 import { useDesktopTheme, type DesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
-import { usePlatform } from "@/modules/platform/desktop/hooks/usePlatform";
 import { smartTruncate, FONTS } from "@/modules/intelligence/oracle/lib/pretext-layout";
 import { SPACE, TIMING } from "@/modules/platform/desktop/lib/golden-ratio";
-import SnapLayoutPicker from "@/modules/platform/desktop/SnapLayoutPicker";
 import EngineStatusIndicator from "@/modules/platform/boot/EngineStatusIndicator";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
@@ -206,7 +204,6 @@ export default function TabBar({
 }: Props) {
   const [time, setTime] = useState(new Date());
   const { isLight, theme, setTheme } = useDesktopTheme();
-  const { ringKey } = usePlatform();
   const { user } = useAuth();
   const isAuthenticated = !!user;
 
@@ -477,23 +474,6 @@ export default function TabBar({
             </ContextMenu>
           );
         })}
-
-        {/* New tab "+" */}
-        <button
-          className={`flex items-center justify-center w-[30px] h-[30px] rounded-full shrink-0 ml-1 transition-colors duration-150
-            ${isLight ? "hover:bg-black/[0.05] text-black/40" : "hover:bg-white/[0.07] text-white/40"}
-          `}
-          style={{ marginTop: "auto", marginBottom: "auto" }}
-          onClick={onSpotlight}
-          title={`New tab (${ringKey} K)`}
-        >
-          <Plus className="w-[17px] h-[17px]" />
-        </button>
-
-        {/* Snap layout picker */}
-        <div style={{ marginTop: "auto", marginBottom: "auto" }} className="shrink-0 ml-0.5">
-          <SnapLayoutPicker windows={visibleWindows} onSnapMultiple={onSnapMultiple} />
-        </div>
       </div>
 
       {/* Right: time → connectivity → engine → fullscreen → profile */}
