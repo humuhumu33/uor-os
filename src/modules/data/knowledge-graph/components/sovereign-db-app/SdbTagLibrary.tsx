@@ -23,7 +23,7 @@ export function SdbTagLibrary({
   userTags, activeTags, onToggleTag,
   tagColors, onSetTagColor, onCreateTag,
 }: Props) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [newTag, setNewTag] = useState("");
   const [colorPicking, setColorPicking] = useState<string | null>(null);
