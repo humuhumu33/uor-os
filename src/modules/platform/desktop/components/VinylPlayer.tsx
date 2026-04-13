@@ -66,9 +66,10 @@ export default function VinylPlayer() {
 
   useEffect(() => {
     loadSCApi().then(() => {
-      if (iframeRef.current && window.SC) {
-        const w = window.SC.Widget(iframeRef.current);
-        widgetRef.current = w;
+      if (!iframeRef.current || !window.SC) return;
+      const w = window.SC.Widget(iframeRef.current);
+      widgetRef.current = w;
+      w.bind("ready" as any, () => {
         w.bind("play", () => {
           setPlaying(true);
           w.getCurrentSound((sound) => {
@@ -80,7 +81,7 @@ export default function VinylPlayer() {
         });
         w.bind("pause", () => setPlaying(false));
         w.bind("finish", () => setPlaying(false));
-      }
+      });
     });
   }, []);
 
@@ -138,10 +139,10 @@ export default function VinylPlayer() {
       <iframe
         ref={iframeRef}
         src={EMBED_AUDIO}
-        width="0"
-        height="0"
+        width="300"
+        height="150"
         allow="autoplay"
-        style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
+        style={{ position: "absolute", left: -9999, top: -9999, opacity: 0, pointerEvents: "none" }}
         title="SoundCloud Player"
       />
 
