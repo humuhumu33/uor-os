@@ -1,5 +1,5 @@
 /**
- * SdbConsumerPages — Notion-inspired workspace with page tree, block editor,
+ * SdbConsumerPages — Eden-inspired workspace with page tree, block editor,
  * backlinks, and Cmd+K quick finder.
  * ══════════════════════════════════════════════════════════════════
  *
@@ -10,7 +10,8 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash,
   IconGraph, IconSun, IconLayoutBoard, IconTerminal2, IconSearch,
-  IconStar, IconStarFilled, IconDots, IconArrowLeft,
+  IconStar, IconStarFilled, IconDots, IconArrowLeft, IconHome,
+  IconSettings, IconClock,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
@@ -45,7 +46,6 @@ function generateId() {
   return crypto.randomUUID().slice(0, 8);
 }
 
-// Default page emojis by type
 const PAGE_ICONS: Record<string, string> = {
   note: "📄",
   daily: "☀️",
@@ -66,13 +66,11 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   });
   const [showProperties, setShowProperties] = useState(false);
 
-  // Block editor state
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [noteTitle, setNoteTitle] = useState("");
 
   const { dailyNotes, reloadDaily } = useDailyNotes(db);
 
-  // Ensure workspace text index exists
   useEffect(() => {
     const existing = textIndexManager.list().find(i => i.name === "workspace-notes");
     if (!existing) {
@@ -80,7 +78,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     }
   }, []);
 
-  // Cmd+K listener
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -92,7 +89,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Load workspace items from hypergraph
   const reload = useCallback(async () => {
     const folders = await db.byLabel("workspace:folder");
     const notes = await db.byLabel("workspace:note");
@@ -127,7 +123,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
 
   useEffect(() => { reload(); }, [reload]);
 
-  // Rebuild text index
   useEffect(() => {
     if (items.length > 0) {
       textIndexManager.drop("workspace-notes");
@@ -138,7 +133,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   const allEdges = hypergraph.cachedEdges();
   const selected = items.find(i => i.id === selectedId);
 
-  // Load blocks when selecting a note
   useEffect(() => {
     if (selected && (selected.type === "note" || selected.type === "daily")) {
       setNoteTitle(selected.name);
@@ -306,7 +300,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     });
   }, []);
 
-  // Breadcrumb path for selected note
   const breadcrumbs = useMemo(() => {
     if (!selected) return [];
     const path: { id: string; name: string; icon: string }[] = [];
@@ -344,14 +337,18 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     [items]
   );
 
-  // Build tree
   const rootItems = items.filter(i => i.type !== "daily" && (!i.parentId || i.parentId === "ws:root"));
   const childrenOf = (parentId: string) => items.filter(i => i.parentId === parentId);
 
-  // Favorite items
   const favoriteItems = useMemo(() =>
     items.filter(i => favorites.has(i.id)),
     [items, favorites]
+  );
+
+  // Recent items (last 5 opened)
+  const recentItems = useMemo(() =>
+    recentIds.slice(0, 5).map(id => items.find(i => i.id === id)).filter(Boolean) as TreeItem[],
+    [recentIds, items]
   );
 
   const renderItem = (item: TreeItem, depth = 0) => {
@@ -368,22 +365,22 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
             if (isFolder) toggleExpand(item.id);
             setSelectedId(item.id);
           }}
-          className={`group flex items-center gap-1.5 w-full py-[5px] text-[14px] transition-colors rounded-md ${
+          className={`group flex items-center gap-1.5 w-full py-[6px] text-[13px] transition-colors rounded-lg ${
             isSelected
-              ? "bg-primary/8 text-foreground"
-              : "text-foreground/70 hover:bg-muted/40"
+              ? "bg-primary/10 text-foreground"
+              : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
           }`}
-          style={{ paddingLeft: `${8 + depth * 16}px`, paddingRight: "8px" }}
+          style={{ paddingLeft: `${10 + depth * 16}px`, paddingRight: "8px" }}
         >
           {isFolder ? (
             <span className="w-5 h-5 flex items-center justify-center shrink-0">
               {isExpanded
-                ? <IconChevronDown size={14} className="text-muted-foreground/60" />
-                : <IconChevronRight size={14} className="text-muted-foreground/60" />
+                ? <IconChevronDown size={13} className="text-muted-foreground/50" />
+                : <IconChevronRight size={13} className="text-muted-foreground/50" />
               }
             </span>
           ) : (
-            <span className="w-5 h-5 flex items-center justify-center shrink-0 text-[13px]">
+            <span className="w-5 h-5 flex items-center justify-center shrink-0 text-[12px]">
               {icon}
             </span>
           )}
@@ -393,14 +390,14 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
               onClick={e => { e.stopPropagation(); deleteItem(item); }}
               className="p-0.5 rounded hover:bg-muted/60 text-muted-foreground/40 hover:text-destructive transition-colors"
             >
-              <IconTrash size={13} />
+              <IconTrash size={12} />
             </button>
             {isFolder && (
               <button
                 onClick={e => { e.stopPropagation(); createNote(item.id); }}
                 className="p-0.5 rounded hover:bg-muted/60 text-muted-foreground/40 hover:text-foreground transition-colors"
               >
-                <IconPlus size={13} />
+                <IconPlus size={12} />
               </button>
             )}
           </div>
@@ -416,7 +413,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
 
   return (
     <div className="flex h-full overflow-hidden">
-      {/* Quick Finder */}
       <SdbQuickFinder
         open={finderOpen}
         onClose={() => setFinderOpen(false)}
@@ -428,89 +424,144 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
       />
 
       {/* ── Sidebar ───────────────────────── */}
-      <aside className="w-60 shrink-0 border-r border-border/50 bg-muted/20 flex flex-col overflow-hidden">
-      {/* Workspace header */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30">
-          <div className="w-5 h-5 rounded bg-gradient-to-br from-primary/80 to-primary/40 flex items-center justify-center text-[10px] font-bold text-primary-foreground">
+      <aside className="w-[240px] shrink-0 border-r border-border/30 bg-muted/10 flex flex-col overflow-hidden">
+        {/* Header with logo + New button */}
+        <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-border/20">
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-[11px] font-bold text-white">
             S
           </div>
           <span className="text-[14px] font-semibold text-foreground truncate flex-1">SovereignDB</span>
           <button
             onClick={() => createNote()}
-            className="w-6 h-6 rounded-md bg-primary/10 text-primary hover:bg-primary/20 flex items-center justify-center transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 text-[12px] font-medium transition-colors"
             title="New"
           >
-            <IconPlus size={14} />
+            <IconPlus size={13} />
+            <span>New</span>
           </button>
         </div>
 
         {/* Quick actions */}
-        <div className="px-3 py-2 space-y-0.5">
+        <div className="px-3 py-2.5 space-y-0.5">
+          <button
+            onClick={() => setSelectedId(null)}
+            className={`flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-lg text-[13px] transition-colors ${
+              !selectedId ? "bg-primary/10 text-foreground font-medium" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+            }`}
+          >
+            <IconHome size={16} className="shrink-0" />
+            <span>Home</span>
+          </button>
           <button
             onClick={() => setFinderOpen(true)}
-            className="flex items-center gap-2.5 w-full px-2 py-[6px] rounded-md text-[14px] text-muted-foreground/70 hover:bg-muted/40 transition-colors"
+            className="flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-lg text-[13px] text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
           >
             <IconSearch size={16} className="shrink-0" />
             <span className="flex-1 text-left">Search</span>
-            <span className="text-[11px] text-muted-foreground/30 font-mono">⌘K</span>
-          </button>
-          <button
-            onClick={() => setSelectedId(null)}
-            className="flex items-center gap-2.5 w-full px-2 py-[6px] rounded-md text-[14px] text-muted-foreground/70 hover:bg-muted/40 transition-colors"
-          >
-            <span className="text-[15px] w-4 text-center">🏠</span>
-            <span>Home</span>
+            <span className="text-[10px] text-muted-foreground/30 font-mono bg-muted/40 px-1.5 py-0.5 rounded">⌘K</span>
           </button>
         </div>
 
-        {/* Favorites */}
-        {favoriteItems.length > 0 && (
-          <div className="px-3 pt-4">
-            <div className="px-2 pb-2">
-              <span className="text-[11px] font-semibold text-muted-foreground/40 uppercase tracking-wider">Favorites</span>
-            </div>
-            {favoriteItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => setSelectedId(item.id)}
-                className={`flex items-center gap-2 w-full px-2 py-[6px] rounded-md text-[14px] transition-colors ${
-                  selectedId === item.id ? "bg-primary/8 text-foreground" : "text-foreground/70 hover:bg-muted/40"
-                }`}
-              >
-                <span className="w-5 h-5 flex items-center justify-center text-[13px]">
-                  {item.icon || PAGE_ICONS[item.type] || "📄"}
-                </span>
-                <span className="truncate">{item.name}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="mx-3 border-t border-border/15" />
 
-        {/* Recents (Daily Notes) */}
-        <div className="px-3 pt-4">
-          <SdbDailyNoteSection db={db} onSelectDaily={navigateTo} selectedId={selectedId} />
-        </div>
-
-        {/* Workspace tree */}
-        <div className="px-3 pt-4 flex-1 min-h-0 flex flex-col">
-          <div className="flex items-center justify-between px-2 pb-2">
-            <span className="text-[11px] font-semibold text-muted-foreground/40 uppercase tracking-wider">Workspace</span>
-          </div>
-          <nav className="flex-1 overflow-auto pb-2">
-            {rootItems.length === 0 ? (
-              <div className="px-2 py-8 text-center">
-                <p className="text-[13px] text-muted-foreground/40 mb-3">No pages yet</p>
-                <button
-                  onClick={() => createNote()}
-                  className="text-[13px] text-primary/70 hover:text-primary transition-colors"
-                >
-                  Create a page
-                </button>
+        {/* Scrollable content area */}
+        <div className="flex-1 min-h-0 overflow-auto px-3 py-2">
+          {/* Recents */}
+          {recentItems.length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center gap-1.5 px-2.5 pb-2 pt-1">
+                <IconClock size={12} className="text-muted-foreground/40" />
+                <span className="text-[11px] font-semibold text-muted-foreground/40 uppercase tracking-wider">Recents</span>
               </div>
-            ) : (
-              rootItems.map(i => renderItem(i))
-            )}
-          </nav>
+              {recentItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedId(item.id)}
+                  className={`flex items-center gap-2 w-full px-2.5 py-[6px] rounded-lg text-[13px] transition-colors ${
+                    selectedId === item.id ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                  }`}
+                >
+                  <span className="w-4 h-4 flex items-center justify-center text-[11px] shrink-0">
+                    {item.icon || PAGE_ICONS[item.type] || "📄"}
+                  </span>
+                  <span className="truncate">{item.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Pinned */}
+          {favoriteItems.length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center gap-1.5 px-2.5 pb-2 pt-1">
+                <IconStar size={12} className="text-muted-foreground/40" />
+                <span className="text-[11px] font-semibold text-muted-foreground/40 uppercase tracking-wider">Pinned</span>
+              </div>
+              {favoriteItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedId(item.id)}
+                  className={`flex items-center gap-2 w-full px-2.5 py-[6px] rounded-lg text-[13px] transition-colors ${
+                    selectedId === item.id ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                  }`}
+                >
+                  <span className="w-4 h-4 flex items-center justify-center text-[11px] shrink-0">
+                    {item.icon || PAGE_ICONS[item.type] || "📄"}
+                  </span>
+                  <span className="truncate">{item.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Daily Notes */}
+          <div className="mb-4">
+            <SdbDailyNoteSection db={db} onSelectDaily={navigateTo} selectedId={selectedId} />
+          </div>
+
+          {/* Workspace tree */}
+          <div>
+            <div className="flex items-center justify-between px-2.5 pb-2 pt-1">
+              <div className="flex items-center gap-1.5">
+                <IconFolder size={12} className="text-muted-foreground/40" />
+                <span className="text-[11px] font-semibold text-muted-foreground/40 uppercase tracking-wider">Workspace</span>
+              </div>
+              <button
+                onClick={createFolder}
+                className="p-0.5 rounded text-muted-foreground/30 hover:text-foreground hover:bg-muted/40 transition-colors"
+                title="New folder"
+              >
+                <IconPlus size={12} />
+              </button>
+            </div>
+            <nav>
+              {rootItems.length === 0 ? (
+                <div className="px-2.5 py-6 text-center">
+                  <p className="text-[12px] text-muted-foreground/30 mb-2">No pages yet</p>
+                  <button
+                    onClick={() => createNote()}
+                    className="text-[12px] text-primary/60 hover:text-primary transition-colors"
+                  >
+                    Create a page
+                  </button>
+                </div>
+              ) : (
+                rootItems.map(i => renderItem(i))
+              )}
+            </nav>
+          </div>
+        </div>
+
+        {/* ── Bottom area ── */}
+        <div className="mt-auto border-t border-border/15 px-3 py-2 space-y-0.5">
+          <button className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-[13px] text-muted-foreground/50 hover:bg-muted/30 hover:text-foreground transition-colors">
+            <IconTrash size={15} className="shrink-0" />
+            <span>Trash</span>
+          </button>
+          <button className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-[13px] text-muted-foreground/50 hover:bg-muted/30 hover:text-foreground transition-colors">
+            <IconSettings size={15} className="shrink-0" />
+            <span>Settings</span>
+          </button>
         </div>
       </aside>
 
@@ -533,7 +584,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
           />
         ) : (
           <>
-            {/* ── Page top bar (breadcrumbs + actions) ── */}
+            {/* ── Page top bar ── */}
             <div className="flex items-center justify-between h-11 px-4 shrink-0 border-b border-border/20">
               <div className="flex items-center gap-1 text-[13px] text-muted-foreground/60 min-w-0">
                 {breadcrumbs.map((crumb, i) => (
@@ -553,7 +604,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                 <button
                   onClick={() => toggleFavorite(selected.id)}
                   className="p-1.5 rounded hover:bg-muted/40 text-muted-foreground/40 hover:text-foreground transition-colors"
-                  title={favorites.has(selected.id) ? "Remove from favorites" : "Add to favorites"}
+                  title={favorites.has(selected.id) ? "Remove from pinned" : "Pin"}
                 >
                   {favorites.has(selected.id)
                     ? <IconStarFilled size={15} className="text-amber-400" />
@@ -573,14 +624,12 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
             {/* ── Page content ── */}
             <div className="flex-1 overflow-auto">
               <div className="max-w-[720px] mx-auto px-16 py-12">
-                {/* Page icon */}
                 <div className="mb-2">
                   <span className="text-[40px] cursor-default select-none">
                     {selected.icon || PAGE_ICONS[selected.type] || "📄"}
                   </span>
                 </div>
 
-                {/* Title */}
                 <input
                   value={noteTitle}
                   onChange={e => setNoteTitle(e.target.value)}
@@ -589,7 +638,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                   className="w-full text-[40px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/20 mb-1 leading-tight tracking-tight"
                 />
 
-                {/* Properties (collapsible) */}
                 {showProperties && (
                   <div className="mb-6">
                     <SdbNoteProperties
@@ -601,7 +649,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                   </div>
                 )}
 
-                {/* Block editor */}
                 <div className="mt-4">
                   <SdbBlockEditor
                     blocks={blocks}
@@ -612,7 +659,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                   />
                 </div>
 
-                {/* Backlinks */}
                 <SdbBacklinks
                   currentNoteId={selected.id}
                   currentNoteTitle={noteTitle}
@@ -623,7 +669,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                   }}
                 />
 
-                {/* Local graph */}
                 <SdbLocalGraph
                   currentNoteId={selected.id}
                   currentNoteTitle={noteTitle}
@@ -634,7 +679,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                   }}
                 />
 
-                {/* Footer metadata */}
                 <div className="mt-8 pt-4 border-t border-border/20 flex items-center gap-3 text-[12px] text-muted-foreground/40 font-mono">
                   <span>{blocks.length} blocks</span>
                   <span>·</span>
