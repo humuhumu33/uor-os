@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Wifi, WifiOff, Database, Brain, Globe, Mic, Shield, RefreshCw, Loader2 } from "lucide-react";
 import { useConnectivity, type FeatureId } from "@/modules/platform/desktop/hooks/useConnectivity";
 import { grafeoStore as localGraphStore } from "@/modules/data/knowledge-graph/grafeo-store";
+import { providerRegistry } from "@/modules/data/knowledge-graph/persistence/provider-registry";
 import type { SyncMode } from "@/modules/data/knowledge-graph/persistence/hooks/useSyncMode";
 
 interface Props {
