@@ -74,9 +74,14 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     } catch { return new Set(); }
   });
   const [showProperties, setShowProperties] = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const [showCoverGallery, setShowCoverGallery] = useState(false);
 
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [noteTitle, setNoteTitle] = useState("");
+  const [noteIcon, setNoteIcon] = useState("");
+  const [noteCover, setNoteCover] = useState<string | null>(null);
+  const [noteComments, setNoteComments] = useState<NoteComment[]>([]);
 
   // Tag system state
   const [activeTags, setActiveTags] = useState<Set<string>>(new Set());
