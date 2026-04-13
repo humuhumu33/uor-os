@@ -598,6 +598,40 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
     setDragOverIdx(null);
   }, []);
 
+  // ── Clipboard paste for images ──
+  useEffect(() => {
+    const handler = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) return;
+          // Insert image block at current position or end
+          const dataUrl = await readFileAsDataUrl(file);
+          const newBlock: Block = {
+            id: genBlockId(),
+            text: file.name || "Pasted image",
+            type: "image",
+            imageData: dataUrl,
+            fileName: file.name || "pasted-image.png",
+            fileMime: file.type,
+            fileSize: file.size,
+            indent: 0,
+            children: [],
+          };
+          const followBlock: Block = { id: genBlockId(), text: "", indent: 0, children: [] };
+          onChange([...blocks, newBlock, followBlock]);
+          setFocusNewIdx(blocks.length + 1);
+          return;
+        }
+      }
+    };
+    document.addEventListener("paste", handler);
+    return () => document.removeEventListener("paste", handler);
+  }, [blocks, onChange]);
+
   // Handle slash menu keyboard navigation via global keydown
   useEffect(() => {
     if (!slashMenu) return;
