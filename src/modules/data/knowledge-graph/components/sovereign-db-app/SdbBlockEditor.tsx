@@ -15,12 +15,13 @@ import {
   IconH1, IconH2, IconH3, IconList, IconCheckbox, IconMinus,
   IconBlockquote, IconInfoCircle, IconTypography,
   IconListNumbers, IconCode, IconChevronRight, IconChevronDown,
+  IconPhoto, IconPaperclip, IconUpload, IconX, IconMaximize,
 } from "@tabler/icons-react";
 import { SdbBlockLexical } from "./SdbBlockLexical";
 import type { LexicalEditor } from "lexical";
 import { $getRoot, $createParagraphNode, $createTextNode } from "lexical";
 
-export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle";
+export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "image" | "file";
 
 export interface Block {
   id: string;
@@ -31,6 +32,18 @@ export interface Block {
   type?: BlockType;
   checked?: boolean;
   collapsed?: boolean;
+  /** Data URL for embedded image */
+  imageData?: string;
+  /** Original file name */
+  fileName?: string;
+  /** MIME type of embedded file */
+  fileMime?: string;
+  /** File size in bytes */
+  fileSize?: number;
+  /** Caption text for image/file */
+  caption?: string;
+  /** Image display width (percentage) */
+  imageWidth?: number;
 }
 
 interface Props {
