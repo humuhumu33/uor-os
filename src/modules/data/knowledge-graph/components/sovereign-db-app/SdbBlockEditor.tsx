@@ -655,6 +655,79 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
       );
     }
 
+    // Image block
+    if (blockType === "image") {
+      return (
+        <div
+          key={block.id}
+          className={`relative group transition-opacity ${isDragging ? "opacity-30" : ""}`}
+          onMouseEnter={() => setHoveredIdx(idx)}
+          onMouseLeave={() => setHoveredIdx(null)}
+          onDragOver={e => handleDragOver(idx, e)}
+          onDrop={e => handleDrop(idx, e)}
+          style={{ paddingLeft: `${block.indent * 24}px` }}
+        >
+          {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+          <div className="flex items-start">
+            <div className={`flex items-center gap-0.5 mt-[5px] mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
+              <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
+                <IconPlus size={14} className="text-muted-foreground" />
+              </button>
+              <div draggable onDragStart={e => handleDragStart(idx, e)} onDragEnd={handleDragEnd} className="p-0.5 cursor-grab active:cursor-grabbing">
+                <IconGripVertical size={14} className="text-muted-foreground" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              {block.imageData ? (
+                <ImageBlockContent
+                  block={block}
+                  onCaptionChange={caption => handleCaptionChange(idx, caption)}
+                  onWidthChange={width => handleImageWidthChange(idx, width)}
+                  onRemove={() => handleRemoveEmbed(idx)}
+                />
+              ) : (
+                <ImagePlaceholder onFileSelect={file => handleFileEmbed(idx, file)} />
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // File block
+    if (blockType === "file") {
+      return (
+        <div
+          key={block.id}
+          className={`relative group transition-opacity ${isDragging ? "opacity-30" : ""}`}
+          onMouseEnter={() => setHoveredIdx(idx)}
+          onMouseLeave={() => setHoveredIdx(null)}
+          onDragOver={e => handleDragOver(idx, e)}
+          onDrop={e => handleDrop(idx, e)}
+          style={{ paddingLeft: `${block.indent * 24}px` }}
+        >
+          {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+          <div className="flex items-start">
+            <div className={`flex items-center gap-0.5 mt-[5px] mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
+              <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
+                <IconPlus size={14} className="text-muted-foreground" />
+              </button>
+              <div draggable onDragStart={e => handleDragStart(idx, e)} onDragEnd={handleDragEnd} className="p-0.5 cursor-grab active:cursor-grabbing">
+                <IconGripVertical size={14} className="text-muted-foreground" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              {block.imageData ? (
+                <FileBlockContent block={block} onRemove={() => handleRemoveEmbed(idx)} />
+              ) : (
+                <FilePlaceholder onFileSelect={file => handleFileEmbed(idx, file)} />
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // Placeholder text
     const placeholder = idx === 0 && blocks.length <= 1
       ? "Press '/' for commands, or just start typing..."
