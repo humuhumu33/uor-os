@@ -124,13 +124,18 @@ const SovereignDBApp = () => {
             <button
               key={tab.id}
               onClick={() => handleSectionChange(tab.id)}
-              className={`px-3.5 py-1 rounded-md text-[14px] transition-all duration-200 ${
+              className={`relative px-3.5 py-1.5 text-[14px] transition-all duration-200 ${
                 section === tab.id
-                  ? "text-foreground font-medium bg-muted/50"
-                  : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/20"
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground/40 hover:text-muted-foreground"
               }`}
             >
               {tab.label}
+              <span
+                className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full bg-primary transition-all duration-300 ease-out ${
+                  section === tab.id ? "w-4/5 opacity-100" : "w-0 opacity-0"
+                }`}
+              />
             </button>
           ))}
         </div>
