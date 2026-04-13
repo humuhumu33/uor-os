@@ -15,14 +15,15 @@ import {
   IconH1, IconH2, IconH3, IconList, IconCheckbox, IconMinus,
   IconBlockquote, IconInfoCircle, IconTypography,
   IconListNumbers, IconCode, IconChevronRight, IconChevronDown,
-  IconTable,
+  IconTable, IconLink,
 } from "@tabler/icons-react";
 import { SdbBlockLexical } from "./SdbBlockLexical";
 import { SdbTableBlock, createDefaultTable, type TableData } from "./SdbTableBlock";
+import { SdbBookmarkBlock, createBookmarkFromUrl, type BookmarkData } from "./SdbBookmarkBlock";
 import type { LexicalEditor } from "lexical";
 import { $getRoot, $createParagraphNode, $createTextNode } from "lexical";
 
-export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "table";
+export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "table" | "bookmark";
 
 export interface Block {
   id: string;
@@ -34,6 +35,7 @@ export interface Block {
   checked?: boolean;
   collapsed?: boolean;
   tableData?: TableData;
+  bookmarkData?: BookmarkData;
 }
 
 interface Props {
@@ -63,6 +65,7 @@ const SLASH_COMMANDS: { type: BlockType; label: string; description: string; ico
   { type: "code", label: "Code", description: "Code block", icon: IconCode, keywords: ["code", "snippet", "pre"] },
   { type: "toggle", label: "Toggle", description: "Collapsible section", icon: IconChevronRight, keywords: ["toggle", "collapse", "expand", "accordion"] },
   { type: "table", label: "Table", description: "Add a simple table", icon: IconTable, keywords: ["table", "grid", "spreadsheet", "rows", "columns"] },
+  { type: "bookmark", label: "Bookmark", description: "Save a link with preview", icon: IconLink, keywords: ["bookmark", "link", "url", "embed", "web"] },
 ];
 
 /** Hover preview for [[wiki-links]] — rendered outside Lexical */
@@ -144,11 +147,12 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
       checked: type === "todo" ? false : undefined,
       collapsed: type === "toggle" ? false : undefined,
       tableData: type === "table" ? createDefaultTable() : undefined,
+      bookmarkData: type === "bookmark" ? createBookmarkFromUrl("") : undefined,
     };
     onChange(next);
     setSlashMenu(null);
-    // Re-focus this block (skip for table — no Lexical instance)
-    if (type !== "table") {
+    // Re-focus this block (skip for table/bookmark — no Lexical instance)
+    if (type !== "table" && type !== "bookmark") {
       setTimeout(() => {
         const editor = editorsRef.current.get(idx);
         if (editor) {
@@ -315,6 +319,49 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
     return () => window.removeEventListener("keydown", handler);
   }, [slashMenu, filteredSlash]);
 
+  // ── Paste URL detection → auto-create bookmark block ──
+  useEffect(() => {
+    const URL_REGEX = /^https?:\/\/[^\s]+$/;
+    const handler = (e: ClipboardEvent) => {
+      const text = e.clipboardData?.getData("text/plain")?.trim();
+      if (!text || !URL_REGEX.test(text)) return;
+
+      // Check if we're inside a Lexical editor that already has content
+      const active = document.activeElement;
+      const isInEditor = active?.closest("[contenteditable]");
+      if (!isInEditor) return;
+
+      // Find which block is focused
+      const focusedIdx = [...editorsRef.current.entries()].find(([, editor]) => {
+        const el = editor.getRootElement();
+        return el && el.contains(active);
+      })?.[0];
+
+      if (focusedIdx === undefined) return;
+      const currentBlock = blocks[focusedIdx];
+
+      // Only convert if the block is empty (user just pasted a URL into an empty block)
+      if (currentBlock && currentBlock.text.trim() === "") {
+        e.preventDefault();
+        const next = [...blocks];
+        next[focusedIdx] = {
+          ...currentBlock,
+          type: "bookmark",
+          text: text,
+          richText: undefined,
+          bookmarkData: createBookmarkFromUrl(text),
+        };
+        // Add a new empty block below for continued typing
+        const newBlock: Block = { id: genBlockId(), text: "", indent: currentBlock.indent, children: [] };
+        next.splice(focusedIdx + 1, 0, newBlock);
+        onChange(next);
+        setFocusNewIdx(focusedIdx + 1);
+      }
+    };
+    document.addEventListener("paste", handler);
+    return () => document.removeEventListener("paste", handler);
+  }, [blocks, onChange]);
+
   const renderBlock = (block: Block, idx: number) => {
     const blockType = block.type || "text";
     const isHovered = hoveredIdx === idx;
@@ -388,6 +435,49 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
                 onChange={(newData) => {
                   const next = [...blocks];
                   next[idx] = { ...next[idx], tableData: newData };
+                  onChange(next);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Bookmark block
+    if (blockType === "bookmark") {
+      const bookmarkData = block.bookmarkData || createBookmarkFromUrl("");
+      return (
+        <div
+          key={block.id}
+          className={`relative group py-1 transition-opacity ${isDragging ? "opacity-30" : ""}`}
+          onMouseEnter={() => setHoveredIdx(idx)}
+          onMouseLeave={() => setHoveredIdx(null)}
+          onDragOver={e => handleDragOver(idx, e)}
+          onDrop={e => handleDrop(idx, e)}
+          style={{ paddingLeft: `${block.indent * 24}px` }}
+        >
+          {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+          <div className="flex items-start">
+            <div className={`flex items-center gap-0.5 mt-2 mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
+              <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
+                <IconPlus size={14} className="text-muted-foreground" />
+              </button>
+              <div
+                draggable
+                onDragStart={e => handleDragStart(idx, e)}
+                onDragEnd={handleDragEnd}
+                className="p-0.5 cursor-grab active:cursor-grabbing"
+              >
+                <IconGripVertical size={14} className="text-muted-foreground" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0 relative">
+              <SdbBookmarkBlock
+                data={bookmarkData}
+                onChange={(newData) => {
+                  const next = [...blocks];
+                  next[idx] = { ...next[idx], bookmarkData: newData, text: newData.url };
                   onChange(next);
                 }}
               />
