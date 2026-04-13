@@ -145,8 +145,14 @@ function TabBarConnectivity({ isLight }: { isLight: boolean }) {
   const conn = useConnectivity();
   const [popoverOpen, setPopoverOpen] = useState(false);
 
+  const modeLabel = conn.syncMode === "cloud" ? "Cloud" : conn.syncMode === "local" ? "Local" : conn.online ? "Online" : "Offline";
+  const textMuted = isLight ? "text-black/40" : "text-white/40";
+
   return (
-    <div className="relative flex items-center">
+    <div className="relative flex items-center gap-1.5">
+      <span className={`text-[10px] font-medium ${textMuted} select-none`}>
+        {modeLabel}
+      </span>
       <button
         onClick={() => setPopoverOpen(o => !o)}
         className={`flex items-center justify-center w-[24px] h-[24px] rounded-full transition-all duration-150
