@@ -950,7 +950,6 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props
             activeSection={activeSection}
             onSwitchSection={onNavigateSection}
           />
-          />
         ) : (
           <>
             {/* Page top bar */}
