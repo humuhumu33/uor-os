@@ -62,3 +62,12 @@ export {
   executeSingleNode,
   type HoloExecutionResult,
 } from "./executor";
+
+// ── LUT-GEMM re-exports ────────────────────────────────────────────────────
+export {
+  buildGemmLayer,
+  executeGemmLayer,
+  quantizedMatrixToBlob,
+  blobToQuantizedMatrix,
+  type LutGemmLayer,
+} from "@/modules/kernel/lut/gemm";
