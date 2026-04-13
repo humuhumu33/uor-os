@@ -39,14 +39,29 @@ import {
   resume,
   grindExecutableBlueprint,
 } from "./executable-blueprint";
-// UI projection types (hologram-ui removed. stubs for type compat)
+// UI projection types (hologram-ui removed. deterministic stubs for type compat)
 type UIComponentType = string;
 type UIProjectionResult = { type: string; props: Record<string, unknown> };
+
+/** The 6 canonical UI component types projected from any hologram identity. */
+const UI_COMPONENT_TYPES: UIComponentType[] = [
+  "ui:stat-card",
+  "ui:data-table",
+  "ui:metric-bar",
+  "ui:graph-view",
+  "ui:timeline",
+  "ui:detail-panel",
+];
+
 function resolveUIProjection(_id: unknown, type: UIComponentType, _o?: Record<string, unknown>): UIProjectionResult {
   return { type, props: {} };
 }
-function resolveAllUIProjections(_id: unknown): ReadonlyMap<UIComponentType, UIProjectionResult> {
-  return new Map();
+function resolveAllUIProjections(id: unknown): ReadonlyMap<UIComponentType, UIProjectionResult> {
+  const map = new Map<UIComponentType, UIProjectionResult>();
+  for (const t of UI_COMPONENT_TYPES) {
+    map.set(t, resolveUIProjection(id, t));
+  }
+  return map;
 }
 
 // ── Engine Types ───────────────────────────────────────────────────────────
