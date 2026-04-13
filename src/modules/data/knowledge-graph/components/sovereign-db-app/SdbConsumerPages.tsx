@@ -897,63 +897,107 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
   // Context menu state for sidebar items
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: TreeItem } | null>(null);
 
-  const renderItem = (item: TreeItem, depth = 0) => {
+  const renderItem = (item: TreeItem, depth = 0, siblings: TreeItem[] = []) => {
     const isFolder = item.type === "folder";
     const isExpanded = expanded.has(item.id);
     const isSelected = selectedId === item.id;
     const children = isFolder ? childrenOf(item.id) : [];
     const hasChildren = children.length > 0;
     const icon = item.icon || PAGE_ICONS[item.type] || "📄";
+    const isDragging = dnd.draggedItem?.id === item.id;
+    const isDropTarget = dnd.dropTarget?.id === item.id;
+    const dropPosition = isDropTarget ? dnd.dropTarget!.position : null;
 
     return (
-      <div key={item.id}>
-        <button
-          onClick={() => {
-            if (isFolder) {
-              toggleExpand(item.id);
-              setActiveFolderId(item.id);
-              setSelectedId(null);
+      <div key={item.id} className={isDragging ? "opacity-40" : ""}>
+        {/* Drop indicator: before */}
+        {dropPosition === "before" && (
+          <div className="h-0.5 mx-4 bg-primary rounded-full" />
+        )}
+        <div
+          draggable
+          onDragStart={(e) => dnd.handleDragStart(e, { id: item.id, type: item.type, parentId: item.parentId, edge: item.edge })}
+          onDragEnd={dnd.handleDragEnd}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            const h = rect.height;
+            if (isFolder && y > h * 0.25 && y < h * 0.75) {
+              dnd.handleDragOver(e, item.id, "inside");
+            } else if (y < h / 2) {
+              dnd.handleDragOver(e, item.id, "before");
             } else {
-              setSelectedId(item.id);
+              dnd.handleDragOver(e, item.id, "after");
             }
           }}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setContextMenu({ x: e.clientX, y: e.clientY, item });
-          }}
-          className={`flex items-center gap-3 w-full py-2 text-os-body font-medium transition-colors ${
-            isSelected || (isFolder && activeFolderId === item.id && !selectedId)
-              ? "bg-primary/10 text-primary border-r-2 border-primary"
-              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-          }`}
-          style={{ paddingLeft: `${16 + depth * 14}px`, paddingRight: "8px" }}
+          onDragLeave={dnd.handleDragLeave}
+          onDrop={(e) => dnd.handleDrop(e, item.id, dnd.dropTarget?.position || "after", siblings.map(s => ({ id: s.id, type: s.type, parentId: s.parentId, edge: s.edge })))}
         >
-          {isFolder ? (
-            <>
-              <IconFolder size={16} className={`shrink-0 ${getFolderColor(item.id)}`} />
-              <span className="truncate flex-1 text-left">{item.name}</span>
-              {(hasChildren || true) && (
+          <button
+            onClick={() => {
+              if (isFolder) {
+                toggleExpand(item.id);
+                setActiveFolderId(item.id);
+                setSelectedId(null);
+              } else {
+                setSelectedId(item.id);
+              }
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setContextMenu({ x: e.clientX, y: e.clientY, item });
+            }}
+            className={`flex items-center gap-3 w-full py-2 text-os-body font-medium transition-colors ${
+              isSelected || (isFolder && activeFolderId === item.id && !selectedId)
+                ? "bg-primary/10 text-primary border-r-2 border-primary"
+                : dropPosition === "inside"
+                  ? "bg-primary/15 text-primary ring-1 ring-primary/30"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            }`}
+            style={{ paddingLeft: `${16 + depth * 14}px`, paddingRight: "8px" }}
+          >
+            {isFolder ? (
+              <>
+                <IconFolder size={16} className={`shrink-0 ${getFolderColor(item.id)}`} />
+                <span className="truncate flex-1 text-left">{item.name}</span>
                 <span className="w-4 h-4 flex items-center justify-center shrink-0 text-muted-foreground/40">
                   <IconChevronRight
                     size={12}
                     className={`transition-transform duration-150 ${isExpanded ? "rotate-90" : ""}`}
                   />
                 </span>
-              )}
-            </>
-          ) : (
-            <>
-              <span className="w-[18px] h-[18px] flex items-center justify-center shrink-0 text-[13px]">
-                {icon}
-              </span>
-              <span className="truncate flex-1 text-left">{item.name}</span>
-            </>
-          )}
-        </button>
+              </>
+            ) : (
+              <>
+                <span className="w-[18px] h-[18px] flex items-center justify-center shrink-0 text-[13px]">
+                  {icon}
+                </span>
+                <span className="truncate flex-1 text-left">{item.name}</span>
+              </>
+            )}
+          </button>
+        </div>
+        {/* Drop indicator: after */}
+        {dropPosition === "after" && !isFolder && (
+          <div className="h-0.5 mx-4 bg-primary rounded-full" />
+        )}
         {isFolder && isExpanded && (
           <div>
-            {children.map(c => renderItem(c, depth + 1))}
+            {children.map(c => renderItem(c, depth + 1, children))}
+            {/* Drop zone at end of folder */}
+            {dnd.draggedItem && children.length === 0 && (
+              <div
+                className="h-6 mx-4"
+                onDragOver={(e) => { e.preventDefault(); dnd.handleDragOver(e, item.id, "inside"); }}
+                onDrop={(e) => dnd.handleDrop(e, item.id, "inside", [])}
+              />
+            )}
           </div>
+        )}
+        {dropPosition === "after" && isFolder && (
+          <div className="h-0.5 mx-4 bg-primary rounded-full" />
         )}
       </div>
     );
