@@ -64,6 +64,27 @@ export async function initProvider(): Promise<PersistenceProvider> {
   return getProvider();
 }
 
+/**
+ * Switch active provider with optional data migration.
+ * Pulls snapshot from current → pushes to target → activates target.
+ */
+export async function switchProvider(targetId: string, migrate = true): Promise<void> {
+  const current = providerRegistry.activeProvider();
+  const targetEntry = providerRegistry.get(targetId);
+  if (!targetEntry) throw new Error(`Provider "${targetId}" not registered`);
+
+  if (migrate) {
+    const snapshot = await current.pullSnapshot();
+    if (snapshot) {
+      await targetEntry.provider.pushSnapshot(snapshot);
+    }
+  }
+
+  providerRegistry.setActive(targetId);
+  providerRegistry.updateStatus(targetId, "connected");
+  console.log(`[Persistence] Switched: ${current.name} → ${targetEntry.provider.name}`);
+}
+
 // Re-export types and providers
 export type { PersistenceProvider, ChangeEntry, SovereignBundle } from "./types";
 export { supabaseProvider } from "./supabase-provider";
