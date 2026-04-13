@@ -324,15 +324,30 @@ export default function TabBar({
         WebkitBackdropFilter: "blur(12px) saturate(1.2)",
       }}
     >
-      {/* Left: Home button (direct click → go to home screen) */}
-      <button
-        onClick={onHideAll}
-        className="flex items-center justify-center shrink-0 h-full transition-opacity duration-150 hover:opacity-70"
-        style={{ width: 50 }}
-        title="Home"
-      >
-        <Home className={`w-[16px] h-[16px] ${isLight ? "text-black/50" : "text-white/50"}`} />
-      </button>
+      {/* Left action icons — Home · New · Layout */}
+      <div className="flex items-center gap-1 pl-3 shrink-0">
+        <button
+          onClick={onHideAll}
+          className={`flex items-center justify-center w-[32px] h-[32px] rounded-lg transition-all duration-150
+            ${isLight ? "hover:bg-black/[0.06] active:bg-black/[0.10]" : "hover:bg-white/[0.07] active:bg-white/[0.12]"}
+          `}
+          title="Home"
+        >
+          <Home className={`w-[15px] h-[15px] ${isLight ? "text-black/50" : "text-white/50"}`} />
+        </button>
+
+        <button
+          className={`flex items-center justify-center w-[32px] h-[32px] rounded-lg transition-all duration-150
+            ${isLight ? "hover:bg-black/[0.06] active:bg-black/[0.10] text-black/45" : "hover:bg-white/[0.07] active:bg-white/[0.12] text-white/45"}
+          `}
+          onClick={onSpotlight}
+          title={`New tab (${ringKey} K)`}
+        >
+          <Plus className="w-[15px] h-[15px]" />
+        </button>
+
+        <SnapLayoutPicker windows={visibleWindows} onSnapMultiple={onSnapMultiple} />
+      </div>
 
 
       {/* Center wordmark — sovereign masthead */}
