@@ -89,12 +89,31 @@ function relativeTime(ts: number): string {
   return `${days}d ago`;
 }
 
+const BANNER_PHOTOS = [
+  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&h=400&fit=crop&crop=center&q=80",
+  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&h=400&fit=crop&crop=center&q=80",
+  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200&h=400&fit=crop&crop=center&q=80",
+  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&h=400&fit=crop&crop=center&q=80",
+  "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&h=400&fit=crop&crop=center&q=80",
+];
+
+function pickBanner(): string {
+  const key = "sdb-banner-idx";
+  let idx = 0;
+  try { idx = (parseInt(localStorage.getItem(key) || "0", 10) + 1) % BANNER_PHOTOS.length; } catch {}
+  try { localStorage.setItem(key, String(idx)); } catch {}
+  return BANNER_PHOTOS[idx];
+}
+
 export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote, onCreateDaily, onSwitchGraph }: Props) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("recent");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [search, setSearch] = useState("");
   const [showSort, setShowSort] = useState(false);
+  const [bannerLoaded, setBannerLoaded] = useState(false);
+  const bannerRef = useRef<HTMLImageElement>(null);
+  const [bannerUrl] = useState(() => pickBanner());
 
   const filtered = useMemo(() => {
     let list = items;
