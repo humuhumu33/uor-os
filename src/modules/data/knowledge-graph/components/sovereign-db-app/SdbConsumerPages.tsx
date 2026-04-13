@@ -37,6 +37,7 @@ import type { AppSection } from "./SovereignDBApp";
 interface Props {
   db: SovereignDB;
   onNavigateSection?: (section: AppSection) => void;
+  activeSection?: AppSection;
 }
 
 interface TreeItem {
