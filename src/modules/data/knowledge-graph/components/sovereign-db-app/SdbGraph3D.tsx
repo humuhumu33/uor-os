@@ -229,6 +229,10 @@ export function SdbGraph3D({
     canvas.height = 64;
     const ctx = canvas.getContext("2d")!;
     ctx.clearRect(0, 0, sz, 64);
+    // Set font first so measureText is accurate
+    ctx.font = "bold 28px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
     // Background pill
     ctx.fillStyle = "rgba(10, 22, 40, 0.75)";
     const pad = 12;
@@ -237,20 +241,41 @@ export function SdbGraph3D({
     ctx.roundRect((sz - tw - pad * 2) / 2, 4, tw + pad * 2, 56, 12);
     ctx.fill();
     // Text
-    ctx.font = "bold 28px monospace";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
     ctx.fillStyle = `rgb(${Math.round(color.r * 255)}, ${Math.round(color.g * 255)}, ${Math.round(color.b * 255)})`;
-    // Re-measure after setting font
     ctx.fillText(text, sz / 2, 34);
 
     const tex = new THREE.CanvasTexture(canvas);
     tex.needsUpdate = true;
-    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, opacity: 0 });
     const sprite = new THREE.Sprite(mat);
     sprite.scale.set(16, 4, 1);
     sprite.position.set(0, yOffset, 0);
+    sprite.userData._fadeStart = performance.now();
     return sprite;
+  }, []);
+
+  /* ── Animate label fade-in each frame ─────────────────────── */
+
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      const fg = fgRef.current;
+      const scene = fg?.scene?.();
+      if (scene) {
+        const now = performance.now();
+        scene.traverse((obj: THREE.Object3D) => {
+          if ((obj as any).isSprite && obj.userData._fadeStart) {
+            const elapsed = now - obj.userData._fadeStart;
+            const t = Math.min(elapsed / 300, 1); // 300ms fade
+            (obj as THREE.Sprite).material.opacity = t;
+            if (t >= 1) delete obj.userData._fadeStart;
+          }
+        });
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   /* ── Custom node rendering with instancing hints ──────────── */
