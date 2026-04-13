@@ -128,14 +128,82 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
     const notes = await db.byLabel("workspace:note");
     const daily = await db.byLabel("workspace:daily");
 
-    // Auto-create default workspace if none exist
+    // Auto-create default workspace with demo content if none exist
     if (workspaces.length === 0) {
       await db.addEdge(["root", "ws:default"], "workspace:workspace", {
         name: "My Workspace",
         createdAt: Date.now(),
       });
+
+      // ── Seed: "UOR OS" folder with nested "Atlas" subfolder ──
+      const osFolderId = "folder:uor-os";
+      const atlasFolderId = "folder:atlas";
+      await db.addEdge(["ws:default", osFolderId], "workspace:folder", {
+        name: "UOR OS",
+        icon: "🖥️",
+        createdAt: Date.now(),
+      });
+      await db.addEdge([osFolderId, atlasFolderId], "workspace:folder", {
+        name: "Atlas Engine",
+        icon: "🌐",
+        createdAt: Date.now(),
+      });
+
+      // ── Seed note: "Welcome to UOR OS" inside UOR OS folder ──
+      const welcomeNoteId = "note:welcome";
+      await db.addEdge([osFolderId, welcomeNoteId], "workspace:note", {
+        title: "Welcome to UOR OS",
+        icon: "👋",
+        content: "",
+        blocks: JSON.stringify([
+          { id: "b0", text: "Welcome to UOR OS — your sovereign knowledge operating system.", indent: 0, children: [] },
+          { id: "b1", text: "", indent: 0, children: [] },
+          { id: "b2", text: "Everything in this workspace is stored locally in your hypergraph database. No cloud required.", indent: 0, children: [] },
+          { id: "b3", text: "", indent: 0, children: [] },
+          { id: "b4", text: "📂 Explore the UOR OS folder to learn about the system architecture.", indent: 0, children: [] },
+          { id: "b5", text: "🌐 Open the Atlas Engine folder to see the E₈ computational substrate.", indent: 0, children: [] },
+          { id: "b6", text: "📊 Switch to the Graph view to see how everything connects.", indent: 0, children: [] },
+        ]),
+        tags: JSON.stringify(["getting-started", "uor"]),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      // ── Seed note: "Atlas Overview" inside Atlas subfolder ──
+      const atlasNoteId = "note:atlas-overview";
+      await db.addEdge([atlasFolderId, atlasNoteId], "workspace:note", {
+        title: "Atlas Engine Overview",
+        icon: "🔮",
+        content: "",
+        blocks: JSON.stringify([
+          { id: "b0", text: "The Atlas Engine is a 96-vertex E₈ computational substrate.", indent: 0, children: [] },
+          { id: "b1", text: "", indent: 0, children: [] },
+          { id: "b2", text: "It provides the mathematical foundation for the knowledge graph, mapping universal objects through 8 sign classes with triality symmetry.", indent: 0, children: [] },
+          { id: "b3", text: "", indent: 0, children: [] },
+          { id: "b4", text: "Toggle the Atlas Layer in the Graph view to visualize the full vertex structure.", indent: 0, children: [] },
+        ]),
+        tags: JSON.stringify(["atlas", "architecture"]),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      // ── Seed tags as hyperedges so they appear in the graph ──
+      await db.addEdge([welcomeNoteId, "tag:getting-started"], "workspace:tag", { tag: "getting-started" });
+      await db.addEdge([welcomeNoteId, "tag:uor"], "workspace:tag", { tag: "uor" });
+      await db.addEdge([atlasNoteId, "tag:atlas"], "workspace:tag", { tag: "atlas" });
+      await db.addEdge([atlasNoteId, "tag:architecture"], "workspace:tag", { tag: "architecture" });
+
+      // ── Seed a cross-link between the two notes ──
+      await db.addEdge([welcomeNoteId, atlasNoteId], "workspace:link", { relation: "references" });
+
       const ws2 = await db.byLabel("workspace:workspace");
       workspaces.push(...ws2);
+
+      // Re-fetch folders and notes after seeding
+      const seededFolders = await db.byLabel("workspace:folder");
+      const seededNotes = await db.byLabel("workspace:note");
+      folders.push(...seededFolders);
+      notes.push(...seededNotes);
     }
 
     const all: TreeItem[] = [
