@@ -27,7 +27,7 @@ import { SdbStatsPanel } from "./SdbStatsPanel";
 import { SdbStoragePanel } from "./SdbStoragePanel";
 import { SdbAtlasInspector } from "./SdbAtlasInspector";
 import { SdbStatusBar } from "./SdbStatusBar";
-import { MYSPACE_SECTION_TAGLINES } from "@/modules/platform/core/lib/app-taglines";
+
 
 export type AppSection = "workspace" | "graph" | "console";
 
@@ -138,7 +138,7 @@ const SovereignDBApp = () => {
 
         <main className="flex-1 overflow-auto">
           {section === "workspace" && (
-            <SdbConsumerPages db={db} onNavigateSection={handleSectionChange} />
+            <SdbConsumerPages db={db} onNavigateSection={handleSectionChange} activeSection={section} />
           )}
           {section === "graph" && (
             <SdbConsumerGraph db={db} onNavigateSection={handleSectionChange} />
