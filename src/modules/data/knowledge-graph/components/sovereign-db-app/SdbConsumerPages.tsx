@@ -29,7 +29,6 @@ import { SdbIconPicker } from "./SdbIconPicker";
 import { SdbNoteComments, type NoteComment } from "./SdbNoteComments";
 import { SdbSidebarPanel } from "./SdbSidebarPanel";
 import type { BlockRefResolver, BlockRefInfo } from "./SdbBlockRef";
-import type { Block } from "./SdbBlockEditor";
 
 import type { AppSection } from "./SovereignDBApp";
 
