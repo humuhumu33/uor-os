@@ -418,6 +418,9 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
 
   useEffect(() => { reload(); }, [reload]);
 
+  // Drag-and-drop for sidebar reordering & reparenting
+  const dnd = useSdbDragDrop(db, reload);
+
   useEffect(() => {
     if (items.length > 0) {
       textIndexManager.drop("workspace-notes");
