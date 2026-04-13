@@ -3,8 +3,6 @@
  *
  * Delays unmounting until a CSS exit animation completes, using onAnimationEnd.
  * Pairs with transitions.css classes: sov-fade-in/out, sov-scale-in/out, sov-slide-*.
- *
- * ~20 lines. Zero JS per animation frame.
  */
 
 import { useState, useEffect, useRef, type ReactNode, type CSSProperties } from "react";
@@ -14,15 +12,11 @@ interface Props {
   enterClass?: string;
   exitClass?: string;
   children: ReactNode;
-  /** Extra className on wrapper div */
   className?: string;
   style?: CSSProperties;
-  /** If true, renders children directly without a wrapping div */
-  bare?: boolean;
-  as?: keyof JSX.IntrinsicElements;
-  onClick?: (e: React.MouseEvent) => void;
-  onMouseLeave?: () => void;
-  onPointerDown?: (e: React.PointerEvent) => void;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
+  onMouseLeave?: React.MouseEventHandler<HTMLDivElement>;
+  onPointerDown?: React.PointerEventHandler<HTMLDivElement>;
 }
 
 export default function CSSPresence({
@@ -32,7 +26,6 @@ export default function CSSPresence({
   children,
   className = "",
   style,
-  as: Tag = "div",
   onClick,
   onMouseLeave,
   onPointerDown,
@@ -58,8 +51,7 @@ export default function CSSPresence({
   if (!render) return null;
 
   return (
-    // @ts-ignore — dynamic tag
-    <Tag
+    <div
       className={`${animClass} ${className}`.trim()}
       style={style}
       onAnimationEnd={handleAnimEnd}
@@ -68,6 +60,6 @@ export default function CSSPresence({
       onPointerDown={onPointerDown}
     >
       {children}
-    </Tag>
+    </div>
   );
 }
