@@ -67,14 +67,8 @@ export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "" }: P
     setFilters(prev => ({ ...prev, searchQuery: globalSearch }));
   }, [globalSearch]);
 
-  // Compute highlighted node IDs from global search
-  const highlightedNodeIds = useMemo(() => {
-    const q = globalSearch.trim().toLowerCase();
-    if (!q) return new Set<string>();
-    return new Set(
-      mergedNodes?.filter(n => n.label.toLowerCase().includes(q)).map(n => n.id) ?? []
-    );
-  }, [globalSearch]);
+
+
 
   // Container sizing for ForceGraph3D
   const containerRef = useRef<HTMLDivElement>(null);
