@@ -187,16 +187,55 @@ export function SdbHomeView({
           </div>
         )}
 
+        {/* ── Folder breadcrumb ── */}
+        {activeFolderId && (
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              onClick={() => onNavigateFolder?.(null)}
+              className="text-os-body text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Workspace
+            </button>
+            <span className="text-muted-foreground/40">›</span>
+            <span className="text-os-body text-foreground font-medium">
+              {items.find(i => i.id === activeFolderId)?.name || "Folder"}
+            </span>
+          </div>
+        )}
+
         {/* ── Workspace heading ── */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <h2 className="text-[22px] font-semibold text-foreground tracking-tight">Workspace</h2>
-            <button
-              onClick={onCreateNote}
-              className="text-muted-foreground/40 hover:text-foreground transition-colors"
-            >
-              <IconPlus size={18} />
-            </button>
+            <h2 className="text-[22px] font-semibold text-foreground tracking-tight">
+              {activeFolderId ? items.find(i => i.id === activeFolderId)?.name || "Folder" : "Workspace"}
+            </h2>
+            <div className="relative">
+              <button
+                onClick={() => setShowNewMenu(s => !s)}
+                className="text-muted-foreground/40 hover:text-foreground transition-colors"
+              >
+                <IconPlus size={18} />
+              </button>
+              {showNewMenu && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowNewMenu(false)} />
+                  <div className="absolute left-0 top-full mt-1 z-20 bg-card border border-border/30 rounded-xl shadow-lg py-1 min-w-[160px]">
+                    <button
+                      onClick={() => { onCreateNote(activeFolderId ?? undefined); setShowNewMenu(false); }}
+                      className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
+                    >
+                      <IconFileText size={15} /> New Page
+                    </button>
+                    <button
+                      onClick={() => { onCreateFolder(activeFolderId ?? undefined); setShowNewMenu(false); }}
+                      className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
+                    >
+                      <IconFolder size={15} /> New Folder
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {/* Sort dropdown */}
@@ -252,13 +291,24 @@ export function SdbHomeView({
               <IconFile size={32} className="text-muted-foreground/30" />
             </div>
             <p className="text-os-body text-muted-foreground/50 mb-5">
-              {search || activeTags.size > 0 ? "No results found" : "Create your first page"}
+              {search || activeTags.size > 0 ? "No results found" : "Get started by creating a page or folder"}
             </p>
             {!search && activeTags.size === 0 && (
-              <button
-                onClick={onCreateNote}
-                className="px-6 py-3 rounded-2xl bg-foreground text-background text-os-body font-medium hover:opacity-90 transition-all shadow-sm"
-              >
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => onCreateNote(activeFolderId ?? undefined)}
+                  className="px-6 py-3 rounded-2xl bg-foreground text-background text-os-body font-medium hover:opacity-90 transition-all shadow-sm"
+                >
+                  New Page
+                </button>
+                <button
+                  onClick={() => onCreateFolder(activeFolderId ?? undefined)}
+                  className="px-6 py-3 rounded-2xl bg-card border border-border/30 text-foreground text-os-body font-medium hover:bg-muted/30 transition-all shadow-sm"
+                >
+                  New Folder
+                </button>
+              </div>
+            )}
                 New Page
               </button>
             )}
