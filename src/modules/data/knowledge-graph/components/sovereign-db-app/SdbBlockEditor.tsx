@@ -16,6 +16,7 @@ import {
   IconBlockquote, IconInfoCircle, IconTypography,
   IconListNumbers, IconCode, IconChevronRight, IconChevronDown,
   IconTable, IconLink, IconCornerDownRight,
+  IconPhoto, IconPaperclip, IconUpload, IconX, IconMaximize,
 } from "@tabler/icons-react";
 import { SdbBlockLexical } from "./SdbBlockLexical";
 import { SdbTableBlock, createDefaultTable, type TableData } from "./SdbTableBlock";
@@ -24,7 +25,7 @@ import { SdbBlockRefChip, SdbBlockEmbed, parseBlockRefs, type BlockRefResolver }
 import type { LexicalEditor } from "lexical";
 import { $getRoot, $createParagraphNode, $createTextNode } from "lexical";
 
-export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "table" | "bookmark" | "embed";
+export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "table" | "bookmark" | "embed" | "image" | "file";
 
 export interface Block {
   id: string;
@@ -37,7 +38,19 @@ export interface Block {
   collapsed?: boolean;
   tableData?: TableData;
   bookmarkData?: BookmarkData;
-  embedBlockId?: string; // For embed blocks — references another block
+  embedBlockId?: string;
+  /** Data URL for embedded image */
+  imageData?: string;
+  /** Original file name */
+  fileName?: string;
+  /** MIME type of embedded file */
+  fileMime?: string;
+  /** File size in bytes */
+  fileSize?: number;
+  /** Caption text for image/file */
+  caption?: string;
+  /** Image display width (percentage) */
+  imageWidth?: number;
 }
 
 interface Props {
@@ -45,7 +58,7 @@ interface Props {
   onChange: (blocks: Block[]) => void;
   onWikiLinkClick?: (title: string) => void;
   onBlockRefClick?: (noteId: string) => void;
-  onShiftClick?: (noteId: string) => void; // Shift-click opens in sidebar
+  onShiftClick?: (noteId: string) => void;
   noteNames?: string[];
   getPreview?: (title: string) => string | null;
   resolveBlockRef?: BlockRefResolver;
@@ -72,9 +85,11 @@ const SLASH_COMMANDS: { type: BlockType; label: string; description: string; ico
   { type: "table", label: "Table", description: "Add a simple table", icon: IconTable, keywords: ["table", "grid", "spreadsheet", "rows", "columns"] },
   { type: "bookmark", label: "Bookmark", description: "Save a link with preview", icon: IconLink, keywords: ["bookmark", "link", "url", "embed", "web"] },
   { type: "embed", label: "Block Embed", description: "Embed another block's content", icon: IconCornerDownRight, keywords: ["embed", "ref", "reference", "block", "transclusion"] },
+  { type: "image", label: "Image", description: "Embed an image", icon: IconPhoto, keywords: ["image", "photo", "picture", "img"] },
+  { type: "file", label: "File", description: "Embed a file", icon: IconPaperclip, keywords: ["file", "attachment", "upload", "document", "pdf"] },
 ];
 
-/** Hover preview for [[wiki-links]] — rendered outside Lexical */
+/** Hover preview for [[wiki-links]] */
 function LinkPreviewTooltip({ title, getPreview }: { title: string; getPreview?: (t: string) => string | null }) {
   const preview = getPreview?.(title);
   if (!preview) return null;
@@ -82,6 +97,225 @@ function LinkPreviewTooltip({ title, getPreview }: { title: string; getPreview?:
     <div className="absolute left-0 top-full z-50 w-56 bg-card border border-border rounded-lg shadow-2xl p-3 mt-1 animate-in fade-in duration-150 pointer-events-none">
       <p className="text-[12px] font-semibold text-foreground mb-1 truncate">{title}</p>
       <p className="text-[12px] text-muted-foreground/80 leading-relaxed line-clamp-3">{preview}</p>
+    </div>
+  );
+}
+
+/** Read a file as data URL */
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Format file size */
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Image block placeholder (upload area) */
+function ImagePlaceholder({ onFileSelect }: { onFileSelect: (file: File) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) onFileSelect(file);
+  };
+
+  return (
+    <div
+      onClick={() => inputRef.current?.click()}
+      onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      className={`flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
+        dragOver
+          ? "border-primary/60 bg-primary/5"
+          : "border-border/40 bg-muted/10 hover:border-border/60 hover:bg-muted/20"
+      }`}
+    >
+      <IconUpload size={24} className="text-muted-foreground/40" />
+      <span className="text-[13px] text-muted-foreground/60">
+        Click to upload or drag an image here
+      </span>
+      <span className="text-[11px] text-muted-foreground/40">
+        PNG, JPG, GIF, WebP, SVG
+      </span>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (file) onFileSelect(file);
+        }}
+      />
+    </div>
+  );
+}
+
+/** File block placeholder */
+function FilePlaceholder({ onFileSelect }: { onFileSelect: (file: File) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div
+      onClick={() => inputRef.current?.click()}
+      className="flex items-center gap-3 py-4 px-5 rounded-xl border-2 border-dashed border-border/40 bg-muted/10 hover:border-border/60 hover:bg-muted/20 cursor-pointer transition-colors"
+    >
+      <IconPaperclip size={20} className="text-muted-foreground/40" />
+      <span className="text-[13px] text-muted-foreground/60">
+        Click to upload a file
+      </span>
+      <input
+        ref={inputRef}
+        type="file"
+        className="hidden"
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (file) onFileSelect(file);
+        }}
+      />
+    </div>
+  );
+}
+
+/** Rendered image block */
+function ImageBlockContent({
+  block,
+  onCaptionChange,
+  onWidthChange,
+  onRemove,
+}: {
+  block: Block;
+  onCaptionChange: (caption: string) => void;
+  onWidthChange: (width: number) => void;
+  onRemove: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const [resizing, setResizing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const width = block.imageWidth || 100;
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setResizing(true);
+    const startX = e.clientX;
+    const containerWidth = containerRef.current?.parentElement?.clientWidth || 600;
+    const startPct = width;
+
+    const handleMove = (me: MouseEvent) => {
+      const dx = me.clientX - startX;
+      const newPct = Math.min(100, Math.max(20, startPct + (dx / containerWidth) * 100));
+      onWidthChange(Math.round(newPct));
+    };
+
+    const handleUp = () => {
+      setResizing(false);
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+    };
+
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+  }, [width, onWidthChange]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative inline-block"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ width: `${width}%` }}
+    >
+      <img src={block.imageData} alt={block.caption || block.fileName || ""} className="w-full rounded-lg" />
+
+      {/* Resize handle */}
+      <div
+        onMouseDown={handleResizeStart}
+        className={`absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-primary/20 rounded-r-lg transition-colors ${resizing ? "bg-primary/30" : ""}`}
+      />
+
+      {/* Toolbar overlay */}
+      {hovered && (
+        <div className="absolute top-2 right-2 flex gap-1 bg-card/90 backdrop-blur-sm rounded-lg border border-border/50 p-0.5">
+          <button
+            onClick={() => onWidthChange(width === 100 ? 50 : 100)}
+            className="p-1 rounded hover:bg-muted/60 text-muted-foreground/60 hover:text-foreground transition-colors"
+            title={width === 100 ? "Half width" : "Full width"}
+          >
+            <IconMaximize size={14} />
+          </button>
+          <button onClick={onRemove} className="p-1 rounded hover:bg-destructive/20 text-muted-foreground/60 hover:text-destructive transition-colors">
+            <IconX size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Caption */}
+      <input
+        value={block.caption || ""}
+        onChange={e => onCaptionChange(e.target.value)}
+        placeholder="Add a caption…"
+        className="w-full mt-1.5 text-center text-[13px] text-muted-foreground/60 bg-transparent outline-none placeholder:text-muted-foreground/30 focus:text-foreground"
+      />
+    </div>
+  );
+}
+
+/** Rendered file block */
+function FileBlockContent({
+  block,
+  onRemove,
+}: {
+  block: Block;
+  onRemove: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  const handleDownload = () => {
+    if (!block.imageData) return;
+    const a = document.createElement("a");
+    a.href = block.imageData;
+    a.download = block.fileName || "file";
+    a.click();
+  };
+
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/30 bg-muted/10 hover:bg-muted/20 cursor-pointer transition-colors"
+      onClick={handleDownload}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="w-10 h-10 rounded-lg border border-border/50 bg-background flex items-center justify-center shrink-0">
+        <IconFile size={20} className="text-muted-foreground/60" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[14px] text-foreground truncate">{block.fileName || "File"}</p>
+        <p className="text-[12px] text-muted-foreground/50">
+          {block.fileSize ? formatFileSize(block.fileSize) : ""}
+          {block.fileMime ? ` · ${block.fileMime.split("/")[1]?.toUpperCase() || block.fileMime}` : ""}
+        </p>
+      </div>
+      {hovered && (
+        <button
+          onClick={e => { e.stopPropagation(); onRemove(); }}
+          className="p-1 rounded hover:bg-destructive/20 text-muted-foreground/60 hover:text-destructive transition-colors"
+        >
+          <IconX size={14} />
+        </button>
+      )}
     </div>
   );
 }
@@ -119,7 +353,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
   const editorsRef = useRef<Map<number, LexicalEditor>>(new Map());
   const blockCountRef = useRef(blocks.length);
 
-  // Track newly created block index for auto-focus
   const [focusNewIdx, setFocusNewIdx] = useState<number | null>(null);
 
   useEffect(() => {
@@ -132,7 +365,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
     }
   }, [focusNewIdx, blocks.length]);
 
-  // Filtered slash commands
   const filteredSlash = useMemo(() => {
     if (!slashMenu) return [];
     const q = slashMenu.query.toLowerCase();
@@ -145,6 +377,12 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
 
   const applySlashCommand = useCallback((idx: number, type: BlockType) => {
     const next = [...blocks];
+    if (type === "image" || type === "file") {
+      next[idx] = { ...next[idx], text: "", richText: undefined, type };
+      onChange(next);
+      setSlashMenu(null);
+      return;
+    }
     next[idx] = {
       ...next[idx],
       text: "",
@@ -157,7 +395,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
     };
     onChange(next);
     setSlashMenu(null);
-    // Re-focus this block (skip for table/bookmark — no Lexical instance)
     if (type !== "table" && type !== "bookmark") {
       setTimeout(() => {
         const editor = editorsRef.current.get(idx);
@@ -183,7 +420,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
   }, [blocks, onChange]);
 
   const handleTextChange = useCallback((idx: number, plain: string, richJson: string) => {
-    // Check for slash command
     if (plain === "/") {
       setSlashMenu({ idx, query: "" });
       setSlashActiveIdx(0);
@@ -196,7 +432,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
       setSlashMenu(null);
     }
 
-    // Update block data without re-rendering the Lexical instance
     const block = blocks[idx];
     if (block && (block.text !== plain || block.richText !== richJson)) {
       const next = [...blocks];
@@ -215,7 +450,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
 
   const handleBackspaceEmpty = useCallback((idx: number) => {
     const block = blocks[idx];
-    // If block has a type, reset to text first
     if (block.type && block.type !== "text") {
       const next = [...blocks];
       next[idx] = { ...block, type: undefined, checked: undefined, collapsed: undefined };
@@ -232,20 +466,14 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
   const handleArrowUp = useCallback((idx: number): boolean => {
     if (idx <= 0) return false;
     const prevEditor = editorsRef.current.get(idx - 1);
-    if (prevEditor) {
-      prevEditor.focus();
-      return true;
-    }
+    if (prevEditor) { prevEditor.focus(); return true; }
     return false;
   }, []);
 
   const handleArrowDown = useCallback((idx: number): boolean => {
     if (idx >= blocks.length - 1) return false;
     const nextEditor = editorsRef.current.get(idx + 1);
-    if (nextEditor) {
-      nextEditor.focus();
-      return true;
-    }
+    if (nextEditor) { nextEditor.focus(); return true; }
     return false;
   }, [blocks.length]);
 
@@ -270,6 +498,55 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
   const toggleCollapse = useCallback((idx: number) => {
     const next = [...blocks];
     next[idx] = { ...next[idx], collapsed: !next[idx].collapsed };
+    onChange(next);
+  }, [blocks, onChange]);
+
+  // ── File embedding ──
+  const handleFileEmbed = useCallback(async (idx: number, file: File) => {
+    const dataUrl = await readFileAsDataUrl(file);
+    const next = [...blocks];
+    const isImage = file.type.startsWith("image/");
+    next[idx] = {
+      ...next[idx],
+      type: isImage ? "image" : "file",
+      imageData: dataUrl,
+      fileName: file.name,
+      fileMime: file.type,
+      fileSize: file.size,
+      text: file.name,
+    };
+    const newBlock: Block = { id: genBlockId(), text: "", indent: next[idx].indent, children: [] };
+    const updated = [...next];
+    updated.splice(idx + 1, 0, newBlock);
+    onChange(updated);
+    setFocusNewIdx(idx + 1);
+  }, [blocks, onChange]);
+
+  const handleCaptionChange = useCallback((idx: number, caption: string) => {
+    const next = [...blocks];
+    next[idx] = { ...next[idx], caption, text: caption || next[idx].fileName || "" };
+    onChange(next);
+  }, [blocks, onChange]);
+
+  const handleImageWidthChange = useCallback((idx: number, width: number) => {
+    const next = [...blocks];
+    next[idx] = { ...next[idx], imageWidth: width };
+    onChange(next);
+  }, [blocks, onChange]);
+
+  const handleRemoveEmbed = useCallback((idx: number) => {
+    const next = [...blocks];
+    next[idx] = {
+      ...next[idx],
+      type: undefined,
+      imageData: undefined,
+      fileName: undefined,
+      fileMime: undefined,
+      fileSize: undefined,
+      caption: undefined,
+      imageWidth: undefined,
+      text: "",
+    };
     onChange(next);
   }, [blocks, onChange]);
 
@@ -307,7 +584,40 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
     setDragOverIdx(null);
   }, []);
 
-  // Handle slash menu keyboard navigation via global keydown
+  // ── Clipboard paste for images ──
+  useEffect(() => {
+    const handler = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) return;
+          const dataUrl = await readFileAsDataUrl(file);
+          const newBlock: Block = {
+            id: genBlockId(),
+            text: file.name || "Pasted image",
+            type: "image",
+            imageData: dataUrl,
+            fileName: file.name || "pasted-image.png",
+            fileMime: file.type,
+            fileSize: file.size,
+            indent: 0,
+            children: [],
+          };
+          const followBlock: Block = { id: genBlockId(), text: "", indent: 0, children: [] };
+          onChange([...blocks, newBlock, followBlock]);
+          setFocusNewIdx(blocks.length + 1);
+          return;
+        }
+      }
+    };
+    document.addEventListener("paste", handler);
+    return () => document.removeEventListener("paste", handler);
+  }, [blocks, onChange]);
+
+  // Handle slash menu keyboard navigation
   useEffect(() => {
     if (!slashMenu) return;
     const handler = (e: KeyboardEvent) => {
@@ -332,12 +642,10 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
       const text = e.clipboardData?.getData("text/plain")?.trim();
       if (!text || !URL_REGEX.test(text)) return;
 
-      // Check if we're inside a Lexical editor that already has content
       const active = document.activeElement;
       const isInEditor = active?.closest("[contenteditable]");
       if (!isInEditor) return;
 
-      // Find which block is focused
       const focusedIdx = [...editorsRef.current.entries()].find(([, editor]) => {
         const el = editor.getRootElement();
         return el && el.contains(active);
@@ -346,7 +654,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
       if (focusedIdx === undefined) return;
       const currentBlock = blocks[focusedIdx];
 
-      // Only convert if the block is empty (user just pasted a URL into an empty block)
       if (currentBlock && currentBlock.text.trim() === "") {
         e.preventDefault();
         const next = [...blocks];
@@ -357,7 +664,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
           richText: undefined,
           bookmarkData: createBookmarkFromUrl(text),
         };
-        // Add a new empty block below for continued typing
         const newBlock: Block = { id: genBlockId(), text: "", indent: currentBlock.indent, children: [] };
         next.splice(focusedIdx + 1, 0, newBlock);
         onChange(next);
@@ -367,6 +673,23 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
     document.addEventListener("paste", handler);
     return () => document.removeEventListener("paste", handler);
   }, [blocks, onChange]);
+
+  // ── Shared drag handle row ──
+  const DragHandles = ({ idx, isHovered, mt = "mt-2" }: { idx: number; isHovered: boolean; mt?: string }) => (
+    <div className={`flex items-center gap-0.5 ${mt} mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
+      <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
+        <IconPlus size={14} className="text-muted-foreground" />
+      </button>
+      <div
+        draggable
+        onDragStart={e => handleDragStart(idx, e)}
+        onDragEnd={handleDragEnd}
+        className="p-0.5 cursor-grab active:cursor-grabbing"
+      >
+        <IconGripVertical size={14} className="text-muted-foreground" />
+      </div>
+    </div>
+  );
 
   const renderBlock = (block: Block, idx: number) => {
     const blockType = block.type || "text";
@@ -388,19 +711,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
         >
           {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
           <div className="flex items-center">
-            <div className={`flex items-center gap-0.5 mr-1 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
-              <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
-                <IconPlus size={14} className="text-muted-foreground" />
-              </button>
-              <div
-                draggable
-                onDragStart={e => handleDragStart(idx, e)}
-                onDragEnd={handleDragEnd}
-                className="p-0.5 cursor-grab active:cursor-grabbing"
-              >
-                <IconGripVertical size={14} className="text-muted-foreground" />
-              </div>
-            </div>
+            <DragHandles idx={idx} isHovered={isHovered} />
             <hr className="flex-1 border-border/50" />
           </div>
         </div>
@@ -422,19 +733,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
         >
           {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
           <div className="flex items-start">
-            <div className={`flex items-center gap-0.5 mt-2 mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
-              <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
-                <IconPlus size={14} className="text-muted-foreground" />
-              </button>
-              <div
-                draggable
-                onDragStart={e => handleDragStart(idx, e)}
-                onDragEnd={handleDragEnd}
-                className="p-0.5 cursor-grab active:cursor-grabbing"
-              >
-                <IconGripVertical size={14} className="text-muted-foreground" />
-              </div>
-            </div>
+            <DragHandles idx={idx} isHovered={isHovered} />
             <div className="flex-1 min-w-0">
               <SdbTableBlock
                 data={tableData}
@@ -465,19 +764,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
         >
           {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
           <div className="flex items-start">
-            <div className={`flex items-center gap-0.5 mt-2 mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
-              <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
-                <IconPlus size={14} className="text-muted-foreground" />
-              </button>
-              <div
-                draggable
-                onDragStart={e => handleDragStart(idx, e)}
-                onDragEnd={handleDragEnd}
-                className="p-0.5 cursor-grab active:cursor-grabbing"
-              >
-                <IconGripVertical size={14} className="text-muted-foreground" />
-              </div>
-            </div>
+            <DragHandles idx={idx} isHovered={isHovered} />
             <div className="flex-1 min-w-0 relative">
               <SdbBookmarkBlock
                 data={bookmarkData}
@@ -493,7 +780,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
       );
     }
 
-    // Embed block — transclusion of another block
+    // Embed block — transclusion
     if (blockType === "embed") {
       const embedId = block.embedBlockId || block.text;
       return (
@@ -508,19 +795,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
         >
           {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
           <div className="flex items-start">
-            <div className={`flex items-center gap-0.5 mt-2 mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
-              <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
-                <IconPlus size={14} className="text-muted-foreground" />
-              </button>
-              <div
-                draggable
-                onDragStart={e => handleDragStart(idx, e)}
-                onDragEnd={handleDragEnd}
-                className="p-0.5 cursor-grab active:cursor-grabbing"
-              >
-                <IconGripVertical size={14} className="text-muted-foreground" />
-              </div>
-            </div>
+            <DragHandles idx={idx} isHovered={isHovered} />
             <div className="flex-1 min-w-0">
               {resolveBlockRef && embedId ? (
                 <SdbBlockEmbed
@@ -548,6 +823,65 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
       );
     }
 
+    // Image block
+    if (blockType === "image") {
+      return (
+        <div
+          key={block.id}
+          className={`relative group py-1 transition-opacity ${isDragging ? "opacity-30" : ""}`}
+          onMouseEnter={() => setHoveredIdx(idx)}
+          onMouseLeave={() => setHoveredIdx(null)}
+          onDragOver={e => handleDragOver(idx, e)}
+          onDrop={e => handleDrop(idx, e)}
+          style={{ paddingLeft: `${block.indent * 24}px` }}
+        >
+          {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+          <div className="flex items-start">
+            <DragHandles idx={idx} isHovered={isHovered} />
+            <div className="flex-1 min-w-0">
+              {block.imageData ? (
+                <ImageBlockContent
+                  block={block}
+                  onCaptionChange={caption => handleCaptionChange(idx, caption)}
+                  onWidthChange={width => handleImageWidthChange(idx, width)}
+                  onRemove={() => handleRemoveEmbed(idx)}
+                />
+              ) : (
+                <ImagePlaceholder onFileSelect={file => handleFileEmbed(idx, file)} />
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // File block
+    if (blockType === "file") {
+      return (
+        <div
+          key={block.id}
+          className={`relative group py-1 transition-opacity ${isDragging ? "opacity-30" : ""}`}
+          onMouseEnter={() => setHoveredIdx(idx)}
+          onMouseLeave={() => setHoveredIdx(null)}
+          onDragOver={e => handleDragOver(idx, e)}
+          onDrop={e => handleDrop(idx, e)}
+          style={{ paddingLeft: `${block.indent * 24}px` }}
+        >
+          {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+          <div className="flex items-start">
+            <DragHandles idx={idx} isHovered={isHovered} />
+            <div className="flex-1 min-w-0">
+              {block.imageData ? (
+                <FileBlockContent block={block} onRemove={() => handleRemoveEmbed(idx)} />
+              ) : (
+                <FilePlaceholder onFileSelect={file => handleFileEmbed(idx, file)} />
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // Placeholder text
     const placeholder = idx === 0 && blocks.length <= 1
       ? "Press '/' for commands, or just start typing..."
@@ -566,7 +900,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
         {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
 
         <div className="flex items-start">
-          {/* Hover handles */}
           <div className={`flex items-center gap-0.5 mt-[5px] mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
             <button
               onClick={() => addBlockBelow(idx)}
@@ -586,7 +919,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
             </div>
           </div>
 
-          {/* Todo checkbox */}
           {blockType === "todo" && (
             <button
               onClick={() => toggleTodo(idx)}
@@ -604,19 +936,16 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
             </button>
           )}
 
-          {/* Bullet point */}
           {blockType === "bullet" && (
             <span className="mt-[11px] mr-2.5 w-1.5 h-1.5 rounded-full bg-foreground/40 shrink-0" />
           )}
 
-          {/* Numbered list */}
           {blockType === "numbered" && (
             <span className="mt-[5px] mr-2 text-[14px] text-muted-foreground/70 tabular-nums shrink-0 w-5 text-right">
               {getNumberedIndex(blocks, idx)}.
             </span>
           )}
 
-          {/* Toggle */}
           {blockType === "toggle" && (
             <button
               onClick={() => toggleCollapse(idx)}
@@ -629,7 +958,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
             </button>
           )}
 
-          {/* Content — Lexical editor */}
           <div className={`flex-1 min-w-0 relative ${blockWrapperClass(block.type)} ${
             block.checked ? "line-through text-muted-foreground/50" : ""
           }`}>
@@ -648,7 +976,6 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefCl
               editorRef={(editor) => { editorsRef.current.set(idx, editor); }}
             />
 
-            {/* Slash command menu */}
             {slashMenu && slashMenu.idx === idx && filteredSlash.length > 0 && (
               <div className="absolute left-0 top-full z-50 w-72 bg-card border border-border rounded-lg shadow-2xl py-1 mt-1 animate-in fade-in slide-in-from-top-1 duration-150">
                 <div className="px-3 py-1.5 text-[12px] font-medium text-muted-foreground/60 uppercase tracking-wider">
