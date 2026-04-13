@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import CSSPresence from "@/modules/platform/core/components/CSSPresence";
 
 interface Props {
   open: boolean;
@@ -33,7 +33,6 @@ const EMOJI_DATA: Record<string, string[]> = {
   flags: ["🏳️","🏴","🏁","🚩","🏳️‍🌈","🏳️‍⚧️","🇺🇸","🇬🇧","🇫🇷","🇩🇪","🇯🇵","🇰🇷","🇨🇳","🇮🇳","🇧🇷","🇷🇺","🇮🇹","🇪🇸","🇨🇦","🇦🇺","🇲🇽","🇦🇷","🇨🇴","🇨🇱","🇵🇪","🇻🇪","🇪🇨","🇧🇴","🇵🇾","🇺🇾","🇸🇪","🇳🇴","🇩🇰","🇫🇮","🇳🇱","🇧🇪","🇨🇭","🇦🇹","🇵🇱","🇨🇿","🇷🇴","🇭🇺","🇵🇹","🇬🇷","🇹🇷","🇮🇱","🇪🇬","🇿🇦","🇳🇬","🇰🇪","🇹🇭","🇻🇳","🇮🇩","🇵🇭","🇲🇾","🇸🇬","🇳🇿","🇮🇪","🇺🇦"],
 };
 
-// Lightweight keyword map for emoji search
 const EMOJI_KEYWORDS: Record<string, string> = {
   "😀": "grinning face happy smile", "😃": "smiley face happy", "😄": "smile grin happy", "😁": "beaming grin teeth",
   "😆": "laughing squint happy", "😅": "sweat smile nervous", "🤣": "rofl rolling laughing", "😂": "tears joy laughing cry",
@@ -54,7 +53,6 @@ const EMOJI_KEYWORDS: Record<string, string> = {
   "💯": "hundred perfect score", "🏁": "checkered flag finish race",
 };
 
-// Build a flat searchable index
 const ALL_EMOJIS_FLAT = Object.values(EMOJI_DATA).flat();
 
 const RECENT_KEY = "emoji_recent";
@@ -87,7 +85,6 @@ export default function EmojiPanel({ open, onClose, onSelect }: Props) {
     return ALL_EMOJIS_FLAT.filter((emoji) => {
       const keywords = EMOJI_KEYWORDS[emoji];
       if (keywords && keywords.includes(q)) return true;
-      // Fallback: match emoji itself
       return emoji.includes(q);
     }).slice(0, 80);
   }, [search, displayEmojis]);
@@ -98,68 +95,60 @@ export default function EmojiPanel({ open, onClose, onSelect }: Props) {
   };
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 20, opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="absolute bottom-full left-0 right-0 h-[320px] bg-slate-950/98 backdrop-blur-xl border-t border-white/[0.06] z-50 flex flex-col"
-        >
-          {/* Search */}
-          <div className="px-3 py-2 border-b border-white/[0.04]">
-            <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/20" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search emoji…"
-                className="w-full h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-white/80 text-[13px] pl-8 pr-3 outline-none placeholder:text-white/20 focus:border-teal-500/30 transition-colors"
-              />
-            </div>
-          </div>
+    <CSSPresence
+      show={open}
+      enterClass="sov-slide-up"
+      exitClass="sov-fade-out"
+      className="absolute bottom-full left-0 right-0 h-[320px] bg-slate-950/98 backdrop-blur-xl border-t border-white/[0.06] z-50 flex flex-col"
+    >
+      <div className="px-3 py-2 border-b border-white/[0.04]">
+        <div className="relative">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/20" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search emoji…"
+            className="w-full h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-white/80 text-[13px] pl-8 pr-3 outline-none placeholder:text-white/20 focus:border-teal-500/30 transition-colors"
+          />
+        </div>
+      </div>
 
-          {/* Category tabs */}
-          {!search && (
-            <div className="flex px-1 py-1 gap-0.5 border-b border-white/[0.04] overflow-x-auto scrollbar-none">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`flex-shrink-0 w-9 h-8 flex items-center justify-center rounded-md text-base transition-colors duration-75 active:scale-[0.92] ${
-                    activeCategory === cat.id ? "bg-white/[0.08]" : "hover:bg-white/[0.04]"
-                  }`}
-                  title={cat.label}
-                >
-                  {cat.icon}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Emoji grid */}
-          <div className="flex-1 overflow-y-auto px-2 py-2" style={{ willChange: "transform" }}>
-            <div className="grid grid-cols-8 gap-0.5">
-              {filteredEmojis.map((emoji, i) => (
-                <button
-                  key={`${emoji}-${i}`}
-                  onClick={() => handleSelect(emoji)}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/[0.08] active:bg-white/[0.12] active:scale-[0.9] transition-all duration-75 text-xl select-none"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-            {filteredEmojis.length === 0 && (
-              <div className="text-center text-white/20 text-sm py-8">
-                {search ? "No emojis found" : activeCategory === "recent" ? "No recent emojis" : "No emojis found"}
-              </div>
-            )}
-          </div>
-        </motion.div>
+      {!search && (
+        <div className="flex px-1 py-1 gap-0.5 border-b border-white/[0.04] overflow-x-auto scrollbar-none">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`flex-shrink-0 w-9 h-8 flex items-center justify-center rounded-md text-base transition-colors duration-75 active:scale-[0.92] ${
+                activeCategory === cat.id ? "bg-white/[0.08]" : "hover:bg-white/[0.04]"
+              }`}
+              title={cat.label}
+            >
+              {cat.icon}
+            </button>
+          ))}
+        </div>
       )}
-    </AnimatePresence>
+
+      <div className="flex-1 overflow-y-auto px-2 py-2" style={{ contain: "layout style paint" }}>
+        <div className="grid grid-cols-8 gap-0.5">
+          {filteredEmojis.map((emoji, i) => (
+            <button
+              key={`${emoji}-${i}`}
+              onClick={() => handleSelect(emoji)}
+              className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/[0.08] active:bg-white/[0.12] active:scale-[0.9] transition-all duration-75 text-xl select-none"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+        {filteredEmojis.length === 0 && (
+          <div className="text-center text-white/20 text-sm py-8">
+            {search ? "No emojis found" : activeCategory === "recent" ? "No recent emojis" : "No emojis found"}
+          </div>
+        )}
+      </div>
+    </CSSPresence>
   );
 }
