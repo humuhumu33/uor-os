@@ -162,6 +162,7 @@ const SovereignDBApp = () => {
                 globalSearch={globalSearch}
                 sidebarTarget={sidebarNode}
                 sidebarCollapsed={collapsed}
+                activeSection={section}
               />
             </div>
             <div className={`h-full ${section === "console" ? "" : "hidden"}`}>
