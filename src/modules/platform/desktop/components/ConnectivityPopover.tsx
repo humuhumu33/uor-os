@@ -5,9 +5,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wifi, WifiOff, Database, Brain, Globe, Mic, Shield, RefreshCw } from "lucide-react";
+import { Wifi, WifiOff, Database, Brain, Globe, Mic, Shield, RefreshCw, Loader2 } from "lucide-react";
 import { useConnectivity, type FeatureId } from "@/modules/platform/desktop/hooks/useConnectivity";
 import { grafeoStore as localGraphStore } from "@/modules/data/knowledge-graph/grafeo-store";
+import type { SyncMode } from "@/modules/data/knowledge-graph/persistence/hooks/useSyncMode";
 
 interface Props {
   open: boolean;
@@ -94,6 +95,14 @@ export default function ConnectivityPopover({ open, onClose, isLight }: Props) {
               )}
             </div>
           </div>
+          {/* Sync Mode Selector */}
+          <SyncModeSelector
+            mode={conn.syncMode}
+            onSetMode={conn.setSyncMode}
+            isMigrating={conn.isMigrating}
+            online={conn.online}
+            isLight={isLight}
+          />
 
           {/* Feature list */}
           <div className="px-3 py-2 space-y-0.5">
@@ -145,6 +154,70 @@ export default function ConnectivityPopover({ open, onClose, isLight }: Props) {
     </AnimatePresence>
   );
 }
+
+/* ── Sync Mode Selector ────────────────────────────────────────────────── */
+
+const MODES: { id: SyncMode; label: string }[] = [
+  { id: "local", label: "Local" },
+  { id: "auto", label: "Auto" },
+  { id: "cloud", label: "Cloud" },
+];
+
+function SyncModeSelector({
+  mode, onSetMode, isMigrating, online, isLight,
+}: {
+  mode: SyncMode;
+  onSetMode: (m: SyncMode) => Promise<void>;
+  isMigrating: boolean;
+  online: boolean;
+  isLight: boolean;
+}) {
+  const border = isLight ? "border-black/[0.08]" : "border-white/[0.08]";
+  const textSecondary = isLight ? "text-black/45" : "text-white/45";
+  const pillBg = isLight ? "bg-black/[0.04]" : "bg-white/[0.04]";
+
+  return (
+    <div className={`px-4 py-2.5 border-b ${border}`}>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className={`text-[10px] font-medium uppercase tracking-wider ${textSecondary}`}>
+          Sync Mode
+        </span>
+        {isMigrating && (
+          <Loader2 className={`w-3 h-3 ${textSecondary} animate-spin`} />
+        )}
+      </div>
+      <div className={`flex rounded-lg ${pillBg} p-0.5 gap-0.5`}>
+        {MODES.map(({ id, label }) => {
+          const active = mode === id;
+          const disabled = id === "cloud" && !online;
+          return (
+            <button
+              key={id}
+              disabled={disabled || isMigrating}
+              onClick={() => onSetMode(id)}
+              className={`
+                flex-1 text-[10px] font-medium py-1 rounded-md transition-all duration-150
+                ${active
+                  ? isLight
+                    ? "bg-white text-black/80 shadow-sm"
+                    : "bg-white/10 text-white/90 shadow-sm"
+                  : disabled
+                    ? `${textSecondary} opacity-40 cursor-not-allowed`
+                    : `${textSecondary} hover:${isLight ? "text-black/60" : "text-white/60"}`
+                }
+                ${isMigrating ? "cursor-wait" : ""}
+              `}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Helpers ───────────────────────────────────────────────────────────── */
 
 function formatTimeAgo(ts: number): string {
   const diff = Math.floor((Date.now() - ts) / 1000);
