@@ -113,47 +113,11 @@ const SovereignDBApp = () => {
 
   return (
     <div className="flex flex-col h-full w-full bg-background text-foreground overflow-hidden">
-      {/* ── Unified Header ──────────────────── */}
+      {/* ── Minimal Header ──────────────────── */}
       <header className="flex items-center h-11 px-5 border-b border-border/40 bg-card shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-os-body font-semibold tracking-tight">MySpace</span>
-        </div>
-
-        <div className="flex items-center ml-6">
-          <span
-            key={section}
-            className="text-os-body italic tracking-wide text-muted-foreground animate-[sdb-tagline-fade_0.5s_ease-out]"
-          >
-            {MYSPACE_SECTION_TAGLINES[section] || "Own your data."}
-          </span>
-          <style>{`
-            @keyframes sdb-tagline-fade {
-              from { opacity: 0; transform: translateY(2px); }
-              to   { opacity: 1; transform: translateY(0); }
-            }
-          `}</style>
-        </div>
-
-        <div className="ml-auto flex items-center gap-0.5">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => handleSectionChange(tab.id)}
-              className={`relative px-3.5 py-1.5 text-os-body transition-all duration-200 ${
-                section === tab.id
-                  ? "text-foreground font-medium"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-              <span
-                className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full bg-primary transition-all duration-300 ease-out ${
-                  section === tab.id ? "w-4/5 opacity-100" : "w-0 opacity-0"
-                }`}
-              />
-            </button>
-          ))}
         </div>
       </header>
 
