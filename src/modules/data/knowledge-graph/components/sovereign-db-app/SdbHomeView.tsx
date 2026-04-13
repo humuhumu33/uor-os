@@ -9,9 +9,11 @@ import {
   IconFolder, IconLayoutGrid, IconList, IconSortDescending,
   IconAdjustments, IconMessage, IconPhoto, IconVideo,
   IconLink, IconMusic, IconFileText, IconX,
+  IconLayout, IconGraph, IconTerminal2,
 } from "@tabler/icons-react";
 import type { Hyperedge } from "../../hypergraph";
 import { SdbTagChip, getTagColor, DEFAULT_TYPE_COLORS } from "./SdbTagChip";
+import type { AppSection } from "./SovereignDBApp";
 
 interface NoteItem {
   id: string;
@@ -32,6 +34,8 @@ interface Props {
   onToggleTag: (tag: string) => void;
   tagColors: Record<string, string>;
   itemTagsMap: Record<string, string[]>;
+  activeSection?: AppSection;
+  onSwitchSection?: (section: AppSection) => void;
 }
 
 type FilterType = "all" | "note" | "daily" | "folder" | "chat" | "photo" | "video" | "link" | "audio";
