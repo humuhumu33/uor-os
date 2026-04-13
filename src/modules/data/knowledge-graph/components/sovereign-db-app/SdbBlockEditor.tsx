@@ -88,6 +88,236 @@ function LinkPreviewTooltip({ title, getPreview }: { title: string; getPreview?:
   );
 }
 
+/** Read a file as data URL */
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Format file size */
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Image block placeholder (upload area) */
+function ImagePlaceholder({ onFileSelect }: { onFileSelect: (file: File) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) onFileSelect(file);
+  };
+
+  return (
+    <div
+      onClick={() => inputRef.current?.click()}
+      onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      className={`flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
+        dragOver
+          ? "border-primary/60 bg-primary/5"
+          : "border-border/40 bg-muted/10 hover:border-border/60 hover:bg-muted/20"
+      }`}
+    >
+      <IconUpload size={24} className="text-muted-foreground/50" />
+      <span className="text-[14px] text-muted-foreground/60">
+        Click to upload or drag an image here
+      </span>
+      <span className="text-[12px] text-muted-foreground/40">
+        PNG, JPG, GIF, WebP, SVG
+      </span>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (file) onFileSelect(file);
+        }}
+      />
+    </div>
+  );
+}
+
+/** File block placeholder */
+function FilePlaceholder({ onFileSelect }: { onFileSelect: (file: File) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div
+      onClick={() => inputRef.current?.click()}
+      className="flex items-center gap-3 py-4 px-5 rounded-xl border-2 border-dashed border-border/40 bg-muted/10 hover:border-border/60 hover:bg-muted/20 cursor-pointer transition-colors"
+    >
+      <IconUpload size={20} className="text-muted-foreground/50" />
+      <span className="text-[14px] text-muted-foreground/60">
+        Click to upload a file
+      </span>
+      <input
+        ref={inputRef}
+        type="file"
+        className="hidden"
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (file) onFileSelect(file);
+        }}
+      />
+    </div>
+  );
+}
+
+/** Rendered image block */
+function ImageBlockContent({
+  block,
+  onCaptionChange,
+  onWidthChange,
+  onRemove,
+}: {
+  block: Block;
+  onCaptionChange: (caption: string) => void;
+  onWidthChange: (width: number) => void;
+  onRemove: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const [resizing, setResizing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const width = block.imageWidth || 100;
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setResizing(true);
+    const startX = e.clientX;
+    const containerWidth = containerRef.current?.parentElement?.clientWidth || 600;
+    const startPct = width;
+
+    const handleMove = (me: MouseEvent) => {
+      const dx = me.clientX - startX;
+      const newPct = Math.min(100, Math.max(20, startPct + (dx / containerWidth) * 100));
+      onWidthChange(Math.round(newPct));
+    };
+
+    const handleUp = () => {
+      setResizing(false);
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+    };
+
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+  }, [width, onWidthChange]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative group my-1"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ width: `${width}%` }}
+    >
+      <img
+        src={block.imageData}
+        alt={block.caption || block.fileName || "Embedded image"}
+        className="w-full rounded-lg object-contain select-none"
+        draggable={false}
+      />
+
+      {/* Resize handle (right edge) */}
+      <div
+        onMouseDown={handleResizeStart}
+        className={`absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-12 rounded-full cursor-col-resize transition-opacity ${
+          hovered || resizing ? "opacity-100 bg-primary/40" : "opacity-0"
+        }`}
+      />
+
+      {/* Toolbar overlay */}
+      {hovered && (
+        <div className="absolute top-2 right-2 flex items-center gap-1 bg-card/90 border border-border/40 rounded-lg px-1 py-0.5 shadow-lg">
+          <button
+            onClick={() => onWidthChange(width === 100 ? 50 : 100)}
+            className="p-1 rounded hover:bg-muted/60 text-muted-foreground/60 hover:text-foreground transition-colors"
+            title={width === 100 ? "Half width" : "Full width"}
+          >
+            <IconMaximize size={14} />
+          </button>
+          <button
+            onClick={onRemove}
+            className="p-1 rounded hover:bg-destructive/20 text-muted-foreground/60 hover:text-destructive transition-colors"
+            title="Remove image"
+          >
+            <IconX size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Caption */}
+      <input
+        value={block.caption || ""}
+        onChange={e => onCaptionChange(e.target.value)}
+        placeholder="Add a caption…"
+        className="w-full mt-1.5 text-center text-[13px] text-muted-foreground/60 bg-transparent outline-none placeholder:text-muted-foreground/30 focus:text-foreground"
+      />
+    </div>
+  );
+}
+
+/** Rendered file block */
+function FileBlockContent({
+  block,
+  onRemove,
+}: {
+  block: Block;
+  onRemove: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  const handleDownload = () => {
+    if (!block.imageData) return;
+    const a = document.createElement("a");
+    a.href = block.imageData;
+    a.download = block.fileName || "file";
+    a.click();
+  };
+
+  return (
+    <div
+      className="relative group flex items-center gap-3 py-3 px-4 rounded-xl bg-muted/15 border border-border/30 hover:bg-muted/25 transition-colors my-1 cursor-pointer"
+      onClick={handleDownload}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+        <IconPaperclip size={20} className="text-primary/70" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[14px] text-foreground truncate">{block.fileName || "File"}</div>
+        <div className="text-[12px] text-muted-foreground/50">
+          {block.fileSize ? formatFileSize(block.fileSize) : ""}
+          {block.fileMime ? ` · ${block.fileMime.split("/")[1]?.toUpperCase() || block.fileMime}` : ""}
+        </div>
+      </div>
+      {hovered && (
+        <button
+          onClick={e => { e.stopPropagation(); onRemove(); }}
+          className="p-1 rounded hover:bg-destructive/20 text-muted-foreground/60 hover:text-destructive transition-colors"
+        >
+          <IconX size={14} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** Get block-type heading class for the wrapper */
 function blockWrapperClass(type: BlockType | undefined): string {
   switch (type) {
