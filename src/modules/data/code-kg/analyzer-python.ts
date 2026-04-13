@@ -19,7 +19,7 @@ function extractEntities(code: string): Omit<CodeEntity, "hash">[] {
     const lineNum = i + 1;
 
     // Classes: class Foo: or class Foo(Bar):
-    const classMatch = line.match(/^class\s+([A-Za-z_]\w*)\s*[\(:]/);
+    const classMatch = line.match(/^class\s+([A-Za-z_]\w*)\s*[(:]/);
     if (classMatch) {
       entities.push({ name: classMatch[1], type: "class", line: lineNum, content: line.trim() });
     }
@@ -37,7 +37,7 @@ function extractEntities(code: string): Omit<CodeEntity, "hash">[] {
     }
 
     // Top-level variables: FOO = ... or foo: int = ...
-    const varMatch = line.match(/^([A-Za-z_]\w*)\s*(?::\s*\w[\w\[\], |]*\s*)?=\s*/);
+    const varMatch = line.match(/^([A-Za-z_]\w*)\s*(?::\s*\w[\w[, |]*\]?\s*)?=\s*/);
     if (varMatch && !line.match(/^\s/) && !classMatch && !funcMatch) {
       entities.push({ name: varMatch[1], type: "variable", line: lineNum, content: line.trim() });
     }

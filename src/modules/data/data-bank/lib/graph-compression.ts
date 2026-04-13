@@ -281,26 +281,26 @@ export function decompressTriples(data: Uint8Array): CompressibleTriple[] {
   if (version !== 1 && version !== 2) throw new Error(`Unsupported UGC version: ${version}`);
 
   // Triple count
-  let tripleCount: number;
-  [tripleCount, pos] = decodeVarint(data, pos);
+  const [tripleCount, pos2] = decodeVarint(data, pos);
+  pos = pos2;
 
   // Subject dictionary
-  let subjectDictSize: number;
-  [subjectDictSize, pos] = decodeVarint(data, pos);
+  const [subjectDictSize, pos3] = decodeVarint(data, pos);
+  pos = pos3;
   const subjectDict: string[] = [];
   for (let i = 0; i < subjectDictSize; i++) {
-    let s: string;
-    [s, pos] = decodeString(data, pos);
+    const [s, nextPos] = decodeString(data, pos);
+    pos = nextPos;
     subjectDict.push(s);
   }
 
   // Unknown predicate dictionary
-  let unknownPredCount: number;
-  [unknownPredCount, pos] = decodeVarint(data, pos);
+  const [unknownPredCount, pos4] = decodeVarint(data, pos);
+  pos = pos4;
   const unknownPreds: string[] = [];
   for (let i = 0; i < unknownPredCount; i++) {
-    let p: string;
-    [p, pos] = decodeString(data, pos);
+    const [p, nextPos] = decodeString(data, pos);
+    pos = nextPos;
     unknownPreds.push(p);
   }
 

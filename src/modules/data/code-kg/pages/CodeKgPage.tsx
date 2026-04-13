@@ -408,8 +408,8 @@ export default function CodeKgPage() {
             <h3 className="font-semibold text-sm">Most Complex Files</h3>
             <DataTable
               columns={topFileCols}
-              data={stats.topFiles as any}
-              getKey={(r) => r.path}
+              data={stats.topFiles as Record<string, unknown>[]}
+              getKey={(r) => String(r.path)}
             />
           </section>
         </>

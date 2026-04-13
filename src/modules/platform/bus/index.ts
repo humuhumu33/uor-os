@@ -76,7 +76,9 @@ export const bus = {
   use,
 
   init() {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     use(timingMiddleware);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     use(loggingMiddleware);
     registerIntrospect();
     registerUniversalConnector();
