@@ -851,12 +851,12 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
             </div>
           )}
 
-          {/* Workspace tree — moved up, before daily notes */}
+          {/* Folders & Pages */}
           <div className="mb-3">
             <div className="flex items-center justify-between px-2.5 pb-1.5 pt-1">
               <div className="flex items-center gap-1.5">
                 <IconFolder size={12} className="text-muted-foreground" />
-                <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider">Pages</span>
+                <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider">Folders</span>
               </div>
               <button
                 onClick={() => createFolder()}
