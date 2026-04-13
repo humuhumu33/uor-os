@@ -815,6 +815,7 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
     const isExpanded = expanded.has(item.id);
     const isSelected = selectedId === item.id;
     const children = isFolder ? childrenOf(item.id) : [];
+    const hasChildren = children.length > 0;
     const icon = item.icon || PAGE_ICONS[item.type] || "📄";
 
     return (
@@ -824,30 +825,32 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             if (isFolder) toggleExpand(item.id);
             setSelectedId(item.id);
           }}
-          className={`group flex items-center gap-2 w-full py-[6px] text-os-body transition-colors rounded-lg ${
+          className={`group flex items-center w-full py-[5px] text-os-body transition-colors rounded-md ${
             isSelected
-              ? "bg-primary/8 text-foreground font-medium"
-              : "text-foreground/70 hover:bg-muted/25 hover:text-foreground"
+              ? "bg-foreground/[0.07] text-foreground font-medium"
+              : "text-foreground/65 hover:bg-foreground/[0.04] hover:text-foreground"
           }`}
-          style={{ paddingLeft: `${10 + depth * 14}px`, paddingRight: "8px" }}
+          style={{ paddingLeft: `${8 + depth * 16}px`, paddingRight: "6px" }}
         >
           {isFolder ? (
             <>
-              <IconFolder size={15} className={`shrink-0 ${getFolderColor(item.id)}`} />
-              <span className="truncate flex-1 text-left">{item.name}</span>
-              <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                {isExpanded
-                  ? <IconChevronDown size={12} className="text-muted-foreground/50" />
-                  : <IconChevronRight size={12} className="text-muted-foreground/50" />
-                }
-              </span>
+              <IconFolder size={15} className={`shrink-0 mr-2 ${getFolderColor(item.id)}`} />
+              <span className="truncate flex-1 text-left text-[13px]">{item.name}</span>
+              {hasChildren && (
+                <span className="w-4 h-4 flex items-center justify-center shrink-0 text-muted-foreground/40">
+                  <IconChevronRight
+                    size={12}
+                    className={`transition-transform duration-150 ${isExpanded ? "rotate-90" : ""}`}
+                  />
+                </span>
+              )}
             </>
           ) : (
             <>
-              <span className="w-4 h-4 flex items-center justify-center shrink-0 text-[12px]">
+              <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2 text-[12px]">
                 {icon}
               </span>
-              <span className="truncate flex-1 text-left">{item.name}</span>
+              <span className="truncate flex-1 text-left text-[13px]">{item.name}</span>
             </>
           )}
         </button>
