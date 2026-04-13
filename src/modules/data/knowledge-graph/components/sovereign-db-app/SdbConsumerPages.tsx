@@ -936,6 +936,8 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props
               name: i.name,
               type: i.type as "note" | "daily",
               updatedAt: Number(i.edge.properties.updatedAt || i.edge.properties.createdAt || 0),
+              fileDataUrl: i.edge.properties.fileDataUrl ? String(i.edge.properties.fileDataUrl) : undefined,
+              fileMime: i.edge.properties.fileMime ? String(i.edge.properties.fileMime) : undefined,
             }))}
             allEdges={allEdges}
             recentIds={recentIds}

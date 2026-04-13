@@ -20,6 +20,8 @@ interface NoteItem {
   name: string;
   type: "note" | "daily" | "folder" | "chat" | "photo" | "video" | "link" | "audio";
   updatedAt: number;
+  fileDataUrl?: string;
+  fileMime?: string;
 }
 
 interface Props {
