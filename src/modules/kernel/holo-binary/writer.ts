@@ -45,7 +45,7 @@ export interface HoloBinaryWriterOptions {
 /** Compute a simple 32-byte checksum (SHA-256 via SubtleCrypto fallback to zero). */
 async function checksum32(data: Uint8Array): Promise<Uint8Array> {
   if (typeof globalThis.crypto?.subtle?.digest === "function") {
-    const hash = await globalThis.crypto.subtle.digest("SHA-256", data as ArrayBuffer);
+    const hash = await globalThis.crypto.subtle.digest("SHA-256", data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength));
     return new Uint8Array(hash);
   }
   // Fallback: simple FNV-style hash repeated to fill 32 bytes
