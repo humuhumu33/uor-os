@@ -92,14 +92,14 @@ function ForceSlider({ label, value, onChange, min = 0, max = 100 }: {
   );
 }
 
-/* ── Collapsible section header ── */
+/* ── Collapsible section header (console-style) ── */
 function SectionHeader({ title, open, onToggle }: { title: string; open: boolean; onToggle: () => void }) {
   return (
     <button
       onClick={onToggle}
-      className="flex items-center gap-1.5 w-full py-2 text-[12px] font-semibold text-foreground/70 hover:text-foreground/90 transition-colors uppercase tracking-wider"
+      className="flex items-center gap-1.5 w-full px-4 py-2.5 text-[11px] font-medium text-muted-foreground/60 hover:text-muted-foreground transition-colors uppercase tracking-widest"
     >
-      {open ? <IconChevronDown size={13} stroke={2} /> : <IconChevronRight size={13} stroke={2} />}
+      {open ? <IconChevronDown size={12} stroke={2} /> : <IconChevronRight size={12} stroke={2} />}
       {title}
     </button>
   );
