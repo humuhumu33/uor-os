@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Check, Loader2, AlertCircle, Monitor } from "lucide-react";
 import { onDeepLink, initDeepLinks, type DeepLinkAction } from "@/modules/data/sovereign-spaces/deep-link/handler";
 import { redeemHandoff, type HandoffResult } from "@/modules/platform/desktop/lib/handoff";
@@ -81,13 +80,8 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
   ];
 
   return (
-    <AnimatePresence>
-      <motion.div
+          <div
         key="handoff-overlay"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.4 }}
         className="fixed inset-0 z-[9999] flex items-center justify-center"
         style={{
           background: "hsl(220 15% 6% / 0.95)",
@@ -97,10 +91,7 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
       >
         <div className="flex flex-col items-center gap-8 max-w-md px-6">
           {/* Icon */}
-          <motion.div
-            animate={phase === "done" ? { scale: [1, 1.15, 1] } : { rotate: 0 }}
-            transition={{ duration: 0.5 }}
-          >
+          <div>
             {phase === "error" ? (
               <AlertCircle size={48} style={{ color: "hsl(0 70% 60%)" }} />
             ) : phase === "done" ? (
@@ -108,7 +99,7 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
             ) : (
               <Monitor size={48} style={{ color: "hsl(210 100% 72%)" }} />
             )}
-          </motion.div>
+          </div>
 
           {/* Title */}
           <h2
@@ -128,12 +119,9 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
                 const isCurrent = key === phase && phase !== "done";
 
                 return (
-                  <motion.div
+                  <div
                     key={key}
                     className="flex items-center gap-3"
-                    initial={{ opacity: 0.3 }}
-                    animate={{ opacity: isDone || isCurrent ? 1 : 0.3 }}
-                    transition={{ duration: 0.3 }}
                   >
                     <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
                       {isDone ? (
@@ -153,7 +141,7 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
                     >
                       {label}
                     </span>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
@@ -179,7 +167,6 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
             </div>
           )}
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 }

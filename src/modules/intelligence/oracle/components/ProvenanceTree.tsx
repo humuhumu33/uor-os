@@ -8,7 +8,6 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { GitFork, Loader2, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 
 interface TreeNode {
@@ -93,10 +92,7 @@ function TreeNodeItem({
   onNavigate: (cid: string) => void;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.2 }}
+    <div
       className="flex items-start group"
       style={{ paddingLeft: indent * 24 }}
     >
@@ -164,7 +160,7 @@ function TreeNodeItem({
           <ExternalLink className="w-3 h-3 text-muted-foreground/15 group-hover:text-muted-foreground/40 transition-colors shrink-0" />
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -198,8 +194,7 @@ function DescendantBranch({
         onToggle={() => setExpanded((e) => !e)}
         onNavigate={onNavigate}
       />
-      <AnimatePresence>
-        {expanded &&
+              {expanded &&
           node.children.map((child, i) => (
             <DescendantBranch
               key={child.cid}
@@ -209,7 +204,6 @@ function DescendantBranch({
               onNavigate={onNavigate}
             />
           ))}
-      </AnimatePresence>
     </>
   );
 }
@@ -282,14 +276,9 @@ export default function ProvenanceTree({ cid, onNavigate }: Props) {
         />
       </button>
 
-      <AnimatePresence>
-        {showTree && data && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden"
+              {showTree && data && (
+          <div
+      className="overflow-hidden"
           >
             <div className="border border-border/10 rounded-xl bg-muted/3 p-4 space-y-0.5 max-h-[400px] overflow-y-auto">
               {/* Legend */}
@@ -342,9 +331,8 @@ export default function ProvenanceTree({ cid, onNavigate }: Props) {
                 />
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

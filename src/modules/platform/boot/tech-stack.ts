@@ -392,28 +392,19 @@ export const TECH_STACK: readonly StackEntry[] = [
     detectVersion: async () => typeof indexedDB !== "undefined" ? "native" : null,
   },
   {
-    name: "Framer Motion",
-    role: "Animation engine — declarative mount/unmount transitions and gestures",
+    name: "CSS Animations",
+    role: "Animation engine — pure CSS keyframes, transitions, and CSSPresence mount/unmount",
     category: "animation",
-    criticality: "recommended",
-    fallback: "CSS transitions only (no AnimatePresence, no layout animations)",
+    criticality: "core",
+    fallback: "None needed — CSS animations are native",
     kernelFunction: null,
     criteria: {
-      license: "MIT",
-      portability: ["browser"],
-      adoptionSignal: "25k+ GitHub stars, Framer, used by Vercel/Stripe",
+      license: "N/A (browser-native)",
+      portability: ["browser", "node", "deno", "edge"],
+      adoptionSignal: "Browser-native, zero-dependency, zero JS frames",
     },
-    verify: async () => {
-      try {
-        const fm = await import("framer-motion");
-        return typeof fm.motion !== "undefined";
-      } catch {
-        return false;
-      }
-    },
-    detectVersion: async () => {
-      try { await import("framer-motion"); return "12.x"; } catch { return null; }
-    },
+    verify: async () => true,
+    detectVersion: async () => "native",
   },
   {
     name: "Radix UI",

@@ -6,7 +6,6 @@
  *   • Double tap → toggle expanded panel with embedded SoundCloud player
  */
 import { useState, useRef, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { X, Music2, Pause, Play, ListMusic } from "lucide-react";
 
 const SC_PLAYLIST_URL = "https://soundcloud.com/ben-bohmer/sets/begin-again";
@@ -152,10 +151,8 @@ export default function SoundCloudFab() {
       >
         {/* Outer glow when playing */}
         {playing && (
-          <motion.div
+          <div
             className="absolute inset-[-4px] rounded-full"
-            animate={{ opacity: [0.3, 0.6, 0.3] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             style={{
               background: "radial-gradient(circle, hsl(24 70% 55% / 0.15), transparent 70%)",
             }}
@@ -163,9 +160,8 @@ export default function SoundCloudFab() {
         )}
 
         {/* Spinning disc */}
-        <motion.div
+        <div
           className="absolute inset-0 rounded-full overflow-hidden"
-          animate={{ rotate: playing ? 360 : 0 }}
           transition={
             playing
               ? { duration: 3, repeat: Infinity, ease: "linear" }
@@ -202,7 +198,7 @@ export default function SoundCloudFab() {
               style={{ transform: "rotate(-45deg)", transformOrigin: "center" }}
             />
           </svg>
-        </motion.div>
+        </div>
 
         {/* Centre spindle */}
         <div
@@ -221,10 +217,8 @@ export default function SoundCloudFab() {
         </div>
       </button>
 
-      {/* ── Expanded SoundCloud player panel ── */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
+      {/* ── Expanded SoundCloud player panel ── */}{expanded && (
+          <div
             className="absolute rounded-2xl overflow-hidden backdrop-blur-xl"
             style={{
               bottom: "calc(100% + 12px)",
@@ -235,10 +229,6 @@ export default function SoundCloudFab() {
               border: "1px solid hsl(0 0% 100% / 0.08)",
               boxShadow: "0 16px 48px hsl(0 0% 0% / 0.5), 0 4px 12px hsl(0 0% 0% / 0.3)",
             }}
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
             onPointerDown={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -309,7 +299,7 @@ export default function SoundCloudFab() {
                       }}
                     >
                       {i === activeTrack && playing ? (
-                        <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.2, repeat: Infinity }}>♪</motion.span>
+                        <span>♪</span>
                       ) : (
                         i + 1
                       )}
@@ -326,9 +316,7 @@ export default function SoundCloudFab() {
                 ))}
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+          </div>
+        )}</div>
   );
 }

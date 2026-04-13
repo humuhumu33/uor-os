@@ -4,7 +4,6 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X } from "lucide-react";
 import VoiceInput from "@/modules/intelligence/oracle/components/VoiceInput";
 
@@ -68,27 +67,16 @@ export default function UnifiedFloatingInput({ onRefine, streaming = false, onCa
 
   return (
     <div className={`fixed bottom-0 left-0 right-0 z-[60] flex justify-center pb-10 px-4 pointer-events-none ${className}`} style={{ willChange: "transform" }}>
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+      <div
         className="pointer-events-auto w-full max-w-xl"
       >
         <div className="relative flex items-center gap-2.5 rounded-2xl border border-white/[0.08] bg-black/60 backdrop-blur-2xl shadow-[0_-4px_40px_-8px_rgba(0,0,0,0.5)] px-4 py-2.5">
           {/* Live indicator dot */}
-          <div className="relative flex items-center justify-center w-5 h-5 shrink-0">
-            <AnimatePresence>
-              {streaming && (
-                <motion.span
+          <div className="relative flex items-center justify-center w-5 h-5 shrink-0">{streaming && (
+                <span
                   className="absolute inset-0 rounded-full bg-emerald-400/30"
-                  initial={{ scale: 1, opacity: 0.5 }}
-                  animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
-                  exit={{ opacity: 0, scale: 0.5 }}
                 />
-              )}
-            </AnimatePresence>
-            <span className={`relative w-2 h-2 rounded-full transition-colors duration-300 ${
+              )}<span className={`relative w-2 h-2 rounded-full transition-colors duration-300 ${
               streaming ? "bg-emerald-400" : showLive ? "bg-white/20" : "bg-white/10"
             }`} />
           </div>
@@ -111,23 +99,14 @@ export default function UnifiedFloatingInput({ onRefine, streaming = false, onCa
             className="flex-1 bg-transparent text-[14px] text-white/90 placeholder:text-white/20 focus:outline-none caret-emerald-400 font-medium tracking-wide"
           />
 
-          {/* Clear button */}
-          <AnimatePresence>
-            {value && (
-              <motion.button
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ duration: 0.15 }}
+          {/* Clear button */}{value && (
+              <button
                 onClick={() => { setValue(""); onCancel?.(); }}
                 className="p-1 text-white/25 hover:text-white/50 transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
-              </motion.button>
-            )}
-          </AnimatePresence>
-
-          {/* Voice input */}
+              </button>
+            )}{/* Voice input */}
           <VoiceInput
             onTranscript={handleVoiceTranscript}
             onSpeechEnd={() => {}}
@@ -135,7 +114,7 @@ export default function UnifiedFloatingInput({ onRefine, streaming = false, onCa
           />
         </div>
 
-        {/* Hint text — always occupies space to prevent layout shift */}
+        {/* Hint text — always occupies space to prevent shift */}
         <div className="h-6 flex items-start justify-center">
           <p
             className={`text-[11px] tracking-wide mt-2 transition-opacity duration-200 ${
@@ -145,7 +124,7 @@ export default function UnifiedFloatingInput({ onRefine, streaming = false, onCa
             Type or speak to reshape this page in real time
           </p>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

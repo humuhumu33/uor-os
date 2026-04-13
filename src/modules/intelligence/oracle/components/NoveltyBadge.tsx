@@ -6,7 +6,6 @@
  */
 
 import React from "react";
-import { motion } from "framer-motion";
 import type { NoveltyResult } from "@/modules/intelligence/oracle/lib/novelty-scorer";
 
 interface NoveltyBadgeProps {
@@ -32,10 +31,7 @@ const NoveltyBadge: React.FC<NoveltyBadgeProps> = ({ novelty }) => {
   const bg = getNoveltyBg(novelty.score);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3, delay: 0.2 }}
+    <div
       title={`${novelty.score}% new to you — ${novelty.label}${novelty.closestMatch ? `. Closest prior: "${novelty.closestMatch}"` : ""}`}
       style={{
         display: "inline-flex",
@@ -68,7 +64,7 @@ const NoveltyBadge: React.FC<NoveltyBadgeProps> = ({ novelty }) => {
       >
         new
       </span>
-    </motion.div>
+    </div>
   );
 };
 

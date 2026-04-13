@@ -5,7 +5,6 @@
  */
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
 import { predictSectionHeight, FONTS } from "../lib/pretext-layout";
 import { useContainerWidth } from "./AdaptiveContentContainer";
 
@@ -61,23 +60,16 @@ const WaterfallSection: React.FC<Props> = ({
   }, [isPartial]);
 
   return (
-    <motion.div
+    <div
       ref={containerRef}
       key={sectionKey}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: isPartial ? 0.85 : 1, y: 0 }}
-      transition={{
-        duration: 0.35,
-        delay: Math.min(index * 0.06, 0.3),
-        ease: [0.23, 1, 0.32, 1],
-      }}
       style={{
         minHeight: predictedHeight ? `${predictedHeight}px` : undefined,
         transition: "min-height 0.3s ease-out",
       }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 };
 

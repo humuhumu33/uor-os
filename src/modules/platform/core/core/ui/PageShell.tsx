@@ -1,5 +1,5 @@
 /**
- * PageShell. Shared page layout with sticky header and breadcrumb.
+ * PageShell. Shared page with sticky header and breadcrumb.
  * Neutral shared primitive. no hologram-specific dependencies.
  */
 

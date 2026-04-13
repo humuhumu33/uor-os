@@ -5,7 +5,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { Lock, RotateCcw, X, Smartphone } from "lucide-react";
 import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
@@ -156,15 +155,10 @@ const QrPortalPanel: React.FC<QrPortalPanelProps> = ({
     right = Math.max(8, window.innerWidth - rect.right);
   }
 
+  if (!open) return null;
   return createPortal(
-    <AnimatePresence>
-      {open && (
-        <motion.div
+        <div
           ref={panelRef}
-          initial={{ opacity: 0, y: -8, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -8, scale: 0.97 }}
-          transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
           className="fixed z-[9999] rounded-2xl overflow-hidden"
           style={{
             width: "min(340px, 90vw)",
@@ -191,7 +185,7 @@ const QrPortalPanel: React.FC<QrPortalPanelProps> = ({
           <div className="flex flex-col items-center px-5 py-6 gap-4">
             {loading && (
               <div className="flex flex-col items-center gap-3 py-8">
-                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }} className="w-7 h-7 rounded-full border-2 border-t-transparent" style={{ borderColor: immersive ? "rgba(255,255,255,0.12)" : "hsl(var(--border) / 0.15)", borderTopColor: "transparent" }} />
+                <div className="w-7 h-7 rounded-full border-2 border-t-transparent" style={{ borderColor: immersive ? "rgba(255,255,255,0.12)" : "hsl(var(--border) / 0.15)", borderTopColor: "transparent" }} />
                 <span className={`text-xs ${immersive ? "text-white/35" : "text-muted-foreground/35"}`}>Generating link…</span>
               </div>
             )}
@@ -235,9 +229,8 @@ const QrPortalPanel: React.FC<QrPortalPanelProps> = ({
               </>
             )}
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>,
+        </div>
+    ,
     document.body
   );
 };

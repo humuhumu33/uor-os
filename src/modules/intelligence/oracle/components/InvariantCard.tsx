@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Sparkles, BookOpen, Atom } from "lucide-react";
 import type { Invariant } from "@/modules/intelligence/oracle/lib/stream-resonance";
 
@@ -11,10 +10,7 @@ export default function InvariantCard({ invariant, index }: Props) {
   const resonancePct = Math.round(invariant.resonance * 100);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: index * 0.12, duration: 0.5 }}
+    <div
       className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md overflow-hidden hover:border-primary/30 transition-colors"
     >
       {/* Header */}
@@ -26,10 +22,7 @@ export default function InvariantCard({ invariant, index }: Props) {
           </div>
           <div className="shrink-0 flex items-center gap-1.5">
             <div className="h-1.5 w-16 rounded-full bg-white/10 overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${resonancePct}%` }}
-                transition={{ delay: index * 0.12 + 0.3, duration: 0.8 }}
+              <div
                 className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60"
               />
             </div>
@@ -75,6 +68,6 @@ export default function InvariantCard({ invariant, index }: Props) {
           <p className="text-[10px] text-white/30 italic">{invariant.why_surprising}</p>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

@@ -4,7 +4,6 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Wifi, WifiOff, Database, Brain, Globe, Mic, Shield, RefreshCw } from "lucide-react";
 import { useConnectivity, type FeatureId } from "@/modules/platform/desktop/hooks/useConnectivity";
 import { grafeoStore as localGraphStore } from "@/modules/data/knowledge-graph/grafeo-store";
@@ -60,14 +59,10 @@ export default function ConnectivityPopover({ open, onClose, isLight }: Props) {
     : null;
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
+          <>
+          {open && (
+        <div
           ref={ref}
-          initial={{ opacity: 0, y: -4, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -4, scale: 0.97 }}
-          transition={{ duration: 0.15 }}
           className={`absolute top-8 right-0 z-[300] w-64 rounded-xl ${bg} ${border} border shadow-xl backdrop-blur-2xl overflow-hidden`}
         >
           {/* Header */}
@@ -140,9 +135,9 @@ export default function ConnectivityPopover({ open, onClose, isLight }: Props) {
               </p>
             )}
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }
 

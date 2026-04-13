@@ -5,7 +5,6 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { usePlatform } from "@/modules/platform/desktop/hooks/usePlatform";
 import { isLocal } from "@/lib/runtime";
 import { Shield, Sparkles } from "lucide-react";
@@ -41,12 +40,9 @@ export default function LocalTwinWelcome({ onComplete }: { onComplete: () => voi
   }, [finish]);
 
   return (
-    <motion.div
+    <div
       className="fixed inset-0 z-[9999] flex items-center justify-center"
       style={{ background: "hsl(220 20% 6% / 0.97)" }}
-      initial={{ opacity: 1 }}
-      animate={{ opacity: exiting ? 0 : 1 }}
-      transition={{ duration: FADE_OUT_DURATION / 1000 }}
     >
       <div className="flex flex-col items-center gap-6 max-w-md px-8 text-center w-full">
         {/* Phase indicator */}
@@ -67,15 +63,10 @@ export default function LocalTwinWelcome({ onComplete }: { onComplete: () => voi
           ))}
         </div>
 
-        <AnimatePresence mode="wait">
-          {phase === "intro" && (
-            <motion.div
+                  {phase === "intro" && (
+            <div
               key="intro"
               className="flex flex-col items-center gap-4"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.35 }}
             >
               <div
                 className="flex items-center justify-center w-16 h-16"
@@ -94,33 +85,25 @@ export default function LocalTwinWelcome({ onComplete }: { onComplete: () => voi
               <p className="text-sm leading-relaxed max-w-xs" style={{ color: "hsl(0 0% 60%)" }}>
                 Everything runs on your machine. Your data never leaves.
               </p>
-            </motion.div>
+            </div>
           )}
 
           {phase === "modules" && (
-            <motion.div
+            <div
               key="modules"
               className="flex flex-col items-center gap-4 w-full"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.35 }}
             >
               <h2 className="text-lg font-semibold tracking-tight" style={{ color: "hsl(0 0% 90%)" }}>
                 Initializing Modules
               </h2>
               <ModuleChecklist animated onComplete={handleModulesComplete} />
-            </motion.div>
+            </div>
           )}
 
           {phase === "ready" && (
-            <motion.div
+            <div
               key="ready"
               className="flex flex-col items-center gap-4"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.35 }}
             >
               <div
                 className="flex items-center justify-center w-16 h-16"
@@ -139,11 +122,10 @@ export default function LocalTwinWelcome({ onComplete }: { onComplete: () => voi
               <p className="text-sm leading-relaxed max-w-xs" style={{ color: "hsl(0 0% 60%)" }}>
                 Your sovereign instance is live.
               </p>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

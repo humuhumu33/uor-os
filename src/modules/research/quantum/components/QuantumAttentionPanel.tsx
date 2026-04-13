@@ -104,7 +104,7 @@ function CircuitDetailView({ circuit }: { circuit: QuantumAttentionCircuit }) {
         ))}
       </div>
 
-      {/* Qubit layout diagram */}
+      {/* Qubit diagram */}
       <div className="bg-[hsla(210,10%,12%,0.6)] rounded-lg border border-[hsla(210,10%,25%,0.3)] p-4">
         <div className="text-[11px] font-mono text-[hsl(210,10%,50%)] uppercase mb-3">Qubit Layout</div>
         <div className="flex gap-1 items-center flex-wrap">

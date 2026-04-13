@@ -5,7 +5,6 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   getPhasePhoto,
   getCurrentPhase,
@@ -54,15 +53,10 @@ export default function ImmersiveBackground({ scrollProgress = 0 }: ImmersiveBac
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      <AnimatePresence mode="sync">
-        <motion.img
+              <img
           key={key}
           src={photoUrl}
           alt=""
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 2.5, ease: "easeInOut" }}
           className="absolute inset-0 w-full h-full object-cover scale-110"
           style={{
             filter: `blur(${blurAmount}px)`,
@@ -71,7 +65,6 @@ export default function ImmersiveBackground({ scrollProgress = 0 }: ImmersiveBac
           }}
           draggable={false}
         />
-      </AnimatePresence>
       {/* Subtle overlay for text legibility */}
       <div className="absolute inset-0 bg-black/30" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />

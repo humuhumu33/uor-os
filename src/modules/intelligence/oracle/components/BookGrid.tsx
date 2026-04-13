@@ -3,7 +3,6 @@
  */
 
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Search } from "lucide-react";
 import BookCard from "./BookCard";
 import type { CatalogBook, BookDomain } from "@/modules/intelligence/oracle/lib/book-catalog";
@@ -90,18 +89,13 @@ export default function BookGrid({ books, selectedIds, onToggle, onRead }: Props
       </div>
 
       {/* Featured hero row */}
-      <AnimatePresence>
-        {featured.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4"
+              {featured.length > 0 && (
+          <div
+      className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4"
           >
             {featured.map((book) => (
-              <motion.div
+              <div
                 key={book.id}
-                whileHover={{ y: -4 }}
                 onClick={() => onRead(book.id)}
                 className="relative group cursor-pointer rounded-xl overflow-hidden h-52 bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-primary/30 transition-colors"
               >
@@ -118,11 +112,10 @@ export default function BookGrid({ books, selectedIds, onToggle, onRead }: Props
                     <p className="text-xs text-white/50 mt-2 line-clamp-2">{book.summary}</p>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* Grid */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-4">
