@@ -98,6 +98,7 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
   const [items, setItems] = useState<TreeItem[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [finderOpen, setFinderOpen] = useState(false);
@@ -889,6 +890,9 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
     return FOLDER_COLORS[folderColorIndex.current.get(id)!];
   };
 
+  // Context menu state for sidebar items
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: TreeItem } | null>(null);
+
   const renderItem = (item: TreeItem, depth = 0) => {
     const isFolder = item.type === "folder";
     const isExpanded = expanded.has(item.id);
@@ -901,11 +905,20 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       <div key={item.id}>
         <button
           onClick={() => {
-            if (isFolder) toggleExpand(item.id);
-            setSelectedId(item.id);
+            if (isFolder) {
+              toggleExpand(item.id);
+              setActiveFolderId(item.id);
+              setSelectedId(null);
+            } else {
+              setSelectedId(item.id);
+            }
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setContextMenu({ x: e.clientX, y: e.clientY, item });
           }}
           className={`flex items-center gap-3 w-full py-2 text-os-body font-medium transition-colors ${
-            isSelected
+            isSelected || (isFolder && activeFolderId === item.id && !selectedId)
               ? "bg-primary/10 text-primary border-r-2 border-primary"
               : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           }`}
@@ -915,7 +928,7 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             <>
               <IconFolder size={16} className={`shrink-0 ${getFolderColor(item.id)}`} />
               <span className="truncate flex-1 text-left">{item.name}</span>
-              {hasChildren && (
+              {(hasChildren || true) && (
                 <span className="w-4 h-4 flex items-center justify-center shrink-0 text-muted-foreground/40">
                   <IconChevronRight
                     size={12}
@@ -1011,6 +1024,64 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
         commands={commands}
       />
 
+      {/* ── Context menu for sidebar items ── */}
+      {contextMenu && (
+        <>
+          <div className="fixed inset-0 z-[60]" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
+          <div
+            className="fixed z-[61] bg-card border border-border/30 rounded-xl shadow-xl py-1 min-w-[180px]"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            {contextMenu.item.type === "folder" && (
+              <>
+                <button
+                  onClick={() => { createNote(contextMenu.item.id); setContextMenu(null); }}
+                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
+                >
+                  <IconPlus size={14} /> New Page Inside
+                </button>
+                <button
+                  onClick={() => { createFolder(contextMenu.item.id); setContextMenu(null); }}
+                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
+                >
+                  <IconFolder size={14} /> New Subfolder
+                </button>
+                <div className="mx-2 my-1 border-t border-border/15" />
+              </>
+            )}
+            <button
+              onClick={() => {
+                const newName = prompt("Rename:", contextMenu.item.name);
+                if (newName && newName.trim()) {
+                  const edge = contextMenu.item.edge;
+                  db.removeEdge(edge.id).then(() => {
+                    const propKey = edge.label === "workspace:folder" ? "name" : "title";
+                    return db.addEdge(edge.nodes, edge.label, { ...edge.properties, [propKey]: newName.trim(), updatedAt: Date.now() });
+                  }).then(() => reload());
+                }
+                setContextMenu(null);
+              }}
+              className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
+            >
+              <IconFile size={14} /> Rename
+            </button>
+            <button
+              onClick={() => { toggleFavorite(contextMenu.item.id); setContextMenu(null); }}
+              className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
+            >
+              <IconStar size={14} /> {favorites.has(contextMenu.item.id) ? "Unpin" : "Pin"}
+            </button>
+            <div className="mx-2 my-1 border-t border-border/15" />
+            <button
+              onClick={() => { deleteItem(contextMenu.item); setContextMenu(null); }}
+              className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+            >
+              <IconTrash size={14} /> Delete
+            </button>
+          </div>
+        </>
+      )}
+
       {/* ── Sidebar (portaled to unified sidebar container) ── */}
       {sidebarTarget && activeSection === "workspace" && createPortal(
         <div className="flex flex-col h-full overflow-hidden">
@@ -1035,10 +1106,10 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
           <nav className="flex-1 py-2 space-y-0.5 overflow-auto">
             {/* Home */}
             <button
-              onClick={() => setSelectedId(null)}
+              onClick={() => { setSelectedId(null); setActiveFolderId(null); }}
               title="Home"
               className={`flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium transition-colors ${
-                !selectedId
+                !selectedId && !activeFolderId
                   ? "bg-primary/10 text-primary border-r-2 border-primary"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               }`}
@@ -1175,7 +1246,11 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       <main className="flex-1 overflow-auto flex flex-col">
         {!selected || selected.type === "folder" ? (
           <SdbHomeView
-            items={items.filter(i => i.type !== "workspace").map(i => ({
+            items={items.filter(i => {
+              if (i.type === "workspace") return false;
+              if (activeFolderId) return i.parentId === activeFolderId;
+              return i.parentId === activeWorkspaceId || (!i.parentId && !i.parentId);
+            }).map(i => ({
               id: i.id,
               name: i.name,
               type: i.type as "note" | "daily" | "folder",
@@ -1188,7 +1263,8 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             allEdges={allEdges}
             recentIds={recentIds}
             onSelect={id => setSelectedId(id)}
-            onCreateNote={() => createNote()}
+            onCreateNote={(parentId) => createNote(parentId || activeFolderId || undefined)}
+            onCreateFolder={(parentId) => createFolder(parentId || activeFolderId || undefined)}
             onCreateDaily={reloadDaily}
             onSwitchGraph={() => onNavigateSection?.("graph")}
             activeTags={activeTags}
@@ -1196,6 +1272,8 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             tagColors={tagColors}
             itemTagsMap={itemTagsMap}
             globalSearch={globalSearch}
+            activeFolderId={activeFolderId}
+            onNavigateFolder={(fid) => { setActiveFolderId(fid); setSelectedId(null); }}
           />
         ) : (
           <>
