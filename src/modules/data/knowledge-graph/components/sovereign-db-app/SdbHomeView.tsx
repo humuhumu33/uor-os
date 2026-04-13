@@ -114,9 +114,14 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
     <div className="flex-1 overflow-auto">
       {/* ── Hero Banner ── */}
       <div className="relative w-full h-[140px] overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/50 via-emerald-700/25 to-sky-800/40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
+        <img
+          src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&h=400&fit=crop&crop=center&q=80"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-background/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent" />
       </div>
 
       <div className="max-w-[960px] mx-auto px-10 -mt-6 relative z-10 pb-10">
