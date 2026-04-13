@@ -387,7 +387,7 @@ export default function DesktopWidgets({ windows, desktopMode = false, onSearch,
               key={id}
               onClick={() => onOpenApp?.(id)}
               title={label}
-              className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+              className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
               style={{
                 background: isImmersive
                   ? "hsl(200 10% 12% / 0.55)"
