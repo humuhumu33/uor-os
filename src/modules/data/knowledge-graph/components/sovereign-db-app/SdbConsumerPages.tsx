@@ -98,6 +98,7 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
   const [items, setItems] = useState<TreeItem[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [finderOpen, setFinderOpen] = useState(false);
@@ -1175,7 +1176,11 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       <main className="flex-1 overflow-auto flex flex-col">
         {!selected || selected.type === "folder" ? (
           <SdbHomeView
-            items={items.filter(i => i.type !== "workspace").map(i => ({
+            items={items.filter(i => {
+              if (i.type === "workspace") return false;
+              if (activeFolderId) return i.parentId === activeFolderId;
+              return i.parentId === activeWorkspaceId || (!i.parentId && !i.parentId);
+            }).map(i => ({
               id: i.id,
               name: i.name,
               type: i.type as "note" | "daily" | "folder",
@@ -1188,7 +1193,8 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             allEdges={allEdges}
             recentIds={recentIds}
             onSelect={id => setSelectedId(id)}
-            onCreateNote={() => createNote()}
+            onCreateNote={(parentId) => createNote(parentId || activeFolderId || undefined)}
+            onCreateFolder={(parentId) => createFolder(parentId || activeFolderId || undefined)}
             onCreateDaily={reloadDaily}
             onSwitchGraph={() => onNavigateSection?.("graph")}
             activeTags={activeTags}
@@ -1196,6 +1202,8 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             tagColors={tagColors}
             itemTagsMap={itemTagsMap}
             globalSearch={globalSearch}
+            activeFolderId={activeFolderId}
+            onNavigateFolder={(fid) => { setActiveFolderId(fid); setSelectedId(null); }}
           />
         ) : (
           <>
