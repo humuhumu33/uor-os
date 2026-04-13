@@ -171,7 +171,14 @@ export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "" }: P
     };
   }, [showAtlasLayer, atlasSeed, nodes, links, typeStats]);
 
-  const handleContextAction = useCallback((action: ContextAction, node: GNode) => {
+  // Compute highlighted node IDs from global search
+  const highlightedNodeIds = useMemo(() => {
+    const q = globalSearch.trim().toLowerCase();
+    if (!q) return new Set<string>();
+    return new Set(
+      mergedNodes.filter(n => n.label.toLowerCase().includes(q)).map(n => n.id)
+    );
+  }, [globalSearch, mergedNodes]);
     switch (action) {
       case "open":
         setSelected(node);
