@@ -123,7 +123,7 @@ function DesktopShellInner() {
   }, [wm]);
 
   const handleHideAll = useCallback(() => {
-    setDesktopMode(prev => !prev);
+    setDesktopMode(true);
   }, []);
 
   const handleCloseWindow = useCallback(() => {
