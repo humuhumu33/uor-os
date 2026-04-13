@@ -11,7 +11,7 @@ interface Props {
   show: boolean;
   enterClass?: string;
   exitClass?: string;
-  children: ReactNode;
+  children?: ReactNode;
   className?: string;
   style?: CSSProperties;
   onClick?: React.MouseEventHandler<HTMLDivElement>;
