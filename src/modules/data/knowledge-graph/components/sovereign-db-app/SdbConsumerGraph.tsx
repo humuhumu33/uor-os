@@ -5,7 +5,8 @@
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { IconX } from "@tabler/icons-react";
+import { createPortal } from "react-dom";
+import { IconX, IconCube, IconLayoutGrid, IconWorld, IconZoomIn, IconZoomOut, IconFocusCentered } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import { hypergraph } from "../../hypergraph";
 import { traversalEngine } from "../../traversal";
@@ -25,6 +26,8 @@ interface Props {
   db: SovereignDB;
   onNavigateSection?: (section: AppSection) => void;
   globalSearch?: string;
+  sidebarTarget?: HTMLDivElement | null;
+  sidebarCollapsed?: boolean;
 }
 
 const COLORS: Record<string, string> = {
@@ -46,7 +49,7 @@ const SIGN_CLASS_LEGEND = [
   { name: "SC₇", color: "hsl(270, 60%, 60%)" },
 ];
 
-export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "" }: Props) {
+export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "", sidebarTarget, sidebarCollapsed }: Props) {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("force");
   const [filters, setFilters] = useState<GraphFilter>({
     types: new Map(),
