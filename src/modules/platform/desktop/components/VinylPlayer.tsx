@@ -33,10 +33,7 @@ interface SCWidget {
 
 declare global {
   interface Window {
-    SC?: {
-      Widget: (el: HTMLIFrameElement) => SCWidget;
-      Events: Record<string, string>;
-    };
+    SC?: { Widget: (el: HTMLIFrameElement) => SCWidget; Events: Record<string, string> };
   }
 }
 
@@ -69,24 +66,22 @@ export default function VinylPlayer() {
 
   useEffect(() => {
     loadSCApi().then(() => {
-      if (iframeRef.current && window.SC) {
-        const w = window.SC.Widget(iframeRef.current);
-        widgetRef.current = w;
-        // Wait for READY before binding events or calling methods
-        w.bind(window.SC.Events.READY as string, () => {
-          w.bind(window.SC.Events.PLAY as string, () => {
-            setPlaying(true);
-            w.getCurrentSound((sound) => {
-              if (sound?.title) setTrackTitle(sound.title);
-              if (sound?.artwork_url) {
-                setArtworkUrl(sound.artwork_url.replace("-large", "-t500x500"));
-              }
-            });
+      if (!iframeRef.current || !window.SC) return;
+      const w = window.SC.Widget(iframeRef.current);
+      widgetRef.current = w;
+      w.bind("ready" as any, () => {
+        w.bind("play", () => {
+          setPlaying(true);
+          w.getCurrentSound((sound) => {
+            if (sound?.title) setTrackTitle(sound.title);
+            if (sound?.artwork_url) {
+              setArtworkUrl(sound.artwork_url.replace("-large", "-t500x500"));
+            }
           });
-          w.bind(window.SC.Events.PAUSE as string, () => setPlaying(false));
-          w.bind(window.SC.Events.FINISH as string, () => setPlaying(false));
         });
-      }
+        w.bind("pause", () => setPlaying(false));
+        w.bind("finish", () => setPlaying(false));
+      });
     });
   }, []);
 
