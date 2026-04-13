@@ -5,6 +5,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { syncBridge, type SyncState } from "@/modules/data/knowledge-graph";
+import { useSyncMode, type SyncMode } from "@/modules/data/knowledge-graph/persistence/hooks/useSyncMode";
 
 export type FeatureId = "oracle" | "kgSync" | "dataBank" | "webBridge" | "voice" | "auth";
 
@@ -21,6 +22,10 @@ export interface ConnectivityState {
   features: Record<FeatureId, FeatureStatus>;
   lastSyncedAt: number | null;
   pendingSync: boolean;
+  syncMode: SyncMode;
+  setSyncMode: (mode: SyncMode) => Promise<void>;
+  activeProviderId: string;
+  isMigrating: boolean;
 }
 
 const FEATURE_DEFS: Record<FeatureId, { offlineReason: string; localOnly?: boolean; requiresOnline: boolean }> = {
@@ -50,6 +55,7 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
   const [online, setOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
   const [syncState, setSyncState] = useState<SyncState>(syncBridge.getSyncState());
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  const { mode: syncMode, setMode: setSyncMode, activeProviderId, isMigrating } = useSyncMode();
 
   useEffect(() => {
     const goOnline = () => setOnline(true);
@@ -72,7 +78,10 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
   const features = computeFeatures(online);
   const pendingSync = syncState === "idle" && !online;
 
-  const value: ConnectivityState = { online, syncState, features, lastSyncedAt, pendingSync };
+  const value: ConnectivityState = {
+    online, syncState, features, lastSyncedAt, pendingSync,
+    syncMode, setSyncMode, activeProviderId, isMigrating,
+  };
 
   return <ConnectivityCtx.Provider value={value}>{children}</ConnectivityCtx.Provider>;
 }
@@ -80,13 +89,16 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
 export function useConnectivity(): ConnectivityState {
   const ctx = useContext(ConnectivityCtx);
   if (!ctx) {
-    // Fallback for components outside the provider
     return {
       online: typeof navigator !== "undefined" ? navigator.onLine : true,
       syncState: "idle",
       features: computeFeatures(typeof navigator !== "undefined" ? navigator.onLine : true),
       lastSyncedAt: null,
       pendingSync: false,
+      syncMode: "auto",
+      setSyncMode: async () => {},
+      activeProviderId: "local",
+      isMigrating: false,
     };
   }
   return ctx;
