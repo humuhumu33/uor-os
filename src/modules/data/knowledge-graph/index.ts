@@ -157,6 +157,58 @@ export { getProvider, setProvider, initProvider } from "./persistence";
 export type { PersistenceProvider, ChangeEntry, SovereignBundle } from "./persistence/types";
 export { exportSovereignBundle, importSovereignBundle, downloadBundle } from "./persistence/bundle";
 
+// ── Binary Snapshot Engine (primary portable format) ────────────────────────
+
+export {
+  exportBinaryContainer,
+  importBinaryContainer,
+  serializeContainer,
+  deserializeContainer,
+  downloadContainer,
+} from "./persistence/binary-snapshot";
+export type { SovereignContainer, SerializedContainer } from "./persistence/binary-snapshot";
+
+// ── Multi-Language Query Engine ─────────────────────────────────────────────
+
+export {
+  query as multiQuery,
+  gql, cypher, sparql, sql,
+  getSupportedLanguages,
+} from "./multi-query";
+export type { QueryLanguage, QueryOptions, QueryResult } from "./multi-query";
+
+// ── Vector & Semantic Search ────────────────────────────────────────────────
+
+export {
+  createIndex as createVectorIndex,
+  createTextIndex as createSearchTextIndex,
+  dropIndex as dropVectorIndex,
+  vectorSearch,
+  textSearch as semanticTextSearch,
+  hybridSearch,
+  mmrSearch,
+  simpleTextVector,
+} from "./vector-search";
+export type {
+  VectorIndexConfig,
+  SearchOptions as VectorSearchOptions,
+  SearchResult as VectorSearchResult,
+  DistanceMetric,
+} from "./vector-search";
+
+// ── CDC (Change Data Capture) + Epoch Sync ──────────────────────────────────
+
+export {
+  initCdc,
+  recordChange,
+  getChangesSince,
+  produceDelta,
+  applyDelta,
+  getSyncState,
+  getCurrentEpoch,
+} from "./cdc-engine";
+export type { ChangeEvent, SyncDelta, SyncState as CdcSyncState } from "./cdc-engine";
+
 // ── Graph Infrastructure ────────────────────────────────────────────────────
 
 // ── Universal Graph Anchoring ────────────────────────────────────────────────
