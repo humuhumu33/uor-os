@@ -10,7 +10,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useContextManager } from "@/modules/data/sovereign-vault/hooks/useContextManager";
 import ContextPills from "@/modules/data/sovereign-vault/components/ContextPills";
-import { ArrowRight, Upload, Sparkles, MessageCircle, BookOpen, FolderOpen, LayoutGrid, Play, Download, MonitorSmartphone } from "lucide-react";
+import { ArrowRight, Upload, Sparkles, Layers, BookOpen, FolderOpen, LayoutGrid, Play, Download, MonitorSmartphone } from "lucide-react";
 import type { WindowState } from "@/modules/platform/desktop/hooks/useWindowManager";
 import { useDesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
 import { usePlatform } from "@/modules/platform/desktop/hooks/usePlatform";
@@ -377,7 +377,7 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
         >
           {([
             { id: "oracle", icon: Sparkles, label: "Oracle" },
-            { id: "messenger", icon: MessageCircle, label: "Messenger" },
+            { id: "myspace", icon: Layers, label: "MySpace" },
             { id: "media", icon: Play, label: "Media" },
             { id: "library", icon: BookOpen, label: "Library" },
             { id: "files", icon: FolderOpen, label: "Files" },
