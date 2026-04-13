@@ -311,20 +311,20 @@ export function SdbGraph3D({
     const mesh = new THREE.Mesh(geo, mat);
     group.add(mesh);
 
-    // Glow ring for hovered
-    if (isHovered && !isDimmed) {
+    // Glow ring for hovered or search-highlighted
+    if ((isHovered || isSearchHighlighted) && !isDimmed) {
       const ringGeo = new THREE.RingGeometry(baseSize * 1.4, baseSize * 1.8, 24);
       const ringMat = new THREE.MeshBasicMaterial({
-        color,
+        color: isSearchHighlighted ? new THREE.Color("hsl(45, 100%, 60%)") : color,
         transparent: true,
-        opacity: 0.4,
+        opacity: isSearchHighlighted ? 0.6 : 0.4,
         side: THREE.DoubleSide,
       });
       group.add(new THREE.Mesh(ringGeo, ringMat));
 
       // Billboard label
       const label = node.label || node.id || "";
-      group.add(makeLabel(label, color, baseSize + 4));
+      group.add(makeLabel(label, isSearchHighlighted ? new THREE.Color("hsl(45, 100%, 70%)") : color, baseSize + 4));
     }
 
     // Atlas nodes: outer glow sphere (enhanced for bloom)
