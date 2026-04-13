@@ -24,6 +24,7 @@ import type { AppSection } from "./SovereignDBApp";
 interface Props {
   db: SovereignDB;
   onNavigateSection?: (section: AppSection) => void;
+  globalSearch?: string;
 }
 
 const COLORS: Record<string, string> = {
