@@ -71,6 +71,7 @@ const SLASH_COMMANDS: { type: BlockType; label: string; description: string; ico
   { type: "toggle", label: "Toggle", description: "Collapsible section", icon: IconChevronRight, keywords: ["toggle", "collapse", "expand", "accordion"] },
   { type: "table", label: "Table", description: "Add a simple table", icon: IconTable, keywords: ["table", "grid", "spreadsheet", "rows", "columns"] },
   { type: "bookmark", label: "Bookmark", description: "Save a link with preview", icon: IconLink, keywords: ["bookmark", "link", "url", "embed", "web"] },
+  { type: "embed", label: "Block Embed", description: "Embed another block's content", icon: IconCornerDownRight, keywords: ["embed", "ref", "reference", "block", "transclusion"] },
 ];
 
 /** Hover preview for [[wiki-links]] — rendered outside Lexical */
@@ -108,7 +109,7 @@ function getNumberedIndex(blocks: Block[], idx: number): number {
   return count;
 }
 
-export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = [], getPreview }: Props) {
+export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, onBlockRefClick, onShiftClick, noteNames = [], getPreview, resolveBlockRef }: Props) {
   const [slashMenu, setSlashMenu] = useState<{ idx: number; query: string } | null>(null);
   const [slashActiveIdx, setSlashActiveIdx] = useState(0);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
