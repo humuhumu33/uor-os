@@ -319,6 +319,49 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
     return () => window.removeEventListener("keydown", handler);
   }, [slashMenu, filteredSlash]);
 
+  // ── Paste URL detection → auto-create bookmark block ──
+  useEffect(() => {
+    const URL_REGEX = /^https?:\/\/[^\s]+$/;
+    const handler = (e: ClipboardEvent) => {
+      const text = e.clipboardData?.getData("text/plain")?.trim();
+      if (!text || !URL_REGEX.test(text)) return;
+
+      // Check if we're inside a Lexical editor that already has content
+      const active = document.activeElement;
+      const isInEditor = active?.closest("[contenteditable]");
+      if (!isInEditor) return;
+
+      // Find which block is focused
+      const focusedIdx = [...editorsRef.current.entries()].find(([, editor]) => {
+        const el = editor.getRootElement();
+        return el && el.contains(active);
+      })?.[0];
+
+      if (focusedIdx === undefined) return;
+      const currentBlock = blocks[focusedIdx];
+
+      // Only convert if the block is empty (user just pasted a URL into an empty block)
+      if (currentBlock && currentBlock.text.trim() === "") {
+        e.preventDefault();
+        const next = [...blocks];
+        next[focusedIdx] = {
+          ...currentBlock,
+          type: "bookmark",
+          text: text,
+          richText: undefined,
+          bookmarkData: createBookmarkFromUrl(text),
+        };
+        // Add a new empty block below for continued typing
+        const newBlock: Block = { id: genBlockId(), text: "", indent: currentBlock.indent, children: [] };
+        next.splice(focusedIdx + 1, 0, newBlock);
+        onChange(next);
+        setFocusNewIdx(focusedIdx + 1);
+      }
+    };
+    document.addEventListener("paste", handler);
+    return () => document.removeEventListener("paste", handler);
+  }, [blocks, onChange]);
+
   const renderBlock = (block: Block, idx: number) => {
     const blockType = block.type || "text";
     const isHovered = hoveredIdx === idx;
