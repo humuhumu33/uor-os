@@ -37,7 +37,7 @@ function extractEntities(code: string): Omit<CodeEntity, "hash">[] {
     }
 
     // Top-level variables: FOO = ... or foo: int = ...
-    const varMatch = line.match(/^([A-Za-z_]\w*)\s*(?::\s*\w[\w\[\], |]*\s*)?=\s*/);
+    const varMatch = line.match(/^([A-Za-z_]\w*)\s*(?::\s*\w[\w[, |]*\]?\s*)?=\s*/);
     if (varMatch && !line.match(/^\s/) && !classMatch && !funcMatch) {
       entities.push({ name: varMatch[1], type: "variable", line: lineNum, content: line.trim() });
     }
