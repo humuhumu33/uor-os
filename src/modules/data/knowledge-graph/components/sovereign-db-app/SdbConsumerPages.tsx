@@ -890,6 +890,9 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
     return FOLDER_COLORS[folderColorIndex.current.get(id)!];
   };
 
+  // Context menu state for sidebar items
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: TreeItem } | null>(null);
+
   const renderItem = (item: TreeItem, depth = 0) => {
     const isFolder = item.type === "folder";
     const isExpanded = expanded.has(item.id);
@@ -902,11 +905,20 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       <div key={item.id}>
         <button
           onClick={() => {
-            if (isFolder) toggleExpand(item.id);
-            setSelectedId(item.id);
+            if (isFolder) {
+              toggleExpand(item.id);
+              setActiveFolderId(item.id);
+              setSelectedId(null);
+            } else {
+              setSelectedId(item.id);
+            }
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setContextMenu({ x: e.clientX, y: e.clientY, item });
           }}
           className={`flex items-center gap-3 w-full py-2 text-os-body font-medium transition-colors ${
-            isSelected
+            isSelected || (isFolder && activeFolderId === item.id && !selectedId)
               ? "bg-primary/10 text-primary border-r-2 border-primary"
               : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           }`}
@@ -916,7 +928,7 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             <>
               <IconFolder size={16} className={`shrink-0 ${getFolderColor(item.id)}`} />
               <span className="truncate flex-1 text-left">{item.name}</span>
-              {hasChildren && (
+              {(hasChildren || true) && (
                 <span className="w-4 h-4 flex items-center justify-center shrink-0 text-muted-foreground/40">
                   <IconChevronRight
                     size={12}
