@@ -199,6 +199,7 @@ export default function VinylPlayer() {
         width="300"
         height="150"
         allow="autoplay"
+        referrerPolicy="no-referrer"
         style={{ position: "absolute", left: -9999, top: -9999, opacity: 0, pointerEvents: "none" }}
         title="SoundCloud Player"
       />
@@ -377,6 +378,7 @@ export default function VinylPlayer() {
               width="320"
               height="300"
               allow="autoplay"
+              referrerPolicy="no-referrer"
               style={{ border: "none", display: "block" }}
               title="SoundCloud Controls"
             />

@@ -269,6 +269,7 @@ export default function SoundCloudFab() {
                 scrolling="no"
                 frameBorder="no"
                 allow="autoplay"
+                referrerPolicy="no-referrer"
                 src={SC_EMBED_URL}
                 style={{
                   borderRadius: 10,
