@@ -221,7 +221,7 @@ function DesktopShellInner() {
         <TabBar
           activeWindowId={wm.activeWindowId}
           windows={wm.windows}
-          onFocusWindow={wm.focusWindow}
+          onFocusWindow={(id: string) => { setDesktopMode(false); wm.focusWindow(id); }}
           onCloseWindow={wm.closeWindow}
           onMinimizeWindow={wm.minimizeWindow}
           onSpotlight={() => setSpotlightOpen(true)}
