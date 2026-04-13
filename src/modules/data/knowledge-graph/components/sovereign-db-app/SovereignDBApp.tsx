@@ -27,6 +27,7 @@ import { SdbStatsPanel } from "./SdbStatsPanel";
 import { SdbStoragePanel } from "./SdbStoragePanel";
 import { SdbAtlasInspector } from "./SdbAtlasInspector";
 import { SdbStatusBar } from "./SdbStatusBar";
+import { MYSPACE_SECTION_TAGLINES } from "@/modules/platform/core/lib/app-taglines";
 
 export type AppSection = "workspace" | "graph" | "console";
 
@@ -117,6 +118,21 @@ const SovereignDBApp = () => {
         <div className="flex items-center gap-2.5">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-[15px] font-semibold tracking-tight">MySpace</span>
+        </div>
+
+        <div className="flex items-center ml-6">
+          <span
+            key={section}
+            className="text-[13px] italic tracking-wide text-muted-foreground/40 animate-[sdb-tagline-fade_0.5s_ease-out]"
+          >
+            {MYSPACE_SECTION_TAGLINES[section] || "Own your data."}
+          </span>
+          <style>{`
+            @keyframes sdb-tagline-fade {
+              from { opacity: 0; transform: translateY(2px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
         </div>
 
         <div className="ml-auto flex items-center gap-0.5">
