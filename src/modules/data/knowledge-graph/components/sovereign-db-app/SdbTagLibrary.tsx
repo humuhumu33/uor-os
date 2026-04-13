@@ -101,7 +101,7 @@ export function SdbTagLibrary({
             style={{ backgroundColor: color, transform: isActive ? "scale(1.3)" : "scale(1)" }}
           />
           <span className="truncate flex-1 text-left">{tag.name}</span>
-          <span className="text-[11px] text-muted-foreground/25 tabular-nums">{tag.count}</span>
+          <span className="text-[11px] text-muted-foreground/40 tabular-nums">{tag.count}</span>
           {!tag.isSmart && !tag.isType && (
             <button
               onClick={e => { e.stopPropagation(); setColorPicking(colorPicking === tag.name ? null : tag.name); }}
@@ -142,7 +142,7 @@ export function SdbTagLibrary({
       {/* Smart Tags */}
       {smartOpen && smartTags.length > 0 && (
         <div className="mb-1">
-          <div className="px-4 py-0.5 text-[10px] text-muted-foreground/25 uppercase tracking-widest">Smart</div>
+          <div className="px-4 py-0.5 text-[11px] text-muted-foreground/40 uppercase tracking-widest">Smart</div>
           {smartTags.map(renderTag)}
         </div>
       )}
@@ -150,7 +150,7 @@ export function SdbTagLibrary({
       {/* Content Types */}
       {typesOpen && typeEntries.length > 0 && (
         <div className="mb-1">
-          <div className="px-4 py-0.5 text-[10px] text-muted-foreground/25 uppercase tracking-widest">Types</div>
+          <div className="px-4 py-0.5 text-[11px] text-muted-foreground/40 uppercase tracking-widest">Types</div>
           {typeEntries.map(renderTag)}
         </div>
       )}
@@ -159,23 +159,23 @@ export function SdbTagLibrary({
       {customOpen && (
         <div className="mb-1">
           <div className="flex items-center justify-between px-4 py-0.5">
-            <span className="text-[10px] text-muted-foreground/25 uppercase tracking-widest">Custom</span>
+            <span className="text-[11px] text-muted-foreground/40 uppercase tracking-widest">Custom</span>
             <button
               onClick={() => setAdding(true)}
-              className="p-0.5 rounded text-muted-foreground/20 hover:text-foreground hover:bg-muted/40 transition-colors"
+              className="p-0.5 rounded text-muted-foreground/40 hover:text-foreground hover:bg-muted/40 transition-colors"
             >
               <IconPlus size={10} />
             </button>
           </div>
           {userTags.map(t => renderTag({ ...t }))}
           {userTags.length === 0 && !adding && (
-            <div className="px-4 py-2 text-[12px] text-muted-foreground/20">
+            <div className="px-4 py-2 text-[12px] text-muted-foreground/40">
               Use #hashtags in notes
             </div>
           )}
           {adding && (
             <div className="flex items-center gap-1 px-2.5 py-1">
-              <span className="text-muted-foreground/30 text-[12px]">#</span>
+              <span className="text-muted-foreground/50 text-[12px]">#</span>
               <input
                 value={newTag}
                 onChange={e => setNewTag(e.target.value)}
@@ -185,7 +185,7 @@ export function SdbTagLibrary({
                 className="flex-1 bg-transparent text-[12px] text-foreground outline-none border-b border-border/30 py-0.5"
               />
               <button onClick={handleAdd} className="text-primary text-[11px]">Add</button>
-              <button onClick={() => { setAdding(false); setNewTag(""); }} className="text-muted-foreground/30">
+              <button onClick={() => { setAdding(false); setNewTag(""); }} className="text-muted-foreground/50">
                 <IconX size={11} />
               </button>
             </div>

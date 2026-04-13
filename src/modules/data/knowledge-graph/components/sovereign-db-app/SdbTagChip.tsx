@@ -37,7 +37,7 @@ export function getTagColor(tag: string, customColors: Record<string, string>): 
 }
 
 export function SdbTagChip({ label, color, active, onClick, onRemove, size = "sm" }: Props) {
-  const px = size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-3 py-1 text-[13px]";
+  const px = size === "sm" ? "px-2 py-0.5 text-[12px]" : "px-3 py-1 text-[13px]";
 
   return (
     <span

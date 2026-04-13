@@ -5,9 +5,9 @@
 
 export function UorSignature({ className = "" }: { className?: string }) {
   return (
-    <span className={`text-[11px] text-muted-foreground/25 font-mono select-none ${className}`}>
+    <span className={`text-[11px] text-muted-foreground/40 font-mono select-none ${className}`}>
       Powered by UOR. With{" "}
-      <span className="text-rose-400/40">❤️</span>.
+      <span className="text-rose-400/60">❤️</span>.
     </span>
   );
 }

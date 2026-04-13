@@ -68,7 +68,7 @@ export function SdbNoteProperties({ edge, blocks, allEdges, noteId, onUpdateProp
     <div className="mb-4">
       <button
         onClick={() => setExpanded(e => !e)}
-        className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors mb-2"
+        className="flex items-center gap-1.5 text-[12px] text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors mb-2"
       >
         {expanded ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}
         Properties
@@ -77,7 +77,7 @@ export function SdbNoteProperties({ edge, blocks, allEdges, noteId, onUpdateProp
       {expanded && (
         <div className="border border-border/30 rounded-lg bg-muted/10 p-3 space-y-2 text-[12px] animate-in fade-in duration-200">
           {/* Stats row */}
-          <div className="flex flex-wrap gap-3 text-muted-foreground/60">
+          <div className="flex flex-wrap gap-3 text-muted-foreground/70">
             <span className="flex items-center gap-1">
               <IconLetterCase size={13} /> {stats.words} words
             </span>
@@ -109,7 +109,7 @@ export function SdbNoteProperties({ edge, blocks, allEdges, noteId, onUpdateProp
             <div className="space-y-1 pt-1 border-t border-border/20">
               {customProps.map(p => (
                 <div key={p.key} className="flex items-center gap-2 group">
-                  <span className="text-muted-foreground/50 w-20 truncate">{p.key}</span>
+                  <span className="text-muted-foreground/60 w-20 truncate">{p.key}</span>
                   <input
                     value={p.value}
                     onChange={e => onUpdateProperty?.(p.key, e.target.value)}
@@ -143,13 +143,13 @@ export function SdbNoteProperties({ edge, blocks, allEdges, noteId, onUpdateProp
                 onKeyDown={e => e.key === "Enter" && handleAddProp()}
                 className="flex-1 bg-transparent text-foreground/80 outline-none border-b border-border/30 text-[12px]"
               />
-              <button onClick={handleAddProp} className="text-primary text-[11px]">Add</button>
-              <button onClick={() => setAddingProp(false)} className="text-muted-foreground/50"><IconX size={11} /></button>
+              <button onClick={handleAddProp} className="text-primary text-[12px]">Add</button>
+              <button onClick={() => setAddingProp(false)} className="text-muted-foreground/50"><IconX size={12} /></button>
             </div>
           ) : (
             <button
               onClick={() => setAddingProp(true)}
-              className="flex items-center gap-1 text-[11px] text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors pt-1"
+              className="flex items-center gap-1 text-[12px] text-muted-foreground/60 hover:text-muted-foreground/80 transition-colors pt-1"
             >
               <IconPlus size={11} /> Add property
             </button>
