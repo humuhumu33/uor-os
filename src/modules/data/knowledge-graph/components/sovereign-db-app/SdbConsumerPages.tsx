@@ -77,6 +77,14 @@ const DEFAULT_TAG_COLORS: Record<string, string> = {
   "uor": "hsl(210, 80%, 55%)",
   "atlas": "hsl(270, 60%, 55%)",
   "architecture": "hsl(40, 85%, 50%)",
+  "guide": "hsl(190, 70%, 45%)",
+  "knowledge-graph": "hsl(220, 75%, 50%)",
+  "hypergraph": "hsl(300, 55%, 50%)",
+  "reference": "hsl(25, 80%, 50%)",
+  "ipfs": "hsl(200, 70%, 50%)",
+  "linked-data": "hsl(170, 65%, 40%)",
+  "projects": "hsl(340, 70%, 55%)",
+  "ideas": "hsl(50, 80%, 50%)",
 };
 
 function loadTagColors(): Record<string, string> {
