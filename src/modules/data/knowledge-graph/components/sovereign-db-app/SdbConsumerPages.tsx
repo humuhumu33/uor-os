@@ -32,6 +32,7 @@ import { SdbNoteComments, type NoteComment } from "./SdbNoteComments";
 import { SdbSidebarPanel } from "./SdbSidebarPanel";
 import type { BlockRefResolver, BlockRefInfo } from "./SdbBlockRef";
 import { SdbMediaPreview } from "./SdbMediaPreview";
+import { useSdbDragDrop } from "./useSdbDragDrop";
 
 // Cover images for demo content
 import coverOs from "@/assets/covers/cover-os.jpg";
