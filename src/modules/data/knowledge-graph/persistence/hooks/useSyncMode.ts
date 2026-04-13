@@ -59,6 +59,12 @@ export function useSyncMode(): SyncModeState {
     localStorage.setItem(STORAGE_KEY, newMode);
     setModeState(newMode);
 
+    const modeLabels: Record<SyncMode, string> = {
+      local: "Local",
+      auto: "Auto",
+      cloud: "Cloud",
+    };
+
     const targetId = newMode === "cloud" ? "supabase" : newMode === "local" ? "local" : null;
 
     if (targetId && providerRegistry.has(targetId) && providerRegistry.active() !== targetId) {
@@ -67,10 +73,15 @@ export function useSyncMode(): SyncModeState {
         await switchProvider(targetId, true);
         if (mountedRef.current) {
           setActiveProviderId(targetId);
+          toast.success(`Switched to ${modeLabels[newMode]}`, {
+            description: newMode === "cloud" ? "Data syncing to cloud" : "Data stored locally",
+            duration: 3000,
+          });
         }
       } catch (err) {
         if (mountedRef.current) {
           setMigrationError(String(err));
+          toast.error("Sync mode switch failed", { description: String(err), duration: 4000 });
         }
       } finally {
         if (mountedRef.current) setIsMigrating(false);
