@@ -497,6 +497,8 @@ export function SdbGraph3D({
         dagLevelDistance={dagMode ? 40 : undefined}
         d3AlphaDecay={0.02}
         d3VelocityDecay={0.3}
+        d3Force="charge"
+        d3ForceStrength={forceParams ? -(forceParams.repelForce * 6) : -300}
         warmupTicks={60}
         cooldownTicks={120}
         showNavInfo={false}
