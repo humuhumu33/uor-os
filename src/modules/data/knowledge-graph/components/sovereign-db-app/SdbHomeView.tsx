@@ -309,9 +309,6 @@ export function SdbHomeView({
                 </button>
               </div>
             )}
-                New Page
-              </button>
-            )}
           </div>
         ) : view === "grid" ? (
           <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
