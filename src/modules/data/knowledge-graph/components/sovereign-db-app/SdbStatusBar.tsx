@@ -80,8 +80,8 @@ export function SdbStatusBar({ db, startTime, section = "workspace" }: Props) {
           </span>
         </>
       )}
-      {!db && <span className="ml-auto" />}
-      <UorSignature className={db ? "" : "ml-auto"} />
+      <span className="ml-auto" />
+      <UorSignature />
     </footer>
   );
 }
