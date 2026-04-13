@@ -15,12 +15,14 @@ import {
   IconH1, IconH2, IconH3, IconList, IconCheckbox, IconMinus,
   IconBlockquote, IconInfoCircle, IconTypography,
   IconListNumbers, IconCode, IconChevronRight, IconChevronDown,
+  IconTable,
 } from "@tabler/icons-react";
 import { SdbBlockLexical } from "./SdbBlockLexical";
+import { SdbTableBlock, createDefaultTable, type TableData } from "./SdbTableBlock";
 import type { LexicalEditor } from "lexical";
 import { $getRoot, $createParagraphNode, $createTextNode } from "lexical";
 
-export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle";
+export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "table";
 
 export interface Block {
   id: string;
@@ -31,6 +33,7 @@ export interface Block {
   type?: BlockType;
   checked?: boolean;
   collapsed?: boolean;
+  tableData?: TableData;
 }
 
 interface Props {
@@ -59,6 +62,7 @@ const SLASH_COMMANDS: { type: BlockType; label: string; description: string; ico
   { type: "callout", label: "Callout", description: "Highlighted info block", icon: IconInfoCircle, keywords: ["callout", "info", "note", "tip"] },
   { type: "code", label: "Code", description: "Code block", icon: IconCode, keywords: ["code", "snippet", "pre"] },
   { type: "toggle", label: "Toggle", description: "Collapsible section", icon: IconChevronRight, keywords: ["toggle", "collapse", "expand", "accordion"] },
+  { type: "table", label: "Table", description: "Add a simple table", icon: IconTable, keywords: ["table", "grid", "spreadsheet", "rows", "columns"] },
 ];
 
 /** Hover preview for [[wiki-links]] — rendered outside Lexical */
@@ -139,21 +143,24 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
       type: type === "text" ? undefined : type,
       checked: type === "todo" ? false : undefined,
       collapsed: type === "toggle" ? false : undefined,
+      tableData: type === "table" ? createDefaultTable() : undefined,
     };
     onChange(next);
     setSlashMenu(null);
-    // Re-focus this block
-    setTimeout(() => {
-      const editor = editorsRef.current.get(idx);
-      if (editor) {
-        editor.update(() => {
-          const root = $getRoot();
-          root.clear();
-          root.append($createParagraphNode());
-        });
-        editor.focus();
-      }
-    }, 50);
+    // Re-focus this block (skip for table — no Lexical instance)
+    if (type !== "table") {
+      setTimeout(() => {
+        const editor = editorsRef.current.get(idx);
+        if (editor) {
+          editor.update(() => {
+            const root = $getRoot();
+            root.clear();
+            root.append($createParagraphNode());
+          });
+          editor.focus();
+        }
+      }, 50);
+    }
   }, [blocks, onChange]);
 
   const addBlockBelow = useCallback((idx: number) => {
