@@ -29,7 +29,8 @@ interface Props {
   allEdges: Hyperedge[];
   recentIds: string[];
   onSelect: (id: string) => void;
-  onCreateNote: () => void;
+  onCreateNote: (parentId?: string) => void;
+  onCreateFolder: (parentId?: string) => void;
   onCreateDaily: () => void;
   onSwitchGraph: () => void;
   activeTags: Set<string>;
@@ -37,6 +38,9 @@ interface Props {
   tagColors: Record<string, string>;
   itemTagsMap: Record<string, string[]>;
   globalSearch?: string;
+  /** When set, show contents of this folder instead of everything */
+  activeFolderId?: string | null;
+  onNavigateFolder?: (folderId: string | null) => void;
 }
 
 type FilterType = "all" | "note" | "daily" | "folder" | "chat" | "photo" | "video" | "link" | "audio";
@@ -99,13 +103,15 @@ function relativeTime(ts: number): string {
 }
 
 export function SdbHomeView({
-  items, allEdges, recentIds, onSelect, onCreateNote, onCreateDaily, onSwitchGraph,
+  items, allEdges, recentIds, onSelect, onCreateNote, onCreateFolder, onCreateDaily, onSwitchGraph,
   activeTags, onToggleTag, tagColors, itemTagsMap, globalSearch = "",
+  activeFolderId, onNavigateFolder,
 }: Props) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("recent");
   const [view, setView] = useState<"grid" | "list">("grid");
   const search = globalSearch;
+  const [showNewMenu, setShowNewMenu] = useState(false);
   const [showSort, setShowSort] = useState(false);
 
   const smartTags = new Set(["today", "this-week", "recent", "untagged"]);
