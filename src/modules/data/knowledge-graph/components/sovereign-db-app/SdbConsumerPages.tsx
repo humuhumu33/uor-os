@@ -940,12 +940,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                     : "—"}</span>
                 </div>
               </div>
-            </div>
-                    ? new Date(Number(selected.edge.properties.updatedAt)).toLocaleString()
-                    : "—"}</span>
-                </div>
-              </div>
-            </div>
           </>
         )}
       </main>
