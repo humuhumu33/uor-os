@@ -7,8 +7,8 @@
  *   2. Graph (Obsidian-like)
  *   3. Console (AWS-like)
  *
- * @product SovereignDB
- * @version 3.0.0
+ * @product MySpace
+ * @version 4.0.0
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -16,7 +16,6 @@ import { SovereignDB } from "../../sovereign-db";
 import { SdbConsumerPages } from "./SdbConsumerPages";
 import { SdbConsumerGraph } from "./SdbConsumerGraph";
 import { SdbDeveloperDashboard } from "./SdbDeveloperDashboard";
-import { SdbDeveloperGraph } from "./SdbDeveloperGraph";
 import { SdbSidebar, type SdbSection } from "./SdbSidebar";
 import { SdbQueryPanel } from "./SdbQueryPanel";
 import { SdbEdgePanel } from "./SdbEdgePanel";
@@ -27,7 +26,7 @@ import { SdbStatsPanel } from "./SdbStatsPanel";
 import { SdbStoragePanel } from "./SdbStoragePanel";
 import { SdbAtlasInspector } from "./SdbAtlasInspector";
 import { SdbStatusBar } from "./SdbStatusBar";
-
+import { SdbSectionShell } from "./SdbSectionShell";
 
 export type AppSection = "workspace" | "graph" | "console";
 
@@ -49,6 +48,7 @@ const SovereignDBApp = () => {
   const [section, setSection] = useState<AppSection>(loadSection);
   const [devSection, setDevSection] = useState<SdbSection | "dashboard">("dashboard");
   const [collapsed, setCollapsed] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState("");
 
   useEffect(() => {
     SovereignDB.open("sovereign-explorer", { reaperInterval: 60_000 })
@@ -66,7 +66,6 @@ const SovereignDBApp = () => {
     setDevSection(s);
   }, []);
 
-  // Listen for section changes from child components
   useEffect(() => {
     const handler = (e: Event) => {
       const s = (e as CustomEvent).detail as AppSection;
@@ -105,11 +104,8 @@ const SovereignDBApp = () => {
     return null;
   };
 
-
   return (
     <div className="flex flex-col h-full w-full bg-background text-foreground overflow-hidden">
-
-      {/* ── Body ─────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
         {/* Console sidebar */}
         {section === "console" && (
@@ -124,18 +120,34 @@ const SovereignDBApp = () => {
           />
         )}
 
-        <main className="flex-1 overflow-auto">
-          {section === "workspace" && (
-            <SdbConsumerPages db={db} onNavigateSection={handleSectionChange} activeSection={section} />
-          )}
-          {section === "graph" && (
-            <SdbConsumerGraph db={db} onNavigateSection={handleSectionChange} />
-          )}
-          {section === "console" && renderConsoleContent()}
+        <main className="flex-1 overflow-hidden">
+          <SdbSectionShell
+            activeSection={section}
+            onSwitchSection={handleSectionChange}
+            onSearch={setGlobalSearch}
+            searchValue={globalSearch}
+            compact={section === "graph" || section === "console"}
+          >
+            {section === "workspace" && (
+              <SdbConsumerPages
+                db={db}
+                onNavigateSection={handleSectionChange}
+                activeSection={section}
+                globalSearch={globalSearch}
+              />
+            )}
+            {section === "graph" && (
+              <SdbConsumerGraph db={db} onNavigateSection={handleSectionChange} />
+            )}
+            {section === "console" && (
+              <div className="h-full overflow-auto">
+                {renderConsoleContent()}
+              </div>
+            )}
+          </SdbSectionShell>
         </main>
       </div>
 
-      {/* ── Status Bar ───────────────────────── */}
       <SdbStatusBar db={db} startTime={startTime.current} section={section} />
     </div>
   );

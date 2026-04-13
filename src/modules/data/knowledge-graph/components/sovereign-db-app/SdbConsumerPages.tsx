@@ -38,6 +38,7 @@ interface Props {
   db: SovereignDB;
   onNavigateSection?: (section: AppSection) => void;
   activeSection?: AppSection;
+  globalSearch?: string;
 }
 
 interface TreeItem {
@@ -67,7 +68,7 @@ function loadTagColors(): Record<string, string> {
   } catch { return {}; }
 }
 
-export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props) {
+export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalSearch }: Props) {
   const [items, setItems] = useState<TreeItem[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -906,8 +907,7 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props
             onToggleTag={toggleTag}
             tagColors={tagColors}
             itemTagsMap={itemTagsMap}
-            activeSection={activeSection}
-            onSwitchSection={onNavigateSection}
+            globalSearch={globalSearch}
           />
         ) : (
           <>

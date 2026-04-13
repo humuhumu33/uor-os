@@ -1,19 +1,16 @@
 /**
- * SdbHomeView — Eden-inspired workspace home with hero banner,
- * search bar, tag-aware filter chips, and beautiful preview cards.
+ * SdbHomeView — Workspace home with filter chips and preview cards.
  */
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState } from "react";
 import {
-  IconSearch, IconPlus, IconFile, IconCalendarEvent,
+  IconPlus, IconFile, IconCalendarEvent,
   IconFolder, IconLayoutGrid, IconList, IconSortDescending,
-  IconAdjustments, IconMessage, IconPhoto, IconVideo,
+  IconMessage, IconPhoto, IconVideo,
   IconLink, IconMusic, IconFileText, IconX,
-  IconLayout, IconGraph, IconTerminal2,
 } from "@tabler/icons-react";
 import type { Hyperedge } from "../../hypergraph";
 import { SdbTagChip, getTagColor, DEFAULT_TYPE_COLORS } from "./SdbTagChip";
-import type { AppSection } from "./SovereignDBApp";
 
 interface NoteItem {
   id: string;
@@ -36,8 +33,7 @@ interface Props {
   onToggleTag: (tag: string) => void;
   tagColors: Record<string, string>;
   itemTagsMap: Record<string, string[]>;
-  activeSection?: AppSection;
-  onSwitchSection?: (section: AppSection) => void;
+  globalSearch?: string;
 }
 
 type FilterType = "all" | "note" | "daily" | "folder" | "chat" | "photo" | "video" | "link" | "audio";
@@ -100,34 +96,16 @@ function relativeTime(ts: number): string {
   return `${days}d ago`;
 }
 
-const BANNER_PHOTOS = [
-  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&h=400&fit=crop&crop=center&q=80",
-  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&h=400&fit=crop&crop=center&q=80",
-  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200&h=400&fit=crop&crop=center&q=80",
-  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&h=400&fit=crop&crop=center&q=80",
-  "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&h=400&fit=crop&crop=center&q=80",
-];
-
-function pickBanner(): string {
-  const key = "sdb-banner-idx";
-  let idx = 0;
-  try { idx = (parseInt(localStorage.getItem(key) || "0", 10) + 1) % BANNER_PHOTOS.length; } catch {}
-  try { localStorage.setItem(key, String(idx)); } catch {}
-  return BANNER_PHOTOS[idx];
-}
 
 export function SdbHomeView({
   items, allEdges, recentIds, onSelect, onCreateNote, onCreateDaily, onSwitchGraph,
-  activeTags, onToggleTag, tagColors, itemTagsMap, activeSection, onSwitchSection,
+  activeTags, onToggleTag, tagColors, itemTagsMap, globalSearch = "",
 }: Props) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("recent");
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [search, setSearch] = useState("");
+  const search = globalSearch;
   const [showSort, setShowSort] = useState(false);
-  const [bannerLoaded, setBannerLoaded] = useState(false);
-  const bannerRef = useRef<HTMLImageElement>(null);
-  const [bannerUrl] = useState(() => pickBanner());
 
   // Smart tag helpers
   const isSmartMatch = (item: NoteItem, tag: string): boolean => {
@@ -177,53 +155,8 @@ export function SdbHomeView({
 
   return (
     <div className="flex-1 overflow-auto">
-      {/* ── Hero Banner ── */}
-      <div className="relative w-full h-[140px] overflow-hidden">
-        <img
-          ref={bannerRef}
-          src={bannerUrl}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
-          style={{ opacity: bannerLoaded ? 1 : 0 }}
-          onLoad={() => setBannerLoaded(true)}
-          draggable={false}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background: "linear-gradient(135deg, hsl(160 40% 12% / 0.5), hsl(200 50% 18% / 0.4), hsl(260 30% 15% / 0.4), hsl(160 40% 12% / 0.5))",
-            backgroundSize: "400% 400%",
-            animation: "sdb-gradient-drift 12s ease-in-out infinite",
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
-        <style>{`
-          @keyframes sdb-gradient-drift {
-            0%, 100% { background-position: 0% 50%; }
-            25% { background-position: 100% 25%; }
-            50% { background-position: 50% 100%; }
-            75% { background-position: 25% 0%; }
-          }
-        `}</style>
-      </div>
-
-      <div className="w-full px-6 sm:px-8 lg:px-12 xl:px-16 -mt-6 relative z-10 pb-10">
-        {/* ── Search bar ── */}
-        <div className="relative mb-7">
-          <IconSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search anything…"
-            className="w-full pl-12 pr-4 py-3.5 text-os-body bg-card border border-border/30 rounded-2xl
-              text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20
-              focus:border-primary/30 transition-all shadow-sm"
-          />
-        </div>
-
-        {/* ── Filter chips + section tabs ── */}
+      <div className="w-full px-6 sm:px-8 lg:px-12 xl:px-16 py-6 pb-10">
+        {/* ── Filter chips ── */}
         <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1">
           {FILTERS.map(f => (
             <button
@@ -239,34 +172,6 @@ export function SdbHomeView({
               {f.label}
             </button>
           ))}
-
-          {/* Section tabs — right-aligned */}
-          {onSwitchSection && (
-            <div className="ml-auto flex items-center gap-1 shrink-0 pl-3 border-l border-border/20">
-              {([
-                { id: "workspace" as AppSection, label: "Workspace", icon: IconLayout },
-                { id: "graph" as AppSection, label: "Graph", icon: IconGraph },
-                { id: "console" as AppSection, label: "Console", icon: IconTerminal2 },
-              ]).map(tab => {
-                const Icon = tab.icon;
-                const isActive = activeSection === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => onSwitchSection(tab.id)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-os-body font-medium whitespace-nowrap transition-all ${
-                      isActive
-                        ? "bg-foreground/10 text-foreground"
-                        : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
-                    }`}
-                  >
-                    <Icon size={14} />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         {/* Active tag pills */}
