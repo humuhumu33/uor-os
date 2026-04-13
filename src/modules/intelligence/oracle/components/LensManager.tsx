@@ -110,7 +110,6 @@ const LensManager: React.FC<LensManagerProps> = ({
     `${base} ${immersive ? immersiveClass : lightClass}`;
 
   return (
-          <>
           {open && (
         <>
           {/* Backdrop */}
@@ -383,7 +382,6 @@ function ActionBtn({
     >
       {children}
     </button>
-    </>
   );
 }
 

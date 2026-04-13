@@ -244,8 +244,9 @@ const LensInspector: React.FC<LensInspectorProps> = ({
     setBp(cloneBlueprint(initialBlueprint));
   };
 
+  if (!open) return null;
+
   return (
-          {open && (
         <div
       className="w-full max-w-sm bg-card/95 backdrop-blur-xl border border-border/20 rounded-2xl shadow-xl overflow-hidden"
         >
@@ -500,7 +501,6 @@ const LensInspector: React.FC<LensInspectorProps> = ({
           </div>
         </div>
       )}
-    </>
   );
 };
 
