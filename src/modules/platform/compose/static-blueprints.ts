@@ -120,12 +120,12 @@ export const STATIC_BLUEPRINTS: AppBlueprint[] = [
     resources: { workers: 1 },
   },
 
-  // ── SOVEREIGN DB ─────────────────────────────────────────────────────
+  // ── MYSPACE ──────────────────────────────────────────────────────────
 
   {
     "@context": CTX,
     "@type": TYPE,
-    name: "sovereign-db",
+    name: "myspace",
     version: "1.0.0",
     requires: [
       "graph/query", "graph/insert", "graph/sparql", "graph/cypher",
@@ -142,9 +142,9 @@ export const STATIC_BLUEPRINTS: AppBlueprint[] = [
     defaultSize: { w: 1200, h: 800 },
     color: "hsl(160 65% 45%)",
     category: "OBSERVE",
-    description: "Full-featured hypergraph database explorer with Cypher, SPARQL, algorithms, and visual browsing",
-    keywords: ["database", "db", "sovereign", "hypergraph", "cypher", "sparql", "query", "graph", "neo4j", "explorer"],
-    iconName: "Network",
+    description: "Your personal sovereign workspace — secure, private, and entirely yours",
+    keywords: ["myspace", "workspace", "personal", "sovereign", "database", "hypergraph", "graph", "files", "notes"],
+    iconName: "ShieldCheck",
     resources: { callBudget: { maxPerSecond: 200 } },
   },
 

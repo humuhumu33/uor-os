@@ -51,6 +51,7 @@ export default {
         },
       },
       fontSize: {
+        "os-body": "var(--os-text-body)",
         "holo-xs": "var(--holo-text-xs)",
         "holo-sm": "var(--holo-text-sm)",
         "holo-base": "var(--holo-text-base)",

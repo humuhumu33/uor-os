@@ -15,17 +15,38 @@ Every object in the system — files, messages, identities, computation results 
 ## Getting Started
 
 ```bash
-npm install
-npm run dev
+npm run boot   # installs deps + starts dev server at http://localhost:8080
 ```
 
-Open `http://localhost:8080` to load the desktop shell.
+Or step by step:
+
+```bash
+npm install    # peer deps resolved automatically via .npmrc
+npm run dev    # opens at http://localhost:8080
+```
+
+**No `.env` required.** The core shell boots fully offline — desktop, dock, kernel, knowledge graph, and sovereign boot all work without any backend. To enable remote features (AI, messenger, cloud sync), copy `.env.example` to `.env` and add your keys.
+
+> **Sovereign Boot:** On every launch the system runs a multi-phase integrity check — verifying the kernel, ring tables, and WASM binaries — and produces a cryptographic seal. This happens automatically; no user action needed.
 
 For a native desktop build (requires the [Rust toolchain](https://rustup.rs)):
 
 ```bash
 npm run tauri:build
 ```
+
+## Offline vs Network Features
+
+| Feature | Requires |
+|---|---|
+| Desktop shell, dock, spotlight | Offline ✅ |
+| Kernel (R₈ ring, WASM) | Offline ✅ |
+| Knowledge graph (GrafeoDB) | Offline ✅ |
+| Sovereign boot + seal | Offline ✅ |
+| AI oracle | Network 🌐 |
+| Encrypted messenger | Network 🌐 |
+| Cloud sync | Network 🌐 |
+| Edge functions | Network 🌐 |
 
 ## Features
 

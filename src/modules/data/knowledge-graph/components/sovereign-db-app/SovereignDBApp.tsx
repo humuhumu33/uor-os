@@ -7,17 +7,21 @@
  *   2. Graph (Obsidian-like)
  *   3. Console (AWS-like)
  *
- * @product SovereignDB
- * @version 3.0.0
+ * Unified collapsible sidebar persists across all sections.
+ *
+ * @product MySpace
+ * @version 5.0.0
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand,
+} from "@tabler/icons-react";
 import { SovereignDB } from "../../sovereign-db";
 import { SdbConsumerPages } from "./SdbConsumerPages";
 import { SdbConsumerGraph } from "./SdbConsumerGraph";
 import { SdbDeveloperDashboard } from "./SdbDeveloperDashboard";
-import { SdbDeveloperGraph } from "./SdbDeveloperGraph";
-import { SdbSidebar, type SdbSection } from "./SdbSidebar";
+import { type SdbSection } from "./SdbSidebar";
 import { SdbQueryPanel } from "./SdbQueryPanel";
 import { SdbEdgePanel } from "./SdbEdgePanel";
 import { SdbSchemaPanel } from "./SdbSchemaPanel";
@@ -27,7 +31,7 @@ import { SdbStatsPanel } from "./SdbStatsPanel";
 import { SdbStoragePanel } from "./SdbStoragePanel";
 import { SdbAtlasInspector } from "./SdbAtlasInspector";
 import { SdbStatusBar } from "./SdbStatusBar";
-import { MYSPACE_SECTION_TAGLINES } from "@/modules/platform/core/lib/app-taglines";
+import { SdbSectionShell } from "./SdbSectionShell";
 
 export type AppSection = "workspace" | "graph" | "console";
 
@@ -49,6 +53,10 @@ const SovereignDBApp = () => {
   const [section, setSection] = useState<AppSection>(loadSection);
   const [devSection, setDevSection] = useState<SdbSection | "dashboard">("dashboard");
   const [collapsed, setCollapsed] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState("");
+
+  // Sidebar portal target — each section renders its sidebar content here
+  const [sidebarNode, setSidebarNode] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     SovereignDB.open("sovereign-explorer", { reaperInterval: 60_000 })
@@ -66,7 +74,6 @@ const SovereignDBApp = () => {
     setDevSection(s);
   }, []);
 
-  // Listen for section changes from child components
   useEffect(() => {
     const handler = (e: Event) => {
       const s = (e as CustomEvent).detail as AppSection;
@@ -105,88 +112,166 @@ const SovereignDBApp = () => {
     return null;
   };
 
-  const TABS: { id: AppSection; label: string }[] = [
-    { id: "workspace", label: "Workspace" },
-    { id: "graph", label: "Graph" },
-    { id: "console", label: "Console" },
-  ];
-
   return (
     <div className="flex flex-col h-full w-full bg-background text-foreground overflow-hidden">
-      {/* ── Unified Header ──────────────────── */}
-      <header className="flex items-center h-11 px-5 border-b border-border/40 bg-card shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[15px] font-semibold tracking-tight">MySpace</span>
-        </div>
-
-        <div className="flex items-center ml-6">
-          <span
-            key={section}
-            className="text-[13px] italic tracking-wide text-muted-foreground/50 animate-[sdb-tagline-fade_0.5s_ease-out]"
-          >
-            {MYSPACE_SECTION_TAGLINES[section] || "Own your data."}
-          </span>
-          <style>{`
-            @keyframes sdb-tagline-fade {
-              from { opacity: 0; transform: translateY(2px); }
-              to   { opacity: 1; transform: translateY(0); }
-            }
-          `}</style>
-        </div>
-
-        <div className="ml-auto flex items-center gap-0.5">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => handleSectionChange(tab.id)}
-              className={`relative px-3.5 py-1.5 text-[14px] transition-all duration-200 ${
-                section === tab.id
-                  ? "text-foreground font-medium"
-                  : "text-muted-foreground/50 hover:text-muted-foreground"
-              }`}
-            >
-              {tab.label}
-              <span
-                className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full bg-primary transition-all duration-300 ease-out ${
-                  section === tab.id ? "w-4/5 opacity-100" : "w-0 opacity-0"
-                }`}
-              />
-            </button>
-          ))}
-        </div>
-      </header>
-
-      {/* ── Body ─────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Console sidebar */}
-        {section === "console" && (
-          <SdbSidebar
-            active={devSection === "dashboard" ? "query" : devSection}
-            onSelect={(s) => setDevSection(s)}
-            collapsed={collapsed}
-            onToggle={() => setCollapsed(c => !c)}
-            showDashboard
-            onDashboard={() => setDevSection("dashboard")}
-            isDashboard={devSection === "dashboard"}
-          />
-        )}
+        {/* ── Unified Sidebar (always visible) ── */}
+        <aside
+          className={`shrink-0 border-r border-border bg-card/40 flex flex-col transition-all duration-200 ${
+            collapsed ? "w-14" : "w-[230px]"
+          }`}
+        >
+          {/* Portal target — each section fills this */}
+          <div ref={setSidebarNode} className="flex-1 flex flex-col overflow-hidden" />
 
-        <main className="flex-1 overflow-auto">
-          {section === "workspace" && (
-            <SdbConsumerPages db={db} onNavigateSection={handleSectionChange} />
-          )}
-          {section === "graph" && (
-            <SdbConsumerGraph db={db} onNavigateSection={handleSectionChange} />
-          )}
-          {section === "console" && renderConsoleContent()}
+          {/* Collapse toggle */}
+          <button
+            onClick={() => setCollapsed(c => !c)}
+            className="flex items-center justify-center py-3 border-t border-border/15 text-muted-foreground/50 hover:text-foreground transition-colors"
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed
+              ? <IconLayoutSidebarLeftExpand size={16} stroke={1.5} />
+              : <IconLayoutSidebarLeftCollapse size={16} stroke={1.5} />}
+          </button>
+        </aside>
+
+        {/* ── Main content area ── */}
+        <main className="flex-1 overflow-hidden">
+          <SdbSectionShell
+            activeSection={section}
+            onSwitchSection={handleSectionChange}
+            onSearch={setGlobalSearch}
+            searchValue={globalSearch}
+          >
+            {/* All sections always mounted, display-toggled for portal stability */}
+            <div className={`h-full ${section === "workspace" ? "" : "hidden"}`}>
+              <SdbConsumerPages
+                db={db}
+                onNavigateSection={handleSectionChange}
+                activeSection={section}
+                globalSearch={globalSearch}
+                sidebarTarget={sidebarNode}
+                sidebarCollapsed={collapsed}
+              />
+            </div>
+            <div className={`h-full ${section === "graph" ? "" : "hidden"}`}>
+              <SdbConsumerGraph
+                db={db}
+                onNavigateSection={handleSectionChange}
+                globalSearch={globalSearch}
+                sidebarTarget={sidebarNode}
+                sidebarCollapsed={collapsed}
+                activeSection={section}
+              />
+            </div>
+            <div className={`h-full ${section === "console" ? "" : "hidden"}`}>
+              <SdbConsoleSection
+                db={db}
+                devSection={devSection}
+                onDevNavigate={handleDevNavigate}
+                isDashboard={devSection === "dashboard"}
+                onDashboard={() => setDevSection("dashboard")}
+                sidebarTarget={sidebarNode}
+                sidebarCollapsed={collapsed}
+                renderContent={renderConsoleContent}
+                activeSection={section}
+              />
+            </div>
+          </SdbSectionShell>
         </main>
       </div>
 
-      {/* ── Status Bar ───────────────────────── */}
       <SdbStatusBar db={db} startTime={startTime.current} section={section} />
     </div>
   );
 };
 
 export default SovereignDBApp;
+
+/* ── Console section wrapper with portal sidebar ── */
+
+import { createPortal } from "react-dom";
+import {
+  IconTerminal2, IconBinaryTree, IconSchema, IconChartDots, IconFileImport,
+  IconChartBar, IconDatabase, IconLayoutDashboard, IconTopologyRing,
+} from "@tabler/icons-react";
+
+const CONSOLE_NAV: { id: SdbSection; label: string; icon: typeof IconTerminal2 }[] = [
+  { id: "query", label: "Query Console", icon: IconTerminal2 },
+  { id: "edges", label: "Edge Explorer", icon: IconBinaryTree },
+  { id: "schema", label: "Schema Manager", icon: IconSchema },
+  { id: "algo", label: "Algorithms", icon: IconChartDots },
+  { id: "import", label: "Import / Export", icon: IconFileImport },
+  { id: "stats", label: "Monitoring", icon: IconChartBar },
+  { id: "storage", label: "Storage", icon: IconDatabase },
+  { id: "atlas", label: "Atlas Inspector", icon: IconTopologyRing },
+];
+
+interface ConsoleSectionProps {
+  db: SovereignDB;
+  devSection: SdbSection | "dashboard";
+  onDevNavigate: (s: SdbSection) => void;
+  isDashboard: boolean;
+  onDashboard: () => void;
+  sidebarTarget: HTMLDivElement | null;
+  sidebarCollapsed: boolean;
+  renderContent: () => React.ReactNode;
+  activeSection: AppSection;
+}
+
+function SdbConsoleSection({
+  devSection, onDevNavigate, isDashboard, onDashboard,
+  sidebarTarget, sidebarCollapsed, renderContent, activeSection,
+}: ConsoleSectionProps) {
+  const sidebarContent = (
+    <div className="flex flex-col h-full">
+      {!sidebarCollapsed && (
+        <div className="px-4 py-3 border-b border-border/15">
+          <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">
+            Services
+          </span>
+        </div>
+      )}
+      <nav className="flex-1 py-2 space-y-0.5 overflow-auto">
+        <button
+          onClick={onDashboard}
+          title="Dashboard"
+          className={`flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium transition-colors ${
+            isDashboard
+              ? "bg-primary/10 text-primary border-r-2 border-primary"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          }`}
+        >
+          <IconLayoutDashboard size={18} stroke={1.5} className="shrink-0" />
+          {!sidebarCollapsed && <span className="truncate">Dashboard</span>}
+        </button>
+        <div className="mx-3 my-1 border-t border-border/10" />
+        {CONSOLE_NAV.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => onDevNavigate(id)}
+            title={label}
+            className={`flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium transition-colors ${
+              devSection === id && !isDashboard
+                ? "bg-primary/10 text-primary border-r-2 border-primary"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            }`}
+          >
+            <Icon size={18} stroke={1.5} className="shrink-0" />
+            {!sidebarCollapsed && <span className="truncate">{label}</span>}
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+
+  return (
+    <>
+      {sidebarTarget && activeSection === "console" && createPortal(sidebarContent, sidebarTarget)}
+      <div className="h-full overflow-auto">
+        {renderContent()}
+      </div>
+    </>
+  );
+}

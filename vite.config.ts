@@ -7,6 +7,7 @@ import { VitePWA } from "vite-plugin-pwa";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 import { componentTagger } from "lovable-tagger";
+import { visualizer } from "rollup-plugin-visualizer";
 
 export default defineConfig(({ mode }) => {
   const isGitHubPages = process.env.GITHUB_PAGES === "true";
@@ -28,6 +29,7 @@ export default defineConfig(({ mode }) => {
     topLevelAwait(),
     react(),
     mode === "development" && componentTagger(),
+    process.env.ANALYZE && visualizer({ open: true, gzipSize: true, filename: "dist/bundle-report.html" }),
     VitePWA({
       strategies: "injectManifest",
       srcDir: "src",
@@ -37,7 +39,18 @@ export default defineConfig(({ mode }) => {
       devOptions: { enabled: false },
       includeAssets: ["favicon.png", "pwa-icon-192.png", "pwa-icon-512.png"],
       injectManifest: {
-        globIgnores: ["**/*.wasm", "**/modules/uns/build/**", "**/modules/identity/uns/build/**"],
+        globIgnores: [
+          "**/*.wasm",
+          "**/modules/uns/build/**",
+          "**/modules/identity/uns/build/**",
+          "**/vendor-3d-*.js",
+          "**/vendor-matrix-*.js",
+          "**/vendor-monaco-*.js",
+          "**/vendor-ml-*.js",
+          "**/vendor-editor-*.js",
+          "**/vendor-graph-viz-*.js",
+          "**/vendor-privy-*.js",
+        ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         rollupFormat: "iife",
       },
@@ -80,6 +93,17 @@ export default defineConfig(({ mode }) => {
   },
   build: {
     rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('three') || id.includes('@react-three') || id.includes('react-force-graph-3d')) return 'vendor-3d';
+          if (id.includes('matrix-js-sdk')) return 'vendor-matrix';
+          if (id.includes('@monaco-editor') || id.includes('monaco-editor')) return 'vendor-monaco';
+          if (id.includes('@huggingface/transformers')) return 'vendor-ml';
+          if (id.includes('lexical') || id.includes('@lexical')) return 'vendor-editor';
+          if (id.includes('graphology') || id.includes('sigma') || id.includes('@react-sigma')) return 'vendor-graph-viz';
+          if (id.includes('@privy-io')) return 'vendor-privy';
+        },
+      },
       external: [
         ...(mode === "tauri"
           ? [

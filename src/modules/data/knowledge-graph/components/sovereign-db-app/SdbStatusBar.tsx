@@ -36,7 +36,7 @@ export function SdbStatusBar({ db, startTime, section = "workspace" }: Props) {
   const wsTags = new Set(edges.filter(e => e.label === "workspace:tag").map(e => String(e.properties.tag || "")));
 
   return (
-    <footer className="flex items-center gap-4 h-8 px-5 border-t border-border bg-card text-[12px] text-muted-foreground shrink-0 font-mono">
+    <footer className="flex items-center gap-4 h-8 px-5 border-t border-border bg-card text-os-body text-muted-foreground shrink-0 font-mono">
       {section === "workspace" ? (
         <>
           <span>{wsNotes.length} notes</span>
@@ -72,16 +72,17 @@ export function SdbStatusBar({ db, startTime, section = "workspace" }: Props) {
               <span>Partitions: <strong className="text-foreground">{partitionRouter.size}</strong></span>
             </>
           )}
-          <span className="ml-auto flex items-center gap-2 text-[11px]">
+          <span className="ml-auto flex items-center gap-2 text-os-body">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span className="text-muted-foreground/70">{db.backend}</span>
-            <span className="text-muted-foreground/50">·</span>
-            <span className="text-muted-foreground/70">{providerRegistry.size} providers</span>
+            <span className="text-muted-foreground">{db.backend}</span>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-muted-foreground">{providerRegistry.size} providers</span>
           </span>
         </>
       )}
       {!db && <span className="ml-auto" />}
-      <UorSignature className={db ? "" : "ml-auto"} />
+      <span className="w-px h-3 bg-border" />
+      <UorSignature />
     </footer>
   );
 }

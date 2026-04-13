@@ -58,21 +58,21 @@ export function SdbQueryPanel({ db }: Props) {
           <select
             value={lang}
             onChange={(e) => setLang(e.target.value as any)}
-            className="px-2.5 py-1.5 rounded-md border border-border bg-muted text-[13px] focus:outline-none"
+            className="px-2.5 py-1.5 rounded-md border border-border bg-muted text-os-body focus:outline-none"
           >
             <option value="cypher">Cypher</option>
             <option value="sparql">SPARQL</option>
           </select>
           <button
             onClick={run}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-primary text-primary-foreground text-[13px] font-medium hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-primary text-primary-foreground text-os-body font-medium hover:bg-primary/90 transition-colors"
           >
             <IconPlayerPlay size={14} />
             Execute
           </button>
           <button
             onClick={() => setShowHistory(h => !h)}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md border text-[13px] transition-colors ${
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md border text-os-body transition-colors ${
               showHistory
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
@@ -82,7 +82,7 @@ export function SdbQueryPanel({ db }: Props) {
             <IconHistory size={14} />
           </button>
           {elapsed !== null && (
-            <span className="text-xs text-muted-foreground ml-auto font-mono">{elapsed} ms</span>
+            <span className="text-os-body text-muted-foreground ml-auto font-mono">{elapsed} ms</span>
           )}
         </div>
         {showHistory && (
@@ -96,7 +96,7 @@ export function SdbQueryPanel({ db }: Props) {
               ? 'MATCH (a)-[r:KNOWS]->(b) RETURN a, b'
               : 'SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 10'
           }
-          className="w-full h-28 p-3 rounded-md border border-border bg-muted/50 font-mono text-[13px] leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/50"
+          className="w-full h-28 p-3 rounded-md border border-border bg-muted/50 font-mono text-os-body leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/50"
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run();
           }}
@@ -106,7 +106,7 @@ export function SdbQueryPanel({ db }: Props) {
       {/* ── Results area ──── */}
       <div className="flex-1 overflow-auto">
         {error && (
-          <div className="m-4 p-3 rounded-md bg-destructive/10 text-destructive text-[13px] font-mono">
+          <div className="m-4 p-3 rounded-md bg-destructive/10 text-destructive text-os-body font-mono">
             {error}
           </div>
         )}
@@ -119,7 +119,7 @@ export function SdbQueryPanel({ db }: Props) {
                 <button
                   key={v}
                   onClick={() => setView(v)}
-                  className={`px-3 py-1 rounded text-[12px] font-medium capitalize transition-colors ${
+                  className={`px-3 py-1 rounded text-os-body font-medium capitalize transition-colors ${
                     view === v
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:text-foreground"
@@ -128,20 +128,20 @@ export function SdbQueryPanel({ db }: Props) {
                   {v}
                 </button>
               ))}
-              <span className="text-xs text-muted-foreground ml-auto">
+              <span className="text-os-body text-muted-foreground ml-auto">
                 {rows.length} row{rows.length !== 1 ? "s" : ""}
               </span>
             </div>
 
             {view === "table" && columns.length > 0 ? (
               <div className="overflow-auto flex-1 px-4 pb-4">
-                <table className="w-full text-[13px]">
+                <table className="w-full text-os-body">
                   <thead>
                     <tr className="border-b border-border">
                       {columns.map((c) => (
                         <th
                           key={c}
-                          className="text-left px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                          className="text-left px-3 py-2 text-os-body font-semibold uppercase tracking-wider text-muted-foreground"
                         >
                           {c}
                         </th>
@@ -152,7 +152,7 @@ export function SdbQueryPanel({ db }: Props) {
                     {rows.map((row, i) => (
                       <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                         {columns.map((c) => (
-                          <td key={c} className="px-3 py-2 font-mono text-[12px]">
+                          <td key={c} className="px-3 py-2 font-mono text-os-body">
                             {typeof row[c] === "object"
                               ? JSON.stringify(row[c])
                               : String(row[c] ?? "")}
@@ -164,7 +164,7 @@ export function SdbQueryPanel({ db }: Props) {
                 </table>
               </div>
             ) : view === "table" && columns.length === 0 ? (
-              <div className="p-4 text-sm text-muted-foreground">
+              <div className="p-4 text-os-body text-muted-foreground">
                 Query returned no tabular data.
               </div>
             ) : view === "graph" ? (
@@ -172,7 +172,7 @@ export function SdbQueryPanel({ db }: Props) {
                 <SdbResultGraph rows={rows} columns={columns} />
               </div>
             ) : (
-              <pre className="flex-1 overflow-auto m-4 p-4 rounded-md bg-muted/50 text-[12px] font-mono leading-relaxed">
+              <pre className="flex-1 overflow-auto m-4 p-4 rounded-md bg-muted/50 text-os-body font-mono leading-relaxed">
                 {JSON.stringify(result, null, 2)}
               </pre>
             )}
@@ -180,7 +180,7 @@ export function SdbQueryPanel({ db }: Props) {
         )}
 
         {!result && !error && (
-          <div className="flex items-center justify-center h-full text-sm text-muted-foreground/60">
+          <div className="flex items-center justify-center h-full text-os-body text-muted-foreground/60">
             Run a query to see results
           </div>
         )}

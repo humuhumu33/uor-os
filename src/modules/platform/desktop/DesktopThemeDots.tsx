@@ -1,12 +1,9 @@
 /**
- * DesktopThemeDots — Earth / Moon / Sun screen switcher.
+ * DesktopThemeDots — Minimal monochrome screen switcher.
  *
- * 🌍 Earth = Immersive (photo wallpaper)
- * 🌙 Moon  = Dark mode
- * ☀️ Sun   = Light mode
- *
- * Each is a separate desktop screen with its own persistent layout.
+ * Three subtle dots: Immersive · Dark · Light.
  * Click or press 1/2/3 to switch. Hover reveals label.
+ * Theme-aware: uses dark tones on light backgrounds.
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -17,38 +14,10 @@ const DOTS: {
   id: DesktopTheme;
   label: string;
   key: string;
-  colors: { fill: string; glow: string; ring: string };
 }[] = [
-  {
-    id: "immersive",
-    label: "Earth",
-    key: "1",
-    colors: {
-      fill: "radial-gradient(circle at 38% 36%, rgba(140,180,160,0.9) 0%, rgba(90,130,110,0.85) 50%, rgba(60,100,90,0.8) 100%)",
-      glow: "0 0 6px rgba(140,180,160,0.25)",
-      ring: "rgba(140,180,160,0.35)",
-    },
-  },
-  {
-    id: "dark",
-    label: "Moon",
-    key: "2",
-    colors: {
-      fill: "radial-gradient(circle at 40% 38%, rgba(200,200,195,0.85) 0%, rgba(160,160,155,0.75) 55%, rgba(130,130,125,0.65) 100%)",
-      glow: "0 0 6px rgba(200,200,195,0.2)",
-      ring: "rgba(200,200,195,0.3)",
-    },
-  },
-  {
-    id: "light",
-    label: "Sun",
-    key: "3",
-    colors: {
-      fill: "radial-gradient(circle at 42% 40%, rgba(240,210,150,0.9) 0%, rgba(210,170,100,0.8) 55%, rgba(185,145,80,0.7) 100%)",
-      glow: "0 0 6px rgba(220,190,120,0.25)",
-      ring: "rgba(220,190,120,0.35)",
-    },
-  },
+  { id: "immersive", label: "Immersive", key: "1" },
+  { id: "dark", label: "Dark", key: "2" },
+  { id: "light", label: "Light", key: "3" },
 ];
 
 interface Props {
@@ -56,12 +25,11 @@ interface Props {
 }
 
 export default function DesktopThemeDots({ windows = [] }: Props) {
-  const { theme, setTheme } = useDesktopTheme();
+  const { theme, setTheme, isLight } = useDesktopTheme();
   const [hoveredDot, setHoveredDot] = useState<DesktopTheme | null>(null);
 
   const hasVisibleWindows = windows.some(w => !w.minimized);
 
-  // Direct number key shortcuts (1/2/3) when no input is focused
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -76,22 +44,30 @@ export default function DesktopThemeDots({ windows = [] }: Props) {
     return () => window.removeEventListener("keydown", handleKey);
   }, [handleKey]);
 
+  // Theme-aware colors
+  const activeFill = isLight ? "rgba(0,0,0,0.50)" : "rgba(255,255,255,0.50)";
+  const inactiveFill = isLight ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.15)";
+  const activeGlow = isLight ? "0 0 6px rgba(0,0,0,0.08)" : "0 0 6px rgba(255,255,255,0.12)";
+  const labelColor = isLight ? "rgba(0,0,0,0.40)" : "rgba(255,255,255,0.35)";
+  const pillBg = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.03)";
+  const pillBorder = isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.04)";
+
   return (
     <div
       className="fixed bottom-4 inset-x-0 z-[195] flex justify-center pointer-events-none"
       style={{
         opacity: hasVisibleWindows ? 0 : 1,
-        transition: "opacity 200ms ease-out",
+        transition: "opacity 400ms ease-out",
       }}
     >
       <div
-        className="pointer-events-auto flex items-center gap-4 py-2 px-4 rounded-full relative"
+        className="pointer-events-auto flex items-center gap-3 py-2 px-3.5 rounded-full relative"
         style={{
           pointerEvents: hasVisibleWindows ? "none" : "auto",
-          background: "rgba(0,0,0,0.12)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          border: "1px solid rgba(255,255,255,0.04)",
+          background: pillBg,
+          backdropFilter: "blur(16px) saturate(1.2)",
+          WebkitBackdropFilter: "blur(16px) saturate(1.2)",
+          border: `1px solid ${pillBorder}`,
         }}
       >
         {DOTS.map(dot => {
@@ -101,11 +77,12 @@ export default function DesktopThemeDots({ windows = [] }: Props) {
             <div key={dot.id} className="relative flex flex-col items-center">
               {/* Hover label */}
               <span
-                className="absolute -top-7 text-white/50 text-[11px] tracking-wide font-medium whitespace-nowrap select-none pointer-events-none"
+                className="absolute -top-7 text-[10px] tracking-[0.12em] uppercase font-medium whitespace-nowrap select-none pointer-events-none"
                 style={{
+                  color: labelColor,
                   opacity: hovered ? 1 : 0,
-                  transform: hovered ? "translateY(0)" : "translateY(3px)",
-                  transition: "opacity 200ms ease-out, transform 200ms ease-out",
+                  transform: hovered ? "translateY(0)" : "translateY(2px)",
+                  transition: "opacity 250ms ease-out, transform 250ms ease-out",
                 }}
               >
                 {dot.label}
@@ -118,15 +95,16 @@ export default function DesktopThemeDots({ windows = [] }: Props) {
                 title={`${dot.label} — press ${dot.key}`}
                 className="rounded-full"
                 style={{
-                  width: active ? 14 : 11,
-                  height: active ? 14 : 11,
-                  background: dot.colors.fill,
-                  boxShadow: active ? dot.colors.glow : "none",
-                  outline: active ? `1.5px solid ${dot.colors.ring}` : "1.5px solid transparent",
-                  outlineOffset: 2,
-                  transform: hovered && !active ? "scale(1.25)" : "scale(1)",
-                  transition: "all 300ms cubic-bezier(0.16, 1, 0.3, 1)",
+                  width: active ? 7 : 5,
+                  height: active ? 7 : 5,
+                  background: active ? activeFill : inactiveFill,
+                  boxShadow: active ? activeGlow : "none",
+                  transform: hovered && !active ? "scale(1.4)" : "scale(1)",
+                  transition: "all 350ms cubic-bezier(0.16, 1, 0.3, 1)",
                   cursor: "pointer",
+                  border: "none",
+                  outline: "none",
+                  padding: 0,
                 }}
               />
             </div>

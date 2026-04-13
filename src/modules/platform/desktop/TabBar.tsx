@@ -145,8 +145,14 @@ function TabBarConnectivity({ isLight }: { isLight: boolean }) {
   const conn = useConnectivity();
   const [popoverOpen, setPopoverOpen] = useState(false);
 
+  const modeLabel = conn.syncMode === "cloud" ? "Cloud" : conn.syncMode === "local" ? "Local" : conn.online ? "Online" : "Offline";
+  const textMuted = isLight ? "text-black/40" : "text-white/40";
+
   return (
-    <div className="relative flex items-center">
+    <div className="relative flex items-center gap-1.5">
+      <span className={`text-[10px] font-medium ${textMuted} select-none`}>
+        {modeLabel}
+      </span>
       <button
         onClick={() => setPopoverOpen(o => !o)}
         className={`flex items-center justify-center w-[24px] h-[24px] rounded-full transition-all duration-150
@@ -318,14 +324,24 @@ export default function TabBar({
         WebkitBackdropFilter: "blur(12px) saturate(1.2)",
       }}
     >
-      {/* Left: UOR menu */}
+      {/* Left: Home button (direct click → go to home screen) */}
+      <button
+        onClick={onHideAll}
+        className="flex items-center justify-center shrink-0 h-full transition-opacity duration-150 hover:opacity-70"
+        style={{ width: 50 }}
+        title="Home"
+      >
+        <Home className={`w-[16px] h-[16px] ${isLight ? "text-black/50" : "text-white/50"}`} />
+      </button>
+
+      {/* UOR menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="flex items-center justify-center shrink-0 h-full transition-opacity duration-150 hover:opacity-70"
-            style={{ width: 50 }}
+            className={`flex items-center justify-center shrink-0 h-full w-8 transition-opacity duration-150 hover:opacity-70 -ml-2`}
+            title="UOR Menu"
           >
-            <Home className={`w-[16px] h-[16px] ${isLight ? "text-black/50" : "text-white/50"}`} />
+            <Sparkles className={`w-[13px] h-[13px] ${isLight ? "text-black/30" : "text-white/30"}`} />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -610,7 +626,7 @@ export default function TabBar({
         >
           {formatted}&ensp;{clock}
         </span>
-        
+        <TabBarConnectivity isLight={isLight} />
         <EngineStatusIndicator isLight={isLight} />
         <FullscreenToggle isLight={isLight} />
         <SovereignProfileButton isLight={isLight} onClick={onProfileOpen} />

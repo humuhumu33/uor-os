@@ -1,39 +1,76 @@
 
 
-# Font Size & Color Contrast Fix
+# Effortless Local ↔ Cloud Instance Switching
 
-## Problem
+## The problem today
 
-The UI has two systemic issues:
+The provider (local vs cloud) is chosen **once at boot** based on auth + connectivity — and never changes. There is no way for you to:
+- Manually switch from cloud to local (e.g. going on a plane)
+- Switch from local to cloud (e.g. arriving at wifi)
+- See which provider is active
+- Have data follow you across the switch
 
-1. **Low contrast**: Many text elements use extreme opacity values (`/20`, `/25`, `/30`, `/35`) that are nearly invisible against both light and dark backgrounds. Labels, timestamps, counts, and helper text are too faint.
+The infrastructure is already there (`ProviderRegistry`, `PartitionRouter`, `syncBridge`, `ConnectivityPopover`) — it just lacks the user-facing control surface and the data migration glue.
 
-2. **Inconsistent font sizes**: Body text ranges from `10px` to `15px` across components. Standardization needed.
+## Design: Three sync modes
 
-## Design Decisions
+| Mode | Behavior |
+|------|----------|
+| **Auto** (default) | Current behavior — follows auth + online status. Cloud when signed in and online, local otherwise. |
+| **Local** | Force local-only. All writes stay in GrafeoDB/IndexedDB. Cloud sync paused. |
+| **Cloud** | Force cloud. Writes push to Supabase immediately. Falls back to local with queue if network drops. |
 
-- **Standard body size**: `14px` for all non-title, non-heading text
-- **Minimum size**: `12px` (only for tertiary metadata like timestamps, counts)
-- **Minimum opacity**: `/50` for any text on dark backgrounds, `/60` for text on light backgrounds — no more `/20`, `/25`, `/30`, `/35`
-- **Section headers**: Stay `12px uppercase tracking-wider` but bump to `/60` minimum
-- **Titles**: Keep current sizes (36px note title, 17px section heading, 15px app name)
+Switching between modes triggers a one-time data migration:
+- **Local → Cloud**: push local snapshot to cloud provider, then activate cloud
+- **Cloud → Local**: pull cloud snapshot into GrafeoDB, then activate local
+- **Auto**: re-run the existing `initProvider()` detection logic
 
-## Files to Change
+## What gets built
 
-| File | Key Changes |
-|------|-------------|
-| `SdbHomeView.tsx` | Timestamps `/35` → `/60`; empty state text `/40` → `/60`; sort menu text `/70` → `/80`; card icon `/6` → `/15`; tag overflow `10px` → `12px`; "Filtering by" `/30` → `/50` |
-| `SdbConsumerPages.tsx` | Sidebar section headers `/35` → `/60`; "No pages yet" `/25` → `/50`; "Create a page" `/50` → `/70`; chevron icons `/40` → `/50`; ⌘K hint `/25` → `/40`; breadcrumb text `/50` → `/60`; page stats `/30` → `/50` |
-| `SdbTagLibrary.tsx` | Sub-headers `10px /25` → `11px /40`; tag text `/60` → `/70`; tag count `/25` → `/40`; hint text `/20` → `/40`; hash prefix `/30` → `/50` |
-| `SdbTagChip.tsx` | Tag chip `11px` → `12px` for sm size |
-| `SdbStatusBar.tsx` | Footer text stays `12px` but `text-muted-foreground` (no opacity reduction); backend info `/60` → `/70` |
-| `UorSignature.tsx` | `/25` → `/40` for signature text |
-| `SdbSidebar.tsx` | "Services" label `/60` → `/70` |
-| `SdbNoteProperties.tsx` | Stats text `/60` → `/70`; property labels `/50` → `/60`; "Add property" `/40` → `/60`; `11px` buttons → `12px` |
-| `SovereignDBApp.tsx` | Tagline text `/40` → `/50`; inactive tab text `/40` → `/50` |
-| `SdbBlockEditor.tsx` | Preview tooltip text `11px` → `12px`; `/70` → `/80` |
+### 1. `useSyncMode` hook — the state machine
 
-## Summary
+A new hook in `src/modules/data/knowledge-graph/persistence/hooks/useSyncMode.ts`:
+- Stores the user's preferred mode in `localStorage` (`uor:sync-mode`)
+- Exposes `mode`, `setMode(mode)`, `activeProvider`, `isMigrating`
+- On `setMode("cloud")`: calls `localProvider.exportBundle()` → `supabaseProvider.pushSnapshot()` → `providerRegistry.setActive("supabase")`
+- On `setMode("local")`: calls `supabaseProvider.pullSnapshot()` → `grafeoStore.loadNQuads()` → `providerRegistry.setActive("local")`
+- On `setMode("auto")`: re-runs `initProvider()` logic
+- Emits sync state changes so the connectivity popover updates in real time
 
-~10 files, all class string adjustments. No logic changes. Every piece of text will be clearly readable with good contrast while maintaining the elegant, understated aesthetic.
+### 2. Sync mode selector in ConnectivityPopover
+
+Add a segmented control (Local | Auto | Cloud) to the existing `ConnectivityPopover.tsx` between the header and feature list. Shows:
+- Current active provider name and status dot
+- Migration progress indicator when switching (a brief spinner)
+- Disabled "Cloud" option when not authenticated
+
+Visual: three small pills, the active one highlighted with the existing emerald/amber color system. Minimal, fits the macOS aesthetic.
+
+### 3. Auto-reconnect on network change
+
+Enhance the `ConnectivityProvider` to listen for online/offline events and, when in Auto mode, automatically switch the active provider — pushing pending changes when going online, gracefully degrading when going offline. This already partially exists in `sync-bridge.ts`; the new code wires it to the provider registry so the switch is visible in the UI.
+
+### 4. Persistence index update
+
+Add a `switchProvider(targetId, migrate?)` function to `src/modules/data/knowledge-graph/persistence/index.ts` that encapsulates the migration logic. This keeps the hook thin and the logic reusable from non-React contexts (e.g. the bus).
+
+## Files changed
+
+| File | Action |
+|------|--------|
+| `src/modules/data/knowledge-graph/persistence/hooks/useSyncMode.ts` | **Create** — sync mode hook with migration logic |
+| `src/modules/data/knowledge-graph/persistence/index.ts` | **Edit** — add `switchProvider()` function |
+| `src/modules/platform/desktop/components/ConnectivityPopover.tsx` | **Edit** — add sync mode selector UI |
+| `src/modules/platform/desktop/hooks/useConnectivity.tsx` | **Edit** — expose `syncMode` and `activeProviderId` in context |
+
+## How switching feels to the user
+
+1. Click wifi icon in menu bar → popover opens
+2. See three-pill toggle: **Local · Auto · Cloud** (Auto is highlighted)
+3. Tap **Local** → brief pulse animation, provider switches, features update instantly
+4. Go offline on a plane — everything keeps working, "local" badge stays green
+5. Land, tap **Auto** → system detects wifi + auth, switches to cloud, pushes queued changes
+6. See "Synced just now" in the popover footer
+
+No modals, no confirmations, no page reloads. The graph is the same graph — only where it persists changes.
 

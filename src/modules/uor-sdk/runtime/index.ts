@@ -144,6 +144,18 @@ export {
   upgradeApp,
   verifyAppCoherence,
 } from "./graph-composition";
+
+// ── Universal Boot ──────────────────────────────────────────────────────────
+export {
+  universalBoot,
+  hasKernel,
+  exportBrain,
+} from "./universal-boot";
+export type {
+  UniversalBootConfig,
+  UniversalBootResult,
+  BootPhase,
+} from "./universal-boot";
 export type {
   AppFunctor,
   AppTransformation,
