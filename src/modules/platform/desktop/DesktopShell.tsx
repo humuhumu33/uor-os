@@ -117,6 +117,7 @@ function DesktopShellInner() {
   }, [wm]);
 
   const handleOpenApp = useCallback((appId: string) => {
+    setDesktopMode(false);
     const app = getApp(appId);
     if (app) wm.openApp(appId, app.label, app.defaultSize, { maximized: true });
   }, [wm]);
