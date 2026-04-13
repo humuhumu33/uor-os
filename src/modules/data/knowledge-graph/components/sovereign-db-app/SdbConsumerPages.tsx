@@ -436,49 +436,76 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props
     });
   }, []);
 
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
   const handleUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    let successCount = 0;
+    let errorCount = 0;
+
     for (const file of Array.from(files)) {
-      const noteId = `note:${generateId()}`;
-      const fileType = file.type.startsWith("image/") ? "photo"
-        : file.type.startsWith("video/") ? "video"
-        : file.type.startsWith("audio/") ? "audio"
-        : "note";
-
-      // Read file content for text-based files
-      let content = "";
-      if (file.type.startsWith("text/") || file.name.endsWith(".md") || file.name.endsWith(".txt")) {
-        content = await file.text();
+      // Size check
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`"${file.name}" exceeds 50 MB limit`);
+        errorCount++;
+        continue;
+      }
+      // Empty file check
+      if (file.size === 0) {
+        toast.error(`"${file.name}" is empty`);
+        errorCount++;
+        continue;
       }
 
-      // Read media files as data URLs for preview
-      let fileDataUrl = "";
-      const isMedia = file.type.startsWith("image/") || file.type.startsWith("audio/") || file.type.startsWith("video/");
-      if (isMedia && file.size < 10 * 1024 * 1024) { // max 10MB for inline storage
-        fileDataUrl = await readFileAsDataUrl(file);
+      try {
+        const noteId = `note:${generateId()}`;
+        const fileType = file.type.startsWith("image/") ? "photo"
+          : file.type.startsWith("video/") ? "video"
+          : file.type.startsWith("audio/") ? "audio"
+          : "note";
+
+        let content = "";
+        if (file.type.startsWith("text/") || file.name.endsWith(".md") || file.name.endsWith(".txt")) {
+          content = await file.text();
+        }
+
+        let fileDataUrl = "";
+        const isMedia = file.type.startsWith("image/") || file.type.startsWith("audio/") || file.type.startsWith("video/");
+        if (isMedia && file.size < 10 * 1024 * 1024) {
+          fileDataUrl = await readFileAsDataUrl(file);
+        }
+
+        const fileName = file.name.replace(/\.[^.]+$/, "") || "Untitled";
+        const blockContent = content
+          ? content.split("\n").map((line, i) => ({ id: `b${i}`, text: line, indent: 0, children: [] }))
+          : [{ id: "b0", text: `Uploaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, indent: 0, children: [] }];
+
+        await db.addEdge([activeWorkspaceId || "ws:root", noteId], "workspace:note", {
+          title: fileName,
+          content: content || `Uploaded: ${file.name}`,
+          blocks: JSON.stringify(blockContent),
+          tags: [],
+          fileType,
+          fileName: file.name,
+          fileSize: file.size,
+          fileMime: file.type,
+          fileDataUrl,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+        successCount++;
+      } catch (err) {
+        console.error("Upload failed:", file.name, err);
+        toast.error(`Failed to upload "${file.name}"`);
+        errorCount++;
       }
-
-      const fileName = file.name.replace(/\.[^.]+$/, "") || "Untitled";
-      const blockContent = content
-        ? content.split("\n").map((line, i) => ({ id: `b${i}`, text: line, indent: 0, children: [] }))
-        : [{ id: "b0", text: `Uploaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, indent: 0, children: [] }];
-
-      await db.addEdge([activeWorkspaceId || "ws:root", noteId], "workspace:note", {
-        title: fileName,
-        content: content || `Uploaded: ${file.name}`,
-        blocks: JSON.stringify(blockContent),
-        tags: [],
-        fileType,
-        fileName: file.name,
-        fileSize: file.size,
-        fileMime: file.type,
-        fileDataUrl,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
     }
-    await reload();
-  }, [db, reload, readFileAsDataUrl]);
+
+    if (successCount > 0) {
+      await reload();
+      toast.success(successCount === 1 ? "File uploaded" : `${successCount} files uploaded`);
+    }
+  }, [db, reload, readFileAsDataUrl, activeWorkspaceId]);
 
   // ── Tag system computations ──
   const tagEdges = useMemo(() =>
@@ -695,14 +722,8 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props
     e.preventDefault();
     dragCounter.current = 0;
     setIsDraggingOver(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleUpload(files);
-      toast.success(
-        files.length === 1
-          ? `"${files[0].name}" uploaded`
-          : `${files.length} files uploaded`
-      );
+    if (e.dataTransfer.files.length > 0) {
+      handleUpload(e.dataTransfer.files);
     }
   }, [handleUpload]);
 
