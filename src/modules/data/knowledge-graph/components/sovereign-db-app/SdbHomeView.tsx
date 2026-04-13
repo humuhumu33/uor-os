@@ -9,9 +9,11 @@ import {
   IconFolder, IconLayoutGrid, IconList, IconSortDescending,
   IconAdjustments, IconMessage, IconPhoto, IconVideo,
   IconLink, IconMusic, IconFileText, IconX,
+  IconLayout, IconGraph, IconTerminal2,
 } from "@tabler/icons-react";
 import type { Hyperedge } from "../../hypergraph";
 import { SdbTagChip, getTagColor, DEFAULT_TYPE_COLORS } from "./SdbTagChip";
+import type { AppSection } from "./SovereignDBApp";
 
 interface NoteItem {
   id: string;
@@ -32,6 +34,8 @@ interface Props {
   onToggleTag: (tag: string) => void;
   tagColors: Record<string, string>;
   itemTagsMap: Record<string, string[]>;
+  activeSection?: AppSection;
+  onSwitchSection?: (section: AppSection) => void;
 }
 
 type FilterType = "all" | "note" | "daily" | "folder" | "chat" | "photo" | "video" | "link" | "audio";
@@ -112,7 +116,7 @@ function pickBanner(): string {
 
 export function SdbHomeView({
   items, allEdges, recentIds, onSelect, onCreateNote, onCreateDaily, onSwitchGraph,
-  activeTags, onToggleTag, tagColors, itemTagsMap,
+  activeTags, onToggleTag, tagColors, itemTagsMap, activeSection, onSwitchSection,
 }: Props) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("recent");
@@ -192,10 +196,10 @@ export function SdbHomeView({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
-        {/* ── "Own your data." cinematic overlay ── */}
+        {/* ── Cinematic overlay ── */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <span className="text-[28px] font-light tracking-[0.15em] text-white/[0.6] select-none">
-            Own your data.
+            MySpace
           </span>
         </div>
         <style>{`
@@ -223,7 +227,7 @@ export function SdbHomeView({
           />
         </div>
 
-        {/* ── Filter chips + active tags ── */}
+        {/* ── Filter chips + section tabs ── */}
         <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1">
           {FILTERS.map(f => (
             <button
@@ -239,6 +243,34 @@ export function SdbHomeView({
               {f.label}
             </button>
           ))}
+
+          {/* Section tabs — right-aligned */}
+          {onSwitchSection && (
+            <div className="ml-auto flex items-center gap-1 shrink-0 pl-3 border-l border-border/20">
+              {([
+                { id: "workspace" as AppSection, label: "Workspace", icon: IconLayout },
+                { id: "graph" as AppSection, label: "Graph", icon: IconGraph },
+                { id: "console" as AppSection, label: "Console", icon: IconTerminal2 },
+              ]).map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeSection === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => onSwitchSection(tab.id)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-os-body font-medium whitespace-nowrap transition-all ${
+                      isActive
+                        ? "bg-foreground/10 text-foreground"
+                        : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                    }`}
+                  >
+                    <Icon size={14} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Active tag pills */}
@@ -269,7 +301,7 @@ export function SdbHomeView({
         {/* ── Section header ── */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <h2 className="text-[17px] font-semibold text-foreground tracking-tight">Workspace</h2>
+            <h2 className="text-[17px] font-semibold text-foreground tracking-tight">MySpace</h2>
             <button
               onClick={onCreateNote}
               className="w-7 h-7 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 flex items-center justify-center transition-colors"

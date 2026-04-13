@@ -37,6 +37,7 @@ import type { AppSection } from "./SovereignDBApp";
 interface Props {
   db: SovereignDB;
   onNavigateSection?: (section: AppSection) => void;
+  activeSection?: AppSection;
 }
 
 interface TreeItem {
@@ -66,7 +67,7 @@ function loadTagColors(): Record<string, string> {
   } catch { return {}; }
 }
 
-export function SdbConsumerPages({ db, onNavigateSection }: Props) {
+export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props) {
   const [items, setItems] = useState<TreeItem[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -750,7 +751,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
         {/* Workspace selector */}
         <div className="px-3 py-2.5 border-b border-border/15">
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider flex-1">Workspace</span>
+            <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider flex-1">MySpace</span>
             <button
               onClick={() => createWorkspace()}
               className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
@@ -946,6 +947,8 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
             onToggleTag={toggleTag}
             tagColors={tagColors}
             itemTagsMap={itemTagsMap}
+            activeSection={activeSection}
+            onSwitchSection={onNavigateSection}
           />
         ) : (
           <>
