@@ -81,15 +81,15 @@ export function SdbSectionShell({
         <div className="flex items-center gap-3 mb-3">
           {/* Search bar */}
           <div className="relative flex-1 min-w-0">
-            <IconSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
+            <IconSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/70 pointer-events-none" />
             <input
               type="text"
               value={searchValue}
               onChange={e => onSearch?.(e.target.value)}
               placeholder="Search anything..."
-              className="w-full pl-11 pr-4 py-3 text-[15px] bg-card border border-border/40 rounded-2xl
-                text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/25
-                focus:border-primary/30 transition-all shadow-md shadow-black/15 truncate"
+              className="w-full pl-11 pr-4 py-3 text-[15px] bg-muted/50 backdrop-blur-xl border border-border/60 rounded-2xl
+                text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30
+                focus:border-primary/40 transition-all shadow-lg shadow-black/20 truncate"
             />
           </div>
 
