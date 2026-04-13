@@ -1259,7 +1259,10 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
           {/* ── Header ── */}
           <div className={`px-4 py-3 border-b border-border/15 flex items-center ${sidebarCollapsed ? "justify-center" : "justify-between"}`}>
             {!sidebarCollapsed && (
-              <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Workspace</span>
+              <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">
+                {workspaces.find(w => w.id === activeWorkspaceId)?.name || "Workspace"}
+              </span>
+            )}
             )}
             {!sidebarCollapsed && (
               <div className="flex items-center gap-0.5">
@@ -1347,13 +1350,13 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
 
                 {/* ── Folders & Files ── */}
                 <div className="flex items-center justify-between px-4 py-1.5">
-                  <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Files</span>
+                  <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Folders</span>
                   <div className="flex items-center gap-0.5">
                     <button onClick={() => createFolder()} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="New folder">
                       <IconFolder size={11} />
                     </button>
-                    <button onClick={() => createNote()} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="New page">
-                      <IconPlus size={11} />
+                    <button onClick={() => createNote()} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="New file">
+                      <IconFile size={11} />
                     </button>
                   </div>
                 </div>
