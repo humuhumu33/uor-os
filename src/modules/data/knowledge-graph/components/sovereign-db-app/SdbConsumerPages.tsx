@@ -878,17 +878,6 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             )}
           </div>
 
-          {/* ── Bottom bar ── */}
-          <div className={`px-3 py-2 border-t border-border/10 flex items-center ${sidebarCollapsed ? "justify-center" : "gap-1.5"}`}>
-            <button onClick={() => uploadRef.current?.click()} className="p-2 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/25 transition-colors" title="Upload files">
-              <IconUpload size={14} />
-            </button>
-            {!sidebarCollapsed && (
-              <button onClick={() => onNavigateSection?.("console")} className="p-2 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/25 transition-colors" title="Console">
-                <IconSettings size={14} />
-              </button>
-            )}
-          </div>
         </div>,
         sidebarTarget
       )}
