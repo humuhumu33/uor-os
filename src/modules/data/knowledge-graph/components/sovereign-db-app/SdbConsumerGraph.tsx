@@ -58,9 +58,23 @@ export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "" }: P
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [showAtlasLayer, setShowAtlasLayer] = useState(true);
-  const [show2D, setShow2D] = useState(false); // 3D is default
+  const [show2D, setShow2D] = useState(false);
   const [gpuAvailable] = useState(() => SdbGpuForceLayout.isSupported());
   const [highlightSc, setHighlightSc] = useState<number | null>(null);
+
+  // Sync global search into graph filters
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, searchQuery: globalSearch }));
+  }, [globalSearch]);
+
+  // Compute highlighted node IDs from global search
+  const highlightedNodeIds = useMemo(() => {
+    const q = globalSearch.trim().toLowerCase();
+    if (!q) return new Set<string>();
+    return new Set(
+      mergedNodes?.filter(n => n.label.toLowerCase().includes(q)).map(n => n.id) ?? []
+    );
+  }, [globalSearch]);
 
   // Container sizing for ForceGraph3D
   const containerRef = useRef<HTMLDivElement>(null);
