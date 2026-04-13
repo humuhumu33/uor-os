@@ -592,8 +592,12 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     [items]
   );
 
-  const rootItems = items.filter(i => i.type !== "daily" && (!i.parentId || i.parentId === "ws:root"));
-  const childrenOf = (parentId: string) => items.filter(i => i.parentId === parentId);
+  const workspaces = items.filter(i => i.type === "workspace");
+  const rootItems = items.filter(i =>
+    i.type !== "daily" && i.type !== "workspace" &&
+    (i.parentId === activeWorkspaceId || (!i.parentId && i.parentId !== "ws:root"))
+  );
+  const childrenOf = (parentId: string) => items.filter(i => i.parentId === parentId && i.type !== "workspace");
 
   const favoriteItems = useMemo(() =>
     items.filter(i => favorites.has(i.id)),
