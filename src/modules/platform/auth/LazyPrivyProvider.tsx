@@ -1,20 +1,9 @@
 /**
- * LazyPrivyProvider — Lightweight shim that renders children immediately
- * and loads the heavy Privy SDK only when wallet features are accessed.
- *
- * This keeps ~200KB+ of Privy off the critical boot path.
+ * LazyPrivyProvider — Pass-through wrapper.
+ * Privy SDK removed; this shim keeps the import graph intact.
  */
-
-import { lazy, Suspense, type ReactNode } from "react";
-
-const PrivyWalletProvider = lazy(() =>
-  import("./PrivyWalletProvider").then((m) => ({ default: m.PrivyWalletProvider })),
-);
+import type { ReactNode } from "react";
 
 export function LazyPrivyProvider({ children }: { children: ReactNode }) {
-  return (
-    <Suspense fallback={children}>
-      <PrivyWalletProvider>{children}</PrivyWalletProvider>
-    </Suspense>
-  );
+  return <>{children}</>;
 }
