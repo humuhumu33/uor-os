@@ -751,7 +751,7 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props
         {/* Workspace selector */}
         <div className="px-3 py-2.5 border-b border-border/15">
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider flex-1">Workspace</span>
+            <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider flex-1">MySpace</span>
             <button
               onClick={() => createWorkspace()}
               className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
@@ -947,6 +947,9 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props
             onToggleTag={toggleTag}
             tagColors={tagColors}
             itemTagsMap={itemTagsMap}
+            activeSection={activeSection}
+            onSwitchSection={onNavigateSection}
+          />
           />
         ) : (
           <>
