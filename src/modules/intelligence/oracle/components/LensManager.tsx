@@ -112,7 +112,6 @@ const LensManager: React.FC<LensManagerProps> = ({
   if (!open) return null;
 
   return (
-  return (
     <>
       {/* Backdrop */}
       <div
@@ -204,7 +203,6 @@ const LensManager: React.FC<LensManagerProps> = ({
             </div>
           </div>
         </>
-      )
   );
 };
 

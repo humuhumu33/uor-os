@@ -238,9 +238,9 @@ const ReaderToolbar: React.FC<ReaderToolbarProps> = ({
             )}
           </div>
         </div>
-        </div>
       </div>
-    ) : null;
+    </div>
+  ) : null;
 
   // ── Compact mobile toolbar ──
   if (isMobile) {
