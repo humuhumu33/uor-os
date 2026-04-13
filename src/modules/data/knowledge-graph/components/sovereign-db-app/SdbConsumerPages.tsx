@@ -8,7 +8,7 @@ import {
   IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash,
   IconGraph, IconSun, IconLayoutBoard, IconSearch,
   IconStar, IconStarFilled, IconDots,
-  IconHome, IconSettings, IconClock,
+  IconHome, IconSettings, IconClock, IconUpload,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
@@ -79,6 +79,9 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   const [tagColors, setTagColors] = useState<Record<string, string>>(loadTagColors);
 
   const { dailyNotes, reloadDaily } = useDailyNotes(db);
+
+  // Upload ref
+  const uploadRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const existing = textIndexManager.list().find(i => i.name === "workspace-notes");
@@ -309,6 +312,43 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     });
   }, []);
 
+  // ── Upload handler ──
+  const handleUpload = useCallback(async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    for (const file of Array.from(files)) {
+      const noteId = `note:${generateId()}`;
+      const fileType = file.type.startsWith("image/") ? "photo"
+        : file.type.startsWith("video/") ? "video"
+        : file.type.startsWith("audio/") ? "audio"
+        : "note";
+
+      // Read file content for text-based files
+      let content = "";
+      if (file.type.startsWith("text/") || file.name.endsWith(".md") || file.name.endsWith(".txt")) {
+        content = await file.text();
+      }
+
+      const fileName = file.name.replace(/\.[^.]+$/, "") || "Untitled";
+      const blockContent = content
+        ? content.split("\n").map((line, i) => ({ id: `b${i}`, text: line, indent: 0, children: [] }))
+        : [{ id: "b0", text: `Uploaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, indent: 0, children: [] }];
+
+      await db.addEdge(["ws:root", noteId], "workspace:note", {
+        title: fileName,
+        content: content || `Uploaded: ${file.name}`,
+        blocks: JSON.stringify(blockContent),
+        tags: [],
+        fileType,
+        fileName: file.name,
+        fileSize: file.size,
+        fileMime: file.type,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
+    await reload();
+  }, [db, reload]);
+
   // ── Tag system computations ──
   const tagEdges = useMemo(() =>
     allEdges.filter(e => e.label === "workspace:tag"),
@@ -380,7 +420,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   }, []);
 
   const handleCreateTag = useCallback(async (name: string) => {
-    // Create a tag-meta edge so the tag persists even without items
     await db.addEdge([`tag:${name}`, "tag-meta"], "workspace:tag-meta", {
       tag: name,
       createdAt: Date.now(),
@@ -499,6 +538,15 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
 
   return (
     <div className="flex h-full overflow-hidden">
+      {/* Hidden file input for Upload */}
+      <input
+        ref={uploadRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={e => handleUpload(e.target.files)}
+      />
+
       <SdbQuickFinder
         open={finderOpen}
         onClose={() => setFinderOpen(false)}
@@ -514,6 +562,13 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
         {/* Header */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border/15">
           <span className="text-os-body font-semibold text-foreground truncate flex-1">Workspace</span>
+          <button
+            onClick={() => uploadRef.current?.click()}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-muted-foreground hover:bg-muted/40 hover:text-foreground text-os-body transition-colors"
+            title="Upload files"
+          >
+            <IconUpload size={14} />
+          </button>
           <button
             onClick={() => createNote()}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/15 text-os-body font-medium transition-colors"
@@ -596,25 +651,8 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
             </div>
           )}
 
-          {/* ── Tag Library ── */}
-          <SdbTagLibrary
-            userTags={userTags}
-            typeCounts={typeCounts}
-            smartCounts={smartCounts}
-            activeTags={activeTags}
-            onToggleTag={toggleTag}
-            tagColors={tagColors}
-            onSetTagColor={handleSetTagColor}
-            onCreateTag={handleCreateTag}
-          />
-
-          {/* Daily Notes */}
+          {/* Workspace tree — moved up, before daily notes */}
           <div className="mb-3">
-            <SdbDailyNoteSection db={db} onSelectDaily={navigateTo} selectedId={selectedId} />
-          </div>
-
-          {/* Workspace tree */}
-          <div>
             <div className="flex items-center justify-between px-2.5 pb-1.5 pt-1">
               <div className="flex items-center gap-1.5">
                 <IconFolder size={12} className="text-muted-foreground" />
@@ -643,18 +681,39 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
               )}
             </nav>
           </div>
+
+          {/* Daily Notes */}
+          <div className="mb-3">
+            <SdbDailyNoteSection db={db} onSelectDaily={navigateTo} selectedId={selectedId} />
+          </div>
         </div>
 
-        {/* Bottom */}
-        <div className="mt-auto border-t border-border/10 px-3 py-2 space-y-0.5">
-          <button className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors">
-            <IconTrash size={15} className="shrink-0" />
-            Trash
-          </button>
-          <button className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors">
-            <IconSettings size={15} className="shrink-0" />
-            Settings
-          </button>
+        {/* Bottom: Tags + Trash + Settings */}
+        <div className="mt-auto border-t border-border/10">
+          {/* Tag Library — moved to bottom */}
+          <div className="px-3 py-2">
+            <SdbTagLibrary
+              userTags={userTags}
+              typeCounts={typeCounts}
+              smartCounts={smartCounts}
+              activeTags={activeTags}
+              onToggleTag={toggleTag}
+              tagColors={tagColors}
+              onSetTagColor={handleSetTagColor}
+              onCreateTag={handleCreateTag}
+            />
+          </div>
+          <div className="mx-3 border-t border-border/10" />
+          <div className="px-3 py-2 space-y-0.5">
+            <button className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors">
+              <IconTrash size={15} className="shrink-0" />
+              Trash
+            </button>
+            <button className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors">
+              <IconSettings size={15} className="shrink-0" />
+              Settings
+            </button>
+          </div>
         </div>
       </aside>
 
