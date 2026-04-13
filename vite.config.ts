@@ -100,7 +100,7 @@ export default defineConfig(({ mode }) => {
           if (id.includes('@monaco-editor') || id.includes('monaco-editor')) return 'vendor-monaco';
           if (id.includes('@huggingface/transformers')) return 'vendor-ml';
           if (id.includes('lexical') || id.includes('@lexical')) return 'vendor-editor';
-          if (id.includes('graphology') || id.includes('sigma') || id.includes('@react-sigma')) return 'vendor-graph-viz';
+          // graphology/sigma removed from manual chunks — circular deps cause TDZ errors in production
           if (id.includes('@privy-io')) return 'vendor-privy';
         },
       },
