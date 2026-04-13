@@ -264,6 +264,7 @@ export function SdbHomeView({
               const dot = TYPE_DOTS[item.type] || TYPE_DOTS.note;
               const Icon = TYPE_ICON[item.type] || IconFile;
               const tags = itemTagsMap[item.id] || [];
+              const hasCover = !!(item.coverUrl || (item.fileDataUrl && item.fileMime?.startsWith("image/")));
               return (
                 <button
                   key={item.id}
@@ -272,11 +273,27 @@ export function SdbHomeView({
                     hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5 hover:border-border/25 transition-all duration-200"
                 >
                   {/* Thumbnail area */}
-                  {item.fileDataUrl && item.fileMime?.startsWith("image/") ? (
+                  {item.coverUrl ? (
+                    <div className="h-[140px] relative overflow-hidden bg-muted/5">
+                      <img
+                        src={item.coverUrl}
+                        alt={item.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      />
+                      {item.type === "folder" && (
+                        <div className="absolute bottom-2 left-3 flex items-center gap-1.5 px-2 py-1 rounded-md bg-black/40 backdrop-blur-sm text-white text-[11px] font-medium">
+                          <IconFolder size={12} />
+                          {item.childCount != null ? `${item.childCount} items` : "Folder"}
+                        </div>
+                      )}
+                    </div>
+                  ) : item.fileDataUrl && item.fileMime?.startsWith("image/") ? (
                     <div className="h-[140px] relative overflow-hidden bg-muted/5">
                       <img
                         src={item.fileDataUrl}
                         alt={item.name}
+                        loading="lazy"
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                       />
                     </div>
@@ -301,6 +318,9 @@ export function SdbHomeView({
                       <span className="text-os-body font-medium text-foreground truncate flex-1">{item.name}</span>
                       <span className="text-[11px] text-muted-foreground/40 shrink-0 tabular-nums">{relativeTime(item.updatedAt)}</span>
                     </div>
+                    {item.type === "folder" && item.childCount != null && !item.coverUrl && (
+                      <p className="text-[11px] text-muted-foreground/50 pl-4 mt-0.5">{item.childCount} items</p>
+                    )}
                     {tags.length > 0 && (
                       <div className="flex items-center gap-1 flex-wrap mt-1.5 pl-4">
                         {tags.slice(0, 3).map(tag => (
