@@ -41,6 +41,8 @@ interface Props {
   /** When set, show contents of this folder instead of everything */
   activeFolderId?: string | null;
   onNavigateFolder?: (folderId: string | null) => void;
+  /** Move an item into a folder */
+  onMoveItem?: (itemId: string, targetFolderId: string) => void;
 }
 
 type FilterType = "all" | "note" | "daily" | "folder" | "chat" | "photo" | "video" | "link" | "audio";
@@ -105,13 +107,14 @@ function relativeTime(ts: number): string {
 export function SdbHomeView({
   items, allEdges, recentIds, onSelect, onCreateNote, onCreateFolder, onCreateDaily, onSwitchGraph,
   activeTags, onToggleTag, tagColors, itemTagsMap, globalSearch = "",
-  activeFolderId, onNavigateFolder,
+  activeFolderId, onNavigateFolder, onMoveItem,
 }: Props) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("recent");
   const [view, setView] = useState<"grid" | "list">("grid");
   const search = globalSearch;
   const [showNewMenu, setShowNewMenu] = useState(false);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [showSort, setShowSort] = useState(false);
 
   const smartTags = new Set(["today", "this-week", "recent", "untagged"]);
@@ -319,11 +322,33 @@ export function SdbHomeView({
               const tags = itemTagsMap[item.id] || [];
               const hasCover = !!(item.coverUrl || (item.fileDataUrl && item.fileMime?.startsWith("image/")));
               return (
-                <button
+                <div
                   key={item.id}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("application/x-sdb-item", item.id);
+                  }}
+                  onDragOver={(e) => {
+                    if (item.type === "folder") {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      setDragOverId(item.id);
+                    }
+                  }}
+                  onDragLeave={() => setDragOverId(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const draggedId = e.dataTransfer.getData("application/x-sdb-item");
+                    if (draggedId && draggedId !== item.id && item.type === "folder") {
+                      onMoveItem?.(draggedId, item.id);
+                    }
+                    setDragOverId(null);
+                  }}
                   onClick={() => item.type === "folder" ? onNavigateFolder?.(item.id) : onSelect(item.id)}
-                  className="group text-left rounded-2xl border border-border/10 bg-card overflow-hidden
-                    hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5 hover:border-border/25 transition-all duration-200"
+                  className={`group text-left rounded-2xl border bg-card overflow-hidden cursor-pointer
+                    hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5 hover:border-border/25 transition-all duration-200
+                    ${dragOverId === item.id ? "border-primary/50 ring-2 ring-primary/20 scale-[1.02]" : "border-border/10"}`}
                 >
                   {/* Thumbnail area */}
                   {item.coverUrl ? (
@@ -385,7 +410,7 @@ export function SdbHomeView({
                       </div>
                     )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -397,10 +422,27 @@ export function SdbHomeView({
               const Icon = TYPE_ICON[item.type] || IconFile;
               const tags = itemTagsMap[item.id] || [];
               return (
-                <button
+                <div
                   key={item.id}
-                  onClick={() => onSelect(item.id)}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl hover:bg-muted/20 transition-colors group"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("application/x-sdb-item", item.id);
+                  }}
+                  onDragOver={(e) => {
+                    if (item.type === "folder") { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverId(item.id); }
+                  }}
+                  onDragLeave={() => setDragOverId(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const draggedId = e.dataTransfer.getData("application/x-sdb-item");
+                    if (draggedId && draggedId !== item.id && item.type === "folder") onMoveItem?.(draggedId, item.id);
+                    setDragOverId(null);
+                  }}
+                  onClick={() => item.type === "folder" ? onNavigateFolder?.(item.id) : onSelect(item.id)}
+                  className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl cursor-pointer transition-colors group ${
+                    dragOverId === item.id ? "bg-primary/10 ring-1 ring-primary/30" : "hover:bg-muted/20"
+                  }`}
                 >
                   {item.fileDataUrl && item.fileMime?.startsWith("image/") ? (
                     <img src={item.fileDataUrl} alt={item.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
@@ -419,7 +461,7 @@ export function SdbHomeView({
                     </div>
                   )}
                   <span className="text-[11px] text-muted-foreground/40 shrink-0 tabular-nums">{relativeTime(item.updatedAt)}</span>
-                </button>
+                </div>
               );
             })}
           </div>
