@@ -115,9 +115,20 @@ export function SdbSectionShell({
         </div>
       </div>
 
-      {/* ── Section content ── */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        {children}
+      {/* ── Section content with crossfade ── */}
+      <div className="flex-1 min-h-0 overflow-hidden relative">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSection}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="absolute inset-0"
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
