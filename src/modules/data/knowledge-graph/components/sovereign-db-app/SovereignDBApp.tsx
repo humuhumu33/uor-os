@@ -78,7 +78,7 @@ const SovereignDBApp = () => {
   if (dbError) {
     return (
       <div className="flex items-center justify-center h-full bg-background text-destructive text-sm p-8">
-        Failed to initialize SovereignDB: {dbError}
+        Failed to initialize MySpace: {dbError}
       </div>
     );
   }
@@ -86,7 +86,7 @@ const SovereignDBApp = () => {
   if (!db) {
     return (
       <div className="flex items-center justify-center h-full bg-background text-sm text-muted-foreground">
-        Initializing SovereignDB…
+        Initializing MySpace…
       </div>
     );
   }
@@ -116,7 +116,7 @@ const SovereignDBApp = () => {
       <header className="flex items-center h-11 px-5 border-b border-border/40 bg-card shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[15px] font-semibold tracking-tight">SovereignDB</span>
+          <span className="text-[15px] font-semibold tracking-tight">MySpace</span>
         </div>
 
         <div className="ml-auto flex items-center gap-0.5">
