@@ -15,11 +15,12 @@ import {
   IconH1, IconH2, IconH3, IconList, IconCheckbox, IconMinus,
   IconBlockquote, IconInfoCircle, IconTypography,
   IconListNumbers, IconCode, IconChevronRight, IconChevronDown,
-  IconTable, IconLink,
+  IconTable, IconLink, IconCornerDownRight,
 } from "@tabler/icons-react";
 import { SdbBlockLexical } from "./SdbBlockLexical";
 import { SdbTableBlock, createDefaultTable, type TableData } from "./SdbTableBlock";
 import { SdbBookmarkBlock, createBookmarkFromUrl, type BookmarkData } from "./SdbBookmarkBlock";
+import { SdbBlockRefChip, SdbBlockEmbed, parseBlockRefs, type BlockRefResolver } from "./SdbBlockRef";
 import type { LexicalEditor } from "lexical";
 import { $getRoot, $createParagraphNode, $createTextNode } from "lexical";
 
