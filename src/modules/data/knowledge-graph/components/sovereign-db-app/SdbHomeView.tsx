@@ -321,7 +321,7 @@ export function SdbHomeView({
               return (
                 <button
                   key={item.id}
-                  onClick={() => onSelect(item.id)}
+                  onClick={() => item.type === "folder" ? onNavigateFolder?.(item.id) : onSelect(item.id)}
                   className="group text-left rounded-2xl border border-border/10 bg-card overflow-hidden
                     hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5 hover:border-border/25 transition-all duration-200"
                 >
