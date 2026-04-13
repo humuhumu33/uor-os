@@ -108,13 +108,6 @@ const SovereignDBApp = () => {
 
   return (
     <div className="flex flex-col h-full w-full bg-background text-foreground overflow-hidden">
-      {/* ── Minimal Header ──────────────────── */}
-      <header className="flex items-center h-11 px-5 border-b border-border/40 bg-card shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-os-body font-semibold tracking-tight">MySpace</span>
-        </div>
-      </header>
 
       {/* ── Body ─────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
