@@ -907,8 +907,7 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             onToggleTag={toggleTag}
             tagColors={tagColors}
             itemTagsMap={itemTagsMap}
-            activeSection={activeSection}
-            onSwitchSection={onNavigateSection}
+            globalSearch={globalSearch}
           />
         ) : (
           <>
