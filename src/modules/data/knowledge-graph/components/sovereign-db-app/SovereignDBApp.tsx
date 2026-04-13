@@ -25,6 +25,7 @@ import { SdbAlgoPanel } from "./SdbAlgoPanel";
 import { SdbImportPanel } from "./SdbImportPanel";
 import { SdbStatsPanel } from "./SdbStatsPanel";
 import { SdbStoragePanel } from "./SdbStoragePanel";
+import { SdbAtlasInspector } from "./SdbAtlasInspector";
 import { SdbStatusBar } from "./SdbStatusBar";
 
 export type AppSection = "workspace" | "graph" | "console";
@@ -99,6 +100,7 @@ const SovereignDBApp = () => {
     if (devSection === "import") return <SdbImportPanel db={db} />;
     if (devSection === "stats") return <SdbStatsPanel db={db} />;
     if (devSection === "storage") return <SdbStoragePanel db={db} />;
+    if (devSection === "atlas") return <SdbAtlasInspector db={db} />;
     return null;
   };
 

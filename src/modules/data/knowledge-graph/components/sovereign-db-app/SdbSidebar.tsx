@@ -2,9 +2,10 @@ import {
   IconTerminal2, IconBinaryTree, IconSchema, IconChartDots, IconFileImport, IconChartBar,
   IconDatabase, IconLayoutDashboard,
   IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand,
+  IconTopologyRing,
 } from "@tabler/icons-react";
 
-export type SdbSection = "query" | "edges" | "schema" | "algo" | "import" | "stats" | "storage";
+export type SdbSection = "query" | "edges" | "schema" | "algo" | "import" | "stats" | "storage" | "atlas";
 
 const NAV: { id: SdbSection; label: string; icon: typeof IconTerminal2 }[] = [
   { id: "query", label: "Query Console", icon: IconTerminal2 },
@@ -14,6 +15,7 @@ const NAV: { id: SdbSection; label: string; icon: typeof IconTerminal2 }[] = [
   { id: "import", label: "Import / Export", icon: IconFileImport },
   { id: "stats", label: "Monitoring", icon: IconChartBar },
   { id: "storage", label: "Storage", icon: IconDatabase },
+  { id: "atlas", label: "Atlas Inspector", icon: IconTopologyRing },
 ];
 
 interface Props {
