@@ -227,7 +227,7 @@ export function SdbHomeView({
                       onClick={() => { onCreateNote(activeFolderId ?? undefined); setShowNewMenu(false); }}
                       className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
                     >
-                      <IconFileText size={15} /> New Page
+                      <IconFileText size={15} /> New File
                     </button>
                     <button
                       onClick={() => { onCreateFolder(activeFolderId ?? undefined); setShowNewMenu(false); }}
@@ -294,7 +294,7 @@ export function SdbHomeView({
               <IconFile size={32} className="text-muted-foreground/30" />
             </div>
             <p className="text-os-body text-muted-foreground/50 mb-5">
-              {search || activeTags.size > 0 ? "No results found" : "Get started by creating a page or folder"}
+              {search || activeTags.size > 0 ? "No results found" : "Get started by creating a file or folder"}
             </p>
             {!search && activeTags.size === 0 && (
               <div className="flex items-center gap-3">
@@ -302,7 +302,7 @@ export function SdbHomeView({
                   onClick={() => onCreateNote(activeFolderId ?? undefined)}
                   className="px-6 py-3 rounded-2xl bg-foreground text-background text-os-body font-medium hover:opacity-90 transition-all shadow-sm"
                 >
-                  New Page
+                  New File
                 </button>
                 <button
                   onClick={() => onCreateFolder(activeFolderId ?? undefined)}
