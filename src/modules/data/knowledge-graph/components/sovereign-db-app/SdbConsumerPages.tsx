@@ -397,7 +397,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
       setSelectedId(existing.id);
     } else {
       await saveNote();
-      await createNote("ws:root", title);
+      await createNote(undefined, title);
     }
   }, [items, saveNote, createNote]);
 
@@ -461,7 +461,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
         ? content.split("\n").map((line, i) => ({ id: `b${i}`, text: line, indent: 0, children: [] }))
         : [{ id: "b0", text: `Uploaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, indent: 0, children: [] }];
 
-      await db.addEdge(["ws:root", noteId], "workspace:note", {
+      await db.addEdge([activeWorkspaceId || "ws:root", noteId], "workspace:note", {
         title: fileName,
         content: content || `Uploaded: ${file.name}`,
         blocks: JSON.stringify(blockContent),
@@ -565,7 +565,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
         name: current.name,
         icon: current.icon || PAGE_ICONS[current.type] || "📄",
       });
-      if (current.parentId && current.parentId !== "ws:root") {
+      if (current.parentId && current.parentId !== activeWorkspaceId && !current.parentId.startsWith("root")) {
         current = items.find(i => i.id === current!.parentId) as TreeItem | undefined as any;
       } else {
         break;
@@ -732,7 +732,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
         items={finderItems}
         recentIds={recentIds}
         onSelect={id => { setSelectedId(id); }}
-        onCreate={title => createNote("ws:root", title)}
+        onCreate={title => createNote(undefined, title)}
         commands={commands}
       />
 
