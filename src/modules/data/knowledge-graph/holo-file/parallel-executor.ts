@@ -129,9 +129,9 @@ class WorkerPool {
     };
 
     // Transfer buffers for zero-copy
-    const transferables: ArrayBuffer[] = [];
+    const transferables: Transferable[] = [];
     for (const item of req.items) {
-      transferables.push(item.table.buffer, item.input.buffer);
+      transferables.push(item.table.buffer as ArrayBuffer, item.input.buffer as ArrayBuffer);
     }
     worker.postMessage(req, transferables);
   }
