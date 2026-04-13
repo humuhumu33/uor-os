@@ -126,6 +126,7 @@
     "vitest": "^4.0.18"
   },
   "overrides": {
+    "axios": "1.15.0",
     "@grafeo-db/web": {
       "react": "$react",
       "react-dom": "$react-dom"

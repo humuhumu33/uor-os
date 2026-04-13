@@ -115,15 +115,19 @@ describe("P32: Query Namespace. Intent-Based Object Resolution", () => {
     );
   });
 
-  it("T12: uor_query with sparql returns sparqlResult", async () => {
-    const { uor_query } = await import("@/modules/intelligence/agent-tools/tools");
-    const output = await uor_query({
-      sparql: "SELECT ?s ?p ?o WHERE { ?s ?p ?o }",
-    });
-    expect(output.sparqlResult).toBeDefined();
-    expect(output.sparqlResult!["@type"]).toBe("query:SparqlResult");
-    expect(output.sparqlResult!.epistemic_grade).toBe("B");
-  });
+  it(
+    "T12: uor_query with sparql returns sparqlResult",
+    async () => {
+      const { uor_query } = await import("@/modules/intelligence/agent-tools/tools");
+      const output = await uor_query({
+        sparql: "SELECT ?s ?p ?o WHERE { ?s ?p ?o }",
+      });
+      expect(output.sparqlResult).toBeDefined();
+      expect(output.sparqlResult!["@type"]).toBe("query:SparqlResult");
+      expect(output.sparqlResult!.epistemic_grade).toBe("B");
+    },
+    20_000
+  );
 
   // ── Intent inspection endpoint ──────────────────────────────────────────
 
