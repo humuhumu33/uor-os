@@ -60,6 +60,13 @@ export default function DesktopImmersiveWallpaper() {
       preloadNextPhasePhoto();
     };
 
+    // Inject <link rel="preload"> for instant loading on repeat visits
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = getPhasePhoto();
+    document.head.appendChild(link);
+
     // Preload current phase photo immediately
     preloadCurrentPhasePhoto();
 
