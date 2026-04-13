@@ -54,7 +54,7 @@ export function SdbSectionShell({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* ── Hero Banner ── */}
-      <div className={`relative w-full shrink-0 overflow-hidden transition-all duration-500 ${compact ? "h-[90px]" : "h-[140px]"}`}>
+      <div className="relative w-full shrink-0 overflow-hidden h-[130px]">
         <img
           ref={bannerRef}
           src={bannerUrl}
