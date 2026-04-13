@@ -409,7 +409,7 @@ export default function CodeKgPage() {
             <DataTable
               columns={topFileCols}
               data={stats.topFiles as Record<string, unknown>[]}
-              getKey={(r) => r.path}
+              getKey={(r) => String(r.path)}
             />
           </section>
         </>

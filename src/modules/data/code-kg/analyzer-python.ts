@@ -19,7 +19,7 @@ function extractEntities(code: string): Omit<CodeEntity, "hash">[] {
     const lineNum = i + 1;
 
     // Classes: class Foo: or class Foo(Bar):
-    const classMatch = line.match(/^class\s+([A-Za-z_]\w*)\s*[\(:]/);
+    const classMatch = line.match(/^class\s+([A-Za-z_]\w*)\s*[(:]/);
     if (classMatch) {
       entities.push({ name: classMatch[1], type: "class", line: lineNum, content: line.trim() });
     }
