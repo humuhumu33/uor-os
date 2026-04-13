@@ -153,10 +153,11 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
     const notes = await db.byLabel("workspace:note");
     const daily = await db.byLabel("workspace:daily");
 
-    // Auto-create default workspace if none exist
+    // Auto-create UOR OS workspace if none exist
     if (workspaces.length === 0) {
-      await db.addEdge(["root", "ws:default"], "workspace:workspace", {
-        name: "My Workspace",
+      await db.addEdge(["root", "ws:uor-os"], "workspace:workspace", {
+        name: "UOR OS",
+        icon: "🖥️",
         createdAt: Date.now(),
       });
       const ws2 = await db.byLabel("workspace:workspace");
@@ -164,199 +165,321 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
     }
 
     // Seed demo content if demo folders are missing
-    const hasDemoContent = folders.some(f => f.nodes?.includes("folder:uor-os"));
+    const hasDemoContent = folders.some(f => f.nodes?.includes("folder:system"));
     if (!hasDemoContent) {
-      const wsId = workspaces[0]?.nodes?.[1] || "ws:default";
+      const wsId = workspaces[0]?.nodes?.[1] || "ws:uor-os";
       const now = Date.now();
-      const dayMs = 86_400_000;
+      const d = 86_400_000;
 
-      // ── Folder: "UOR OS" with cover ──
-      const osFolderId = "folder:uor-os";
-      await db.addEdge([wsId, osFolderId], "workspace:folder", {
-        name: "UOR OS", icon: "🖥️", coverUrl: coverOs, createdAt: now,
+      // ═══════════════════════════════════════════════════════
+      // LEVEL 1 FOLDERS (inside workspace)
+      // ═══════════════════════════════════════════════════════
+
+      // 📁 System
+      await db.addEdge([wsId, "folder:system"], "workspace:folder", {
+        name: "System", icon: "⚙️", coverUrl: coverOs, createdAt: now, sortOrder: 0,
+      });
+      // 📁 Atlas Engine
+      await db.addEdge([wsId, "folder:atlas-engine"], "workspace:folder", {
+        name: "Atlas Engine", icon: "🌐", coverUrl: coverAtlas, createdAt: now, sortOrder: 1,
+      });
+      // 📁 Knowledge Base
+      await db.addEdge([wsId, "folder:knowledge-base"], "workspace:folder", {
+        name: "Knowledge Base", icon: "📚", coverUrl: coverResources, createdAt: now, sortOrder: 2,
+      });
+      // 📁 Projects
+      await db.addEdge([wsId, "folder:projects"], "workspace:folder", {
+        name: "Projects", icon: "🎯", coverUrl: coverProjects, createdAt: now, sortOrder: 3,
       });
 
-      // ── Folder: "Atlas Engine" nested inside UOR OS ──
-      const atlasFolderId = "folder:atlas";
-      await db.addEdge([osFolderId, atlasFolderId], "workspace:folder", {
-        name: "Atlas Engine", icon: "🌐", coverUrl: coverAtlas, createdAt: now,
+      // ═══════════════════════════════════════════════════════
+      // LEVEL 2 FOLDERS (nested)
+      // ═══════════════════════════════════════════════════════
+
+      // 📁 System > Kernel
+      await db.addEdge(["folder:system", "folder:kernel"], "workspace:folder", {
+        name: "Kernel", icon: "🔧", createdAt: now, sortOrder: 0,
+      });
+      // 📁 System > Identity
+      await db.addEdge(["folder:system", "folder:identity"], "workspace:folder", {
+        name: "Identity", icon: "🔐", createdAt: now, sortOrder: 1,
+      });
+      // 📁 System > Networking
+      await db.addEdge(["folder:system", "folder:networking"], "workspace:folder", {
+        name: "Networking", icon: "🌍", createdAt: now, sortOrder: 2,
       });
 
-      // ── Folder: "Resources" with cover ──
-      const resourcesFolderId = "folder:resources";
-      await db.addEdge([wsId, resourcesFolderId], "workspace:folder", {
-        name: "Resources", icon: "📚", coverUrl: coverResources, createdAt: now,
+      // 📁 Atlas Engine > Vertices
+      await db.addEdge(["folder:atlas-engine", "folder:vertices"], "workspace:folder", {
+        name: "Vertices & Symmetry", icon: "🔺", createdAt: now, sortOrder: 0,
+      });
+      // 📁 Atlas Engine > Ring Algebra
+      await db.addEdge(["folder:atlas-engine", "folder:ring"], "workspace:folder", {
+        name: "Ring Algebra (R₈)", icon: "💎", createdAt: now, sortOrder: 1,
       });
 
-      // ── Folder: "Projects" with cover ──
-      const projectsFolderId = "folder:projects";
-      await db.addEdge([wsId, projectsFolderId], "workspace:folder", {
-        name: "Projects", icon: "🎯", coverUrl: coverProjects, createdAt: now,
+      // 📁 Knowledge Base > References
+      await db.addEdge(["folder:knowledge-base", "folder:references"], "workspace:folder", {
+        name: "References", icon: "🔗", createdAt: now, sortOrder: 0,
+      });
+      // 📁 Knowledge Base > Guides
+      await db.addEdge(["folder:knowledge-base", "folder:guides"], "workspace:folder", {
+        name: "Guides", icon: "📖", createdAt: now, sortOrder: 1,
       });
 
-      // ── Note: "Welcome to UOR OS" (inside UOR OS) ──
-      const welcomeNoteId = "note:welcome";
-      await db.addEdge([osFolderId, welcomeNoteId], "workspace:note", {
-        title: "Welcome to UOR OS", icon: "👋", content: "", coverUrl: coverWelcome,
-        blocks: JSON.stringify([
-          { id: "b0", text: "Welcome to UOR OS — your sovereign knowledge operating system.", indent: 0, children: [] },
-          { id: "b1", text: "", indent: 0, children: [] },
-          { id: "b2", text: "Everything in this workspace is stored locally in your hypergraph database. No cloud required.", indent: 0, children: [] },
-          { id: "b3", text: "", indent: 0, children: [] },
-          { id: "b4", text: "📂 Explore the UOR OS folder to learn about the system architecture.", indent: 0, children: [] },
-          { id: "b5", text: "🌐 Open the Atlas Engine folder to see the E₈ computational substrate.", indent: 0, children: [] },
-          { id: "b6", text: "📊 Switch to the Graph view to see how everything connects.", indent: 0, children: [] },
-          { id: "b7", text: "", indent: 0, children: [] },
-          { id: "b8", text: "Use [[Atlas Engine Overview]] to learn about the mathematical foundation.", indent: 0, children: [] },
+      // ═══════════════════════════════════════════════════════
+      // FILES (notes inside folders)
+      // ═══════════════════════════════════════════════════════
+
+      const b = (texts: string[]) => JSON.stringify(
+        texts.map((t, i) => ({ id: `b${i}`, text: t, indent: 0, children: [] }))
+      );
+
+      // ── System > Welcome ──
+      await db.addEdge(["folder:system", "note:welcome"], "workspace:note", {
+        title: "Welcome to UOR OS", icon: "👋", coverUrl: coverWelcome,
+        blocks: b([
+          "Welcome to UOR OS — your sovereign knowledge operating system.",
+          "",
+          "Everything in this workspace is stored locally in your hypergraph database. No cloud required.",
+          "",
+          "📂 System — Core OS architecture and components",
+          "🌐 Atlas Engine — The E₈ computational substrate",
+          "📚 Knowledge Base — Guides, references, and bookmarks",
+          "🎯 Projects — Your ideas and experiments",
+          "",
+          "Use ⌘K to quickly find anything. Type [[ to link files together.",
         ]),
         tags: JSON.stringify(["getting-started", "uor"]),
-        createdAt: now, updatedAt: now,
+        createdAt: now, updatedAt: now, sortOrder: 0,
       });
 
-      // ── Note: "Atlas Engine Overview" (inside Atlas) ──
-      const atlasNoteId = "note:atlas-overview";
-      await db.addEdge([atlasFolderId, atlasNoteId], "workspace:note", {
-        title: "Atlas Engine Overview", icon: "🔮", content: "", coverUrl: coverAtlas,
-        blocks: JSON.stringify([
-          { id: "b0", text: "The Atlas Engine is a 96-vertex E₈ computational substrate.", indent: 0, children: [] },
-          { id: "b1", text: "", indent: 0, children: [] },
-          { id: "b2", text: "It provides the mathematical foundation for the knowledge graph, mapping universal objects through 8 sign classes with triality symmetry.", indent: 0, children: [] },
-          { id: "b3", text: "", indent: 0, children: [] },
-          { id: "b4", text: "Toggle the Atlas Layer in the Graph view to visualize the full vertex structure.", indent: 0, children: [] },
-        ]),
-        tags: JSON.stringify(["atlas", "architecture"]),
-        createdAt: now - dayMs * 1, updatedAt: now - dayMs * 1,
-      });
-
-      // ── Note: "Knowledge Graph Guide" (inside UOR OS) ──
-      const graphGuideId = "note:graph-guide";
-      await db.addEdge([osFolderId, graphGuideId], "workspace:note", {
-        title: "Knowledge Graph Guide", icon: "📊", content: "", coverUrl: coverGraph,
-        blocks: JSON.stringify([
-          { id: "b0", text: "The Knowledge Graph is your second brain — a living map of connections between ideas.", indent: 0, children: [] },
-          { id: "b1", text: "", indent: 0, children: [] },
-          { id: "b2", text: "Every note, link, and tag creates a node. Every [[wiki link]] creates an edge.", indent: 0, children: [] },
-          { id: "b3", text: "", indent: 0, children: [] },
-          { id: "b4", text: "Use #tags to categorize and filter. Use backlinks to discover hidden connections.", indent: 0, children: [] },
-          { id: "b5", text: "", indent: 0, children: [] },
-          { id: "b6", text: "Try switching to the Graph view to explore your knowledge visually.", indent: 0, children: [] },
-        ]),
-        tags: JSON.stringify(["guide", "knowledge-graph"]),
-        createdAt: now - dayMs * 2, updatedAt: now - dayMs * 0.5,
-      });
-
-      // ── Note: "Hypergraph Architecture" (inside Atlas) ──
-      const hyperNoteId = "note:hypergraph-arch";
-      await db.addEdge([atlasFolderId, hyperNoteId], "workspace:note", {
-        title: "Hypergraph Architecture", icon: "🧬", content: "",
-        blocks: JSON.stringify([
-          { id: "b0", text: "SovereignDB uses hypergraph edges — n-ary relations that can connect any number of nodes.", indent: 0, children: [] },
-          { id: "b1", text: "", indent: 0, children: [] },
-          { id: "b2", text: "Unlike traditional triple stores, hyperedges can represent complex relationships like:", indent: 0, children: [] },
-          { id: "b3", text: "• A meeting between three people at a specific time and place", indent: 1, children: [] },
-          { id: "b4", text: "• A chemical reaction with multiple reactants and products", indent: 1, children: [] },
-          { id: "b5", text: "• A transaction involving sender, receiver, amount, and timestamp", indent: 1, children: [] },
+      // ── System > Kernel > Hypergraph Architecture ──
+      await db.addEdge(["folder:kernel", "note:hypergraph-arch"], "workspace:note", {
+        title: "Hypergraph Architecture", icon: "🧬",
+        blocks: b([
+          "SovereignDB uses hypergraph edges — n-ary relations that can connect any number of nodes.",
+          "",
+          "Unlike traditional triple stores, hyperedges can represent:",
+          "  • A meeting between three people at a specific time and place",
+          "  • A chemical reaction with multiple reactants and products",
+          "  • A transaction involving sender, receiver, amount, and timestamp",
+          "",
+          "The hypergraph is the unified substrate for storage, compute, and networking.",
+          "See also: [[Ring Operations]] [[Atlas E₈ Overview]]",
         ]),
         tags: JSON.stringify(["architecture", "hypergraph"]),
-        createdAt: now - dayMs * 3, updatedAt: now - dayMs * 2,
+        createdAt: now - d * 3, updatedAt: now - d * 2, sortOrder: 0,
       });
 
-      // ── Bookmark notes inside Resources ──
-      const bookmark1Id = "note:res-wikipedia";
-      await db.addEdge([resourcesFolderId, bookmark1Id], "workspace:note", {
-        title: "Wikipedia — Knowledge Graph", icon: "🔗", content: "",
-        blocks: JSON.stringify([
-          { id: "b0", text: "Reference article on knowledge graphs and semantic networks.", indent: 0, children: [] },
-          { id: "b1", text: "", indent: 0, children: [] },
-          { id: "b2", text: "🔗 https://en.wikipedia.org/wiki/Knowledge_graph", indent: 0, children: [] },
+      // ── System > Kernel > SovereignDB ──
+      await db.addEdge(["folder:kernel", "note:sovereign-db"], "workspace:note", {
+        title: "SovereignDB", icon: "🗄️",
+        blocks: b([
+          "SovereignDB is the product name for the sovereign hypergraph database.",
+          "",
+          "Entry point: SovereignDB.open('name')",
+          "Modules: query-builder, transaction, schema-constraints, index-manager, io-adapters",
+          "",
+          "Export formats: JSON-LD, N-Quads, CSV, Cypher",
+          "Neo4j interop: binary edges map 1:1; n-ary edges use star expansion with hub nodes.",
         ]),
+        tags: JSON.stringify(["architecture", "database"]),
+        createdAt: now - d * 2, updatedAt: now - d * 1, sortOrder: 1,
+      });
+
+      // ── System > Identity > UNS Identity Engine ──
+      await db.addEdge(["folder:identity", "note:uns-identity"], "workspace:note", {
+        title: "UNS Identity Engine", icon: "🔐",
+        blocks: b([
+          "The UNS (Universal Name System) provides content-addressed identity.",
+          "",
+          "Pipeline: obj → URDNA2015 → UTF-8 bytes → SHA-256 → derive all four forms:",
+          "  1. canonicalId — urn:uor:derivation:sha256:{hex64} (lossless, 256-bit)",
+          "  2. ipv6 — fd00:0075:6f72:xxxx:xxxx:xxxx:xxxx:xxxx (routing, 80-bit)",
+          "  3. cid — CIDv1/dag-json/sha2-256/base32lower (IPFS interop)",
+          "  4. glyph — Braille bijection (visual identity)",
+          "",
+          "Same object → same nquads → same hash → same identity. Forever.",
+        ]),
+        tags: JSON.stringify(["identity", "cryptography"]),
+        createdAt: now - d * 4, updatedAt: now - d * 1, sortOrder: 0,
+      });
+
+      // ── System > Networking > Mesh Network ──
+      await db.addEdge(["folder:networking", "note:mesh-network"], "workspace:note", {
+        title: "UNS Mesh Network", icon: "🌍",
+        blocks: b([
+          "UnsNode boots the entire UNS stack: resolver, shield, compute, store, kv, cache, ledger, trust.",
+          "",
+          "One command. Entire stack. Content-addressed from kernel to application.",
+          "",
+          "Services: DHT (Kademlia), IPv6 Extension Headers, PQC Keypair (Dilithium-3)",
+          "See also: [[UNS Identity Engine]]",
+        ]),
+        tags: JSON.stringify(["networking", "mesh"]),
+        createdAt: now - d * 2, updatedAt: now - d * 1, sortOrder: 0,
+      });
+
+      // ── Atlas Engine > Atlas E₈ Overview (THE atlas file) ──
+      await db.addEdge(["folder:atlas-engine", "note:atlas-e8"], "workspace:note", {
+        title: "Atlas E₈ Overview", icon: "🔮", coverUrl: coverAtlas,
+        blocks: b([
+          "The Atlas Engine is a 96-vertex E₈ computational substrate.",
+          "",
+          "It provides the mathematical foundation for the knowledge graph,",
+          "mapping universal objects through 8 sign classes with triality symmetry.",
+          "",
+          "Key properties:",
+          "  • 96 vertices derived from E₈ root system",
+          "  • Triality automorphism group (S₃ symmetry)",
+          "  • HDC-native: bind=XOR, bundle=majority, similarity=popcount",
+          "  • Direct mapping to R₈ ring algebra",
+          "",
+          "Toggle the Atlas Layer in the Graph view to visualize the full structure.",
+          "See also: [[Ring Operations]] [[Hypergraph Architecture]]",
+        ]),
+        tags: JSON.stringify(["atlas", "e8", "architecture"]),
+        fileType: "atlas",
+        createdAt: now - d * 5, updatedAt: now, sortOrder: 0,
+      });
+
+      // ── Atlas Engine > Vertices > Vertex Structure ──
+      await db.addEdge(["folder:vertices", "note:vertex-structure"], "workspace:note", {
+        title: "Vertex Structure", icon: "🔺",
+        blocks: b([
+          "Each of the 96 vertices represents a unique sign class in the E₈ lattice.",
+          "",
+          "Vertices are organized into 8 orbits of 12 vertices each.",
+          "The orbit structure reflects the triality symmetry: D₄ → S₃.",
+          "",
+          "Properties per vertex: coordinates (8D), sign class, orbit index, neighbors.",
+        ]),
+        tags: JSON.stringify(["atlas", "vertices"]),
+        createdAt: now - d * 4, updatedAt: now - d * 3, sortOrder: 0,
+      });
+
+      // ── Atlas Engine > Ring > Ring Operations ──
+      await db.addEdge(["folder:ring", "note:ring-operations"], "workspace:note", {
+        title: "Ring Operations", icon: "💎",
+        blocks: b([
+          "R₈ (the ring of integers mod 256) provides native HDC/VSA primitives:",
+          "",
+          "  • bind(a, b) = a XOR b — invertible binding",
+          "  • bundle(a, b, c) = majority vote — superposition",
+          "  • similarity(a, b) = popcount(a XOR b) — Hamming distance",
+          "",
+          "These three operations, applied to the 256 elements of R₈,",
+          "form a complete Hyperdimensional Computing algebra.",
+          "See also: [[Atlas E₈ Overview]] [[Hypergraph Architecture]]",
+        ]),
+        tags: JSON.stringify(["ring", "hdc", "algebra"]),
+        createdAt: now - d * 3, updatedAt: now - d * 2, sortOrder: 0,
+      });
+
+      // ── Knowledge Base > Guides > Quick Start Guide ──
+      await db.addEdge(["folder:guides", "note:quick-start"], "workspace:note", {
+        title: "Quick Start Guide", icon: "⚡", coverUrl: coverWelcome,
+        blocks: b([
+          "Get started with UOR OS in 5 steps:",
+          "",
+          "1. Browse the sidebar to explore workspaces, folders, and files",
+          "2. Use ⌘K to quickly find or create anything",
+          "3. Type [[ to link files together — connections appear in the graph",
+          "4. Use #tags to categorize and filter your knowledge",
+          "5. Switch to Graph view to visualize all connections",
+          "",
+          "Hierarchy: Workspace → Folders → Files",
+          "Everything is stored in your local hypergraph. No cloud needed.",
+        ]),
+        tags: JSON.stringify(["getting-started", "guide"]),
+        createdAt: now, updatedAt: now, sortOrder: 0,
+      });
+
+      // ── Knowledge Base > Guides > Knowledge Graph Guide ──
+      await db.addEdge(["folder:guides", "note:graph-guide"], "workspace:note", {
+        title: "Knowledge Graph Guide", icon: "📊", coverUrl: coverGraph,
+        blocks: b([
+          "The Knowledge Graph is your second brain — a living map of connections.",
+          "",
+          "Every file, link, and tag creates a node. Every [[wiki link]] creates an edge.",
+          "Use #tags to categorize and filter. Use backlinks to discover hidden connections.",
+          "",
+          "Try switching to the Graph view to explore your knowledge visually.",
+        ]),
+        tags: JSON.stringify(["guide", "knowledge-graph"]),
+        createdAt: now - d * 2, updatedAt: now - d * 0.5, sortOrder: 1,
+      });
+
+      // ── Knowledge Base > References > bookmarks ──
+      await db.addEdge(["folder:references", "note:ref-wikipedia"], "workspace:note", {
+        title: "Wikipedia — Knowledge Graph", icon: "🔗",
+        blocks: b(["Reference article on knowledge graphs and semantic networks.", "", "🔗 https://en.wikipedia.org/wiki/Knowledge_graph"]),
         tags: JSON.stringify(["reference", "knowledge-graph"]),
-        bookmark: JSON.stringify({ url: "https://en.wikipedia.org/wiki/Knowledge_graph", title: "Knowledge Graph — Wikipedia" }),
-        createdAt: now - dayMs * 5, updatedAt: now - dayMs * 5,
+        bookmark: JSON.stringify({ url: "https://en.wikipedia.org/wiki/Knowledge_graph" }),
+        createdAt: now - d * 5, updatedAt: now - d * 5, sortOrder: 0,
       });
-
-      const bookmark2Id = "note:res-ipfs";
-      await db.addEdge([resourcesFolderId, bookmark2Id], "workspace:note", {
-        title: "IPFS Documentation", icon: "🔗", content: "",
-        blocks: JSON.stringify([
-          { id: "b0", text: "InterPlanetary File System — content-addressed, peer-to-peer storage.", indent: 0, children: [] },
-          { id: "b1", text: "", indent: 0, children: [] },
-          { id: "b2", text: "🔗 https://docs.ipfs.tech", indent: 0, children: [] },
-        ]),
+      await db.addEdge(["folder:references", "note:ref-ipfs"], "workspace:note", {
+        title: "IPFS Documentation", icon: "🔗",
+        blocks: b(["InterPlanetary File System — content-addressed, peer-to-peer storage.", "", "🔗 https://docs.ipfs.tech"]),
         tags: JSON.stringify(["reference", "ipfs"]),
-        bookmark: JSON.stringify({ url: "https://docs.ipfs.tech", title: "IPFS Docs" }),
-        createdAt: now - dayMs * 4, updatedAt: now - dayMs * 4,
+        bookmark: JSON.stringify({ url: "https://docs.ipfs.tech" }),
+        createdAt: now - d * 4, updatedAt: now - d * 4, sortOrder: 1,
       });
-
-      const bookmark3Id = "note:res-jsonld";
-      await db.addEdge([resourcesFolderId, bookmark3Id], "workspace:note", {
-        title: "JSON-LD Specification", icon: "🔗", content: "",
-        blocks: JSON.stringify([
-          { id: "b0", text: "JSON-LD is a method of encoding linked data using JSON.", indent: 0, children: [] },
-          { id: "b1", text: "", indent: 0, children: [] },
-          { id: "b2", text: "🔗 https://json-ld.org", indent: 0, children: [] },
-        ]),
+      await db.addEdge(["folder:references", "note:ref-jsonld"], "workspace:note", {
+        title: "JSON-LD Specification", icon: "🔗",
+        blocks: b(["JSON-LD is a method of encoding linked data using JSON.", "", "🔗 https://json-ld.org"]),
         tags: JSON.stringify(["reference", "linked-data"]),
-        bookmark: JSON.stringify({ url: "https://json-ld.org", title: "JSON-LD" }),
-        createdAt: now - dayMs * 3, updatedAt: now - dayMs * 3,
+        bookmark: JSON.stringify({ url: "https://json-ld.org" }),
+        createdAt: now - d * 3, updatedAt: now - d * 3, sortOrder: 2,
       });
 
-      // ── Note: "Project Ideas" (inside Projects) ──
-      const projectIdeasId = "note:project-ideas";
-      await db.addEdge([projectsFolderId, projectIdeasId], "workspace:note", {
-        title: "Project Ideas", icon: "💡", content: "",
-        blocks: JSON.stringify([
-          { id: "b0", text: "Ideas for building on top of UOR OS:", indent: 0, children: [] },
-          { id: "b1", text: "", indent: 0, children: [] },
-          { id: "b2", text: "☐ Build a personal CRM using the hypergraph", indent: 0, children: [] },
-          { id: "b3", text: "☐ Create a research paper organizer with semantic search", indent: 0, children: [] },
-          { id: "b4", text: "☐ Design a recipe database with ingredient connections", indent: 0, children: [] },
-          { id: "b5", text: "☐ Map out a learning curriculum with prerequisites", indent: 0, children: [] },
+      // ── Projects > Project Ideas ──
+      await db.addEdge(["folder:projects", "note:project-ideas"], "workspace:note", {
+        title: "Project Ideas", icon: "💡",
+        blocks: b([
+          "Ideas for building on top of UOR OS:",
+          "",
+          "☐ Build a personal CRM using the hypergraph",
+          "☐ Create a research paper organizer with semantic search",
+          "☐ Design a recipe database with ingredient connections",
+          "☐ Map out a learning curriculum with prerequisites",
         ]),
         tags: JSON.stringify(["projects", "ideas"]),
-        createdAt: now - dayMs * 1, updatedAt: now,
+        createdAt: now - d * 1, updatedAt: now, sortOrder: 0,
       });
 
-      // ── Note: "Quick Start" (root level — visible immediately) ──
-      const quickStartId = "note:quick-start";
-      await db.addEdge([wsId, quickStartId], "workspace:note", {
-        title: "Quick Start", icon: "⚡", content: "", coverUrl: coverWelcome,
-        blocks: JSON.stringify([
-          { id: "b0", text: "Welcome! Here's how to get started:", indent: 0, children: [] },
-          { id: "b1", text: "", indent: 0, children: [] },
-          { id: "b2", text: "1. Browse the sidebar to explore folders and notes", indent: 0, children: [] },
-          { id: "b3", text: "2. Use ⌘K to quickly find or create anything", indent: 0, children: [] },
-          { id: "b4", text: "3. Type [[ to link notes together", indent: 0, children: [] },
-          { id: "b5", text: "4. Use # to add tags for organization", indent: 0, children: [] },
-          { id: "b6", text: "5. Switch to the Graph view to visualize connections", indent: 0, children: [] },
-        ]),
-        tags: JSON.stringify(["getting-started"]),
-        createdAt: now, updatedAt: now,
-      });
-
-      // ── Seed tags as hyperedges ──
+      // ═══════════════════════════════════════════════════════
+      // TAGS & CROSS-LINKS
+      // ═══════════════════════════════════════════════════════
       const tagPairs: [string, string][] = [
-        [welcomeNoteId, "getting-started"], [welcomeNoteId, "uor"],
-        [atlasNoteId, "atlas"], [atlasNoteId, "architecture"],
-        [graphGuideId, "guide"], [graphGuideId, "knowledge-graph"],
-        [hyperNoteId, "architecture"], [hyperNoteId, "hypergraph"],
-        [bookmark1Id, "reference"], [bookmark1Id, "knowledge-graph"],
-        [bookmark2Id, "reference"], [bookmark2Id, "ipfs"],
-        [bookmark3Id, "reference"], [bookmark3Id, "linked-data"],
-        [projectIdeasId, "projects"], [projectIdeasId, "ideas"],
-        [quickStartId, "getting-started"],
+        ["note:welcome", "getting-started"], ["note:welcome", "uor"],
+        ["note:hypergraph-arch", "architecture"], ["note:hypergraph-arch", "hypergraph"],
+        ["note:sovereign-db", "architecture"], ["note:sovereign-db", "database"],
+        ["note:uns-identity", "identity"], ["note:uns-identity", "cryptography"],
+        ["note:mesh-network", "networking"], ["note:mesh-network", "mesh"],
+        ["note:atlas-e8", "atlas"], ["note:atlas-e8", "e8"], ["note:atlas-e8", "architecture"],
+        ["note:vertex-structure", "atlas"], ["note:vertex-structure", "vertices"],
+        ["note:ring-operations", "ring"], ["note:ring-operations", "hdc"],
+        ["note:quick-start", "getting-started"], ["note:quick-start", "guide"],
+        ["note:graph-guide", "guide"], ["note:graph-guide", "knowledge-graph"],
+        ["note:ref-wikipedia", "reference"], ["note:ref-ipfs", "reference"],
+        ["note:ref-jsonld", "reference"], ["note:ref-jsonld", "linked-data"],
+        ["note:project-ideas", "projects"], ["note:project-ideas", "ideas"],
       ];
       for (const [noteId, tag] of tagPairs) {
         await db.addEdge([noteId, `tag:${tag}`], "workspace:tag", { tag });
       }
 
-      // ── Seed cross-links ──
-      await db.addEdge([welcomeNoteId, atlasNoteId], "workspace:link", { relation: "references" });
-      await db.addEdge([welcomeNoteId, graphGuideId], "workspace:link", { relation: "see-also" });
-      await db.addEdge([welcomeNoteId, bookmark1Id], "workspace:link", { relation: "see-also" });
-      await db.addEdge([atlasNoteId, hyperNoteId], "workspace:link", { relation: "extends" });
-      await db.addEdge([atlasNoteId, bookmark3Id], "workspace:link", { relation: "uses" });
-      await db.addEdge([graphGuideId, quickStartId], "workspace:link", { relation: "related" });
+      // Cross-links between files
+      await db.addEdge(["note:welcome", "note:atlas-e8"], "workspace:link", { relation: "references" });
+      await db.addEdge(["note:welcome", "note:graph-guide"], "workspace:link", { relation: "see-also" });
+      await db.addEdge(["note:atlas-e8", "note:hypergraph-arch"], "workspace:link", { relation: "extends" });
+      await db.addEdge(["note:atlas-e8", "note:ring-operations"], "workspace:link", { relation: "uses" });
+      await db.addEdge(["note:ring-operations", "note:vertex-structure"], "workspace:link", { relation: "related" });
+      await db.addEdge(["note:hypergraph-arch", "note:sovereign-db"], "workspace:link", { relation: "implements" });
+      await db.addEdge(["note:uns-identity", "note:mesh-network"], "workspace:link", { relation: "enables" });
+      await db.addEdge(["note:graph-guide", "note:quick-start"], "workspace:link", { relation: "related" });
 
       // Re-fetch after seeding
       const seededFolders = await db.byLabel("workspace:folder");
