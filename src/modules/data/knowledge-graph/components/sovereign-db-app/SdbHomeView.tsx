@@ -20,6 +20,8 @@ interface NoteItem {
   updatedAt: number;
   fileDataUrl?: string;
   fileMime?: string;
+  coverUrl?: string;
+  childCount?: number;
 }
 
 interface Props {
