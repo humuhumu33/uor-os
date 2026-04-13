@@ -106,6 +106,7 @@ function DesktopShellInner() {
   const [snapPreview, setSnapPreview] = useState<SnapZone | null>(null);
   const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
+  const [desktopMode, setDesktopMode] = useState(false);
 
   // Voice-to-voice (replaces raw useGlobalDictation)
   const [voiceState, voiceActions] = useVoiceToVoice();
