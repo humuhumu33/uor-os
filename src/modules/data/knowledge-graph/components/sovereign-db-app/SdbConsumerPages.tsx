@@ -353,16 +353,26 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     setNoteComments(prev => [...prev, comment]);
   }, []);
 
-  const createFolder = useCallback(async () => {
-    const folderId = `ws:${generateId()}`;
-    await db.addEdge(["ws:root", folderId], "workspace:folder", { name: "New Folder", createdAt: Date.now() });
+  const createWorkspace = useCallback(async (name = "New Workspace") => {
+    const wsId = `ws:${generateId()}`;
+    await db.addEdge(["root", wsId], "workspace:workspace", { name, createdAt: Date.now() });
     await reload();
-    setExpanded(prev => new Set(prev).add(folderId));
+    setActiveWorkspaceId(wsId);
   }, [db, reload]);
 
-  const createNote = useCallback(async (parentId = "ws:root", title = "Untitled") => {
+  const createFolder = useCallback(async (parentId?: string) => {
+    const parent = parentId || activeWorkspaceId || "ws:root";
+    const folderId = `folder:${generateId()}`;
+    await db.addEdge([parent, folderId], "workspace:folder", { name: "New Folder", createdAt: Date.now() });
+    await reload();
+    setExpanded(prev => new Set(prev).add(folderId));
+  }, [db, reload, activeWorkspaceId]);
+
+  const createNote = useCallback(async (parentId?: string, title = "Untitled") => {
+    // Notes go inside folders (or workspace root if no folder specified)
+    const parent = parentId || activeWorkspaceId || "ws:root";
     const noteId = `note:${generateId()}`;
-    await db.addEdge([parentId, noteId], "workspace:note", {
+    await db.addEdge([parent, noteId], "workspace:note", {
       title,
       content: "",
       blocks: JSON.stringify([{ id: "b0", text: "", indent: 0, children: [] }]),
@@ -372,7 +382,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     });
     await reload();
     setSelectedId(noteId);
-  }, [db, reload]);
+  }, [db, reload, activeWorkspaceId]);
 
   const navigateTo = useCallback((noteId: string) => {
     setSelectedId(noteId);
