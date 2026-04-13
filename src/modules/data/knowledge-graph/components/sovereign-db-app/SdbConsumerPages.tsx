@@ -161,8 +161,9 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       workspaces.push(...ws2);
     }
 
-    // Seed demo content if workspace is empty (no folders AND no notes)
-    if (folders.length === 0 && notes.length === 0) {
+    // Seed demo content if demo folders are missing
+    const hasDemoContent = folders.some(f => f.nodes?.includes("folder:uor-os"));
+    if (!hasDemoContent) {
       const wsId = workspaces[0]?.nodes?.[1] || "ws:default";
       const now = Date.now();
       const dayMs = 86_400_000;
