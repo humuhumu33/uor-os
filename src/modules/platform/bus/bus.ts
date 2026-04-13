@@ -26,14 +26,16 @@ function nextId(): number { return _nextId++; }
 
 // ── Remote Gateway ────────────────────────────────────────────────────────
 
-let _gatewayUrl: string | null = null;
-function getGatewayUrl(): string {
-  if (_gatewayUrl) return _gatewayUrl;
+let _gatewayUrl: string | null | undefined = undefined; // undefined = not resolved yet
+function getGatewayUrl(): string | null {
+  if (_gatewayUrl !== undefined) return _gatewayUrl;
   const projectId = runtime.env("VITE_SUPABASE_PROJECT_ID");
   if (!projectId) {
     const url = runtime.env("VITE_SUPABASE_URL");
     if (url) { _gatewayUrl = `${url}/functions/v1/gateway`; return _gatewayUrl; }
-    throw new Error("[bus] No VITE_SUPABASE_PROJECT_ID or VITE_SUPABASE_URL configured");
+    // No backend configured — remote features degrade gracefully
+    _gatewayUrl = null;
+    return null;
   }
   _gatewayUrl = `https://${projectId}.supabase.co/functions/v1/gateway`;
   return _gatewayUrl;
@@ -41,6 +43,18 @@ function getGatewayUrl(): string {
 
 async function callRemote<T>(req: RpcRequest): Promise<RpcResponse<SovereignResult<T>>> {
   const start = runtime.now();
+
+  const url = getGatewayUrl();
+  if (!url) {
+    return {
+      jsonrpc: "2.0", id: req.id,
+      error: {
+        code: RPC_ERRORS.GATEWAY_ERROR.code,
+        message: `[bus] Remote method "${req.method}" unavailable — no backend configured. Set VITE_SUPABASE_URL in .env to enable.`,
+      },
+    };
+  }
+
   try {
     const { supabase } = await import("@/integrations/supabase/client");
     const session = await supabase.auth.getSession();
@@ -52,7 +66,7 @@ async function callRemote<T>(req: RpcRequest): Promise<RpcResponse<SovereignResu
     };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const resp = await runtime.fetch(getGatewayUrl(), {
+    const resp = await runtime.fetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify(req),
