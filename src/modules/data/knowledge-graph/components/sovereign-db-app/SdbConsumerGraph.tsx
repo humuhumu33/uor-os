@@ -46,7 +46,7 @@ const SIGN_CLASS_LEGEND = [
   { name: "SC₇", color: "hsl(270, 60%, 60%)" },
 ];
 
-export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
+export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "" }: Props) {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("force");
   const [filters, setFilters] = useState<GraphFilter>({
     types: new Map(),
