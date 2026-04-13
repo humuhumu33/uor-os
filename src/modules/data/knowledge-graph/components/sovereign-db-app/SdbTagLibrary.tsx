@@ -17,21 +17,13 @@ interface TagItem {
 }
 
 interface Props {
-  /** All user-created tags from hypergraph edges */
   userTags: { name: string; count: number }[];
-  /** Content type counts */
   typeCounts: Record<string, number>;
-  /** Smart tag counts */
   smartCounts: { today: number; thisWeek: number; recent: number; untagged: number };
-  /** Currently active tag filters */
   activeTags: Set<string>;
-  /** Toggle a tag filter */
   onToggleTag: (tag: string) => void;
-  /** Custom tag colors from localStorage */
   tagColors: Record<string, string>;
-  /** Update a tag's color */
   onSetTagColor: (tag: string, color: string) => void;
-  /** Create a new custom tag */
   onCreateTag?: (name: string) => void;
 }
 
@@ -77,9 +69,9 @@ export function SdbTagLibrary({
       onClick={toggle}
       className="flex items-center gap-1.5 w-full px-2.5 pb-1 pt-2"
     >
-      {open ? <IconChevronDown size={11} className="text-muted-foreground/30" /> : <IconChevronRight size={11} className="text-muted-foreground/30" />}
-      <Icon size={12} className="text-muted-foreground/30" />
-      <span className="text-[12px] font-medium text-muted-foreground/35 uppercase tracking-wider">{label}</span>
+      {open ? <IconChevronDown size={11} className="text-muted-foreground" /> : <IconChevronRight size={11} className="text-muted-foreground" />}
+      <Icon size={12} className="text-muted-foreground" />
+      <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
     </button>
   );
 
@@ -90,10 +82,10 @@ export function SdbTagLibrary({
       <div key={tag.name} className="relative group">
         <button
           onClick={() => onToggleTag(tag.name)}
-          className={`flex items-center gap-2 w-full px-2.5 py-[5px] rounded-lg text-[13px] transition-all ${
+          className={`flex items-center gap-2 w-full px-2.5 py-[5px] rounded-lg text-os-body transition-all ${
             isActive
               ? "bg-primary/10 text-foreground"
-              : "text-muted-foreground/60 hover:bg-muted/30 hover:text-foreground"
+              : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
           }`}
         >
           <span
@@ -101,7 +93,7 @@ export function SdbTagLibrary({
             style={{ backgroundColor: color, transform: isActive ? "scale(1.3)" : "scale(1)" }}
           />
           <span className="truncate flex-1 text-left">{tag.name}</span>
-          <span className="text-[11px] text-muted-foreground/40 tabular-nums">{tag.count}</span>
+          <span className="text-os-body text-muted-foreground tabular-nums">{tag.count}</span>
           {!tag.isSmart && !tag.isType && (
             <button
               onClick={e => { e.stopPropagation(); setColorPicking(colorPicking === tag.name ? null : tag.name); }}
@@ -139,53 +131,50 @@ export function SdbTagLibrary({
         setCustomOpen(!allOpen);
       }} />
 
-      {/* Smart Tags */}
       {smartOpen && smartTags.length > 0 && (
         <div className="mb-1">
-          <div className="px-4 py-0.5 text-[11px] text-muted-foreground/40 uppercase tracking-widest">Smart</div>
+          <div className="px-4 py-0.5 text-os-body text-muted-foreground uppercase tracking-widest">Smart</div>
           {smartTags.map(renderTag)}
         </div>
       )}
 
-      {/* Content Types */}
       {typesOpen && typeEntries.length > 0 && (
         <div className="mb-1">
-          <div className="px-4 py-0.5 text-[11px] text-muted-foreground/40 uppercase tracking-widest">Types</div>
+          <div className="px-4 py-0.5 text-os-body text-muted-foreground uppercase tracking-widest">Types</div>
           {typeEntries.map(renderTag)}
         </div>
       )}
 
-      {/* User Tags */}
       {customOpen && (
         <div className="mb-1">
           <div className="flex items-center justify-between px-4 py-0.5">
-            <span className="text-[11px] text-muted-foreground/40 uppercase tracking-widest">Custom</span>
+            <span className="text-os-body text-muted-foreground uppercase tracking-widest">Custom</span>
             <button
               onClick={() => setAdding(true)}
-              className="p-0.5 rounded text-muted-foreground/40 hover:text-foreground hover:bg-muted/40 transition-colors"
+              className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
             >
               <IconPlus size={10} />
             </button>
           </div>
           {userTags.map(t => renderTag({ ...t }))}
           {userTags.length === 0 && !adding && (
-            <div className="px-4 py-2 text-[12px] text-muted-foreground/40">
+            <div className="px-4 py-2 text-os-body text-muted-foreground">
               Use #hashtags in notes
             </div>
           )}
           {adding && (
             <div className="flex items-center gap-1 px-2.5 py-1">
-              <span className="text-muted-foreground/50 text-[12px]">#</span>
+              <span className="text-muted-foreground text-os-body">#</span>
               <input
                 value={newTag}
                 onChange={e => setNewTag(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleAdd()}
                 placeholder="tag-name"
                 autoFocus
-                className="flex-1 bg-transparent text-[12px] text-foreground outline-none border-b border-border/30 py-0.5"
+                className="flex-1 bg-transparent text-os-body text-foreground outline-none border-b border-border/30 py-0.5"
               />
-              <button onClick={handleAdd} className="text-primary text-[11px]">Add</button>
-              <button onClick={() => { setAdding(false); setNewTag(""); }} className="text-muted-foreground/50">
+              <button onClick={handleAdd} className="text-primary text-os-body">Add</button>
+              <button onClick={() => { setAdding(false); setNewTag(""); }} className="text-muted-foreground">
                 <IconX size={11} />
               </button>
             </div>
@@ -193,11 +182,10 @@ export function SdbTagLibrary({
         </div>
       )}
 
-      {/* Clear filters */}
       {activeTags.size > 0 && (
         <button
           onClick={() => [...activeTags].forEach(t => onToggleTag(t))}
-          className="flex items-center gap-1 px-4 py-1 text-[11px] text-primary/60 hover:text-primary transition-colors"
+          className="flex items-center gap-1 px-4 py-1 text-os-body text-primary hover:text-primary transition-colors"
         >
           <IconX size={11} /> Clear filters
         </button>

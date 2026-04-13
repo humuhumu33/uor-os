@@ -37,20 +37,19 @@ export function SdbSidebar({ active, onSelect, collapsed, onToggle, showDashboar
     >
       {!collapsed && (
         <div className="px-4 py-3 border-b border-border">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/70">
+          <span className="text-os-body font-mono uppercase tracking-widest text-muted-foreground">
             Services
           </span>
         </div>
       )}
 
       <nav className="flex-1 py-2 space-y-0.5">
-        {/* Dashboard button */}
         {showDashboard && (
           <>
             <button
               onClick={onDashboard}
               title="Dashboard"
-              className={`flex items-center gap-3 w-full px-4 py-2.5 text-[14px] font-medium transition-colors ${
+              className={`flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium transition-colors ${
                 isDashboard
                   ? "bg-primary/10 text-primary border-r-2 border-primary"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -68,7 +67,7 @@ export function SdbSidebar({ active, onSelect, collapsed, onToggle, showDashboar
             key={id}
             onClick={() => onSelect(id)}
             title={label}
-            className={`flex items-center gap-3 w-full px-4 py-2.5 text-[14px] font-medium transition-colors ${
+            className={`flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium transition-colors ${
               active === id && !isDashboard
                 ? "bg-primary/10 text-primary border-r-2 border-primary"
                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
