@@ -1251,8 +1251,8 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
                   </div>
                 )}
                 <div className="space-y-px">
-                  {rootItems.filter(i => i.type === "folder").map(i => renderItem(i))}
-                  {rootItems.filter(i => i.type !== "folder").map(i => renderItem(i))}
+                  {rootItems.filter(i => i.type === "folder").map(i => renderItem(i, 0, rootItems))}
+                  {rootItems.filter(i => i.type !== "folder").map(i => renderItem(i, 0, rootItems))}
                 </div>
 
                 <div className="mx-3 my-1 border-t border-border/10" />
