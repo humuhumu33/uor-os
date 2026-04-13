@@ -422,10 +422,27 @@ export function SdbHomeView({
               const Icon = TYPE_ICON[item.type] || IconFile;
               const tags = itemTagsMap[item.id] || [];
               return (
-                <button
+                <div
                   key={item.id}
-                  onClick={() => onSelect(item.id)}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl hover:bg-muted/20 transition-colors group"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("application/x-sdb-item", item.id);
+                  }}
+                  onDragOver={(e) => {
+                    if (item.type === "folder") { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOverId(item.id); }
+                  }}
+                  onDragLeave={() => setDragOverId(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const draggedId = e.dataTransfer.getData("application/x-sdb-item");
+                    if (draggedId && draggedId !== item.id && item.type === "folder") onMoveItem?.(draggedId, item.id);
+                    setDragOverId(null);
+                  }}
+                  onClick={() => item.type === "folder" ? onNavigateFolder?.(item.id) : onSelect(item.id)}
+                  className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl cursor-pointer transition-colors group ${
+                    dragOverId === item.id ? "bg-primary/10 ring-1 ring-primary/30" : "hover:bg-muted/20"
+                  }`}
                 >
                   {item.fileDataUrl && item.fileMime?.startsWith("image/") ? (
                     <img src={item.fileDataUrl} alt={item.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
