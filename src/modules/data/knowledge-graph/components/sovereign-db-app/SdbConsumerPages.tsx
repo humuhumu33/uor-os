@@ -84,6 +84,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   const [noteIcon, setNoteIcon] = useState("");
   const [noteCover, setNoteCover] = useState<string | null>(null);
   const [noteComments, setNoteComments] = useState<NoteComment[]>([]);
+  const [sidebarPages, setSidebarPages] = useState<Array<{ id: string; title: string; blocks: Block[]; icon?: string }>>([]);
 
   // Tag system state
   const [activeTags, setActiveTags] = useState<Set<string>>(new Set());
