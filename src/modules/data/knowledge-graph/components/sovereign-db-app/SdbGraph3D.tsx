@@ -167,7 +167,28 @@ export function SdbGraph3D({
     return () => clearTimeout(t);
   }, []);
 
-  // ── GPU force layout integration ──────────────────────────
+  // ── Apply sidebar force params ────────────────────────────
+  useEffect(() => {
+    if (!forceParams) return;
+    const fg = fgRef.current;
+    if (!fg) return;
+    const t = setTimeout(() => {
+      try {
+        const charge = fg.d3Force?.("charge");
+        if (charge?.strength) charge.strength(-(forceParams.repelForce * 6 + 30));
+        const center = fg.d3Force?.("center");
+        if (center?.strength) center.strength(forceParams.centerForce / 100);
+        const link = fg.d3Force?.("link");
+        if (link) {
+          if (link.strength) link.strength(forceParams.linkForce / 100);
+          if (link.distance) link.distance(forceParams.linkDistance * 2 + 20);
+        }
+        fg.d3ReheatSimulation?.();
+      } catch {}
+    }, 500);
+    return () => clearTimeout(t);
+  }, [forceParams]);
+
   useEffect(() => {
     if (!gpuAvailable) return;
 
