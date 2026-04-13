@@ -2,7 +2,6 @@
  * ShortcutCheatSheet — Modal listing all UOR OS keyboard shortcuts.
  */
 
-import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useDesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
 import { usePlatform } from "@/modules/platform/desktop/hooks/usePlatform";
@@ -73,23 +72,14 @@ export default function ShortcutCheatSheet({ open, onClose }: Props) {
   const headerClass = isLight ? "text-black/30" : "text-white/30";
 
   return (
-    <AnimatePresence>
-      {open && (
+          {open && (
         <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-[10000] bg-black/30"
+          <div
+      className="fixed inset-0 z-[10000] bg-black/30"
             onClick={onClose}
           />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: 8 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10001] w-[420px] max-w-[90vw] max-h-[80vh] overflow-y-auto rounded-2xl border p-6 ${bgClass}`}
+          <div
+      className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10001] w-[420px] max-w-[90vw] max-h-[80vh] overflow-y-auto rounded-2xl border p-6 ${bgClass}`}
             style={{
               backdropFilter: "blur(16px) saturate(1.4)",
               WebkitBackdropFilter: "blur(16px) saturate(1.4)",
@@ -127,9 +117,8 @@ export default function ShortcutCheatSheet({ open, onClose }: Props) {
                 </div>
               </div>
             ))}
-          </motion.div>
+          </div>
         </>
       )}
-    </AnimatePresence>
   );
 }

@@ -8,7 +8,6 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { format } from "date-fns";
-import { motion, AnimatePresence } from "framer-motion";
 import { singleProofHash } from "@/lib/uor-canonical";
 import { grafeoStore as localGraphStore } from "@/modules/data/knowledge-graph/grafeo-store";
 import { parseWikiLinks, hasWikiSyntax } from "@/modules/data/knowledge-graph/lib/wiki-links";
@@ -148,26 +147,17 @@ export default function QuickCapture({ open, onClose }: Props) {
   }, [handleCapture, onClose]);
 
   return (
-    <AnimatePresence>
-      {open && (
+          {open && (
         <>
           {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-[200] bg-black/20"
+          <div
+      className="fixed inset-0 z-[200] bg-black/20"
             onClick={onClose}
           />
 
           {/* Capture pill */}
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.97 }}
-            transition={{ type: "spring", damping: 25, stiffness: 350 }}
-            className="fixed top-[20%] left-1/2 -translate-x-1/2 z-[201] w-[560px] max-w-[90vw]"
+          <div
+      className="fixed top-[20%] left-1/2 -translate-x-1/2 z-[201] w-[560px] max-w-[90vw]"
           >
             <div
               className="rounded-2xl border border-border/40 shadow-2xl overflow-hidden"
@@ -179,7 +169,7 @@ export default function QuickCapture({ open, onClose }: Props) {
             >
               {captured ? (
                 <div className="flex items-center justify-center gap-2 py-5">
-                  <motion.div
+                  <div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", damping: 12 }}
@@ -187,7 +177,7 @@ export default function QuickCapture({ open, onClose }: Props) {
                     <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M20 6L9 17l-5-5" />
                     </svg>
-                  </motion.div>
+                  </div>
                   <span className="text-sm text-foreground/70">Captured to today's note</span>
                 </div>
               ) : (
@@ -211,9 +201,8 @@ export default function QuickCapture({ open, onClose }: Props) {
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         </>
       )}
-    </AnimatePresence>
   );
 }

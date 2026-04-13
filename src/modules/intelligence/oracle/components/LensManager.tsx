@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Plus, Copy, Trash2, Eye, Sparkles, Settings2,
   BookOpen, Newspaper, Baby, GraduationCap, BookText, Calculator, User,
@@ -111,25 +110,17 @@ const LensManager: React.FC<LensManagerProps> = ({
     `${base} ${immersive ? immersiveClass : lightClass}`;
 
   return (
-    <AnimatePresence>
-      {open && (
+          {open && (
         <>
           {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
+          <div
+      onClick={onClose}
             className="fixed inset-0 z-50"
             style={{ background: immersive ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.25)" }}
           />
           {/* Panel */}
-          <motion.div
-            initial={{ opacity: 0, x: 40, scale: 0.97 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 40, scale: 0.97 }}
-            transition={{ type: "spring", damping: 30, stiffness: 400 }}
-            className="fixed right-4 top-16 bottom-4 z-50 w-[380px] max-w-[calc(100vw-2rem)] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
+          <div
+      className="fixed right-4 top-16 bottom-4 z-50 w-[380px] max-w-[calc(100vw-2rem)] flex flex-col rounded-2xl overflow-hidden shadow-2xl"
             style={{
               background: immersive ? "rgba(10,14,18,0.95)" : "hsl(var(--card) / 0.97)",
               border: immersive ? "1px solid rgba(255,255,255,0.08)" : "1px solid hsl(var(--border) / 0.15)",
@@ -209,10 +200,9 @@ const LensManager: React.FC<LensManagerProps> = ({
                 </>
               )}
             </div>
-          </motion.div>
+          </div>
         </>
       )}
-    </AnimatePresence>
   );
 };
 

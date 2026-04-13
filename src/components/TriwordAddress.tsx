@@ -9,7 +9,6 @@
 import { useState, useCallback } from "react";
 import { Copy, Check, Eye, EyeOff } from "lucide-react";
 import { canonicalToTriword } from "@/lib/uor-triword";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface TriwordAddressProps {
   /** The canonical ID / hash string to derive the triword from */
@@ -144,14 +143,9 @@ export default function TriwordAddress({
       </span>
 
       {/* Reveal panel */}
-      <AnimatePresence>
-        {revealed && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+              {revealed && (
+          <div
+      className="overflow-hidden"
           >
             <div
               className={`mt-2 rounded-md border px-3 py-2 space-y-1 ${
@@ -180,9 +174,8 @@ export default function TriwordAddress({
                 </code>
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

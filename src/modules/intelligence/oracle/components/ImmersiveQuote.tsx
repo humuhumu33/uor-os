@@ -5,7 +5,6 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { gatherQuoteContext, type QuoteContext } from "@/modules/intelligence/oracle/lib/quote-context";
 
 interface Quote {
@@ -121,8 +120,7 @@ export default function ImmersiveQuote() {
 
   return (
     <div className="max-w-[620px] w-full text-center min-h-[3rem]">
-      <AnimatePresence mode="wait">
-        <motion.div
+              <div
           key={index}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -154,8 +152,7 @@ export default function ImmersiveQuote() {
           >
             {current.author}
           </span>
-        </motion.div>
-      </AnimatePresence>
+        </div>
     </div>
   );
 }

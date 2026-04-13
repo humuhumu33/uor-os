@@ -22,7 +22,6 @@ import {
   Settings2,
 } from "lucide-react";
 import QrPortalPanel from "@/modules/intelligence/oracle/components/QrPortalPanel";
-import { motion, AnimatePresence } from "framer-motion";
 import LensManager from "./LensManager";
 import { KNOWLEDGE_LENSES, getBlueprint, loadCustomLenses, type LensBlueprint } from "@/modules/intelligence/oracle/lib/knowledge-lenses";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -187,9 +186,8 @@ const ReaderToolbar: React.FC<ReaderToolbarProps> = ({
 
   /* ── Search history dropdown ── */
   const HistoryDropdown = () => (
-    <AnimatePresence>
-      {historyOpen && (
-        <motion.div
+          {historyOpen && (
+        <div
           ref={historyRef}
           initial={{ opacity: 0, y: -6, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -244,19 +242,15 @@ const ReaderToolbar: React.FC<ReaderToolbarProps> = ({
               ))
             )}
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
   );
 
   // ── Compact mobile toolbar ──
   if (isMobile) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-        className={`sticky top-0 z-40 flex items-center gap-1 px-2 backdrop-blur-2xl relative ${synthesizing ? "" : "border-b"}`}
+      <div
+      className={`sticky top-0 z-40 flex items-center gap-1 px-2 backdrop-blur-2xl relative ${synthesizing ? "" : "border-b"}`}
         style={{
           background: immersive ? "rgba(255,255,255,0.06)" : "hsl(var(--background) / 0.82)",
           borderColor: immersive ? "rgba(255,255,255,0.04)" : "hsl(var(--border) / 0.05)",
@@ -320,16 +314,13 @@ const ReaderToolbar: React.FC<ReaderToolbarProps> = ({
           </IconBtn>
         )}
         <IconBtn onClick={onToggleDetails} title="Data profile"><Lock className="w-3.5 h-3.5 text-emerald-400/80" /></IconBtn>
-      </motion.div>
+      </div>
     );
   }
 
   // ── Desktop toolbar — full-width browser chrome with golden-ratio spacing ──
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+    <div
       className="sticky top-0 z-40 w-full backdrop-blur-2xl relative"
       style={{
         background: immersive ? "rgba(10,14,18,0.88)" : "hsl(var(--background) / 0.88)",
@@ -560,7 +551,7 @@ const ReaderToolbar: React.FC<ReaderToolbarProps> = ({
         onInspectLens={() => {}}
         immersive={immersive}
       />
-    </motion.div>
+    </div>
   );
 };
 

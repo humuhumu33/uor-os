@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { Check, Circle, Loader2 } from "lucide-react";
 import { usePlatform } from "@/modules/platform/desktop/hooks/usePlatform";
 
@@ -96,7 +95,7 @@ export default function ModuleChecklist({ animated = false, compact = false, onC
           const isIncluded = mod.included;
 
           return (
-            <motion.div
+            <div
               key={mod.id}
               className="flex items-center gap-3"
               initial={animated ? { opacity: 0, x: -8 } : { opacity: 1 }}
@@ -110,13 +109,13 @@ export default function ModuleChecklist({ animated = false, compact = false, onC
                 ) : status === "verifying" ? (
                   <Loader2 size={14} className="animate-spin" style={{ color: "hsl(210 100% 72%)" }} />
                 ) : status === "verified" ? (
-                  <motion.div
+                  <div
                     initial={animated ? { scale: 0 } : { scale: 1 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 400, damping: 15 }}
                   >
                     <Check size={14} style={{ color: "hsl(150 70% 55%)" }} strokeWidth={3} />
-                  </motion.div>
+                  </div>
                 ) : (
                   <Circle size={14} style={{ color: "hsl(0 0% 25%)" }} />
                 )}
@@ -151,7 +150,7 @@ export default function ModuleChecklist({ animated = false, compact = false, onC
                   {mod.description}
                 </p>
               </div>
-            </motion.div>
+            </div>
           );
         })}
       </div>

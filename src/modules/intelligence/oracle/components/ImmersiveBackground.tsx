@@ -5,7 +5,6 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   getPhasePhoto,
   getCurrentPhase,
@@ -54,8 +53,7 @@ export default function ImmersiveBackground({ scrollProgress = 0 }: ImmersiveBac
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      <AnimatePresence mode="sync">
-        <motion.img
+              <img
           key={key}
           src={photoUrl}
           alt=""
@@ -71,7 +69,6 @@ export default function ImmersiveBackground({ scrollProgress = 0 }: ImmersiveBac
           }}
           draggable={false}
         />
-      </AnimatePresence>
       {/* Subtle overlay for text legibility */}
       <div className="absolute inset-0 bg-black/30" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />

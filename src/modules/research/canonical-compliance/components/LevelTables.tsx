@@ -3,7 +3,6 @@
  * L3: SystemTable, L2: ModuleTable, L1: PipelineTable, L0: PrimitiveGrid
  */
 
-import { motion } from "framer-motion";
 import { type AuditReport, type AuditFinding } from "../audit";
 import { ALL_ATOMS, ATOM_INDEX, type AtomCategory, type UorAtom } from "../atoms";
 import { PROVENANCE_REGISTRY, SYSTEM_LAYERS, type SystemLayer } from "../provenance-map";
@@ -65,7 +64,7 @@ export function SystemTable({ report, onLayerClick }: SystemTableProps) {
         <span className="text-center">Operations</span>
       </div>
       {layerStats.map((s, i) => (
-        <motion.div
+        <div
           key={s.layer.id}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -81,7 +80,7 @@ export function SystemTable({ report, onLayerClick }: SystemTableProps) {
           <div className="text-center text-xs font-mono text-zinc-300 self-center">{s.pipelines}</div>
           <div className="self-center"><ScoreBar grounded={s.grounded} total={s.total} /></div>
           <div className="text-center text-xs font-mono text-zinc-400 self-center">{s.atoms}</div>
-        </motion.div>
+        </div>
       ))}
     </div>
   );
@@ -114,7 +113,7 @@ export function ModuleTable({ report, filterModules, onModuleClick }: ModuleTabl
         <span className="text-center">Operations</span>
       </div>
       {modules.map((m, i) => (
-        <motion.div
+        <div
           key={m.module}
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
@@ -129,7 +128,7 @@ export function ModuleTable({ report, filterModules, onModuleClick }: ModuleTabl
           <div className="text-center text-xs font-mono text-zinc-300 self-center">{m.pipelines}</div>
           <div className="self-center"><ScoreBar grounded={m.grounded} total={m.total} /></div>
           <div className="text-center text-xs font-mono text-zinc-400 self-center">{m.atoms}</div>
-        </motion.div>
+        </div>
       ))}
     </div>
   );
@@ -159,7 +158,7 @@ export function PipelineTable({ report, filterModule, onPipelineClick }: Pipelin
       </div>
       <div className="max-h-[500px] overflow-y-auto">
         {findings.map((f, i) => (
-          <motion.div
+          <div
             key={`${f.module}-${f.export}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -188,7 +187,7 @@ export function PipelineTable({ report, filterModule, onPipelineClick }: Pipelin
               })}
             </div>
             {filterModule && <span />}
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>

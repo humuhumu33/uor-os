@@ -2,7 +2,6 @@
  * BookCard — Visual cover-focused book card for the library grid.
  */
 
-import { motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
 import type { CatalogBook } from "@/modules/intelligence/oracle/lib/book-catalog";
 import { DOMAIN_COLORS } from "@/modules/intelligence/oracle/lib/book-catalog";
@@ -18,10 +17,7 @@ export default function BookCard({ book, selected, onToggle, onRead }: Props) {
   const gradient = DOMAIN_COLORS[book.domain] || DOMAIN_COLORS.General;
 
   return (
-    <motion.div
-      layout
-      whileHover={{ y: -6 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+    <div
       className="relative group cursor-pointer"
     >
       {/* Cover */}
@@ -74,6 +70,6 @@ export default function BookCard({ book, selected, onToggle, onRead }: Props) {
         <p className="text-xs font-semibold text-foreground/90 line-clamp-2 leading-tight">{book.title}</p>
         <p className="text-[10px] text-muted-foreground mt-0.5">{book.author}</p>
       </div>
-    </motion.div>
+    </div>
   );
 }

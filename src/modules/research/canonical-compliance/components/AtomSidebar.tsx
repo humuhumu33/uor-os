@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { ALL_ATOMS, type AtomCategory, type UorAtom, FIRMWARE_VERSION } from "../atoms";
 import { type AuditReport } from "../audit";
 import { exportMarkdown, exportJsonLd, exportNQuads } from "../export";
@@ -33,7 +32,7 @@ function ScoreRing({ score }: { score: number }) {
   return (
     <svg width={88} height={88} className="mx-auto">
       <circle cx={44} cy={44} r={r} fill="none" stroke="hsl(0 0% 15%)" strokeWidth={3} />
-      <motion.circle
+      <circle
         cx={44} cy={44} r={r} fill="none" stroke={color} strokeWidth={3}
         strokeDasharray={c} strokeDashoffset={c} strokeLinecap="round"
         animate={{ strokeDashoffset: offset }}

@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Eye, MessageCircle, Send, GitFork, ChevronUp, ChevronDown, MessageSquare, Minus, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -447,13 +446,9 @@ function CommentNodeView({
           </div>
 
           {/* Inline reply */}
-          <AnimatePresence>
-            {replyingTo === node.id && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-2 overflow-hidden"
+                      {replyingTo === node.id && (
+              <div
+      className="mb-2 overflow-hidden"
               >
                 <CommentInput
                   placeholder={`Reply to ${node.author.display_name || "Guest"}…`}
@@ -463,9 +458,8 @@ function CommentNodeView({
                   compact
                   showGuestName={!user}
                 />
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
 
           {/* Children */}
           {node.children.length > 0 && depth < MAX_DEPTH && (
@@ -661,7 +655,7 @@ export function AddressDiscussion({ cid }: { cid: string }) {
       {tree.length > 0 ? (
         <div className="space-y-3">
           {tree.map(node => (
-            <motion.div
+            <div
               key={node.id}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
@@ -679,7 +673,7 @@ export function AddressDiscussion({ cid }: { cid: string }) {
                 onSubmitReply={handleReply}
                 user={user}
               />
-            </motion.div>
+            </div>
           ))}
         </div>
       ) : (

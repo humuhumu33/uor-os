@@ -5,7 +5,6 @@
  */
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
 import { predictSectionHeight, FONTS } from "../lib/pretext-layout";
 import { useContainerWidth } from "./AdaptiveContentContainer";
 
@@ -61,7 +60,7 @@ const WaterfallSection: React.FC<Props> = ({
   }, [isPartial]);
 
   return (
-    <motion.div
+    <div
       ref={containerRef}
       key={sectionKey}
       initial={{ opacity: 0, y: 10 }}
@@ -77,7 +76,7 @@ const WaterfallSection: React.FC<Props> = ({
       }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 };
 

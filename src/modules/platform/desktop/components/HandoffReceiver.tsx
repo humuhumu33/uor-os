@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Check, Loader2, AlertCircle, Monitor } from "lucide-react";
 import { onDeepLink, initDeepLinks, type DeepLinkAction } from "@/modules/data/sovereign-spaces/deep-link/handler";
 import { redeemHandoff, type HandoffResult } from "@/modules/platform/desktop/lib/handoff";
@@ -81,8 +80,7 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
   ];
 
   return (
-    <AnimatePresence>
-      <motion.div
+          <div
         key="handoff-overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -97,7 +95,7 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
       >
         <div className="flex flex-col items-center gap-8 max-w-md px-6">
           {/* Icon */}
-          <motion.div
+          <div
             animate={phase === "done" ? { scale: [1, 1.15, 1] } : { rotate: 0 }}
             transition={{ duration: 0.5 }}
           >
@@ -108,7 +106,7 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
             ) : (
               <Monitor size={48} style={{ color: "hsl(210 100% 72%)" }} />
             )}
-          </motion.div>
+          </div>
 
           {/* Title */}
           <h2
@@ -128,7 +126,7 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
                 const isCurrent = key === phase && phase !== "done";
 
                 return (
-                  <motion.div
+                  <div
                     key={key}
                     className="flex items-center gap-3"
                     initial={{ opacity: 0.3 }}
@@ -153,7 +151,7 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
                     >
                       {label}
                     </span>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
@@ -179,7 +177,6 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
             </div>
           )}
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 }

@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Maximize2, Minimize2, Sparkles, Upload, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getPhasePhoto, getPhasePhotoDescription, getCurrentPhase, preloadNextPhasePhoto, initLocation, getHourlyFallback } from "@/modules/intelligence/oracle/lib/immersive-photos";
@@ -134,11 +133,7 @@ export default function ImmersiveSearchView({ onSearch, onExit, onEncode, onAiMo
   const greeting = getGreeting();
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.6 }}
+    <div
       className="fixed inset-0 z-50 flex flex-col"
       onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
@@ -188,53 +183,38 @@ export default function ImmersiveSearchView({ onSearch, onExit, onEncode, onAiMo
         {/* Center: Clock + Greeting + Search */}
         <div className="flex-1 flex flex-col items-center justify-center px-8" style={{ paddingBottom: "5vh" }}>
           {/* Clock */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
-            className="font-display font-bold tracking-tight select-none"
+          <div
+      className="font-display font-bold tracking-tight select-none"
             style={{ fontSize: "clamp(5rem, 12vw, 10rem)", lineHeight: 1, textShadow: "0 2px 40px rgba(0,0,0,0.4)" }}
           >
             {clock}
-          </motion.div>
+          </div>
 
           {/* Greeting */}
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="font-display text-white/90 select-none mt-3"
+          <p
+      className="font-display text-white/90 select-none mt-3"
             style={{ fontSize: "clamp(1.25rem, 3vw, 2.25rem)", textShadow: "0 1px 20px rgba(0,0,0,0.3)" }}
           >
             {greeting}, {displayName}.
-          </motion.p>
+          </p>
 
           {/* Search input */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-            className="mt-10 w-full flex flex-col items-center"
+          <div
+      className="mt-10 w-full flex flex-col items-center"
             style={{ maxWidth: "min(580px, 80vw)" }}
           >
             <div className="w-full relative group">
               {/* Address badge */}
-              <AnimatePresence>
-                {isAddress && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -8, scale: 0.9 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    exit={{ opacity: 0, x: -8, scale: 0.9 }}
-                    transition={{ type: "spring", damping: 25, stiffness: 400 }}
-                    className="absolute left-14 top-1/2 -translate-y-1/2 z-20 flex items-center gap-1.5 pointer-events-none"
+                              {isAddress && (
+                  <div
+      className="absolute left-14 top-1/2 -translate-y-1/2 z-20 flex items-center gap-1.5 pointer-events-none"
                   >
                     <Lock className="w-3 h-3 text-emerald-400" />
                     <span className="text-[11px] font-medium tracking-wide text-emerald-400/80 uppercase">
                       {detected.kind === "triword" ? "Address" : "IPv6"}
                     </span>
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
 
               <input
                 ref={inputRef}
@@ -270,7 +250,7 @@ export default function ImmersiveSearchView({ onSearch, onExit, onEncode, onAiMo
 
               {/* + button (context menu trigger) */}
               <div className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10">
-                <motion.button
+                <button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => onOpenApp?.("files")}
                   className="w-9 h-9 rounded-full flex items-center justify-center transition-all"
@@ -285,7 +265,7 @@ export default function ImmersiveSearchView({ onSearch, onExit, onEncode, onAiMo
                   title="Open File Explorer"
                 >
                   <Upload className="w-4 h-4" />
-                </motion.button>
+                </button>
               </div>
 
               {/* Right-side actions */}
@@ -319,7 +299,7 @@ export default function ImmersiveSearchView({ onSearch, onExit, onEncode, onAiMo
                 <ContextPills items={ctx.contextItems} onRemove={ctx.remove} />
               </div>
             )}
-          </motion.div>
+          </div>
         </div>
 
         {/* Drag overlay */}
@@ -346,6 +326,6 @@ export default function ImmersiveSearchView({ onSearch, onExit, onEncode, onAiMo
           <SoundCloudFab />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

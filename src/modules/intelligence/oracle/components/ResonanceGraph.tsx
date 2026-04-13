@@ -4,7 +4,6 @@
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   forceSimulation,
   forceLink,

@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { ZoomIn, ZoomOut, HelpCircle, ShieldCheck } from "lucide-react";
 import {
   Tooltip,
@@ -108,10 +107,9 @@ const SelectionToolbar = ({ containerRef, onAction }: SelectionToolbarProps) => 
   };
 
   return createPortal(
-    <AnimatePresence>
-      {visible && (
+          {visible && (
         <TooltipProvider delayDuration={200}>
-          <motion.div
+          <div
             ref={toolbarRef}
             initial={{ opacity: 0, y: 6, scale: 0.92 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -139,10 +137,9 @@ const SelectionToolbar = ({ containerRef, onAction }: SelectionToolbarProps) => 
                 </TooltipContent>
               </Tooltip>
             ))}
-          </motion.div>
+          </div>
         </TooltipProvider>
-      )}
-    </AnimatePresence>,
+      )},
     document.body,
   );
 };

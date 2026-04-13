@@ -5,7 +5,6 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, startTransition } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandSeparator } from "@/modules/platform/core/ui/command";
 import { DESKTOP_APPS } from "@/modules/platform/desktop/lib/desktop-apps";
 import { OS_TAXONOMY, type OsCategory } from "@/modules/platform/desktop/lib/os-taxonomy";
@@ -138,23 +137,16 @@ export default function SpotlightSearch({ open, onClose, onOpenApp, onSearch }: 
   const suggestionIconColor = isLight ? "text-black/25" : "text-white/30";
 
   return (
-    <AnimatePresence>
-      {open && (
+          {open && (
         <>
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-[300]"
+          <div
+      className="fixed inset-0 z-[300]"
             style={{ background: isLight ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.35)" }}
             onClick={onClose}
           />
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: -10 }}
-            transition={{ type: "spring", damping: 30, stiffness: 500, duration: 0.2 }}
-            className="fixed z-[301] left-1/2 -translate-x-1/2 w-[480px] max-w-[90vw] overflow-hidden"
+          <div
+      className="fixed z-[301] left-1/2 -translate-x-1/2 w-[480px] max-w-[90vw] overflow-hidden"
             style={{
               top: `${CONTENT.opticalCenter}%`,
               borderRadius: `${RADIUS.xl}px`,
@@ -323,9 +315,8 @@ export default function SpotlightSearch({ open, onClose, onOpenApp, onSearch }: 
                 )}
               </CommandList>
             </Command>
-          </motion.div>
+          </div>
         </>
       )}
-    </AnimatePresence>
   );
 }

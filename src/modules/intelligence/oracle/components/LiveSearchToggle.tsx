@@ -3,7 +3,6 @@
  * When active, typing triggers debounced streaming search.
  */
 
-import { motion } from "framer-motion";
 
 interface Props {
   active: boolean;
@@ -28,11 +27,8 @@ export default function LiveSearchToggle({ active, onToggle, streaming = false }
       {/* Pulsing dot */}
       <span className="relative flex h-2 w-2">
         {active && streaming && (
-          <motion.span
-            className="absolute inset-0 rounded-full bg-emerald-400/60"
-            animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
-            transition={{ duration: 1.2, repeat: Infinity }}
-          />
+          <span
+      />
         )}
         <span className={`relative inline-flex rounded-full h-2 w-2 ${active ? "bg-emerald-400" : "bg-muted-foreground/30"}`} />
       </span>

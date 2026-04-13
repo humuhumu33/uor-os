@@ -7,7 +7,6 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Download, Trash2, Eye, Brain, Clock, Target, Sparkles } from "lucide-react";
 import {
   loadProfile,
@@ -125,23 +124,16 @@ const ContextJournal: React.FC<ContextJournalProps> = ({ inline = true }) => {
             {journalCount} observations
           </span>
         )}
-        <motion.span
-          animate={{ rotate: expanded ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="text-muted-foreground/30"
+        <span
+      className="text-muted-foreground/30"
         >
           <ChevronDown size={12} />
-        </motion.span>
+        </span>
       </button>
 
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25 }}
-            style={{ overflow: "hidden" }}
+              {expanded && (
+          <div
+      style={{ overflow: "hidden" }}
           >
             <div
               style={{
@@ -333,9 +325,8 @@ const ContextJournal: React.FC<ContextJournalProps> = ({ inline = true }) => {
                 )}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 };

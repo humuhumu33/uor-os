@@ -9,7 +9,6 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Compass, Search } from "lucide-react";
 import { useDesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
 import type { SearchSuggestion } from "@/modules/intelligence/oracle/lib/search-suggestions";
@@ -103,13 +102,8 @@ export default function SearchSuggestions({
   let lastType: string | null = null;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: -4 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -4 }}
-        transition={{ duration: 0.15, ease: "easeOut" }}
-        ref={listRef}
+          <div
+      ref={listRef}
         className="absolute left-0 right-0 z-50 overflow-hidden"
         style={{
           top: "calc(100% + 6px)",
@@ -190,7 +184,6 @@ export default function SearchSuggestions({
             );
           })}
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 }
