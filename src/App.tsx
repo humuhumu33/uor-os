@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
+import { ErrorBoundary } from "@/modules/platform/core/ErrorBoundary";
 import { Toaster } from "@/modules/platform/core/ui/toaster";
 import { Toaster as Sonner } from "@/modules/platform/core/ui/sonner";
 import { TooltipProvider } from "@/modules/platform/core/ui/tooltip";
