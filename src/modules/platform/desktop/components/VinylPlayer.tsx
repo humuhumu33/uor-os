@@ -33,7 +33,10 @@ interface SCWidget {
 
 declare global {
   interface Window {
-    SC?: { Widget: (el: HTMLIFrameElement) => SCWidget; Events: Record<string, string> };
+    SC?: {
+      Widget: (el: HTMLIFrameElement) => SCWidget;
+      Events: Record<string, string>;
+    };
   }
 }
 
