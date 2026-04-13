@@ -8,7 +8,7 @@
  * Same engine, same data, different syntax — choose whichever fits your brain.
  */
 
-import type { SparqlBinding } from "../grafeo-store";
+import type { SparqlBinding } from "./grafeo-store";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 

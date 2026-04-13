@@ -66,14 +66,7 @@ export interface SerializedContainer {
 
 /** Get the raw GrafeoDB WASM instance. */
 async function getDb(): Promise<any> {
-  const mod = await import("@grafeo-db/web");
-  const GrafeoDB = (mod as any).GrafeoDB ?? (mod as any).default;
-  // Return the existing global instance from grafeo-store
-  const { grafeoStore } = await import("./grafeo-store");
-  await grafeoStore.init();
-  // Access via a re-creation — but we want the live instance.
-  // The grafeo-store module caches it; we'll use execute to verify it's live.
-  return grafeoStore;
+  return getDbDirect();
 }
 
 // ── Export ───────────────────────────────────────────────────────────────────
@@ -85,15 +78,7 @@ async function getDb(): Promise<any> {
 export async function exportBinaryContainer(
   runtime?: SovereignContainer["runtime"],
 ): Promise<SovereignContainer> {
-  // Get the live GrafeoDB instance via dynamic import
-  const mod = await import("@grafeo-db/web");
-  const { grafeoStore } = await import("./grafeo-store");
-  await grafeoStore.init();
-
-  // Access the raw db instance through the module's internal cache
-  // We need to call export() on the actual GrafeoDB instance
-  const dbModule = await import("./grafeo-store");
-  const db = await (dbModule as any).getDbInstance?.() ?? await getDbDirect();
+  const db = await getDbDirect();
 
   const snapshot = await db.export();
   const dataHash = await sha256hex(
