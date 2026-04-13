@@ -17,6 +17,13 @@ import type { GNode, GLink, LayoutMode } from "./SdbGraphCanvas";
 import { getGpuForceLayout, type GpuForceNode, type GpuForceLink } from "./SdbGpuForceLayout";
 import { SdbMinimap } from "./SdbMinimap";
 
+export interface ForceParams {
+  centerForce: number;
+  repelForce: number;
+  linkForce: number;
+  linkDistance: number;
+}
+
 interface Props {
   nodes: GNode[];
   links: GLink[];
@@ -31,6 +38,12 @@ interface Props {
   highlightSignClass?: number | null;
   /** Set of node IDs to highlight (from global search) */
   highlightedNodeIds?: Set<string>;
+  /** Force simulation parameters from sidebar sliders */
+  forceParams?: ForceParams;
+  /** Node size multiplier (1 = default) */
+  nodeScale?: number;
+  /** Whether to always show labels */
+  showLabels?: boolean;
 }
 
 /* ── helpers ──────────────────────────────────────────────────── */
@@ -61,6 +74,7 @@ function buildDegreeMap(links: GLink[]): Map<string, number> {
 export function SdbGraph3D({
   nodes, links, layoutMode, onNodeClick, onNodeRightClick, onBackgroundClick,
   width, height, gpuAvailable, highlightSignClass, highlightedNodeIds,
+  forceParams, nodeScale = 1, showLabels = true,
 }: Props) {
   const fgRef = useRef<any>(null);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -153,7 +167,28 @@ export function SdbGraph3D({
     return () => clearTimeout(t);
   }, []);
 
-  // ── GPU force layout integration ──────────────────────────
+  // ── Apply sidebar force params ────────────────────────────
+  useEffect(() => {
+    if (!forceParams) return;
+    const fg = fgRef.current;
+    if (!fg) return;
+    const t = setTimeout(() => {
+      try {
+        const charge = fg.d3Force?.("charge");
+        if (charge?.strength) charge.strength(-(forceParams.repelForce * 6 + 30));
+        const center = fg.d3Force?.("center");
+        if (center?.strength) center.strength(forceParams.centerForce / 100);
+        const link = fg.d3Force?.("link");
+        if (link) {
+          if (link.strength) link.strength(forceParams.linkForce / 100);
+          if (link.distance) link.distance(forceParams.linkDistance * 2 + 20);
+        }
+        fg.d3ReheatSimulation?.();
+      } catch {}
+    }, 500);
+    return () => clearTimeout(t);
+  }, [forceParams]);
+
   useEffect(() => {
     if (!gpuAvailable) return;
 
@@ -285,7 +320,8 @@ export function SdbGraph3D({
   const nodeThreeObject = useCallback((node: any) => {
     const isAtlas = node.id?.startsWith("atlas:");
     const deg = degreeMap.get(node.id) || 1;
-    const baseSize = isAtlas ? 1.8 : Math.max(2, Math.min(6, 2 + deg * 0.5));
+    const rawSize = isAtlas ? 1.8 : Math.max(2, Math.min(6, 2 + deg * 0.5));
+    const baseSize = rawSize * nodeScale;
     const isHovered = hovered === node.id;
     const isSearchHighlighted = highlightedNodeIds && highlightedNodeIds.size > 0 && highlightedNodeIds.has(node.id);
     const isSearchDimmed = highlightedNodeIds && highlightedNodeIds.size > 0 && !highlightedNodeIds.has(node.id);
@@ -321,10 +357,14 @@ export function SdbGraph3D({
         side: THREE.DoubleSide,
       });
       group.add(new THREE.Mesh(ringGeo, ringMat));
+    }
 
-      // Billboard label
+    // Always-visible label (Obsidian-style) or hover-only
+    const shouldShowLabel = showLabels ? !isDimmed : ((isHovered || isSearchHighlighted) && !isDimmed);
+    if (shouldShowLabel) {
       const label = node.label || node.id || "";
-      group.add(makeLabel(label, isSearchHighlighted ? new THREE.Color("hsl(45, 100%, 70%)") : color, baseSize + 4));
+      const labelColor = isSearchHighlighted ? new THREE.Color("hsl(45, 100%, 70%)") : color;
+      group.add(makeLabel(label, labelColor, baseSize + 4));
     }
 
     // Atlas nodes: outer glow sphere (enhanced for bloom)
@@ -339,7 +379,7 @@ export function SdbGraph3D({
     }
 
     return group;
-  }, [degreeMap, hovered, makeLabel, highlightSignClass, highlightedNodeIds]);
+  }, [degreeMap, hovered, makeLabel, highlightSignClass, highlightedNodeIds, nodeScale, showLabels]);
 
   /* ── Mirror τ detection helper ───────────────────────────── */
 
