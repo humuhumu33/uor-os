@@ -67,6 +67,7 @@ function loadTagColors(): Record<string, string> {
 
 export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   const [items, setItems] = useState<TreeItem[]>([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [recentIds, setRecentIds] = useState<string[]>([]);
