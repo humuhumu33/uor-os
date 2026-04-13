@@ -328,8 +328,16 @@ export default function TabBar({
         <Home className={`w-[16px] h-[16px] ${isLight ? "text-black/50" : "text-white/50"}`} />
       </button>
 
-      {/* UOR menu (moved to separate trigger) */}
+      {/* UOR menu */}
       <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className={`flex items-center justify-center shrink-0 h-full w-8 transition-opacity duration-150 hover:opacity-70 -ml-2`}
+            title="UOR Menu"
+          >
+            <Sparkles className={`w-[13px] h-[13px] ${isLight ? "text-black/30" : "text-white/30"}`} />
+          </button>
+        </DropdownMenuTrigger>
         <DropdownMenuContent
           className={`rounded-xl min-w-[340px] p-0 ${menuContentClass}`}
           align="start"
