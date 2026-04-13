@@ -29,6 +29,7 @@ import { SdbIconPicker } from "./SdbIconPicker";
 import { SdbNoteComments, type NoteComment } from "./SdbNoteComments";
 import { SdbSidebarPanel } from "./SdbSidebarPanel";
 import type { BlockRefResolver, BlockRefInfo } from "./SdbBlockRef";
+import { SdbMediaPreview } from "./SdbMediaPreview";
 
 import type { AppSection } from "./SovereignDBApp";
 
@@ -997,6 +998,16 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                       noteId={selected.id}
                     />
                   </div>
+                )}
+
+                {/* Media preview for uploaded files */}
+                {selected.edge.properties.fileMime && String(selected.edge.properties.fileMime) !== "" && (
+                  <SdbMediaPreview
+                    fileName={String(selected.edge.properties.fileName || "")}
+                    fileSize={Number(selected.edge.properties.fileSize || 0)}
+                    fileMime={String(selected.edge.properties.fileMime)}
+                    fileDataUrl={String(selected.edge.properties.fileDataUrl || "") || undefined}
+                  />
                 )}
 
                 <div className="mt-4">
