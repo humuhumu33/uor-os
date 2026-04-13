@@ -493,23 +493,6 @@ export default function TabBar({
           );
         })}
 
-        {/* New tab "+" */}
-        <button
-          className={`flex items-center justify-center w-[30px] h-[30px] rounded-full shrink-0 ml-1 transition-colors duration-150
-            ${isLight ? "hover:bg-black/[0.05] text-black/40" : "hover:bg-white/[0.07] text-white/40"}
-          `}
-          style={{ marginTop: "auto", marginBottom: "auto" }}
-          onClick={onSpotlight}
-          title={`New tab (${ringKey} K)`}
-        >
-          <Plus className="w-[17px] h-[17px]" />
-        </button>
-
-        {/* Snap layout picker */}
-        <div style={{ marginTop: "auto", marginBottom: "auto" }} className="shrink-0 ml-0.5">
-          <SnapLayoutPicker windows={visibleWindows} onSnapMultiple={onSnapMultiple} />
-        </div>
-      </div>
 
       {/* Right: time → connectivity → engine → fullscreen → profile */}
       <div className="flex items-center shrink-0 pr-2.5 h-full" style={{ gap: `${SPACE.md}px` }}>
