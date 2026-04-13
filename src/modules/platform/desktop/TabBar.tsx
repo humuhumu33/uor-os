@@ -492,7 +492,7 @@ export default function TabBar({
             </ContextMenu>
           );
         })}
-
+      </div>
 
       {/* Right: time → connectivity → engine → fullscreen → profile */}
       <div className="flex items-center shrink-0 pr-2.5 h-full" style={{ gap: `${SPACE.md}px` }}>
