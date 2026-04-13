@@ -208,7 +208,7 @@ export function SdbHomeView({
         `}</style>
       </div>
 
-      <div className="max-w-[960px] mx-auto px-10 -mt-6 relative z-10 pb-10">
+      <div className="w-full px-6 sm:px-8 lg:px-12 xl:px-16 -mt-6 relative z-10 pb-10">
         {/* ── Search bar ── */}
         <div className="relative mb-7">
           <IconSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -341,7 +341,7 @@ export function SdbHomeView({
             )}
           </div>
         ) : view === "grid" ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
             {filtered.map(item => {
               const gradient = TYPE_GRADIENTS[item.type] || TYPE_GRADIENTS.note;
               const dot = TYPE_DOTS[item.type] || TYPE_DOTS.note;
@@ -354,7 +354,7 @@ export function SdbHomeView({
                   className="group text-left rounded-2xl border border-border/15 bg-card overflow-hidden
                     hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 hover:border-border/30 transition-all duration-250"
                 >
-                  <div className={`h-[140px] bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
+                  <div className={`h-[120px] bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
                     <Icon size={32} className="text-foreground/20" />
                   </div>
                   <div className="px-4 py-3.5">
