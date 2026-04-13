@@ -203,7 +203,7 @@ export {
   recordChange,
   getChangesSince,
   produceDelta,
-  applyDelta,
+  applyDelta as applySyncDelta,
   getSyncState,
   getCurrentEpoch,
 } from "./cdc-engine";
