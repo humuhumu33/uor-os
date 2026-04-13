@@ -24,7 +24,7 @@ import { SdbBlockRefChip, SdbBlockEmbed, parseBlockRefs, type BlockRefResolver }
 import type { LexicalEditor } from "lexical";
 import { $getRoot, $createParagraphNode, $createTextNode } from "lexical";
 
-export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "table" | "bookmark";
+export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "table" | "bookmark" | "embed";
 
 export interface Block {
   id: string;
@@ -37,14 +37,18 @@ export interface Block {
   collapsed?: boolean;
   tableData?: TableData;
   bookmarkData?: BookmarkData;
+  embedBlockId?: string; // For embed blocks — references another block
 }
 
 interface Props {
   blocks: Block[];
   onChange: (blocks: Block[]) => void;
   onWikiLinkClick?: (title: string) => void;
+  onBlockRefClick?: (noteId: string) => void;
+  onShiftClick?: (noteId: string) => void; // Shift-click opens in sidebar
   noteNames?: string[];
   getPreview?: (title: string) => string | null;
+  resolveBlockRef?: BlockRefResolver;
 }
 
 function genBlockId() {
