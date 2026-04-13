@@ -165,6 +165,65 @@
 
   /* Dark class is a no-op — site is permanently dark */
   .dark {}
+
+  /* ── Light Theme ──────────────────────────────────────────────────
+   * Toggled by adding .light to <html> via useDesktopTheme.
+   * Every semantic token is overridden for light backgrounds + dark text.
+   */
+  .light {
+    --background: 0 0% 97%;
+    --foreground: 225 20% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 225 20% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 20% 12%;
+
+    --primary: 38 65% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 225 10% 93%;
+    --secondary-foreground: 225 20% 15%;
+
+    --muted: 225 10% 94%;
+    --muted-foreground: 225 10% 38%;
+
+    --accent: 270 40% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 225 12% 87%;
+    --input: 225 12% 87%;
+    --ring: 38 60% 45%;
+
+    --section-dark: 225 10% 94%;
+    --section-dark-foreground: 225 20% 12%;
+    --pill-border: 225 10% 82%;
+    --rule: 225 12% 87%;
+
+    --hologram-bg: 30 5% 96%;
+    --hologram-surface: 30 5% 92%;
+    --hologram-glass: hsla(30, 5%, 85%, 0.5);
+    --hologram-glass-border: hsla(38, 15%, 40%, 0.1);
+    --hologram-text: 225 20% 15%;
+    --hologram-text-muted: 225 10% 45%;
+    --hologram-gold: 38 50% 42%;
+    --hologram-purple-warm: 270 30% 45%;
+  }
+
+  /* ── Immersive Theme — warmer/deeper than standard dark ─────────── */
+  :root[data-immersive="true"] {
+    --background: 220 25% 4%;
+    --card: 220 22% 6%;
+    --popover: 220 22% 6%;
+    --secondary: 220 20% 10%;
+    --muted: 220 20% 10%;
+    --border: 220 20% 11%;
+    --input: 220 20% 11%;
+  }
 }
 
 @layer components {

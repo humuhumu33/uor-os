@@ -38,6 +38,13 @@ export function DesktopThemeProvider({ children }: { children: ReactNode }) {
     try { localStorage.setItem(STORAGE_KEY, t); } catch {}
   }, []);
 
+  // Propagate theme to <html> so CSS variables update globally
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("light", theme === "light");
+    root.setAttribute("data-immersive", String(theme === "immersive"));
+  }, [theme]);
+
   const isLight = theme === "light";
 
   return React.createElement(
