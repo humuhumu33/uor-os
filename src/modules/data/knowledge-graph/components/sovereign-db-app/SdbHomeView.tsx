@@ -211,14 +211,14 @@ export function SdbHomeView({
       <div className="max-w-[960px] mx-auto px-10 -mt-6 relative z-10 pb-10">
         {/* ── Search bar ── */}
         <div className="relative mb-7">
-          <IconSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+          <IconSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search anything…"
-            className="w-full pl-12 pr-4 py-3.5 text-[15px] bg-card border border-border/30 rounded-2xl
-              text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20
+            className="w-full pl-12 pr-4 py-3.5 text-os-body bg-card border border-border/30 rounded-2xl
+              text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20
               focus:border-primary/30 transition-all shadow-sm"
           />
         </div>
@@ -229,7 +229,7 @@ export function SdbHomeView({
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[14px] font-medium border whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-os-body font-medium border whitespace-nowrap transition-all ${
                 filter === f.key
                   ? "bg-primary text-primary-foreground border-primary shadow-sm"
                   : "bg-card/80 text-muted-foreground border-border/20 hover:bg-muted/40 hover:text-foreground"
@@ -244,7 +244,7 @@ export function SdbHomeView({
         {/* Active tag pills */}
         {activeTags.size > 0 && (
           <div className="flex items-center gap-2 mb-6 flex-wrap">
-            <span className="text-[12px] text-muted-foreground/50">Filtering by:</span>
+            <span className="text-os-body text-muted-foreground">Filtering by:</span>
             {[...activeTags].map(tag => (
               <SdbTagChip
                 key={tag}
@@ -257,7 +257,7 @@ export function SdbHomeView({
             ))}
             <button
               onClick={() => [...activeTags].forEach(t => onToggleTag(t))}
-              className="text-[12px] text-muted-foreground/50 hover:text-foreground flex items-center gap-1 transition-colors"
+              className="text-os-body text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
             >
               <IconX size={12} /> Clear
             </button>
@@ -281,7 +281,7 @@ export function SdbHomeView({
             <div className="relative">
               <button
                 onClick={() => setShowSort(s => !s)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[14px] text-muted-foreground hover:bg-muted/40 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-os-body text-muted-foreground hover:bg-muted/40 transition-colors"
               >
                 <IconSortDescending size={15} />
                 {sort === "recent" ? "Last opened" : sort === "name" ? "Name" : "Created"}
@@ -294,8 +294,8 @@ export function SdbHomeView({
                       <button
                         key={s}
                         onClick={() => { setSort(s); setShowSort(false); }}
-                        className={`w-full px-4 py-2 text-left text-[14px] hover:bg-muted/40 transition-colors ${
-                          sort === s ? "text-primary font-medium" : "text-foreground/70"
+                        className={`w-full px-4 py-2 text-left text-os-body hover:bg-muted/40 transition-colors ${
+                          sort === s ? "text-primary font-medium" : "text-foreground"
                         }`}
                       >
                         {s === "recent" ? "Last opened" : s === "name" ? "Name" : "Created"}
@@ -308,13 +308,13 @@ export function SdbHomeView({
             <div className="flex items-center border border-border/20 rounded-xl overflow-hidden">
               <button
                 onClick={() => setView("grid")}
-                className={`p-2 transition-colors ${view === "grid" ? "bg-muted/60 text-foreground" : "text-muted-foreground/30 hover:text-foreground"}`}
+                className={`p-2 transition-colors ${view === "grid" ? "bg-muted/60 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <IconLayoutGrid size={16} />
               </button>
               <button
                 onClick={() => setView("list")}
-                className={`p-2 transition-colors ${view === "list" ? "bg-muted/60 text-foreground" : "text-muted-foreground/30 hover:text-foreground"}`}
+                className={`p-2 transition-colors ${view === "list" ? "bg-muted/60 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <IconList size={16} />
               </button>
@@ -326,15 +326,15 @@ export function SdbHomeView({
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24">
             <div className="w-20 h-20 rounded-3xl bg-muted/15 flex items-center justify-center mb-5">
-              <IconFile size={32} className="text-muted-foreground/40" />
+              <IconFile size={32} className="text-muted-foreground" />
             </div>
-            <p className="text-[15px] text-muted-foreground/60 mb-5">
+            <p className="text-os-body text-muted-foreground mb-5">
               {search || activeTags.size > 0 ? "No results found" : "Create your first page"}
             </p>
             {!search && activeTags.size === 0 && (
               <button
                 onClick={onCreateNote}
-                className="px-6 py-3 rounded-2xl bg-primary text-primary-foreground text-[15px] font-medium hover:bg-primary/90 transition-colors shadow-sm"
+                className="px-6 py-3 rounded-2xl bg-primary text-primary-foreground text-os-body font-medium hover:bg-primary/90 transition-colors shadow-sm"
               >
                 New Page
               </button>
@@ -355,12 +355,12 @@ export function SdbHomeView({
                     hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 hover:border-border/30 transition-all duration-250"
                 >
                   <div className={`h-[140px] bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
-                    <Icon size={32} className="text-foreground/15" />
+                    <Icon size={32} className="text-foreground/20" />
                   </div>
                   <div className="px-4 py-3.5">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
-                      <span className="text-[14px] font-medium text-foreground truncate">{item.name}</span>
+                      <span className="text-os-body font-medium text-foreground truncate">{item.name}</span>
                     </div>
                     {/* Tag chips */}
                     {tags.length > 0 && (
@@ -373,11 +373,11 @@ export function SdbHomeView({
                           />
                         ))}
                         {tags.length > 3 && (
-                          <span className="text-[12px] text-muted-foreground/50">+{tags.length - 3}</span>
+                          <span className="text-os-body text-muted-foreground">+{tags.length - 3}</span>
                         )}
                       </div>
                     )}
-                    <span className="text-[13px] text-muted-foreground/60 pl-4">{relativeTime(item.updatedAt)}</span>
+                    <span className="text-os-body text-muted-foreground pl-4">{relativeTime(item.updatedAt)}</span>
                   </div>
                 </button>
               );
@@ -396,8 +396,8 @@ export function SdbHomeView({
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-xl hover:bg-muted/30 transition-colors group"
                 >
                   <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
-                  <Icon size={16} className="text-muted-foreground/30 shrink-0" />
-                  <span className="text-[14px] text-foreground/80 truncate flex-1 text-left group-hover:text-foreground transition-colors">
+                  <Icon size={16} className="text-muted-foreground shrink-0" />
+                  <span className="text-os-body text-foreground truncate flex-1 text-left group-hover:text-foreground transition-colors">
                     {item.name}
                   </span>
                   {tags.length > 0 && (
@@ -410,11 +410,11 @@ export function SdbHomeView({
                         />
                       ))}
                       {tags.length > 2 && (
-                        <span className="text-[12px] text-muted-foreground/50">+{tags.length - 2}</span>
+                        <span className="text-os-body text-muted-foreground">+{tags.length - 2}</span>
                       )}
                     </div>
                   )}
-                  <span className="text-[13px] text-muted-foreground/60 shrink-0">
+                  <span className="text-os-body text-muted-foreground shrink-0">
                     {relativeTime(item.updatedAt)}
                   </span>
                 </button>
