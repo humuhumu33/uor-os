@@ -167,7 +167,6 @@ function DesktopShellInner() {
 
   if (isMobile) return <MobileShell />;
 
-  const shellBg = theme === "light" ? "bg-white" : "bg-black";
 
   return (
     <DesktopContextMenu
@@ -175,7 +174,7 @@ function DesktopShellInner() {
       onSpotlight={() => setSpotlightOpen(true)}
       onHideAll={handleHideAll}
     >
-      <div className={`fixed inset-0 overflow-hidden ${shellBg} select-none`} style={{ fontFamily: fontStack, ["--uor-corner-radius" as string]: `${cornerRadius}px` }}>
+      <div className="fixed inset-0 overflow-hidden bg-background select-none transition-colors duration-300" style={{ fontFamily: fontStack, ["--uor-corner-radius" as string]: `${cornerRadius}px` }}>
         {theme === "immersive" && (
           <>
             <DesktopImmersiveWallpaper />
