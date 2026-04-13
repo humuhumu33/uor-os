@@ -15,12 +15,13 @@ import {
   IconH1, IconH2, IconH3, IconList, IconCheckbox, IconMinus,
   IconBlockquote, IconInfoCircle, IconTypography,
   IconListNumbers, IconCode, IconChevronRight, IconChevronDown,
+  IconPhoto, IconPaperclip, IconUpload, IconX, IconMaximize,
 } from "@tabler/icons-react";
 import { SdbBlockLexical } from "./SdbBlockLexical";
 import type { LexicalEditor } from "lexical";
 import { $getRoot, $createParagraphNode, $createTextNode } from "lexical";
 
-export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle";
+export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "image" | "file";
 
 export interface Block {
   id: string;
@@ -31,6 +32,18 @@ export interface Block {
   type?: BlockType;
   checked?: boolean;
   collapsed?: boolean;
+  /** Data URL for embedded image */
+  imageData?: string;
+  /** Original file name */
+  fileName?: string;
+  /** MIME type of embedded file */
+  fileMime?: string;
+  /** File size in bytes */
+  fileSize?: number;
+  /** Caption text for image/file */
+  caption?: string;
+  /** Image display width (percentage) */
+  imageWidth?: number;
 }
 
 interface Props {
@@ -59,6 +72,8 @@ const SLASH_COMMANDS: { type: BlockType; label: string; description: string; ico
   { type: "callout", label: "Callout", description: "Highlighted info block", icon: IconInfoCircle, keywords: ["callout", "info", "note", "tip"] },
   { type: "code", label: "Code", description: "Code block", icon: IconCode, keywords: ["code", "snippet", "pre"] },
   { type: "toggle", label: "Toggle", description: "Collapsible section", icon: IconChevronRight, keywords: ["toggle", "collapse", "expand", "accordion"] },
+  { type: "image", label: "Image", description: "Embed an image", icon: IconPhoto, keywords: ["image", "photo", "picture", "img", "embed"] },
+  { type: "file", label: "File", description: "Embed a file", icon: IconPaperclip, keywords: ["file", "attachment", "upload", "document", "pdf"] },
 ];
 
 /** Hover preview for [[wiki-links]] — rendered outside Lexical */
@@ -69,6 +84,236 @@ function LinkPreviewTooltip({ title, getPreview }: { title: string; getPreview?:
     <div className="absolute left-0 top-full z-50 w-56 bg-card border border-border rounded-lg shadow-2xl p-3 mt-1 animate-in fade-in duration-150 pointer-events-none">
       <p className="text-[12px] font-semibold text-foreground mb-1 truncate">{title}</p>
       <p className="text-[12px] text-muted-foreground/80 leading-relaxed line-clamp-3">{preview}</p>
+    </div>
+  );
+}
+
+/** Read a file as data URL */
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Format file size */
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Image block placeholder (upload area) */
+function ImagePlaceholder({ onFileSelect }: { onFileSelect: (file: File) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) onFileSelect(file);
+  };
+
+  return (
+    <div
+      onClick={() => inputRef.current?.click()}
+      onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      className={`flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
+        dragOver
+          ? "border-primary/60 bg-primary/5"
+          : "border-border/40 bg-muted/10 hover:border-border/60 hover:bg-muted/20"
+      }`}
+    >
+      <IconUpload size={24} className="text-muted-foreground/50" />
+      <span className="text-[14px] text-muted-foreground/60">
+        Click to upload or drag an image here
+      </span>
+      <span className="text-[12px] text-muted-foreground/40">
+        PNG, JPG, GIF, WebP, SVG
+      </span>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (file) onFileSelect(file);
+        }}
+      />
+    </div>
+  );
+}
+
+/** File block placeholder */
+function FilePlaceholder({ onFileSelect }: { onFileSelect: (file: File) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div
+      onClick={() => inputRef.current?.click()}
+      className="flex items-center gap-3 py-4 px-5 rounded-xl border-2 border-dashed border-border/40 bg-muted/10 hover:border-border/60 hover:bg-muted/20 cursor-pointer transition-colors"
+    >
+      <IconUpload size={20} className="text-muted-foreground/50" />
+      <span className="text-[14px] text-muted-foreground/60">
+        Click to upload a file
+      </span>
+      <input
+        ref={inputRef}
+        type="file"
+        className="hidden"
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (file) onFileSelect(file);
+        }}
+      />
+    </div>
+  );
+}
+
+/** Rendered image block */
+function ImageBlockContent({
+  block,
+  onCaptionChange,
+  onWidthChange,
+  onRemove,
+}: {
+  block: Block;
+  onCaptionChange: (caption: string) => void;
+  onWidthChange: (width: number) => void;
+  onRemove: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const [resizing, setResizing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const width = block.imageWidth || 100;
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setResizing(true);
+    const startX = e.clientX;
+    const containerWidth = containerRef.current?.parentElement?.clientWidth || 600;
+    const startPct = width;
+
+    const handleMove = (me: MouseEvent) => {
+      const dx = me.clientX - startX;
+      const newPct = Math.min(100, Math.max(20, startPct + (dx / containerWidth) * 100));
+      onWidthChange(Math.round(newPct));
+    };
+
+    const handleUp = () => {
+      setResizing(false);
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+    };
+
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+  }, [width, onWidthChange]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative group my-1"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ width: `${width}%` }}
+    >
+      <img
+        src={block.imageData}
+        alt={block.caption || block.fileName || "Embedded image"}
+        className="w-full rounded-lg object-contain select-none"
+        draggable={false}
+      />
+
+      {/* Resize handle (right edge) */}
+      <div
+        onMouseDown={handleResizeStart}
+        className={`absolute top-1/2 -translate-y-1/2 -right-1.5 w-3 h-12 rounded-full cursor-col-resize transition-opacity ${
+          hovered || resizing ? "opacity-100 bg-primary/40" : "opacity-0"
+        }`}
+      />
+
+      {/* Toolbar overlay */}
+      {hovered && (
+        <div className="absolute top-2 right-2 flex items-center gap-1 bg-card/90 border border-border/40 rounded-lg px-1 py-0.5 shadow-lg">
+          <button
+            onClick={() => onWidthChange(width === 100 ? 50 : 100)}
+            className="p-1 rounded hover:bg-muted/60 text-muted-foreground/60 hover:text-foreground transition-colors"
+            title={width === 100 ? "Half width" : "Full width"}
+          >
+            <IconMaximize size={14} />
+          </button>
+          <button
+            onClick={onRemove}
+            className="p-1 rounded hover:bg-destructive/20 text-muted-foreground/60 hover:text-destructive transition-colors"
+            title="Remove image"
+          >
+            <IconX size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Caption */}
+      <input
+        value={block.caption || ""}
+        onChange={e => onCaptionChange(e.target.value)}
+        placeholder="Add a caption…"
+        className="w-full mt-1.5 text-center text-[13px] text-muted-foreground/60 bg-transparent outline-none placeholder:text-muted-foreground/30 focus:text-foreground"
+      />
+    </div>
+  );
+}
+
+/** Rendered file block */
+function FileBlockContent({
+  block,
+  onRemove,
+}: {
+  block: Block;
+  onRemove: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  const handleDownload = () => {
+    if (!block.imageData) return;
+    const a = document.createElement("a");
+    a.href = block.imageData;
+    a.download = block.fileName || "file";
+    a.click();
+  };
+
+  return (
+    <div
+      className="relative group flex items-center gap-3 py-3 px-4 rounded-xl bg-muted/15 border border-border/30 hover:bg-muted/25 transition-colors my-1 cursor-pointer"
+      onClick={handleDownload}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+        <IconPaperclip size={20} className="text-primary/70" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[14px] text-foreground truncate">{block.fileName || "File"}</div>
+        <div className="text-[12px] text-muted-foreground/50">
+          {block.fileSize ? formatFileSize(block.fileSize) : ""}
+          {block.fileMime ? ` · ${block.fileMime.split("/")[1]?.toUpperCase() || block.fileMime}` : ""}
+        </div>
+      </div>
+      {hovered && (
+        <button
+          onClick={e => { e.stopPropagation(); onRemove(); }}
+          className="p-1 rounded hover:bg-destructive/20 text-muted-foreground/60 hover:text-destructive transition-colors"
+        >
+          <IconX size={14} />
+        </button>
+      )}
     </div>
   );
 }
@@ -132,6 +377,18 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
 
   const applySlashCommand = useCallback((idx: number, type: BlockType) => {
     const next = [...blocks];
+    if (type === "image" || type === "file") {
+      // For image/file, just set the type — no content clearing, placeholder will show
+      next[idx] = {
+        ...next[idx],
+        text: "",
+        richText: undefined,
+        type,
+      };
+      onChange(next);
+      setSlashMenu(null);
+      return;
+    }
     next[idx] = {
       ...next[idx],
       text: "",
@@ -256,6 +513,57 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
     onChange(next);
   }, [blocks, onChange]);
 
+  // ── File embedding ──
+  const handleFileEmbed = useCallback(async (idx: number, file: File) => {
+    const dataUrl = await readFileAsDataUrl(file);
+    const next = [...blocks];
+    const isImage = file.type.startsWith("image/");
+    next[idx] = {
+      ...next[idx],
+      type: isImage ? "image" : "file",
+      imageData: dataUrl,
+      fileName: file.name,
+      fileMime: file.type,
+      fileSize: file.size,
+      text: file.name, // For search/outline
+    };
+    onChange(next);
+    // Add an empty block below for continued typing
+    const newBlock: Block = { id: genBlockId(), text: "", indent: next[idx].indent, children: [] };
+    const updated = [...next];
+    updated.splice(idx + 1, 0, newBlock);
+    onChange(updated);
+    setFocusNewIdx(idx + 1);
+  }, [blocks, onChange]);
+
+  const handleCaptionChange = useCallback((idx: number, caption: string) => {
+    const next = [...blocks];
+    next[idx] = { ...next[idx], caption, text: caption || next[idx].fileName || "" };
+    onChange(next);
+  }, [blocks, onChange]);
+
+  const handleImageWidthChange = useCallback((idx: number, width: number) => {
+    const next = [...blocks];
+    next[idx] = { ...next[idx], imageWidth: width };
+    onChange(next);
+  }, [blocks, onChange]);
+
+  const handleRemoveEmbed = useCallback((idx: number) => {
+    const next = [...blocks];
+    next[idx] = {
+      ...next[idx],
+      type: undefined,
+      imageData: undefined,
+      fileName: undefined,
+      fileMime: undefined,
+      fileSize: undefined,
+      caption: undefined,
+      imageWidth: undefined,
+      text: "",
+    };
+    onChange(next);
+  }, [blocks, onChange]);
+
   // ── Drag and drop ──
   const handleDragStart = useCallback((idx: number, e: React.DragEvent) => {
     setDragIdx(idx);
@@ -289,6 +597,40 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
     setDragIdx(null);
     setDragOverIdx(null);
   }, []);
+
+  // ── Clipboard paste for images ──
+  useEffect(() => {
+    const handler = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) return;
+          // Insert image block at current position or end
+          const dataUrl = await readFileAsDataUrl(file);
+          const newBlock: Block = {
+            id: genBlockId(),
+            text: file.name || "Pasted image",
+            type: "image",
+            imageData: dataUrl,
+            fileName: file.name || "pasted-image.png",
+            fileMime: file.type,
+            fileSize: file.size,
+            indent: 0,
+            children: [],
+          };
+          const followBlock: Block = { id: genBlockId(), text: "", indent: 0, children: [] };
+          onChange([...blocks, newBlock, followBlock]);
+          setFocusNewIdx(blocks.length + 1);
+          return;
+        }
+      }
+    };
+    document.addEventListener("paste", handler);
+    return () => document.removeEventListener("paste", handler);
+  }, [blocks, onChange]);
 
   // Handle slash menu keyboard navigation via global keydown
   useEffect(() => {
@@ -342,6 +684,79 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
               </div>
             </div>
             <hr className="flex-1 border-border/50" />
+          </div>
+        </div>
+      );
+    }
+
+    // Image block
+    if (blockType === "image") {
+      return (
+        <div
+          key={block.id}
+          className={`relative group transition-opacity ${isDragging ? "opacity-30" : ""}`}
+          onMouseEnter={() => setHoveredIdx(idx)}
+          onMouseLeave={() => setHoveredIdx(null)}
+          onDragOver={e => handleDragOver(idx, e)}
+          onDrop={e => handleDrop(idx, e)}
+          style={{ paddingLeft: `${block.indent * 24}px` }}
+        >
+          {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+          <div className="flex items-start">
+            <div className={`flex items-center gap-0.5 mt-[5px] mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
+              <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
+                <IconPlus size={14} className="text-muted-foreground" />
+              </button>
+              <div draggable onDragStart={e => handleDragStart(idx, e)} onDragEnd={handleDragEnd} className="p-0.5 cursor-grab active:cursor-grabbing">
+                <IconGripVertical size={14} className="text-muted-foreground" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              {block.imageData ? (
+                <ImageBlockContent
+                  block={block}
+                  onCaptionChange={caption => handleCaptionChange(idx, caption)}
+                  onWidthChange={width => handleImageWidthChange(idx, width)}
+                  onRemove={() => handleRemoveEmbed(idx)}
+                />
+              ) : (
+                <ImagePlaceholder onFileSelect={file => handleFileEmbed(idx, file)} />
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // File block
+    if (blockType === "file") {
+      return (
+        <div
+          key={block.id}
+          className={`relative group transition-opacity ${isDragging ? "opacity-30" : ""}`}
+          onMouseEnter={() => setHoveredIdx(idx)}
+          onMouseLeave={() => setHoveredIdx(null)}
+          onDragOver={e => handleDragOver(idx, e)}
+          onDrop={e => handleDrop(idx, e)}
+          style={{ paddingLeft: `${block.indent * 24}px` }}
+        >
+          {isDragOver && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+          <div className="flex items-start">
+            <div className={`flex items-center gap-0.5 mt-[5px] mr-1 shrink-0 transition-opacity ${isHovered ? "opacity-40" : "opacity-0"}`}>
+              <button onClick={() => addBlockBelow(idx)} className="p-0.5 rounded hover:bg-muted/60">
+                <IconPlus size={14} className="text-muted-foreground" />
+              </button>
+              <div draggable onDragStart={e => handleDragStart(idx, e)} onDragEnd={handleDragEnd} className="p-0.5 cursor-grab active:cursor-grabbing">
+                <IconGripVertical size={14} className="text-muted-foreground" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              {block.imageData ? (
+                <FileBlockContent block={block} onRemove={() => handleRemoveEmbed(idx)} />
+              ) : (
+                <FilePlaceholder onFileSelect={file => handleFileEmbed(idx, file)} />
+              )}
+            </div>
           </div>
         </div>
       );
