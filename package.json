@@ -17,7 +17,7 @@
     "tauri:build": "tauri build"
   },
   "dependencies": {
-    "@chenglou/pretext": "^0.0.3",
+    "@chenglou/pretext": "0.0.5",
     "@diffusionstudio/vits-web": "^1.0.3",
     "@dnd-kit/core": "^6.3.1",
     "@fontsource/dm-sans": "^5.2.8",
@@ -64,6 +64,7 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/d3-force": "^3.0.10",
     "@webgpu/types": "^0.1.69",
+    "axios": "1.15.0",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -115,7 +116,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
-    "jsdom": "^20.0.3",
+    "jsdom": "29.0.2",
     "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
