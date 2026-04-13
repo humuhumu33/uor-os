@@ -1,79 +1,39 @@
 
 
-# "Own Your ___" Branded Identity System
+# Font Size & Color Contrast Fix
 
-## Vision
+## Problem
 
-A cohesive branding motif across all apps: each section greets users with a contextual "Own your ___" tagline, creating a rhythmic, memorable identity. Plus a subtle "Powered by UOR. With &hearts;." signature at the bottom of every app.
+The UI has two systemic issues:
 
-## What Changes
+1. **Low contrast**: Many text elements use extreme opacity values (`/20`, `/25`, `/30`, `/35`) that are nearly invisible against both light and dark backgrounds. Labels, timestamps, counts, and helper text are too faint.
 
-### 1. App Tagline Map
+2. **Inconsistent font sizes**: Body text ranges from `10px` to `15px` across components. Standardization needed.
 
-A single shared config mapping app IDs to their tagline:
+## Design Decisions
 
-```text
-sovereign-db  → "Own your data."
-oracle        → "Own your intelligence."
-vault         → "Own your identity."
-messenger     → "Own your conversations."
-library       → "Own your knowledge."
-media         → "Own your entertainment."
-app-hub       → "Own your platform."
-system-monitor→ "Own your infrastructure."
-```
-
-Future wallet app would get: "Own your money."
-
-### 2. SovereignDB / MySpace Header Enhancement
-
-In `SovereignDBApp.tsx`, add the tagline next to "MySpace" in the header bar. It fades in with a subtle animation, appearing as elegant secondary text:
-
-```text
-[●] MySpace                    Own your data.        Workspace  Graph  Console
-```
-
-The tagline uses `text-muted-foreground/40 text-[13px] italic tracking-wide` — visible but not competing with the app name.
-
-### 3. Per-Section Tagline Variation (MySpace)
-
-Within MySpace, the tagline subtly shifts based on the active tab:
-- **Workspace** → "Own your data."
-- **Graph** → "Own your connections."
-- **Console** → "Own your infrastructure."
-
-This creates the "drum" effect even within a single app. The text cross-fades on tab switch (CSS transition on opacity).
-
-### 4. Hero Banner Tagline Overlay
-
-In `SdbHomeView.tsx`, overlay the "Own your data." tagline on the hero banner as a large, cinematic watermark-style text — `text-[28px] font-light tracking-[0.15em] text-white/40` — centered, creating an Apple-keynote feel.
-
-### 5. "Powered by UOR" Footer Signature
-
-Add to `SdbStatusBar.tsx` (the bottom bar of every app that uses it) a right-aligned signature:
-
-```text
-notes: 3 | connections: 2 | ...          Powered by UOR. With ❤️.
-```
-
-Styling: `text-[11px] text-muted-foreground/25` — barely there, discovered rather than imposed. The heart is a subtle `text-rose-400/40`.
-
-For apps that don't use `SdbStatusBar`, create a tiny reusable `<UorSignature />` component that can be dropped into any app footer.
+- **Standard body size**: `14px` for all non-title, non-heading text
+- **Minimum size**: `12px` (only for tertiary metadata like timestamps, counts)
+- **Minimum opacity**: `/50` for any text on dark backgrounds, `/60` for text on light backgrounds — no more `/20`, `/25`, `/30`, `/35`
+- **Section headers**: Stay `12px uppercase tracking-wider` but bump to `/60` minimum
+- **Titles**: Keep current sizes (36px note title, 17px section heading, 15px app name)
 
 ## Files to Change
 
-| File | What |
-|------|------|
-| New: `src/modules/platform/core/components/UorSignature.tsx` | Reusable "Powered by UOR. With heart." component |
-| New: `src/modules/platform/core/lib/app-taglines.ts` | Tagline map: app-id to "Own your ___" string |
-| `SovereignDBApp.tsx` | Add tagline in header, shift per-section |
-| `SdbHomeView.tsx` | Add cinematic tagline overlay on hero banner |
-| `SdbStatusBar.tsx` | Add UorSignature to the right end |
+| File | Key Changes |
+|------|-------------|
+| `SdbHomeView.tsx` | Timestamps `/35` → `/60`; empty state text `/40` → `/60`; sort menu text `/70` → `/80`; card icon `/6` → `/15`; tag overflow `10px` → `12px`; "Filtering by" `/30` → `/50` |
+| `SdbConsumerPages.tsx` | Sidebar section headers `/35` → `/60`; "No pages yet" `/25` → `/50`; "Create a page" `/50` → `/70`; chevron icons `/40` → `/50`; ⌘K hint `/25` → `/40`; breadcrumb text `/50` → `/60`; page stats `/30` → `/50` |
+| `SdbTagLibrary.tsx` | Sub-headers `10px /25` → `11px /40`; tag text `/60` → `/70`; tag count `/25` → `/40`; hint text `/20` → `/40`; hash prefix `/30` → `/50` |
+| `SdbTagChip.tsx` | Tag chip `11px` → `12px` for sm size |
+| `SdbStatusBar.tsx` | Footer text stays `12px` but `text-muted-foreground` (no opacity reduction); backend info `/60` → `/70` |
+| `UorSignature.tsx` | `/25` → `/40` for signature text |
+| `SdbSidebar.tsx` | "Services" label `/60` → `/70` |
+| `SdbNoteProperties.tsx` | Stats text `/60` → `/70`; property labels `/50` → `/60`; "Add property" `/40` → `/60`; `11px` buttons → `12px` |
+| `SovereignDBApp.tsx` | Tagline text `/40` → `/50`; inactive tab text `/40` → `/50` |
+| `SdbBlockEditor.tsx` | Preview tooltip text `11px` → `12px`; `/70` → `/80` |
 
-## Technical Details
+## Summary
 
-- Tagline transitions: `transition-opacity duration-500` with key-based remount for cross-fade
-- No new dependencies
-- `UorSignature` is a 5-line component: `<span>Powered by UOR. With <span class="text-rose-400/40">❤️</span>.</span>`
-- Tagline map is a plain `Record<string, string>` export, easily extended as new apps are added
+~10 files, all class string adjustments. No logic changes. Every piece of text will be clearly readable with good contrast while maintaining the elegant, understated aesthetic.
 
