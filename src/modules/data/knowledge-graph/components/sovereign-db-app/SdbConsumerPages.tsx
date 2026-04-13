@@ -67,7 +67,7 @@ function loadTagColors(): Record<string, string> {
   } catch { return {}; }
 }
 
-export function SdbConsumerPages({ db, onNavigateSection }: Props) {
+export function SdbConsumerPages({ db, onNavigateSection, activeSection }: Props) {
   const [items, setItems] = useState<TreeItem[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
