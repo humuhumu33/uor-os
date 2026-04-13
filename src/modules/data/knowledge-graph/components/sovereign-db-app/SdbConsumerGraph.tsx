@@ -179,6 +179,8 @@ export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "" }: P
       mergedNodes.filter(n => n.label.toLowerCase().includes(q)).map(n => n.id)
     );
   }, [globalSearch, mergedNodes]);
+
+  const handleContextAction = useCallback((action: ContextAction, node: GNode) => {
     switch (action) {
       case "open":
         setSelected(node);
