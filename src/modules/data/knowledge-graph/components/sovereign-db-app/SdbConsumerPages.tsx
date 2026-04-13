@@ -9,7 +9,7 @@ import {
   IconGraph, IconSun, IconLayoutBoard, IconSearch,
   IconStar, IconStarFilled, IconDots,
   IconHome, IconSettings, IconClock, IconUpload,
-  IconPhoto, IconMoodSmile, IconMessage,
+  IconPhoto, IconMoodSmile, IconMessage, IconLayoutSidebarRight,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
@@ -845,6 +845,13 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                   className="p-1.5 rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <IconDots size={15} />
+                </button>
+                <button
+                  onClick={() => openInSidebar(selected.id)}
+                  className="p-1.5 rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Open in sidebar"
+                >
+                  <IconLayoutSidebarRight size={15} />
                 </button>
               </div>
             </div>
