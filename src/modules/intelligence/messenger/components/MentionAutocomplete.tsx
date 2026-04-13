@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import type { GroupMember } from "../lib/types";
 
 interface Props {
@@ -20,12 +19,7 @@ export default function MentionAutocomplete({ members, query, onSelect, position
   if (filtered.length === 0) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
-      className="absolute bottom-full mb-1 left-0 right-0 mx-4 bg-slate-900/95 backdrop-blur-xl border border-white/[0.1] rounded-xl shadow-2xl overflow-hidden z-50"
-    >
+    <div className="absolute bottom-full mb-1 left-0 right-0 mx-4 bg-slate-900/95 backdrop-blur-xl border border-white/[0.1] rounded-xl shadow-2xl overflow-hidden z-50 sov-fade-in">
       {filtered.map((member) => (
         <button
           key={member.userId}
@@ -41,6 +35,6 @@ export default function MentionAutocomplete({ members, query, onSelect, position
           </div>
         </button>
       ))}
-    </motion.div>
+    </div>
   );
 }

@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback } from "react";
 import { Send, Smile, Mic, X, Square, Timer } from "lucide-react";
-import { AnimatePresence } from "framer-motion";
 import FilePickerButton from "./FilePickerButton";
 import MentionAutocomplete from "./MentionAutocomplete";
 import EmojiPanel from "./EmojiPanel";
@@ -111,11 +110,9 @@ export default function MessageInput({ onSend, onTyping, disabled, replyTo, onCa
         </div>
       )}
 
-      <AnimatePresence>
-        {mentionQuery !== null && isGroup && members && (
-          <MentionAutocomplete members={members.filter(m => m.displayName !== "You")} query={mentionQuery} onSelect={handleMentionSelect} />
-        )}
-      </AnimatePresence>
+      {mentionQuery !== null && isGroup && members && (
+        <MentionAutocomplete members={members.filter(m => m.displayName !== "You")} query={mentionQuery} onSelect={handleMentionSelect} />
+      )}
 
       {showTimerPicker && (
         <div className="absolute bottom-full mb-1 left-4 bg-slate-900/95 backdrop-blur-md border border-white/[0.1] rounded-xl shadow-xl z-50 py-1 min-w-[140px] sov-scale-in">
