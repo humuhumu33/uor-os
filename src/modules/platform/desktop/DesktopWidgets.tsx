@@ -376,8 +376,8 @@ export default function DesktopWidgets({ windows, onSearch, onOpenApp }: Props) 
           style={{ opacity: clockOpacity, transition: "opacity 300ms ease-out" }}
         >
           {([
-            { id: "oracle", icon: Sparkles, label: "Oracle" },
             { id: "myspace", icon: Layers, label: "MySpace" },
+            { id: "oracle", icon: Sparkles, label: "Oracle" },
             { id: "media", icon: Play, label: "Media" },
             { id: "library", icon: BookOpen, label: "Library" },
             { id: "files", icon: FolderOpen, label: "Files" },
