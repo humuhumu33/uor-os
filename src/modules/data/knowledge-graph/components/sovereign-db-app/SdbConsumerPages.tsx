@@ -207,8 +207,75 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       await db.addEdge([atlasNoteId, "tag:atlas"], "workspace:tag", { tag: "atlas" });
       await db.addEdge([atlasNoteId, "tag:architecture"], "workspace:tag", { tag: "architecture" });
 
-      // ── Seed a cross-link between the two notes ──
+      // ── Seed: "Resources" folder with sample bookmarks ──
+      const resourcesFolderId = "folder:resources";
+      await db.addEdge([wsId, resourcesFolderId], "workspace:folder", {
+        name: "Resources",
+        icon: "📚",
+        createdAt: Date.now(),
+      });
+
+      // Bookmark notes inside Resources
+      const bookmark1Id = "note:res-wikipedia";
+      await db.addEdge([resourcesFolderId, bookmark1Id], "workspace:note", {
+        title: "Wikipedia — Knowledge Graph",
+        icon: "🔗",
+        content: "",
+        blocks: JSON.stringify([
+          { id: "b0", text: "Reference article on knowledge graphs and semantic networks.", indent: 0, children: [] },
+          { id: "b1", text: "", indent: 0, children: [] },
+          { id: "b2", text: "🔗 https://en.wikipedia.org/wiki/Knowledge_graph", indent: 0, children: [] },
+        ]),
+        tags: JSON.stringify(["reference", "knowledge-graph"]),
+        bookmark: JSON.stringify({ url: "https://en.wikipedia.org/wiki/Knowledge_graph", title: "Knowledge Graph — Wikipedia", description: "A knowledge graph formally represents semantics by describing entities and their relationships." }),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      const bookmark2Id = "note:res-ipfs";
+      await db.addEdge([resourcesFolderId, bookmark2Id], "workspace:note", {
+        title: "IPFS Documentation",
+        icon: "🔗",
+        content: "",
+        blocks: JSON.stringify([
+          { id: "b0", text: "InterPlanetary File System — content-addressed, peer-to-peer storage.", indent: 0, children: [] },
+          { id: "b1", text: "", indent: 0, children: [] },
+          { id: "b2", text: "🔗 https://docs.ipfs.tech", indent: 0, children: [] },
+        ]),
+        tags: JSON.stringify(["reference", "ipfs"]),
+        bookmark: JSON.stringify({ url: "https://docs.ipfs.tech", title: "IPFS Docs", description: "Learn how to build with the InterPlanetary File System." }),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      const bookmark3Id = "note:res-jsonld";
+      await db.addEdge([resourcesFolderId, bookmark3Id], "workspace:note", {
+        title: "JSON-LD Specification",
+        icon: "🔗",
+        content: "",
+        blocks: JSON.stringify([
+          { id: "b0", text: "JSON-LD is a method of encoding linked data using JSON.", indent: 0, children: [] },
+          { id: "b1", text: "", indent: 0, children: [] },
+          { id: "b2", text: "🔗 https://json-ld.org", indent: 0, children: [] },
+        ]),
+        tags: JSON.stringify(["reference", "linked-data"]),
+        bookmark: JSON.stringify({ url: "https://json-ld.org", title: "JSON-LD", description: "JSON for Linking Data — a lightweight Linked Data format." }),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      // Tags for resource notes
+      await db.addEdge([bookmark1Id, "tag:reference"], "workspace:tag", { tag: "reference" });
+      await db.addEdge([bookmark1Id, "tag:knowledge-graph"], "workspace:tag", { tag: "knowledge-graph" });
+      await db.addEdge([bookmark2Id, "tag:reference"], "workspace:tag", { tag: "reference" });
+      await db.addEdge([bookmark2Id, "tag:ipfs"], "workspace:tag", { tag: "ipfs" });
+      await db.addEdge([bookmark3Id, "tag:reference"], "workspace:tag", { tag: "reference" });
+      await db.addEdge([bookmark3Id, "tag:linked-data"], "workspace:tag", { tag: "linked-data" });
+
+      // ── Seed cross-links ──
       await db.addEdge([welcomeNoteId, atlasNoteId], "workspace:link", { relation: "references" });
+      await db.addEdge([welcomeNoteId, bookmark1Id], "workspace:link", { relation: "see-also" });
+      await db.addEdge([atlasNoteId, bookmark3Id], "workspace:link", { relation: "uses" });
 
       // Re-fetch after seeding
       const seededFolders = await db.byLabel("workspace:folder");
