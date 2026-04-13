@@ -135,17 +135,24 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
     const notes = await db.byLabel("workspace:note");
     const daily = await db.byLabel("workspace:daily");
 
-    // Auto-create default workspace with demo content if none exist
+    // Auto-create default workspace if none exist
     if (workspaces.length === 0) {
       await db.addEdge(["root", "ws:default"], "workspace:workspace", {
         name: "My Workspace",
         createdAt: Date.now(),
       });
+      const ws2 = await db.byLabel("workspace:workspace");
+      workspaces.push(...ws2);
+    }
+
+    // Seed demo content if workspace is empty (no folders AND no notes)
+    if (folders.length === 0 && notes.length === 0) {
+      const wsId = workspaces[0]?.nodes?.[1] || "ws:default";
 
       // ── Seed: "UOR OS" folder with nested "Atlas" subfolder ──
       const osFolderId = "folder:uor-os";
       const atlasFolderId = "folder:atlas";
-      await db.addEdge(["ws:default", osFolderId], "workspace:folder", {
+      await db.addEdge([wsId, osFolderId], "workspace:folder", {
         name: "UOR OS",
         icon: "🖥️",
         createdAt: Date.now(),
@@ -203,10 +210,7 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       // ── Seed a cross-link between the two notes ──
       await db.addEdge([welcomeNoteId, atlasNoteId], "workspace:link", { relation: "references" });
 
-      const ws2 = await db.byLabel("workspace:workspace");
-      workspaces.push(...ws2);
-
-      // Re-fetch folders and notes after seeding
+      // Re-fetch after seeding
       const seededFolders = await db.byLabel("workspace:folder");
       const seededNotes = await db.byLabel("workspace:note");
       folders.push(...seededFolders);
