@@ -5,6 +5,7 @@
   "description": "UOR OS — Sovereign Virtual Operating System",
   "type": "module",
   "scripts": {
+    "boot": "npm install && npm run dev",
     "dev": "vite --mode development",
     "build": "NODE_OPTIONS='--max-old-space-size=4096' vite build",
     "build:dev": "NODE_OPTIONS='--max-old-space-size=4096' vite build --mode development",
