@@ -82,6 +82,17 @@ export default defineConfig(({ mode }) => {
   },
   build: {
     rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('three') || id.includes('@react-three') || id.includes('react-force-graph-3d')) return 'vendor-3d';
+          if (id.includes('matrix-js-sdk')) return 'vendor-matrix';
+          if (id.includes('@monaco-editor') || id.includes('monaco-editor')) return 'vendor-monaco';
+          if (id.includes('@huggingface/transformers')) return 'vendor-ml';
+          if (id.includes('lexical') || id.includes('@lexical')) return 'vendor-editor';
+          if (id.includes('graphology') || id.includes('sigma') || id.includes('@react-sigma')) return 'vendor-graph-viz';
+          if (id.includes('@privy-io')) return 'vendor-privy';
+        },
+      },
       external: [
         ...(mode === "tauri"
           ? [
