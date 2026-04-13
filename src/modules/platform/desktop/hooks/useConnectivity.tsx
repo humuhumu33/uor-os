@@ -3,9 +3,10 @@
  * Tracks online/offline status and computes per-feature availability.
  */
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { syncBridge, type SyncState } from "@/modules/data/knowledge-graph";
 import { useSyncMode, type SyncMode } from "@/modules/data/knowledge-graph/persistence/hooks/useSyncMode";
+import { toast } from "sonner";
 
 export type FeatureId = "oracle" | "kgSync" | "dataBank" | "webBridge" | "voice" | "auth";
 
@@ -57,6 +58,8 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const { mode: syncMode, setMode: setSyncMode, activeProviderId, isMigrating } = useSyncMode();
 
+  const prevOnlineRef = useRef(online);
+
   useEffect(() => {
     const goOnline = () => setOnline(true);
     const goOffline = () => setOnline(false);
@@ -67,6 +70,24 @@ export function ConnectivityProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("offline", goOffline);
     };
   }, []);
+
+  // Toast on connectivity transitions (skip initial mount)
+  useEffect(() => {
+    if (prevOnlineRef.current === online) return;
+    prevOnlineRef.current = online;
+
+    if (online) {
+      toast.success("Back online", {
+        description: "Cloud sync resumed",
+        duration: 3000,
+      });
+    } else {
+      toast("You're offline", {
+        description: "Local data fully available — changes sync when reconnected",
+        duration: 4000,
+      });
+    }
+  }, [online]);
 
   useEffect(() => {
     return syncBridge.subscribeSyncState((state) => {
