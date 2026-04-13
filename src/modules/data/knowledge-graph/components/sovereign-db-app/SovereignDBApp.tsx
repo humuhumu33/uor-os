@@ -105,11 +105,6 @@ const SovereignDBApp = () => {
     return null;
   };
 
-  const TABS: { id: AppSection; label: string }[] = [
-    { id: "workspace", label: "Workspace" },
-    { id: "graph", label: "Graph" },
-    { id: "console", label: "Console" },
-  ];
 
   return (
     <div className="flex flex-col h-full w-full bg-background text-foreground overflow-hidden">
