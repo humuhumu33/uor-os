@@ -1024,6 +1024,64 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
         commands={commands}
       />
 
+      {/* ── Context menu for sidebar items ── */}
+      {contextMenu && (
+        <>
+          <div className="fixed inset-0 z-[60]" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} />
+          <div
+            className="fixed z-[61] bg-card border border-border/30 rounded-xl shadow-xl py-1 min-w-[180px]"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            {contextMenu.item.type === "folder" && (
+              <>
+                <button
+                  onClick={() => { createNote(contextMenu.item.id); setContextMenu(null); }}
+                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
+                >
+                  <IconPlus size={14} /> New Page Inside
+                </button>
+                <button
+                  onClick={() => { createFolder(contextMenu.item.id); setContextMenu(null); }}
+                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
+                >
+                  <IconFolder size={14} /> New Subfolder
+                </button>
+                <div className="mx-2 my-1 border-t border-border/15" />
+              </>
+            )}
+            <button
+              onClick={() => {
+                const newName = prompt("Rename:", contextMenu.item.name);
+                if (newName && newName.trim()) {
+                  const edge = contextMenu.item.edge;
+                  db.removeEdge(edge.id).then(() => {
+                    const propKey = edge.label === "workspace:folder" ? "name" : "title";
+                    return db.addEdge(edge.nodes, edge.label, { ...edge.properties, [propKey]: newName.trim(), updatedAt: Date.now() });
+                  }).then(() => reload());
+                }
+                setContextMenu(null);
+              }}
+              className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
+            >
+              <IconFile size={14} /> Rename
+            </button>
+            <button
+              onClick={() => { toggleFavorite(contextMenu.item.id); setContextMenu(null); }}
+              className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
+            >
+              <IconStar size={14} /> {favorites.has(contextMenu.item.id) ? "Unpin" : "Pin"}
+            </button>
+            <div className="mx-2 my-1 border-t border-border/15" />
+            <button
+              onClick={() => { deleteItem(contextMenu.item); setContextMenu(null); }}
+              className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left text-os-body text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+            >
+              <IconTrash size={14} /> Delete
+            </button>
+          </div>
+        </>
+      )}
+
       {/* ── Sidebar (portaled to unified sidebar container) ── */}
       {sidebarTarget && activeSection === "workspace" && createPortal(
         <div className="flex flex-col h-full overflow-hidden">
