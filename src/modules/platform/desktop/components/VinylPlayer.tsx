@@ -11,16 +11,40 @@
  *
  * Uses SoundCloud's iframe Widget API for real playback control.
  * Default playlist: Ben Böhmer — Begin Again
+ * Users can paste any SoundCloud URL to switch playlists.
  */
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
-import { Music, X } from "lucide-react";
+import { Music, X, Link2, Check, RotateCcw } from "lucide-react";
 import { useDesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
 
-const SC_PLAYLIST = "https://soundcloud.com/ben-bohmer/sets/begin-again";
-const SC_PLAYLIST_ENCODED = encodeURIComponent(SC_PLAYLIST);
-const EMBED_AUDIO = `https://w.soundcloud.com/player/?url=${SC_PLAYLIST_ENCODED}&color=%232A2724&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false`;
-const EMBED_VISUAL = `https://w.soundcloud.com/player/?url=${SC_PLAYLIST_ENCODED}&color=%232A2724&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=true`;
+const DEFAULT_SC_URL = "https://soundcloud.com/ben-bohmer/sets/begin-again";
+const STORAGE_KEY = "vinyl-player-sc-url";
+
+function buildEmbedAudio(scUrl: string): string {
+  return `https://w.soundcloud.com/player/?url=${encodeURIComponent(scUrl)}&color=%232A2724&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false`;
+}
+
+function buildEmbedVisual(scUrl: string): string {
+  return `https://w.soundcloud.com/player/?url=${encodeURIComponent(scUrl)}&color=%232A2724&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=true`;
+}
+
+function isValidSoundCloudUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.hostname === "soundcloud.com" || parsed.hostname === "www.soundcloud.com";
+  } catch {
+    return false;
+  }
+}
+
+function getSavedUrl(): string {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && isValidSoundCloudUrl(saved)) return saved;
+  } catch {}
+  return DEFAULT_SC_URL;
+}
 
 interface SCWidget {
   play: () => void;
@@ -53,16 +77,23 @@ const DISC_SIZE = 28;
 const GROOVE_COUNT = 4;
 
 export default function VinylPlayer() {
+  const [scUrl, setScUrl] = useState(getSavedUrl);
   const [playing, setPlaying] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [trackTitle, setTrackTitle] = useState<string | null>(null);
   const [artworkUrl, setArtworkUrl] = useState<string | null>(null);
+  const [urlInput, setUrlInput] = useState("");
+  const [urlSaved, setUrlSaved] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const widgetRef = useRef<SCWidget | null>(null);
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clickCountRef = useRef(0);
   const spinControls = useAnimationControls();
   const { isLight } = useDesktopTheme();
+
+  // Derive embed URLs from current scUrl
+  const embedAudio = buildEmbedAudio(scUrl);
+  const embedVisual = buildEmbedVisual(scUrl);
 
   useEffect(() => {
     loadSCApi().then(() => {
@@ -83,7 +114,7 @@ export default function VinylPlayer() {
         w.bind("finish", () => setPlaying(false));
       });
     });
-  }, []);
+  }, [scUrl]); // Re-init widget when URL changes
 
   // Continuous spin via rAF
   const rotationRef = useRef(0);
@@ -131,14 +162,40 @@ export default function VinylPlayer() {
     }, 250);
   }, [togglePlay]);
 
+  const handleLoadUrl = useCallback(() => {
+    const trimmed = urlInput.trim();
+    if (!trimmed || !isValidSoundCloudUrl(trimmed)) return;
+    // Stop current playback
+    setPlaying(false);
+    setTrackTitle(null);
+    setArtworkUrl(null);
+    widgetRef.current = null;
+    // Save and switch
+    try { localStorage.setItem(STORAGE_KEY, trimmed); } catch {}
+    setScUrl(trimmed);
+    setUrlSaved(true);
+    setTimeout(() => setUrlSaved(false), 2000);
+  }, [urlInput]);
+
+  const handleResetDefault = useCallback(() => {
+    setPlaying(false);
+    setTrackTitle(null);
+    setArtworkUrl(null);
+    widgetRef.current = null;
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    setScUrl(DEFAULT_SC_URL);
+    setUrlInput("");
+  }, []);
+
   const half = DISC_SIZE / 2;
 
   return (
     <div className="relative flex items-center" style={{ zIndex: 50 }}>
-      {/* Hidden audio iframe */}
+      {/* Hidden audio iframe — keyed by scUrl to force remount on URL change */}
       <iframe
+        key={scUrl}
         ref={iframeRef}
-        src={EMBED_AUDIO}
+        src={embedAudio}
         width="300"
         height="150"
         allow="autoplay"
@@ -315,13 +372,100 @@ export default function VinylPlayer() {
               </button>
             </div>
             <iframe
-              src={EMBED_VISUAL}
+              key={scUrl + "-visual"}
+              src={embedVisual}
               width="320"
               height="300"
               allow="autoplay"
               style={{ border: "none", display: "block" }}
               title="SoundCloud Controls"
             />
+
+            {/* Custom URL input */}
+            <div style={{ padding: "10px 12px", borderTop: "1px solid hsl(0 0% 100% / 0.06)" }}>
+              <div className="flex items-center gap-1.5" style={{ marginBottom: 6 }}>
+                <Link2 style={{ width: 10, height: 10, color: "hsl(0 0% 100% / 0.3)", flexShrink: 0 }} />
+                <span style={{ fontSize: 10, fontWeight: 600, color: "hsl(0 0% 100% / 0.35)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Custom Playlist
+                </span>
+                {scUrl !== DEFAULT_SC_URL && (
+                  <button
+                    onClick={handleResetDefault}
+                    className="ml-auto flex items-center gap-1 transition-colors"
+                    style={{ fontSize: 9, color: "hsl(0 0% 100% / 0.3)", background: "none", border: "none", cursor: "pointer", padding: "2px 4px" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "hsl(0 0% 100% / 0.7)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "hsl(0 0% 100% / 0.3)")}
+                    title="Reset to default playlist"
+                  >
+                    <RotateCcw style={{ width: 9, height: 9 }} />
+                    Reset
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-1.5">
+                <input
+                  type="url"
+                  value={urlInput}
+                  onChange={(e) => { setUrlInput(e.target.value); setUrlSaved(false); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleLoadUrl(); }}
+                  placeholder="Paste SoundCloud URL…"
+                  maxLength={500}
+                  style={{
+                    flex: 1,
+                    fontSize: 11,
+                    padding: "6px 8px",
+                    borderRadius: 6,
+                    border: "1px solid hsl(0 0% 100% / 0.08)",
+                    background: "hsl(0 0% 100% / 0.04)",
+                    color: "hsl(0 0% 100% / 0.8)",
+                    outline: "none",
+                    fontFamily: "'DM Sans', -apple-system, sans-serif",
+                    minWidth: 0,
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = "hsl(0 0% 100% / 0.2)"; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = "hsl(0 0% 100% / 0.08)"; }}
+                />
+                <button
+                  onClick={handleLoadUrl}
+                  disabled={!urlInput.trim() || !isValidSoundCloudUrl(urlInput)}
+                  className="flex items-center justify-center rounded-md transition-all"
+                  style={{
+                    width: 30,
+                    height: 30,
+                    flexShrink: 0,
+                    background: urlSaved
+                      ? "hsl(140 60% 40% / 0.2)"
+                      : urlInput.trim() && isValidSoundCloudUrl(urlInput)
+                        ? "hsl(0 0% 100% / 0.08)"
+                        : "hsl(0 0% 100% / 0.03)",
+                    border: "1px solid " + (urlSaved ? "hsl(140 60% 40% / 0.3)" : "hsl(0 0% 100% / 0.08)"),
+                    color: urlSaved
+                      ? "hsl(140 60% 55%)"
+                      : urlInput.trim() && isValidSoundCloudUrl(urlInput)
+                        ? "hsl(0 0% 100% / 0.7)"
+                        : "hsl(0 0% 100% / 0.2)",
+                    cursor: urlInput.trim() && isValidSoundCloudUrl(urlInput) ? "pointer" : "default",
+                  }}
+                  title="Load playlist"
+                >
+                  {urlSaved ? (
+                    <Check style={{ width: 12, height: 12 }} />
+                  ) : (
+                    <Link2 style={{ width: 12, height: 12 }} />
+                  )}
+                </button>
+              </div>
+              {urlInput.trim() && !isValidSoundCloudUrl(urlInput) && (
+                <span style={{ fontSize: 9, color: "hsl(0 70% 60% / 0.7)", marginTop: 4, display: "block" }}>
+                  Enter a valid soundcloud.com URL
+                </span>
+              )}
+              {scUrl !== DEFAULT_SC_URL && (
+                <span className="truncate block" style={{ fontSize: 9, color: "hsl(0 0% 100% / 0.25)", marginTop: 4, maxWidth: "100%" }}>
+                  Now: {scUrl.replace("https://soundcloud.com/", "")}
+                </span>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
