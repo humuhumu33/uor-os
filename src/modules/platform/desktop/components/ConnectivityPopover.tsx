@@ -223,6 +223,18 @@ function SyncModeSelector({
 
 /* ── Helpers ───────────────────────────────────────────────────────────── */
 
+const PROVIDER_LABELS: Record<string, string> = {
+  local: "GrafeoDB (Local)",
+  supabase: "Supabase (Cloud)",
+};
+
+function getProviderLabel(id: string): string {
+  if (PROVIDER_LABELS[id]) return PROVIDER_LABELS[id];
+  const entry = providerRegistry.get(id);
+  return entry?.provider.name ?? id;
+}
+
+
 function formatTimeAgo(ts: number): string {
   const diff = Math.floor((Date.now() - ts) / 1000);
   if (diff < 60) return "just now";
