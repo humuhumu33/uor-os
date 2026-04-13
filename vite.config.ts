@@ -48,7 +48,7 @@ export default defineConfig(({ mode }) => {
           "**/vendor-monaco-*.js",
           "**/vendor-ml-*.js",
           "**/vendor-editor-*.js",
-          "**/vendor-graph-viz-*.js",
+          
           "**/vendor-privy-*.js",
         ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
