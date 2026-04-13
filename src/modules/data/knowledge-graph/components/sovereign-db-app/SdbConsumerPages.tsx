@@ -808,12 +808,70 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
 
             {/* Page content */}
             <div className="flex-1 overflow-auto">
+              {/* Cover image */}
+              <SdbNoteCover
+                coverUrl={noteCover}
+                onChangeCover={(url) => { setNoteCover(url); }}
+              />
+
               <div className="max-w-[720px] mx-auto px-16 py-12">
-                <div className="mb-2">
-                  <span className="text-[40px] cursor-default select-none">
-                    {selected.icon || PAGE_ICONS[selected.type] || "📄"}
-                  </span>
+                {/* Icon with picker */}
+                <div className="relative mb-2 inline-block">
+                  <button
+                    onClick={() => setShowIconPicker(true)}
+                    className="text-[40px] cursor-pointer select-none hover:opacity-80 transition-opacity"
+                  >
+                    {noteIcon || PAGE_ICONS[selected.type] || "📄"}
+                  </button>
+                  {showIconPicker && (
+                    <SdbIconPicker
+                      currentIcon={noteIcon}
+                      onSelectIcon={(emoji) => { setNoteIcon(emoji); }}
+                      onRemoveIcon={() => setNoteIcon("")}
+                      onClose={() => setShowIconPicker(false)}
+                    />
+                  )}
                 </div>
+
+                {/* Notion-style action buttons (shown when no cover/icon set) */}
+                <div className="flex items-center gap-3 mb-3">
+                  {!noteIcon && (
+                    <button
+                      onClick={() => setShowIconPicker(true)}
+                      className="flex items-center gap-1.5 text-os-body text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2 py-1 rounded-md transition-colors"
+                    >
+                      <IconMoodSmile size={15} />
+                      Add icon
+                    </button>
+                  )}
+                  {!noteCover && (
+                    <button
+                      onClick={() => setShowCoverGallery(true)}
+                      className="flex items-center gap-1.5 text-os-body text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2 py-1 rounded-md transition-colors"
+                    >
+                      <IconPhoto size={15} />
+                      Add cover
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById("note-comments-section");
+                      el?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="flex items-center gap-1.5 text-os-body text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2 py-1 rounded-md transition-colors"
+                  >
+                    <IconMessage size={15} />
+                    Add comment
+                  </button>
+                </div>
+
+                {/* Cover gallery modal */}
+                {showCoverGallery && (
+                  <SdbCoverGallery
+                    onSelect={(url) => { setNoteCover(url); setShowCoverGallery(false); }}
+                    onClose={() => setShowCoverGallery(false)}
+                  />
+                )}
 
                 <input
                   value={noteTitle}
@@ -844,6 +902,14 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                   />
                 </div>
 
+                {/* Comments section */}
+                <div id="note-comments-section">
+                  <SdbNoteComments
+                    comments={noteComments}
+                    onAddComment={addComment}
+                  />
+                </div>
+
                 <SdbBacklinks
                   currentNoteId={selected.id}
                   currentNoteTitle={noteTitle}
@@ -867,7 +933,14 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                 <div className="mt-8 pt-4 border-t border-border/15 flex items-center gap-3 text-os-body text-muted-foreground">
                   <span>{blocks.length} blocks</span>
                   <span>·</span>
+                  <span>{noteComments.length} comment{noteComments.length !== 1 ? "s" : ""}</span>
+                  <span>·</span>
                   <span>{selected.edge.properties.updatedAt
+                    ? new Date(Number(selected.edge.properties.updatedAt)).toLocaleString()
+                    : "—"}</span>
+                </div>
+              </div>
+            </div>
                     ? new Date(Number(selected.edge.properties.updatedAt)).toLocaleString()
                     : "—"}</span>
                 </div>
