@@ -113,33 +113,29 @@ const SovereignDBApp = () => {
   return (
     <div className="flex flex-col h-full w-full bg-background text-foreground overflow-hidden">
       {/* ── Unified Header ──────────────────── */}
-      <header className="flex items-center justify-between h-11 px-5 border-b border-border bg-card shrink-0">
+      <header className="flex items-center h-11 px-5 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-[14px] font-semibold tracking-tight">SovereignDB</span>
           <span className="text-[12px] text-muted-foreground/50 font-mono ml-1">{db.name}</span>
         </div>
 
-        {/* Three-section switcher */}
-        <div className="flex items-center rounded-md border border-border bg-muted/30 text-[13px] overflow-hidden">
-          {TABS.map((tab, i) => (
-            <div key={tab.id} className="flex items-center">
-              {i > 0 && <span className="w-px h-5 bg-border" />}
-              <button
-                onClick={() => handleSectionChange(tab.id)}
-                className={`px-4 py-1 transition-colors ${
-                  section === tab.id
-                    ? "bg-primary/15 text-primary font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {tab.label}
-              </button>
-            </div>
+        {/* Subtle section switcher — pushed to the right */}
+        <div className="ml-auto flex items-center gap-1 text-[13px]">
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => handleSectionChange(tab.id)}
+              className={`px-3 py-1 rounded-md transition-all duration-200 ${
+                section === tab.id
+                  ? "text-foreground font-medium bg-muted/50"
+                  : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/20"
+              }`}
+            >
+              {tab.label}
+            </button>
           ))}
         </div>
-
-        <div className="w-32" />
       </header>
 
       {/* ── Body ─────────────────────────────── */}
