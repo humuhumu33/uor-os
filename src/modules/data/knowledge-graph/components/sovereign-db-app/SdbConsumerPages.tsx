@@ -639,6 +639,19 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
     [recentIds, items]
   );
 
+  // Folder color palette (Eden-style)
+  const FOLDER_COLORS = [
+    "text-emerald-500", "text-blue-500", "text-amber-500", "text-rose-500",
+    "text-violet-500", "text-orange-500", "text-teal-500", "text-pink-500",
+  ];
+  const folderColorIndex = useRef(new Map<string, number>());
+  const getFolderColor = (id: string) => {
+    if (!folderColorIndex.current.has(id)) {
+      folderColorIndex.current.set(id, folderColorIndex.current.size % FOLDER_COLORS.length);
+    }
+    return FOLDER_COLORS[folderColorIndex.current.get(id)!];
+  };
+
   const renderItem = (item: TreeItem, depth = 0) => {
     const isFolder = item.type === "folder";
     const isExpanded = expanded.has(item.id);
@@ -653,42 +666,32 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             if (isFolder) toggleExpand(item.id);
             setSelectedId(item.id);
           }}
-          className={`group flex items-center gap-2 w-full py-[7px] text-os-body transition-colors rounded-lg ${
+          className={`group flex items-center gap-2 w-full py-[6px] text-os-body transition-colors rounded-lg ${
             isSelected
-              ? "bg-primary/10 text-foreground"
-              : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+              ? "bg-primary/8 text-foreground font-medium"
+              : "text-foreground/70 hover:bg-muted/25 hover:text-foreground"
           }`}
-          style={{ paddingLeft: `${12 + depth * 16}px`, paddingRight: "10px" }}
+          style={{ paddingLeft: `${10 + depth * 14}px`, paddingRight: "8px" }}
         >
           {isFolder ? (
-            <span className="w-4 h-4 flex items-center justify-center shrink-0">
-              {isExpanded
-                ? <IconChevronDown size={13} className="text-muted-foreground" />
-                : <IconChevronRight size={13} className="text-muted-foreground" />
-              }
-            </span>
+            <>
+              <IconFolder size={15} className={`shrink-0 ${getFolderColor(item.id)}`} />
+              <span className="truncate flex-1 text-left">{item.name}</span>
+              <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                {isExpanded
+                  ? <IconChevronDown size={12} className="text-muted-foreground/50" />
+                  : <IconChevronRight size={12} className="text-muted-foreground/50" />
+                }
+              </span>
+            </>
           ) : (
-            <span className="w-4 h-4 flex items-center justify-center shrink-0 text-[12px]">
-              {icon}
-            </span>
+            <>
+              <span className="w-4 h-4 flex items-center justify-center shrink-0 text-[12px]">
+                {icon}
+              </span>
+              <span className="truncate flex-1 text-left">{item.name}</span>
+            </>
           )}
-          <span className="truncate flex-1 text-left">{item.name}</span>
-          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
-            <button
-              onClick={e => { e.stopPropagation(); deleteItem(item); }}
-              className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-destructive transition-colors"
-            >
-              <IconTrash size={13} />
-            </button>
-            {isFolder && (
-              <button
-                onClick={e => { e.stopPropagation(); createNote(item.id); }}
-                className="p-1 rounded hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <IconPlus size={13} />
-              </button>
-            )}
-          </div>
         </button>
         {isFolder && isExpanded && (
           <div>
