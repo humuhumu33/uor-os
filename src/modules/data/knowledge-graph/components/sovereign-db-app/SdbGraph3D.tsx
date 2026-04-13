@@ -17,6 +17,13 @@ import type { GNode, GLink, LayoutMode } from "./SdbGraphCanvas";
 import { getGpuForceLayout, type GpuForceNode, type GpuForceLink } from "./SdbGpuForceLayout";
 import { SdbMinimap } from "./SdbMinimap";
 
+export interface ForceParams {
+  centerForce: number;
+  repelForce: number;
+  linkForce: number;
+  linkDistance: number;
+}
+
 interface Props {
   nodes: GNode[];
   links: GLink[];
@@ -31,6 +38,12 @@ interface Props {
   highlightSignClass?: number | null;
   /** Set of node IDs to highlight (from global search) */
   highlightedNodeIds?: Set<string>;
+  /** Force simulation parameters from sidebar sliders */
+  forceParams?: ForceParams;
+  /** Node size multiplier (1 = default) */
+  nodeScale?: number;
+  /** Whether to always show labels */
+  showLabels?: boolean;
 }
 
 /* ── helpers ──────────────────────────────────────────────────── */
