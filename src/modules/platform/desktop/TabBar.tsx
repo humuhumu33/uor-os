@@ -626,7 +626,7 @@ export default function TabBar({
         >
           {formatted}&ensp;{clock}
         </span>
-        
+        <TabBarConnectivity isLight={isLight} />
         <EngineStatusIndicator isLight={isLight} />
         <FullscreenToggle isLight={isLight} />
         <SovereignProfileButton isLight={isLight} onClick={onProfileOpen} />
