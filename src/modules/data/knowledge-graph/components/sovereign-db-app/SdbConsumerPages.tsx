@@ -828,7 +828,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                 <span className="text-os-body font-medium text-muted-foreground uppercase tracking-wider">Pages</span>
               </div>
               <button
-                onClick={createFolder}
+                onClick={() => createFolder()}
                 className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
               >
                 <IconPlus size={12} />
