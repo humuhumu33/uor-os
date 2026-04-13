@@ -7,7 +7,7 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  IconSearch, IconLayout, IconGraph, IconTerminal2, IconAdjustments,
+  IconSearch, IconLayout, IconGraph, IconTerminal2,
 } from "@tabler/icons-react";
 import type { AppSection } from "./SovereignDBApp";
 
@@ -70,29 +70,22 @@ export function SdbSectionShell({
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
       </div>
 
-      {/* ── Search bar + Filters ── */}
-      <div className="w-full px-6 sm:px-8 lg:px-12 xl:px-16 -mt-6 relative z-10 shrink-0">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="relative flex-1 max-w-2xl">
-            <IconSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
-            <input
-              type="text"
-              value={searchValue}
-              onChange={e => onSearch?.(e.target.value)}
-              placeholder="Search anything..."
-              className="w-full pl-12 pr-4 py-3 text-[15px] bg-card/95 backdrop-blur-sm border border-border/30 rounded-2xl
-                text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/15
-                focus:border-primary/25 transition-all shadow-sm"
-            />
-          </div>
-          <button className="flex items-center gap-2 px-4 py-3 text-os-body text-muted-foreground hover:text-foreground
-            bg-card/80 backdrop-blur-sm border border-border/20 rounded-2xl hover:bg-card transition-colors">
-            <IconAdjustments size={16} />
-            <span className="hidden sm:inline">Filters</span>
-          </button>
+      {/* ── Search bar (centered, Google-style) ── */}
+      <div className="w-full -mt-7 relative z-10 shrink-0 flex flex-col items-center px-4">
+        <div className="relative w-full max-w-xl mb-5">
+          <IconSearch size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/40 pointer-events-none" />
+          <input
+            type="text"
+            value={searchValue}
+            onChange={e => onSearch?.(e.target.value)}
+            placeholder="Search anything..."
+            className="w-full pl-13 pr-5 py-3.5 text-[15px] bg-card/90 backdrop-blur-md border border-border/20 rounded-full
+              text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20
+              focus:border-primary/30 transition-all shadow-lg shadow-black/10"
+          />
         </div>
 
-        {/* ── Section tabs (pill style like Eden's filter chips) ── */}
+        {/* ── Section tabs ── */}
         <div className="flex items-center gap-1.5 mb-2">
           {SECTION_TABS.map(tab => {
             const Icon = tab.icon;
