@@ -4,6 +4,7 @@
  */
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { toast } from "sonner";
 import {
   IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash,
   IconGraph, IconSun, IconLayoutBoard, IconSearch,
@@ -693,7 +694,15 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     e.preventDefault();
     dragCounter.current = 0;
     setIsDraggingOver(false);
-    handleUpload(e.dataTransfer.files);
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleUpload(files);
+      toast.success(
+        files.length === 1
+          ? `"${files[0].name}" uploaded`
+          : `${files.length} files uploaded`
+      );
+    }
   }, [handleUpload]);
 
   return (
