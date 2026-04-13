@@ -480,7 +480,7 @@ export function SdbGraph3D({
         enableNodeDrag={true}
         enablePointerInteraction={true}
       />
-      <SdbMinimap fgRef={fgRef} nodes={nodes} />
+      <SdbMinimap fgRef={fgRef} nodes={nodes} hoveredNodeId={hovered} degreeMap={degreeMap} />
     </div>
   );
 }
