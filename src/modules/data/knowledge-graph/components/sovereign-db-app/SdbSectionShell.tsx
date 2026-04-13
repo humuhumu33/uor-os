@@ -1,10 +1,10 @@
 /**
  * SdbSectionShell — Shared header (hero banner + search + section tabs)
  * that wraps Workspace, Graph, and Console for visual continuity.
- * Eden-inspired: clean, spacious, balanced.
+ * Eden-inspired: clean, spacious, balanced. Parallax banner.
  */
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { IconSearch, IconLayout, IconGraph, IconTerminal2 } from "@tabler/icons-react";
 import type { AppSection } from "./SovereignDBApp";
 
@@ -45,23 +45,35 @@ export function SdbSectionShell({
   const bannerRef = useRef<HTMLImageElement>(null);
   const [bannerLoaded, setBannerLoaded] = useState(false);
   const bannerUrl = useMemo(pickBanner, []);
+  const [parallaxY, setParallaxY] = useState(0);
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = (e.target as HTMLDivElement).scrollTop;
+    setParallaxY(scrollTop * 0.4);
+  }, []);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* ── Hero Banner (fixed height, no change on section switch) ── */}
-      <div className="relative w-full shrink-0 overflow-hidden h-[130px]">
+      {/* ── Hero Banner with parallax ── */}
+      <div className="relative w-full shrink-0 overflow-hidden h-[180px]">
         <img
           ref={bannerRef}
           src={bannerUrl}
           alt=""
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
-          style={{ opacity: bannerLoaded ? 1 : 0 }}
+          className="absolute inset-0 w-full object-cover transition-opacity duration-700"
+          style={{
+            opacity: bannerLoaded ? 1 : 0,
+            height: "140%",
+            top: -parallaxY,
+            willChange: "top",
+          }}
           onLoad={() => setBannerLoaded(true)}
           draggable={false}
         />
-        <div className="absolute inset-0 bg-background/10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
+        {/* Layered gradient overlays for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/5 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent" />
       </div>
 
       {/* ── Search bar + Section tabs (single row) ── */}
@@ -106,7 +118,10 @@ export function SdbSectionShell({
       </div>
 
       {/* ── Section content (all sections mounted, display-toggled) ── */}
-      <div className="flex-1 min-h-0 overflow-hidden relative">
+      <div
+        className="flex-1 min-h-0 overflow-hidden relative"
+        onScrollCapture={handleScroll}
+      >
         {children}
       </div>
     </div>
