@@ -1477,19 +1477,19 @@
   letter-spacing: 0.04em;
 }
 
-/* ── Typing dots animation (WhatsApp-style) ── */
-@keyframes typing-bounce {
-  0%, 60%, 100% {
-    opacity: 0.25;
-    transform: translateY(0);
+/* ── Typing dots — soft, breathing presence ── */
+@keyframes typing-breathe {
+  0%, 100% {
+    opacity: 0.12;
+    transform: scale(0.8);
   }
-  30% {
-    opacity: 0.9;
-    transform: translateY(-4px);
+  50% {
+    opacity: 0.45;
+    transform: scale(1);
   }
 }
 .typing-dot {
-  animation: typing-bounce 1.2s ease-in-out infinite;
+  animation: typing-breathe 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* ── Search bar alive glow — rotating conic gradient ─────────────── */
