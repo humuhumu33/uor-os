@@ -64,11 +64,18 @@ const PAGE_ICONS: Record<string, string> = {
   folder: "📁",
 };
 
+const DEFAULT_TAG_COLORS: Record<string, string> = {
+  "getting-started": "hsl(160, 70%, 45%)",
+  "uor": "hsl(210, 80%, 55%)",
+  "atlas": "hsl(270, 60%, 55%)",
+  "architecture": "hsl(40, 85%, 50%)",
+};
+
 function loadTagColors(): Record<string, string> {
   try {
     const v = localStorage.getItem("sdb-tag-colors");
-    return v ? JSON.parse(v) : {};
-  } catch { return {}; }
+    return v ? { ...DEFAULT_TAG_COLORS, ...JSON.parse(v) } : DEFAULT_TAG_COLORS;
+  } catch { return DEFAULT_TAG_COLORS; }
 }
 
 export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalSearch, sidebarTarget, sidebarCollapsed }: Props) {
@@ -128,14 +135,82 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
     const notes = await db.byLabel("workspace:note");
     const daily = await db.byLabel("workspace:daily");
 
-    // Auto-create default workspace if none exist
+    // Auto-create default workspace with demo content if none exist
     if (workspaces.length === 0) {
       await db.addEdge(["root", "ws:default"], "workspace:workspace", {
         name: "My Workspace",
         createdAt: Date.now(),
       });
+
+      // ── Seed: "UOR OS" folder with nested "Atlas" subfolder ──
+      const osFolderId = "folder:uor-os";
+      const atlasFolderId = "folder:atlas";
+      await db.addEdge(["ws:default", osFolderId], "workspace:folder", {
+        name: "UOR OS",
+        icon: "🖥️",
+        createdAt: Date.now(),
+      });
+      await db.addEdge([osFolderId, atlasFolderId], "workspace:folder", {
+        name: "Atlas Engine",
+        icon: "🌐",
+        createdAt: Date.now(),
+      });
+
+      // ── Seed note: "Welcome to UOR OS" inside UOR OS folder ──
+      const welcomeNoteId = "note:welcome";
+      await db.addEdge([osFolderId, welcomeNoteId], "workspace:note", {
+        title: "Welcome to UOR OS",
+        icon: "👋",
+        content: "",
+        blocks: JSON.stringify([
+          { id: "b0", text: "Welcome to UOR OS — your sovereign knowledge operating system.", indent: 0, children: [] },
+          { id: "b1", text: "", indent: 0, children: [] },
+          { id: "b2", text: "Everything in this workspace is stored locally in your hypergraph database. No cloud required.", indent: 0, children: [] },
+          { id: "b3", text: "", indent: 0, children: [] },
+          { id: "b4", text: "📂 Explore the UOR OS folder to learn about the system architecture.", indent: 0, children: [] },
+          { id: "b5", text: "🌐 Open the Atlas Engine folder to see the E₈ computational substrate.", indent: 0, children: [] },
+          { id: "b6", text: "📊 Switch to the Graph view to see how everything connects.", indent: 0, children: [] },
+        ]),
+        tags: JSON.stringify(["getting-started", "uor"]),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      // ── Seed note: "Atlas Overview" inside Atlas subfolder ──
+      const atlasNoteId = "note:atlas-overview";
+      await db.addEdge([atlasFolderId, atlasNoteId], "workspace:note", {
+        title: "Atlas Engine Overview",
+        icon: "🔮",
+        content: "",
+        blocks: JSON.stringify([
+          { id: "b0", text: "The Atlas Engine is a 96-vertex E₈ computational substrate.", indent: 0, children: [] },
+          { id: "b1", text: "", indent: 0, children: [] },
+          { id: "b2", text: "It provides the mathematical foundation for the knowledge graph, mapping universal objects through 8 sign classes with triality symmetry.", indent: 0, children: [] },
+          { id: "b3", text: "", indent: 0, children: [] },
+          { id: "b4", text: "Toggle the Atlas Layer in the Graph view to visualize the full vertex structure.", indent: 0, children: [] },
+        ]),
+        tags: JSON.stringify(["atlas", "architecture"]),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      // ── Seed tags as hyperedges so they appear in the graph ──
+      await db.addEdge([welcomeNoteId, "tag:getting-started"], "workspace:tag", { tag: "getting-started" });
+      await db.addEdge([welcomeNoteId, "tag:uor"], "workspace:tag", { tag: "uor" });
+      await db.addEdge([atlasNoteId, "tag:atlas"], "workspace:tag", { tag: "atlas" });
+      await db.addEdge([atlasNoteId, "tag:architecture"], "workspace:tag", { tag: "architecture" });
+
+      // ── Seed a cross-link between the two notes ──
+      await db.addEdge([welcomeNoteId, atlasNoteId], "workspace:link", { relation: "references" });
+
       const ws2 = await db.byLabel("workspace:workspace");
       workspaces.push(...ws2);
+
+      // Re-fetch folders and notes after seeding
+      const seededFolders = await db.byLabel("workspace:folder");
+      const seededNotes = await db.byLabel("workspace:note");
+      folders.push(...seededFolders);
+      notes.push(...seededNotes);
     }
 
     const all: TreeItem[] = [
@@ -176,7 +251,16 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
     // Auto-select first workspace if none active
     if (!activeWorkspaceId) {
       const first = all.find(i => i.type === "workspace");
-      if (first) setActiveWorkspaceId(first.id);
+      if (first) {
+        setActiveWorkspaceId(first.id);
+        // Auto-expand seeded folders so nesting is visible
+        const folderIds = all.filter(i => i.type === "folder").map(i => i.id);
+        setExpanded(prev => {
+          const next = new Set(prev);
+          folderIds.forEach(id => next.add(id));
+          return next;
+        });
+      }
     }
   }, [db, activeWorkspaceId]);
 
