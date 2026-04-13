@@ -1160,13 +1160,15 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       <main className="flex-1 overflow-auto flex flex-col">
         {!selected || selected.type === "folder" ? (
           <SdbHomeView
-            items={items.filter(i => i.type !== "folder").map(i => ({
+            items={items.filter(i => i.type !== "workspace").map(i => ({
               id: i.id,
               name: i.name,
-              type: i.type as "note" | "daily",
+              type: i.type as "note" | "daily" | "folder",
               updatedAt: Number(i.edge.properties.updatedAt || i.edge.properties.createdAt || 0),
               fileDataUrl: i.edge.properties.fileDataUrl ? String(i.edge.properties.fileDataUrl) : undefined,
               fileMime: i.edge.properties.fileMime ? String(i.edge.properties.fileMime) : undefined,
+              coverUrl: i.edge.properties.coverUrl ? String(i.edge.properties.coverUrl) : undefined,
+              childCount: i.type === "folder" ? childrenOf(i.id).length : undefined,
             }))}
             allEdges={allEdges}
             recentIds={recentIds}
