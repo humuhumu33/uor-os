@@ -377,6 +377,18 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
 
   const applySlashCommand = useCallback((idx: number, type: BlockType) => {
     const next = [...blocks];
+    if (type === "image" || type === "file") {
+      // For image/file, just set the type — no content clearing, placeholder will show
+      next[idx] = {
+        ...next[idx],
+        text: "",
+        richText: undefined,
+        type,
+      };
+      onChange(next);
+      setSlashMenu(null);
+      return;
+    }
     next[idx] = {
       ...next[idx],
       text: "",
@@ -498,6 +510,57 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
   const toggleCollapse = useCallback((idx: number) => {
     const next = [...blocks];
     next[idx] = { ...next[idx], collapsed: !next[idx].collapsed };
+    onChange(next);
+  }, [blocks, onChange]);
+
+  // ── File embedding ──
+  const handleFileEmbed = useCallback(async (idx: number, file: File) => {
+    const dataUrl = await readFileAsDataUrl(file);
+    const next = [...blocks];
+    const isImage = file.type.startsWith("image/");
+    next[idx] = {
+      ...next[idx],
+      type: isImage ? "image" : "file",
+      imageData: dataUrl,
+      fileName: file.name,
+      fileMime: file.type,
+      fileSize: file.size,
+      text: file.name, // For search/outline
+    };
+    onChange(next);
+    // Add an empty block below for continued typing
+    const newBlock: Block = { id: genBlockId(), text: "", indent: next[idx].indent, children: [] };
+    const updated = [...next];
+    updated.splice(idx + 1, 0, newBlock);
+    onChange(updated);
+    setFocusNewIdx(idx + 1);
+  }, [blocks, onChange]);
+
+  const handleCaptionChange = useCallback((idx: number, caption: string) => {
+    const next = [...blocks];
+    next[idx] = { ...next[idx], caption, text: caption || next[idx].fileName || "" };
+    onChange(next);
+  }, [blocks, onChange]);
+
+  const handleImageWidthChange = useCallback((idx: number, width: number) => {
+    const next = [...blocks];
+    next[idx] = { ...next[idx], imageWidth: width };
+    onChange(next);
+  }, [blocks, onChange]);
+
+  const handleRemoveEmbed = useCallback((idx: number) => {
+    const next = [...blocks];
+    next[idx] = {
+      ...next[idx],
+      type: undefined,
+      imageData: undefined,
+      fileName: undefined,
+      fileMime: undefined,
+      fileSize: undefined,
+      caption: undefined,
+      imageWidth: undefined,
+      text: "",
+    };
     onChange(next);
   }, [blocks, onChange]);
 
