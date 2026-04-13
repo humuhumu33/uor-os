@@ -940,6 +940,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                     : "—"}</span>
                 </div>
               </div>
+            </div>
           </>
         )}
       </main>
