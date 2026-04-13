@@ -24,6 +24,7 @@ import type { AppSection } from "./SovereignDBApp";
 interface Props {
   db: SovereignDB;
   onNavigateSection?: (section: AppSection) => void;
+  globalSearch?: string;
 }
 
 const COLORS: Record<string, string> = {
@@ -45,7 +46,7 @@ const SIGN_CLASS_LEGEND = [
   { name: "SC₇", color: "hsl(270, 60%, 60%)" },
 ];
 
-export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
+export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "" }: Props) {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("force");
   const [filters, setFilters] = useState<GraphFilter>({
     types: new Map(),
@@ -57,9 +58,17 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [showAtlasLayer, setShowAtlasLayer] = useState(true);
-  const [show2D, setShow2D] = useState(false); // 3D is default
+  const [show2D, setShow2D] = useState(false);
   const [gpuAvailable] = useState(() => SdbGpuForceLayout.isSupported());
   const [highlightSc, setHighlightSc] = useState<number | null>(null);
+
+  // Sync global search into graph filters
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, searchQuery: globalSearch }));
+  }, [globalSearch]);
+
+
+
 
   // Container sizing for ForceGraph3D
   const containerRef = useRef<HTMLDivElement>(null);
@@ -162,6 +171,15 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
     };
   }, [showAtlasLayer, atlasSeed, nodes, links, typeStats]);
 
+  // Compute highlighted node IDs from global search
+  const highlightedNodeIds = useMemo(() => {
+    const q = globalSearch.trim().toLowerCase();
+    if (!q) return new Set<string>();
+    return new Set(
+      mergedNodes.filter(n => n.label.toLowerCase().includes(q)).map(n => n.id)
+    );
+  }, [globalSearch, mergedNodes]);
+
   const handleContextAction = useCallback((action: ContextAction, node: GNode) => {
     switch (action) {
       case "open":
@@ -231,6 +249,7 @@ export function SdbConsumerGraph({ db, onNavigateSection }: Props) {
           height={dims.h}
           gpuAvailable={gpuAvailable}
           highlightSignClass={highlightSc}
+          highlightedNodeIds={highlightedNodeIds}
         />
       ) : (
         /* ── 2D fallback ── */

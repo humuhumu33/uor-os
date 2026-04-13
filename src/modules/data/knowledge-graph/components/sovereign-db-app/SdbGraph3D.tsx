@@ -29,6 +29,8 @@ interface Props {
   gpuAvailable?: boolean;
   /** When set, dims all nodes except those matching this sign class index */
   highlightSignClass?: number | null;
+  /** Set of node IDs to highlight (from global search) */
+  highlightedNodeIds?: Set<string>;
 }
 
 /* ── helpers ──────────────────────────────────────────────────── */
@@ -58,7 +60,7 @@ function buildDegreeMap(links: GLink[]): Map<string, number> {
 
 export function SdbGraph3D({
   nodes, links, layoutMode, onNodeClick, onNodeRightClick, onBackgroundClick,
-  width, height, gpuAvailable, highlightSignClass,
+  width, height, gpuAvailable, highlightSignClass, highlightedNodeIds,
 }: Props) {
   const fgRef = useRef<any>(null);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -285,42 +287,44 @@ export function SdbGraph3D({
     const deg = degreeMap.get(node.id) || 1;
     const baseSize = isAtlas ? 1.8 : Math.max(2, Math.min(6, 2 + deg * 0.5));
     const isHovered = hovered === node.id;
+    const isSearchHighlighted = highlightedNodeIds && highlightedNodeIds.size > 0 && highlightedNodeIds.has(node.id);
+    const isSearchDimmed = highlightedNodeIds && highlightedNodeIds.size > 0 && !highlightedNodeIds.has(node.id);
 
     // Sign class filtering: extract SC index from atlas node type (e.g. "SC3")
     const scMatch = node.type?.match(/^SC(\d)$/);
     const nodeSc = scMatch ? parseInt(scMatch[1], 10) : null;
-    const isDimmed = highlightSignClass != null && nodeSc !== highlightSignClass;
+    const isDimmed = (highlightSignClass != null && nodeSc !== highlightSignClass) || isSearchDimmed;
 
     const group = new THREE.Group();
 
     // Main sphere
-    const geo = new THREE.SphereGeometry(baseSize, isAtlas ? 16 : 12, isAtlas ? 16 : 12);
+    const geo = new THREE.SphereGeometry(isSearchHighlighted ? baseSize * 1.4 : baseSize, isAtlas ? 16 : 12, isAtlas ? 16 : 12);
     const color = new THREE.Color(node.color || "hsl(210, 80%, 60%)");
     const mat = new THREE.MeshPhongMaterial({
       color: isDimmed ? new THREE.Color(0x333344) : color,
-      emissive: isAtlas && !isDimmed ? color.clone().multiplyScalar(0.5) : new THREE.Color(0x000000),
-      emissiveIntensity: isAtlas && !isDimmed ? 1.2 : 0,
+      emissive: isSearchHighlighted ? color.clone().multiplyScalar(0.6) : (isAtlas && !isDimmed ? color.clone().multiplyScalar(0.5) : new THREE.Color(0x000000)),
+      emissiveIntensity: isSearchHighlighted ? 1.5 : (isAtlas && !isDimmed ? 1.2 : 0),
       transparent: true,
-      opacity: isDimmed ? 0.12 : (isHovered ? 1 : (isAtlas ? 0.85 : 0.92)),
+      opacity: isDimmed ? 0.08 : (isHovered || isSearchHighlighted ? 1 : (isAtlas ? 0.85 : 0.92)),
       shininess: 60,
     });
     const mesh = new THREE.Mesh(geo, mat);
     group.add(mesh);
 
-    // Glow ring for hovered
-    if (isHovered && !isDimmed) {
+    // Glow ring for hovered or search-highlighted
+    if ((isHovered || isSearchHighlighted) && !isDimmed) {
       const ringGeo = new THREE.RingGeometry(baseSize * 1.4, baseSize * 1.8, 24);
       const ringMat = new THREE.MeshBasicMaterial({
-        color,
+        color: isSearchHighlighted ? new THREE.Color("hsl(45, 100%, 60%)") : color,
         transparent: true,
-        opacity: 0.4,
+        opacity: isSearchHighlighted ? 0.6 : 0.4,
         side: THREE.DoubleSide,
       });
       group.add(new THREE.Mesh(ringGeo, ringMat));
 
       // Billboard label
       const label = node.label || node.id || "";
-      group.add(makeLabel(label, color, baseSize + 4));
+      group.add(makeLabel(label, isSearchHighlighted ? new THREE.Color("hsl(45, 100%, 70%)") : color, baseSize + 4));
     }
 
     // Atlas nodes: outer glow sphere (enhanced for bloom)
@@ -335,7 +339,7 @@ export function SdbGraph3D({
     }
 
     return group;
-  }, [degreeMap, hovered, makeLabel, highlightSignClass]);
+  }, [degreeMap, hovered, makeLabel, highlightSignClass, highlightedNodeIds]);
 
   /* ── Mirror τ detection helper ───────────────────────────── */
 
