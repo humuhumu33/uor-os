@@ -262,7 +262,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     await syncLinks(selected.id, blocks);
     await reload();
     await reloadDaily();
-  }, [db, selected, noteTitle, blocks, reload, reloadDaily, syncLinks]);
+  }, [db, selected, noteTitle, noteIcon, noteCover, noteComments, blocks, reload, reloadDaily, syncLinks]);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout>>();
   const handleBlocksChange = useCallback((newBlocks: Block[]) => {
