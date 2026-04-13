@@ -178,7 +178,7 @@ function DesktopShellInner() {
         {theme === "immersive" && (
           <>
             <DesktopImmersiveWallpaper />
-            {wm.windows.some(w => !w.minimized) && (
+            {!desktopMode && wm.windows.some(w => !w.minimized) && (
               <div
                 className="fixed inset-0 z-[1] pointer-events-none transition-opacity duration-500"
                 style={{ background: "hsl(220 15% 8%)", opacity: 0.92 }}
@@ -215,6 +215,7 @@ function DesktopShellInner() {
         )}
         <DesktopWidgets
           windows={wm.windows}
+          desktopMode={desktopMode}
           onSearch={handleHomeSearch}
           onOpenApp={handleOpenApp}
         />
