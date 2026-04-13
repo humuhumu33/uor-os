@@ -42,7 +42,7 @@ function LinkWithPreview({ title, onClick, noteNames, getPreview }: {
       {showPreview && preview && (
         <div className="absolute left-0 top-full z-50 w-56 bg-card border border-border rounded-lg shadow-2xl p-3 mt-1 animate-in fade-in duration-150 pointer-events-none">
           <p className="text-[12px] font-semibold text-foreground mb-1 truncate">{title}</p>
-          <p className="text-[11px] text-muted-foreground/70 leading-relaxed line-clamp-3">{preview}</p>
+          <p className="text-[12px] text-muted-foreground/80 leading-relaxed line-clamp-3">{preview}</p>
         </div>
       )}
     </span>
@@ -485,7 +485,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
             {/* Slash command menu */}
             {slashMenu && slashMenu.idx === idx && filteredSlash.length > 0 && (
               <div className="absolute left-0 top-full z-50 w-72 bg-card border border-border rounded-lg shadow-2xl py-1 mt-1 animate-in fade-in slide-in-from-top-1 duration-150">
-                <div className="px-3 py-1.5 text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider">
+                <div className="px-3 py-1.5 text-[12px] font-medium text-muted-foreground/60 uppercase tracking-wider">
                   Basic blocks
                 </div>
                 {filteredSlash.map((cmd, i) => {
@@ -504,7 +504,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
                       </div>
                       <div>
                         <div className="text-[14px] text-foreground">{cmd.label}</div>
-                        <div className="text-[12px] text-muted-foreground/50">{cmd.description}</div>
+                        <div className="text-[12px] text-muted-foreground/60">{cmd.description}</div>
                       </div>
                     </button>
                   );
@@ -517,7 +517,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
               <div className="absolute left-0 top-full z-50 w-64 bg-card border border-border rounded-lg shadow-2xl py-1 mt-1 animate-in fade-in duration-150">
                 <div className="px-3 py-1.5 flex items-center gap-2 border-b border-border/30 mb-1">
                   <IconSearch size={12} className="text-muted-foreground/40" />
-                  <span className="text-[11px] text-muted-foreground/50">
+                  <span className="text-[12px] text-muted-foreground/60">
                     {autocomplete.query ? `Linking to "${autocomplete.query}"` : "Link to a page…"}
                   </span>
                 </div>
@@ -546,7 +546,7 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
                     Create "[[{autocomplete.query}]]"
                   </button>
                 )}
-                <div className="px-3 pt-1.5 pb-1 border-t border-border/30 mt-1 flex gap-3 text-[10px] text-muted-foreground/40">
+                <div className="px-3 pt-1.5 pb-1 border-t border-border/30 mt-1 flex gap-3 text-[11px] text-muted-foreground/50">
                   <span>↑↓ Navigate</span>
                   <span>↵ Select</span>
                   <span>Esc Close</span>

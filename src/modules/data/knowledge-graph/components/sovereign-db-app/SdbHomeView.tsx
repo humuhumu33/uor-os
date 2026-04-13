@@ -194,7 +194,7 @@ export function SdbHomeView({
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
         {/* ── "Own your data." cinematic overlay ── */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="text-[28px] font-light tracking-[0.15em] text-white/[0.35] select-none">
+          <span className="text-[28px] font-light tracking-[0.15em] text-white/[0.6] select-none">
             Own your data.
           </span>
         </div>
@@ -211,14 +211,14 @@ export function SdbHomeView({
       <div className="max-w-[960px] mx-auto px-10 -mt-6 relative z-10 pb-10">
         {/* ── Search bar ── */}
         <div className="relative mb-7">
-          <IconSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30" />
+          <IconSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search anything…"
             className="w-full pl-12 pr-4 py-3.5 text-[15px] bg-card border border-border/30 rounded-2xl
-              text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/20
+              text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20
               focus:border-primary/30 transition-all shadow-sm"
           />
         </div>
@@ -244,7 +244,7 @@ export function SdbHomeView({
         {/* Active tag pills */}
         {activeTags.size > 0 && (
           <div className="flex items-center gap-2 mb-6 flex-wrap">
-            <span className="text-[12px] text-muted-foreground/30">Filtering by:</span>
+            <span className="text-[12px] text-muted-foreground/50">Filtering by:</span>
             {[...activeTags].map(tag => (
               <SdbTagChip
                 key={tag}
@@ -257,7 +257,7 @@ export function SdbHomeView({
             ))}
             <button
               onClick={() => [...activeTags].forEach(t => onToggleTag(t))}
-              className="text-[12px] text-muted-foreground/30 hover:text-foreground flex items-center gap-1 transition-colors"
+              className="text-[12px] text-muted-foreground/50 hover:text-foreground flex items-center gap-1 transition-colors"
             >
               <IconX size={12} /> Clear
             </button>
@@ -326,9 +326,9 @@ export function SdbHomeView({
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24">
             <div className="w-20 h-20 rounded-3xl bg-muted/15 flex items-center justify-center mb-5">
-              <IconFile size={32} className="text-muted-foreground/15" />
+              <IconFile size={32} className="text-muted-foreground/40" />
             </div>
-            <p className="text-[15px] text-muted-foreground/40 mb-5">
+            <p className="text-[15px] text-muted-foreground/60 mb-5">
               {search || activeTags.size > 0 ? "No results found" : "Create your first page"}
             </p>
             {!search && activeTags.size === 0 && (
@@ -355,7 +355,7 @@ export function SdbHomeView({
                     hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 hover:border-border/30 transition-all duration-250"
                 >
                   <div className={`h-[140px] bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
-                    <Icon size={32} className="text-foreground/6" />
+                    <Icon size={32} className="text-foreground/15" />
                   </div>
                   <div className="px-4 py-3.5">
                     <div className="flex items-center gap-2 mb-1">
@@ -373,11 +373,11 @@ export function SdbHomeView({
                           />
                         ))}
                         {tags.length > 3 && (
-                          <span className="text-[10px] text-muted-foreground/30">+{tags.length - 3}</span>
+                          <span className="text-[12px] text-muted-foreground/50">+{tags.length - 3}</span>
                         )}
                       </div>
                     )}
-                    <span className="text-[13px] text-muted-foreground/35 pl-4">{relativeTime(item.updatedAt)}</span>
+                    <span className="text-[13px] text-muted-foreground/60 pl-4">{relativeTime(item.updatedAt)}</span>
                   </div>
                 </button>
               );
@@ -410,11 +410,11 @@ export function SdbHomeView({
                         />
                       ))}
                       {tags.length > 2 && (
-                        <span className="text-[10px] text-muted-foreground/30">+{tags.length - 2}</span>
+                        <span className="text-[12px] text-muted-foreground/50">+{tags.length - 2}</span>
                       )}
                     </div>
                   )}
-                  <span className="text-[13px] text-muted-foreground/30 shrink-0">
+                  <span className="text-[13px] text-muted-foreground/60 shrink-0">
                     {relativeTime(item.updatedAt)}
                   </span>
                 </button>

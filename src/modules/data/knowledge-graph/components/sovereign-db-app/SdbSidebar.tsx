@@ -37,7 +37,7 @@ export function SdbSidebar({ active, onSelect, collapsed, onToggle, showDashboar
     >
       {!collapsed && (
         <div className="px-4 py-3 border-b border-border">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/60">
+          <span className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/70">
             Services
           </span>
         </div>

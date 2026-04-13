@@ -74,9 +74,9 @@ export function SdbStatusBar({ db, startTime, section = "workspace" }: Props) {
           )}
           <span className="ml-auto flex items-center gap-2 text-[11px]">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span className="text-muted-foreground/60">{db.backend}</span>
-            <span className="text-muted-foreground/40">·</span>
-            <span className="text-muted-foreground/60">{providerRegistry.size} providers</span>
+            <span className="text-muted-foreground/70">{db.backend}</span>
+            <span className="text-muted-foreground/50">·</span>
+            <span className="text-muted-foreground/70">{providerRegistry.size} providers</span>
           </span>
         </>
       )}

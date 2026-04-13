@@ -123,7 +123,7 @@ const SovereignDBApp = () => {
         <div className="flex items-center ml-6">
           <span
             key={section}
-            className="text-[13px] italic tracking-wide text-muted-foreground/40 animate-[sdb-tagline-fade_0.5s_ease-out]"
+            className="text-[13px] italic tracking-wide text-muted-foreground/50 animate-[sdb-tagline-fade_0.5s_ease-out]"
           >
             {MYSPACE_SECTION_TAGLINES[section] || "Own your data."}
           </span>
@@ -143,7 +143,7 @@ const SovereignDBApp = () => {
               className={`relative px-3.5 py-1.5 text-[14px] transition-all duration-200 ${
                 section === tab.id
                   ? "text-foreground font-medium"
-                  : "text-muted-foreground/40 hover:text-muted-foreground"
+                  : "text-muted-foreground/50 hover:text-muted-foreground"
               }`}
             >
               {tab.label}
