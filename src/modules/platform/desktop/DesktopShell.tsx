@@ -90,7 +90,7 @@ function DownloadCTA({ theme, onClick }: { theme: string; onClick: () => void })
       }}
     >
       <OsIcon />
-      <span>Download</span>
+      <span>Free Download</span>
     </button>
   );
 }
