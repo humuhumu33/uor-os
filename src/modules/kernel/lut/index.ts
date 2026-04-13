@@ -47,3 +47,24 @@ export {
   optimizeGraph,
   type FusionNode,
 } from "./fusion";
+
+export {
+  quantizeQ8,
+  quantizeQ4,
+  generateQ8Booklets,
+  generateQ4Booklets,
+  lutGemmQ8,
+  lutGemmQ4,
+  serializeQuantizedMatrix,
+  deserializeQuantizedMatrix,
+  quantizedMatrixToBlob,
+  blobToQuantizedMatrix,
+  createGemmComputeNode,
+  buildGemmLayer,
+  executeGemmLayer,
+  type QuantMode,
+  type QuantizedMatrix,
+  type PartialSumBooklet,
+  type GemmBookletSet,
+  type LutGemmLayer,
+} from "./gemm";

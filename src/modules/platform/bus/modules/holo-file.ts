@@ -104,5 +104,45 @@ register({
         required: ["file"],
       },
     },
+    gemm: {
+      handler: async (params: any) => {
+        const { buildGemmLayer, executeGemmLayer } = await import(
+          "@/modules/kernel/lut/gemm"
+        );
+        const { mode = "Q8", weights, rows, cols, activation, actRows } = params;
+        const weightData = new Float32Array(weights);
+        const layer = buildGemmLayer(
+          params.name || "gemm_layer",
+          weightData,
+          rows,
+          cols,
+          mode,
+          params.inputNodeId,
+          params.atlasVertex,
+        );
+        if (activation) {
+          const actBuf = new Uint8Array(activation);
+          const result = executeGemmLayer(layer, actBuf, actRows || 1);
+          return { blob: layer.blob, computeNode: layer.computeNode, output: Array.from(result) };
+        }
+        return { blob: layer.blob, computeNode: layer.computeNode };
+      },
+      description: "Build and optionally execute a LUT-GEMM layer (Q4/Q8 quantized matmul via lookup tables)",
+      paramsSchema: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Layer name" },
+          mode: { type: "string", description: "Q4 or Q8" },
+          weights: { description: "Float32 weight values as number array" },
+          rows: { type: "number", description: "Weight matrix rows (output dim)" },
+          cols: { type: "number", description: "Weight matrix cols (input dim)" },
+          activation: { description: "Optional activation bytes to execute" },
+          actRows: { type: "number", description: "Number of activation rows" },
+          inputNodeId: { type: "string" },
+          atlasVertex: { type: "number" },
+        },
+        required: ["weights", "rows", "cols"],
+      },
+    },
   },
 });
