@@ -72,6 +72,8 @@ const SLASH_COMMANDS: { type: BlockType; label: string; description: string; ico
   { type: "callout", label: "Callout", description: "Highlighted info block", icon: IconInfoCircle, keywords: ["callout", "info", "note", "tip"] },
   { type: "code", label: "Code", description: "Code block", icon: IconCode, keywords: ["code", "snippet", "pre"] },
   { type: "toggle", label: "Toggle", description: "Collapsible section", icon: IconChevronRight, keywords: ["toggle", "collapse", "expand", "accordion"] },
+  { type: "image", label: "Image", description: "Embed an image", icon: IconPhoto, keywords: ["image", "photo", "picture", "img", "embed"] },
+  { type: "file", label: "File", description: "Embed a file", icon: IconPaperclip, keywords: ["file", "attachment", "upload", "document", "pdf"] },
 ];
 
 /** Hover preview for [[wiki-links]] — rendered outside Lexical */
