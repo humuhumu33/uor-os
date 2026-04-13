@@ -251,6 +251,9 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
       {
         ...selected.edge.properties,
         title: noteTitle,
+        icon: noteIcon,
+        coverUrl: noteCover || "",
+        comments: JSON.stringify(noteComments),
         content,
         blocks: JSON.stringify(blocks),
         updatedAt: Date.now(),
