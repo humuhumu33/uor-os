@@ -15,14 +15,15 @@ import {
   IconH1, IconH2, IconH3, IconList, IconCheckbox, IconMinus,
   IconBlockquote, IconInfoCircle, IconTypography,
   IconListNumbers, IconCode, IconChevronRight, IconChevronDown,
-  IconTable,
+  IconTable, IconLink,
 } from "@tabler/icons-react";
 import { SdbBlockLexical } from "./SdbBlockLexical";
 import { SdbTableBlock, createDefaultTable, type TableData } from "./SdbTableBlock";
+import { SdbBookmarkBlock, createBookmarkFromUrl, type BookmarkData } from "./SdbBookmarkBlock";
 import type { LexicalEditor } from "lexical";
 import { $getRoot, $createParagraphNode, $createTextNode } from "lexical";
 
-export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "table";
+export type BlockType = "text" | "h1" | "h2" | "h3" | "bullet" | "todo" | "divider" | "quote" | "callout" | "numbered" | "code" | "toggle" | "table" | "bookmark";
 
 export interface Block {
   id: string;
@@ -34,6 +35,7 @@ export interface Block {
   checked?: boolean;
   collapsed?: boolean;
   tableData?: TableData;
+  bookmarkData?: BookmarkData;
 }
 
 interface Props {
@@ -63,6 +65,7 @@ const SLASH_COMMANDS: { type: BlockType; label: string; description: string; ico
   { type: "code", label: "Code", description: "Code block", icon: IconCode, keywords: ["code", "snippet", "pre"] },
   { type: "toggle", label: "Toggle", description: "Collapsible section", icon: IconChevronRight, keywords: ["toggle", "collapse", "expand", "accordion"] },
   { type: "table", label: "Table", description: "Add a simple table", icon: IconTable, keywords: ["table", "grid", "spreadsheet", "rows", "columns"] },
+  { type: "bookmark", label: "Bookmark", description: "Save a link with preview", icon: IconLink, keywords: ["bookmark", "link", "url", "embed", "web"] },
 ];
 
 /** Hover preview for [[wiki-links]] — rendered outside Lexical */
@@ -144,11 +147,12 @@ export function SdbBlockEditor({ blocks, onChange, onWikiLinkClick, noteNames = 
       checked: type === "todo" ? false : undefined,
       collapsed: type === "toggle" ? false : undefined,
       tableData: type === "table" ? createDefaultTable() : undefined,
+      bookmarkData: type === "bookmark" ? createBookmarkFromUrl("") : undefined,
     };
     onChange(next);
     setSlashMenu(null);
-    // Re-focus this block (skip for table — no Lexical instance)
-    if (type !== "table") {
+    // Re-focus this block (skip for table/bookmark — no Lexical instance)
+    if (type !== "table" && type !== "bookmark") {
       setTimeout(() => {
         const editor = editorsRef.current.get(idx);
         if (editor) {
