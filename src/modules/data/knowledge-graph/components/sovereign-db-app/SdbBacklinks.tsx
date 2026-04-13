@@ -9,7 +9,7 @@
  */
 
 import { useMemo } from "react";
-import { IconArrowBackUp } from "@tabler/icons-react";
+import { IconArrowBackUp, IconLink } from "@tabler/icons-react";
 import type { Hyperedge } from "../../hypergraph";
 
 interface Props {
@@ -17,9 +17,10 @@ interface Props {
   currentNoteTitle: string;
   allEdges: Hyperedge[];
   onNavigate: (noteId: string) => void;
+  onLinkUnlinked?: (noteId: string, noteTitle: string) => void;
 }
 
-export function SdbBacklinks({ currentNoteId, currentNoteTitle, allEdges, onNavigate }: Props) {
+export function SdbBacklinks({ currentNoteId, currentNoteTitle, allEdges, onNavigate, onLinkUnlinked }: Props) {
   const { linked, unlinked } = useMemo(() => {
     const linkEdges = allEdges.filter(e => e.label === "workspace:link" && e.nodes[1] === currentNoteId);
     const noteEdges = allEdges.filter(e => e.label === "workspace:note");
@@ -104,9 +105,20 @@ export function SdbBacklinks({ currentNoteId, currentNoteTitle, allEdges, onNavi
               <button
                 key={ref.noteId}
                 onClick={() => onNavigate(ref.noteId)}
-                className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted/30 border border-border/20 transition-colors"
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted/30 border border-border/20 transition-colors group"
               >
-                <span className="text-[13px] text-foreground/80">{ref.title}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] text-foreground/80">{ref.title}</span>
+                  {onLinkUnlinked && (
+                    <span
+                      onClick={(e) => { e.stopPropagation(); onLinkUnlinked(ref.noteId, ref.title); }}
+                      className="flex items-center gap-1 text-[11px] text-primary/60 hover:text-primary px-1.5 py-0.5 rounded hover:bg-primary/10 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <IconLink size={11} />
+                      Link
+                    </span>
+                  )}
+                </div>
                 {ref.snippet && (
                   <p className="text-[12px] text-muted-foreground/40 mt-0.5 line-clamp-1">
                     {ref.snippet}
