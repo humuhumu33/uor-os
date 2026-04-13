@@ -141,7 +141,7 @@ export default function DownloadPage() {
   return (
     <div className="w-full h-full flex items-center justify-center overflow-hidden">
       <div
-        className="w-full max-w-[920px] flex gap-8 px-8" } }}
+        className="w-full max-w-[920px] flex gap-8 px-8"
       >
         {/* ── LEFT: Download action ── */}
         <div className="flex-1 flex flex-col justify-center min-w-0">
