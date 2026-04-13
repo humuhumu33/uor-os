@@ -192,6 +192,46 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     [items]
   );
 
+  /** Global block index — resolves any block ID to its content + source note */
+  const resolveBlockRef: BlockRefResolver = useCallback((blockId: string): BlockRefInfo | null => {
+    const noteEdges = allEdges.filter(e => e.label === "workspace:note" || e.label === "workspace:daily");
+    for (const edge of noteEdges) {
+      const stored = edge.properties.blocks;
+      if (!stored) continue;
+      try {
+        const noteBlocks: Block[] = JSON.parse(String(stored));
+        const found = noteBlocks.find(b => b.id === blockId);
+        if (found) {
+          return {
+            blockId,
+            text: found.text,
+            noteId: edge.nodes[1] || edge.id,
+            noteTitle: String(edge.properties.title || "Untitled"),
+          };
+        }
+      } catch { /* skip */ }
+    }
+    return null;
+  }, [allEdges]);
+
+  /** Open a note in the sidebar panel (Shift-click) */
+  const openInSidebar = useCallback((noteId: string) => {
+    if (sidebarPages.some(p => p.id === noteId)) return; // Already open
+    const item = items.find(i => i.id === noteId);
+    if (!item) return;
+    let pageBlocks: Block[] = [];
+    try {
+      const stored = item.edge.properties.blocks;
+      if (stored) pageBlocks = JSON.parse(String(stored));
+    } catch { /* */ }
+    setSidebarPages(prev => [...prev, {
+      id: noteId,
+      title: String(item.edge.properties.title || item.name),
+      blocks: pageBlocks,
+      icon: String(item.edge.properties.icon || item.icon || ""),
+    }]);
+  }, [items, sidebarPages]);
+
   const getPreview = useCallback((title: string): string | null => {
     const item = items.find(
       i => (i.type === "note" || i.type === "daily") && i.name.toLowerCase() === title.toLowerCase()
