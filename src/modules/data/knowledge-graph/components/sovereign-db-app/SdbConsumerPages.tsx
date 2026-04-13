@@ -271,6 +271,16 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     saveTimer.current = setTimeout(() => {}, 1500);
   }, []);
 
+  const addComment = useCallback((text: string) => {
+    const comment: NoteComment = {
+      id: crypto.randomUUID().slice(0, 8),
+      text,
+      createdAt: Date.now(),
+      author: "You",
+    };
+    setNoteComments(prev => [...prev, comment]);
+  }, []);
+
   const createFolder = useCallback(async () => {
     const folderId = `ws:${generateId()}`;
     await db.addEdge(["ws:root", folderId], "workspace:folder", { name: "New Folder", createdAt: Date.now() });
