@@ -134,8 +134,11 @@ export default function ConnectivityPopover({ open, onClose, isLight }: Props) {
 
           {/* Footer: KG stats + last sync */}
           <div className={`px-4 py-2.5 border-t ${border}`}>
+            <p className={`text-[10px] ${textSecondary}`}>
+              Provider: <span className={`font-medium ${textPrimary}`}>{getProviderLabel(conn.activeProviderId)}</span>
+            </p>
             {kgStats && (
-              <p className={`text-[10px] ${textSecondary}`}>
+              <p className={`text-[10px] ${textSecondary} mt-0.5`}>
                 Knowledge Graph: {kgStats.nodes.toLocaleString()} nodes · {kgStats.edges.toLocaleString()} edges
               </p>
             )}
