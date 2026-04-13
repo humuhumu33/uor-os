@@ -299,7 +299,8 @@ export function SdbGraph3D({
   const nodeThreeObject = useCallback((node: any) => {
     const isAtlas = node.id?.startsWith("atlas:");
     const deg = degreeMap.get(node.id) || 1;
-    const baseSize = isAtlas ? 1.8 : Math.max(2, Math.min(6, 2 + deg * 0.5));
+    const rawSize = isAtlas ? 1.8 : Math.max(2, Math.min(6, 2 + deg * 0.5));
+    const baseSize = rawSize * nodeScale;
     const isHovered = hovered === node.id;
     const isSearchHighlighted = highlightedNodeIds && highlightedNodeIds.size > 0 && highlightedNodeIds.has(node.id);
     const isSearchDimmed = highlightedNodeIds && highlightedNodeIds.size > 0 && !highlightedNodeIds.has(node.id);
