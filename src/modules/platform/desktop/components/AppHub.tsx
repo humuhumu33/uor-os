@@ -25,7 +25,7 @@ import type { ComponentType } from "react";
 
 type TabId = "my-apps" | "store" | "developer";
 
-const FEATURED_IDS = ["oracle", "messenger", "sovereign-db", "compliance"];
+const FEATURED_IDS = ["oracle", "messenger", "myspace", "compliance"];
 const RECENT_KEY = "uor:recent-apps";
 const MAX_RECENT = 8;
 

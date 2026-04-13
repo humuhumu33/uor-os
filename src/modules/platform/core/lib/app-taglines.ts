@@ -3,7 +3,7 @@
  */
 
 export const APP_TAGLINES: Record<string, string> = {
-  "sovereign-db":    "Own your data.",
+  "myspace":           "Own your space.",
   "oracle":          "Own your intelligence.",
   "vault":           "Own your identity.",
   "messenger":       "Own your conversations.",

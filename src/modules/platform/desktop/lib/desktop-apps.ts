@@ -98,6 +98,7 @@ function deriveDesktopApp(bp: AppBlueprint): DesktopApp {
 
   const LABEL_OVERRIDES: Record<string, string> = {
     "app-hub": "Apps",
+    "myspace": "MySpace",
   };
 
   return {
