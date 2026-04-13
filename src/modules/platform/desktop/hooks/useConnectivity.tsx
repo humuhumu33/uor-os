@@ -3,9 +3,10 @@
  * Tracks online/offline status and computes per-feature availability.
  */
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { syncBridge, type SyncState } from "@/modules/data/knowledge-graph";
 import { useSyncMode, type SyncMode } from "@/modules/data/knowledge-graph/persistence/hooks/useSyncMode";
+import { toast } from "sonner";
 
 export type FeatureId = "oracle" | "kgSync" | "dataBank" | "webBridge" | "voice" | "auth";
 
