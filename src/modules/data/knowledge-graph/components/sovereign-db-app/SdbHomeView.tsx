@@ -410,7 +410,7 @@ export function SdbHomeView({
                       </div>
                     )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
