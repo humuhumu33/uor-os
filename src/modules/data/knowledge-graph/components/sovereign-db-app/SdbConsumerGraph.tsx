@@ -249,6 +249,7 @@ export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "" }: P
           height={dims.h}
           gpuAvailable={gpuAvailable}
           highlightSignClass={highlightSc}
+          highlightedNodeIds={highlightedNodeIds}
         />
       ) : (
         /* ── 2D fallback ── */
