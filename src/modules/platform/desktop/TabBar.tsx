@@ -596,7 +596,7 @@ export default function TabBar({
           <Plus className="w-[17px] h-[17px]" />
         </button>
 
-        {/* Snap picker */}
+        {/* Snap layout picker */}
         <div style={{ marginTop: "auto", marginBottom: "auto" }} className="shrink-0 ml-0.5">
           <SnapLayoutPicker windows={visibleWindows} onSnapMultiple={onSnapMultiple} />
         </div>

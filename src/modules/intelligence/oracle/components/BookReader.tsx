@@ -2,6 +2,7 @@
  * BookReader — Immersive reading view for a single book.
  */
 
+import { motion } from "framer-motion";
 import { ArrowLeft, ExternalLink, BookOpen, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -21,7 +22,11 @@ export default function BookReader({ book, markdownContent, relatedBooks, onBack
   const content = markdownContent || book.summary;
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.4 }}
       className="min-h-[80vh]"
     >
       {/* Back button */}
@@ -138,6 +143,6 @@ export default function BookReader({ book, markdownContent, relatedBooks, onBack
           )}
         </aside>
       </div>
-    </div>
+    </motion.div>
   );
 }

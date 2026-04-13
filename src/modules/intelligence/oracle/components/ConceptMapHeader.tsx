@@ -9,6 +9,7 @@
 
 import { useMemo } from "react";
 import { adjacencyIndex } from "@/modules/data/knowledge-graph/lib/adjacency-index";
+import { motion } from "framer-motion";
 
 interface Props {
   topic: string;
@@ -72,7 +73,10 @@ export default function ConceptMapHeader({ topic, onNavigate }: Props) {
   const truncatedTopic = topic.length > 28 ? topic.slice(0, 26) + "…" : topic;
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
       className="mb-5"
     >
       {/* SVG Map */}
@@ -206,7 +210,7 @@ export default function ConceptMapHeader({ topic, onNavigate }: Props) {
         <span className="text-[#3f3f46] text-[8px]">·</span>
         <StatBadge label="Density" value={`${(density * 100).toFixed(0)}%`} />
       </div>
-    </div>
+    </motion.div>
   );
 }
 

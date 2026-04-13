@@ -5,6 +5,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff } from "lucide-react";
 import { getHologramStt } from "@/modules/identity/uns/core/hologram/stt-engine";
 import { usePlatform } from "@/modules/platform/desktop/hooks/usePlatform";
@@ -82,10 +83,16 @@ export default function VoiceInput({ onTranscript, onSpeechEnd, className = "", 
       />
 
       {/* Pulsing ring when listening */}
-              {listening && (
-          <span
-      />
+      <AnimatePresence>
+        {listening && (
+          <motion.span
+            className="absolute inset-0 rounded-full border-2 border-red-400/40"
+            initial={{ scale: 1, opacity: 0.6 }}
+            animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          />
         )}
+      </AnimatePresence>
       {listening ? <MicOff size={iconSize} /> : <Mic size={iconSize} />}
     </button>
   );

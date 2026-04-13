@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
 interface ExistingSemanticsBadgeProps {
@@ -85,12 +86,17 @@ const ExistingSemanticsBadge: React.FC<ExistingSemanticsBadgeProps> = ({ existin
         ))}
       </div>
 
-              {expandedFormat && (() => {
+      <AnimatePresence>
+        {expandedFormat && (() => {
           const fmt = formats.find(f => f.key === expandedFormat);
           if (!fmt?.data) return null;
           return (
-            <div
+            <motion.div
               key={expandedFormat}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
               style={{ overflow: "hidden" }}
             >
               <div
@@ -131,9 +137,10 @@ const ExistingSemanticsBadge: React.FC<ExistingSemanticsBadgeProps> = ({ existin
                   {JSON.stringify(fmt.data, null, 2)}
                 </pre>
               </div>
-            </div>
+            </motion.div>
           );
         })()}
+      </AnimatePresence>
     </div>
   );
 };

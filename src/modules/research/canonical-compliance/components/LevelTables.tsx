@@ -3,6 +3,7 @@
  * L3: SystemTable, L2: ModuleTable, L1: PipelineTable, L0: PrimitiveGrid
  */
 
+import { motion } from "framer-motion";
 import { type AuditReport, type AuditFinding } from "../audit";
 import { ALL_ATOMS, ATOM_INDEX, type AtomCategory, type UorAtom } from "../atoms";
 import { PROVENANCE_REGISTRY, SYSTEM_LAYERS, type SystemLayer } from "../provenance-map";
@@ -64,8 +65,11 @@ export function SystemTable({ report, onLayerClick }: SystemTableProps) {
         <span className="text-center">Operations</span>
       </div>
       {layerStats.map((s, i) => (
-        <div
+        <motion.div
           key={s.layer.id}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.05 }}
           onClick={() => onLayerClick(s.layer)}
           className="grid grid-cols-[2fr_80px_80px_120px_80px] gap-2 px-4 py-3 border-b border-white/[0.03] hover:bg-white/[0.025] cursor-pointer transition-colors"
         >
@@ -77,7 +81,7 @@ export function SystemTable({ report, onLayerClick }: SystemTableProps) {
           <div className="text-center text-xs font-mono text-zinc-300 self-center">{s.pipelines}</div>
           <div className="self-center"><ScoreBar grounded={s.grounded} total={s.total} /></div>
           <div className="text-center text-xs font-mono text-zinc-400 self-center">{s.atoms}</div>
-        </div>
+        </motion.div>
       ))}
     </div>
   );
@@ -110,8 +114,11 @@ export function ModuleTable({ report, filterModules, onModuleClick }: ModuleTabl
         <span className="text-center">Operations</span>
       </div>
       {modules.map((m, i) => (
-        <div
+        <motion.div
           key={m.module}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.03 }}
           onClick={() => onModuleClick(m.module)}
           className="grid grid-cols-[2fr_80px_120px_80px] gap-2 px-4 py-2.5 border-b border-white/[0.03] hover:bg-white/[0.025] cursor-pointer transition-colors"
         >
@@ -122,7 +129,7 @@ export function ModuleTable({ report, filterModules, onModuleClick }: ModuleTabl
           <div className="text-center text-xs font-mono text-zinc-300 self-center">{m.pipelines}</div>
           <div className="self-center"><ScoreBar grounded={m.grounded} total={m.total} /></div>
           <div className="text-center text-xs font-mono text-zinc-400 self-center">{m.atoms}</div>
-        </div>
+        </motion.div>
       ))}
     </div>
   );
@@ -152,8 +159,11 @@ export function PipelineTable({ report, filterModule, onPipelineClick }: Pipelin
       </div>
       <div className="max-h-[500px] overflow-y-auto">
         {findings.map((f, i) => (
-          <div
+          <motion.div
             key={`${f.module}-${f.export}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: i * 0.008 }}
             onClick={() => onPipelineClick(f)}
             className={`grid ${filterModule ? "grid-cols-[1fr_80px_2fr_1fr]" : "grid-cols-[1fr_1fr_80px_2fr]"} gap-2 px-4 py-2 border-b border-white/[0.03] hover:bg-white/[0.025] cursor-pointer transition-colors`}
           >
@@ -178,7 +188,7 @@ export function PipelineTable({ report, filterModule, onPipelineClick }: Pipelin
               })}
             </div>
             {filterModule && <span />}
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>

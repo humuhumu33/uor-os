@@ -194,7 +194,7 @@ export default function AtlasGraph({ width = 900, height = 700 }: AtlasGraphProp
         setSimLinks([...linksCopy]);
       });
 
-    // Run 300 ticks immediately for initial
+    // Run 300 ticks immediately for initial layout
     sim.tick(300);
     setSimNodes([...nodesCopy]);
     setSimLinks([...linksCopy]);

@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import { motion } from "framer-motion";
 
 /* ── Domain metadata ─────────────────────────────────────────────────── */
 
@@ -76,7 +77,10 @@ const UorAnchoringCard: React.FC<UorAnchoringCardProps> = ({
   const subcategory = domainSubcategory || detectSubcategory(keyword, domain);
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1, duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
       className="mb-5 flex items-center gap-2 px-1"
     >
       <span style={{ fontSize: 15, lineHeight: 1 }}>{meta.emoji}</span>
@@ -89,7 +93,7 @@ const UorAnchoringCard: React.FC<UorAnchoringCardProps> = ({
           <span className="text-foreground/50 text-[12px]">{subcategory}</span>
         </>
       )}
-    </div>
+    </motion.div>
   );
 };
 

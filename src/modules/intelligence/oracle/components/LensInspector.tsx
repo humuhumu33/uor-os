@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Sparkles, Save, RotateCcw, Eye, Globe } from "lucide-react";
 import {
   type LensBlueprint,
@@ -244,11 +245,15 @@ const LensInspector: React.FC<LensInspectorProps> = ({
     setBp(cloneBlueprint(initialBlueprint));
   };
 
-  if (!open) return null;
-
   return (
-        <div
-      className="w-full max-w-sm bg-card/95 backdrop-blur-xl border border-border/20 rounded-2xl shadow-xl overflow-hidden"
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0, x: 20, scale: 0.98 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: 20, scale: 0.98 }}
+          transition={{ type: "spring", damping: 30, stiffness: 400 }}
+          className="w-full max-w-sm bg-card/95 backdrop-blur-xl border border-border/20 rounded-2xl shadow-xl overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/10">
@@ -499,8 +504,9 @@ const LensInspector: React.FC<LensInspectorProps> = ({
               </button>
             )}
           </div>
-        </div>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

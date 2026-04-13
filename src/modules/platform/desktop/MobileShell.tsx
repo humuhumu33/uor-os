@@ -9,6 +9,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef, Suspense } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/modules/platform/core/ui/drawer";
 import { DESKTOP_APPS, getApp } from "@/modules/platform/desktop/lib/desktop-apps";
 import { useDesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
@@ -180,13 +181,23 @@ export default function MobileShell() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* ── Animated background layer ── */}<div
+      {/* ── Animated background layer ── */}
+      <AnimatePresence mode="wait" custom={swipeDirection}>
+        <motion.div
           key={theme}
           className="absolute inset-0"
+          custom={swipeDirection}
+          variants={swipeVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
           transition={swipeTransition}
         >
           {theme === "immersive" && <DesktopImmersiveWallpaper />}
-        </div>{/* ── Fullscreen toggle — top-right ── */}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* ── Fullscreen toggle — top-right ── */}
       <div
         className="absolute top-0 right-0 z-30"
         style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0.75rem))", paddingRight: "0.75rem" }}
@@ -194,16 +205,26 @@ export default function MobileShell() {
         <FullscreenButton isLight={isLight} />
       </div>
 
-      {/* ── DayRingClock — animated with theme transition ── */}<div
+      {/* ── DayRingClock — animated with theme transition ── */}
+      <AnimatePresence mode="wait" custom={swipeDirection}>
+        <motion.div
           key={theme}
           className="absolute inset-x-0 top-0 bottom-0 flex flex-col items-center z-10 pointer-events-none gpu-promote"
+          custom={swipeDirection}
+          variants={swipeVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
           transition={swipeTransition}
         >
           <div className="flex-[0_0_18%]" />
           <div className="pointer-events-auto">
             <MobileClock theme={theme} isLight={isLight} />
           </div>
-        </div>{/* ── Bottom Controls — safe-area aware ── */}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* ── Bottom Controls — safe-area aware ── */}
       <div className="absolute inset-x-0 bottom-0 z-20 gpu-promote" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0.75rem))" }}>
         <div className="flex items-end justify-between px-6 pb-2">
           {/* Menu icon */}

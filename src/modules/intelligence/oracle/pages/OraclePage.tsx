@@ -18,6 +18,7 @@ import { encode, type EnrichedReceipt } from "@/lib/uor-codec";
 import { enrichWithWasm } from "@/modules/intelligence/oracle/lib/receipt-registry";
 import { canonicalToTriword, formatTriword } from "@/lib/uor-triword";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import SelectionToolbar, { type SelectionAction } from "@/modules/intelligence/oracle/components/SelectionToolbar";
 import { useIsInsideWindow } from "@/modules/platform/desktop/WindowContext";
 
@@ -543,19 +544,28 @@ const OraclePage = () => {
                         {(() => {
                           const chunks = msg.content.split(/\n\n+/).filter(Boolean);
                           return chunks.map((chunk, ci) => (
-                            <div
+                            <motion.div
                               key={`${i}-${ci}-${chunk.slice(0, 20)}`}
+                              initial={{ opacity: 0, y: 6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{
+                                duration: 0.28,
+                                delay: i < messages.length - 1 ? 0 : ci * 0.15,
+                                ease: [0.25, 0.1, 0.25, 1],
+                              }}
                               className="oracle-bubble"
                             >
                               <div className="oracle-prose">
                                 <ReactMarkdown>{chunk}</ReactMarkdown>
                               </div>
-                            </div>
+                            </motion.div>
                           ));
                         })()}
                         </div>
 
-                        {/* X-Ray: revealed in the same position */}{xrayOpen.has(i) && trustMap[i] && (() => {
+                        {/* X-Ray: revealed in the same position */}
+                        <AnimatePresence>
+                          {xrayOpen.has(i) && trustMap[i] && (() => {
                             const t = trustMap[i];
                             const compositeRing = t.termMap.reduce((acc, tm) => acc ^ tm.ringValue, 0) & 0xFF;
                             const _e = getEngine();
@@ -593,12 +603,19 @@ const OraclePage = () => {
                             };
 
                             return (
-                              <div
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0, filter: "blur(4px)" }}
+                                transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
                                 className="oracle-xray-panel relative z-10 space-y-5"
                               >
                                 {/* ── 1. What You Didn't Ask ── */}
                                 {blindSpots.length > 0 && (
-                                  <div
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.06, duration: 0.35 }}
                                     className="oracle-bubble"
                                   >
                                     <div className="flex items-center justify-between mb-3">
@@ -610,8 +627,11 @@ const OraclePage = () => {
                                     </p>
                                     <div className="space-y-3">
                                       {blindSpots.map((spot, si) => (
-                                        <div
+                                        <motion.div
                                           key={si}
+                                          initial={{ opacity: 0, x: -8 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          transition={{ delay: 0.15 + si * 0.1, duration: 0.3 }}
                                           className="flex items-start gap-3 group/spot"
                                         >
                                           <div className="w-1.5 h-1.5 rounded-full bg-primary/40 mt-2.5 shrink-0" />
@@ -619,14 +639,17 @@ const OraclePage = () => {
                                             <span className="text-base font-medium text-foreground/90">{spot.concept}</span>
                                             <span className="text-base text-foreground/50 ml-1.5">— {spot.why}</span>
                                           </div>
-                                        </div>
+                                        </motion.div>
                                       ))}
                                     </div>
-                                  </div>
+                                  </motion.div>
                                 )}
 
                                 {/* ── 2. Trust Map ── */}
-                                <div
+                                <motion.div
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.18, duration: 0.35 }}
                                   className="oracle-bubble"
                                 >
                                   <div className="flex items-center justify-between mb-4">
@@ -647,8 +670,11 @@ const OraclePage = () => {
                                       const gc = GRADE_COLORS[claim.grade];
                                       const searchUrl = `https://scholar.google.com/scholar?q=${encodeURIComponent(claim.text.slice(0, 120))}`;
                                       return (
-                                        <div
+                                        <motion.div
                                           key={ci}
+                                          initial={{ opacity: 0 }}
+                                          animate={{ opacity: 1 }}
+                                          transition={{ delay: 0.25 + ci * 0.04, duration: 0.25 }}
                                           className={`oracle-trust-sentence oracle-trust-${claim.grade} rounded-r-lg pl-3.5 pr-3 py-2 cursor-pointer group/sent`}
                                           onClick={() => window.open(searchUrl, "_blank")}
                                           title="Click to verify externally"
@@ -667,14 +693,17 @@ const OraclePage = () => {
                                               <ReceiptBadge receiptKey={`claim-${ci}`} />
                                             </div>
                                           )}
-                                        </div>
+                                        </motion.div>
                                       );
                                     })}
                                   </div>
-                                </div>
+                                </motion.div>
 
                                 {/* ── 3. Proof Chain ── */}
-                                <div
+                                <motion.div
+                                  initial={{ opacity: 0, y: 8 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.35, duration: 0.3 }}
                                   className="oracle-bubble"
                                 >
                                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground/60">
@@ -714,34 +743,44 @@ const OraclePage = () => {
                                     <ReceiptBadge receiptKey="proof" />
                                     <ReceiptBadge receiptKey="signature" />
                                   </div>
-                                </div>
-                              </div>
+                                </motion.div>
+                              </motion.div>
                             );
-                          })()}</div>
+                          })()}
+                        </AnimatePresence>
+                      </div>
 
                       {/* ── Trust bar + controls ── */}
                       {trustMap[i] && (
-                        <div
+                        <motion.div
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4 }}
                           className="mt-4 pt-3 border-t border-border/15"
                         >
                           {/* Grade bar */}
                           <div className="flex items-center gap-3 mb-2">
                             <div className="flex gap-[1px] flex-1 h-1.5 rounded-full overflow-hidden">
                               {trustMap[i].claims.map((claim, ci) => (
-                                <div
+                                <motion.div
                                   key={ci}
+                                  initial={{ scaleX: 0 }}
+                                  animate={{ scaleX: 1 }}
+                                  transition={{ delay: ci * 0.02, duration: 0.25 }}
                                   className={`h-full ${GRADE_COLORS[claim.grade].fill} origin-left cursor-pointer hover:opacity-100 transition-opacity`}
                                   style={{ width: `${100 / trustMap[i].claims.length}%`, opacity: 0.6 }}
                                   onClick={() => { setExpandedTrust(prev => toggle(prev, i)); setActivePillar(prev => ({ ...prev, [i]: "trust" })); }}
                                 />
                               ))}
                             </div>
-                            <span
+                            <motion.span
                               key={trustMap[i].grade}
+                              initial={{ scale: 0.7 }}
+                              animate={{ scale: 1 }}
                               className={`text-xs font-mono font-bold ${GRADE_COLORS[trustMap[i].grade].text}`}
                             >
                               {trustMap[i].grade}
-                            </span>
+                            </motion.span>
                           </div>
 
                           {/* ── Simplified Summary Line ── */}
@@ -765,7 +804,9 @@ const OraclePage = () => {
                                   </span>
                                 </button>
 
-                                {/* ── Three-Pillar Trust Card ── */}{isOpen && (() => {
+                                {/* ── Three-Pillar Trust Card ── */}
+                                <AnimatePresence>
+                                  {isOpen && (() => {
                                     const confidence = t.grade <= "B" ? "High" : t.grade === "C" ? "Moderate" : "Low";
                                     const confidenceDot = t.grade <= "B" ? "bg-emerald-400" : t.grade === "C" ? "bg-amber-400" : "bg-red-400";
                                     const consistencyLabel = t.converged ? "Confirmed" : "Some uncertainty";
@@ -779,7 +820,7 @@ const OraclePage = () => {
                                     ];
 
                                     return (
-                                      <div className="overflow-hidden">
+                                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
                                         <div className="mt-3 rounded-xl border border-border/20 bg-background/30 p-3">
                                           <div className="space-y-0">
                                             {pillars.map((p) => {
@@ -794,8 +835,11 @@ const OraclePage = () => {
                                                     <span className="text-sm font-medium text-foreground/70 flex-1 text-left">{p.label}</span>
                                                     <span className="text-sm text-muted-foreground/60 mr-1">{p.value}</span>
                                                     {isActive ? <ChevronDown className="w-3 h-3 text-muted-foreground/40" /> : <ChevronRight className="w-3 h-3 text-muted-foreground/30 group-hover/pillar:text-muted-foreground/50" />}
-                                                  </button>{isActive && (
-                                                      <div className="overflow-hidden">
+                                                  </button>
+
+                                                  <AnimatePresence>
+                                                    {isActive && (
+                                                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
                                                         <div className="pl-6 pr-1 pb-2">
                                                           {/* Trust pillar → statement breakdown */}
                                                           {p.id === "trust" && (
@@ -864,8 +908,10 @@ const OraclePage = () => {
                                                             </div>
                                                           )}
                                                         </div>
-                                                      </div>
-                                                    )}</div>
+                                                      </motion.div>
+                                                    )}
+                                                  </AnimatePresence>
+                                                </div>
                                               );
                                             })}
                                           </div>
@@ -874,12 +920,14 @@ const OraclePage = () => {
                                             Checked independently · {t.claims.length} verifications
                                           </div>
                                         </div>
-                                      </div>
+                                      </motion.div>
                                     );
-                                  })()}</>
+                                  })()}
+                                </AnimatePresence>
+                              </>
                             );
                           })()}
-                        </div>
+                        </motion.div>
                       )}
                     </div>
                   )}
@@ -891,18 +939,26 @@ const OraclePage = () => {
 
             {/* ── Breathing dot / typing indicator ── */}
             {messages.length > 0 && (
-              <div className="flex justify-start px-4 md:px-6 max-w-3xl mx-auto w-full">{showTypingDots ? (
-                    <div
+              <div className="flex justify-start px-4 md:px-6 max-w-3xl mx-auto w-full">
+                <AnimatePresence mode="wait">
+                  {showTypingDots ? (
+                    <motion.div
                       key="typing"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
                       className="flex gap-[5px] items-center px-3 py-2"
                     >
                       <span className="typing-dot w-[6px] h-[6px] rounded-full bg-muted-foreground/40" style={{ animationDelay: "0ms" }} />
                       <span className="typing-dot w-[6px] h-[6px] rounded-full bg-muted-foreground/40" style={{ animationDelay: "160ms" }} />
                       <span className="typing-dot w-[6px] h-[6px] rounded-full bg-muted-foreground/40" style={{ animationDelay: "320ms" }} />
-                    </div>
+                    </motion.div>
                   ) : (verifying || refiningIteration !== null) ? (
-                    <div
+                    <motion.div
                       key="verifying"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
                       className="flex items-center gap-2 text-xs text-muted-foreground/50 py-2"
                     >
                       {refiningIteration !== null ? (
@@ -910,15 +966,20 @@ const OraclePage = () => {
                       ) : (
                         <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>Verifying…</span></>
                       )}
-                    </div>
+                    </motion.div>
                   ) : !isStreaming ? (
-                    <div
+                    <motion.div
                       key="breathing"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
                       className="py-3 px-3"
                     >
                       <div className="oracle-breathing-dot" />
-                    </div>
-                  ) : null}</div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
             )}
 
             {/* ── Inline flow input ── */}
@@ -988,11 +1049,13 @@ const OraclePage = () => {
                   </button>
                 </div>
                 {queuedMessage && (
-                  <p
+                  <motion.p
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
                     className="text-xs text-primary/60 mt-1.5 ml-1"
                   >
                     ↳ "{queuedMessage}" will send when current response finishes
-                  </p>
+                  </motion.p>
                 )}
               </div>
             )}
@@ -1002,15 +1065,24 @@ const OraclePage = () => {
       </div>
       </div>
 
-      {/* ── Settings overlay ── */}{settingsOpen && (
+      {/* ── Settings overlay ── */}
+      <AnimatePresence>
+        {settingsOpen && (
           <>
             {/* Backdrop */}
-            <div
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className="fixed inset-0 z-[60] bg-black/40"
               onClick={() => setSettingsOpen(false)}
             />
             {/* Panel */}
-            <div
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
               className="fixed top-0 right-0 bottom-0 z-[70] w-80 max-w-[85vw] bg-background border-l border-border/20 overflow-y-auto"
             >
               <div className="p-5">
@@ -1102,9 +1174,11 @@ const OraclePage = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </>
-        )}</div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 

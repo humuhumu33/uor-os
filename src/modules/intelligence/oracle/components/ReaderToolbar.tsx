@@ -22,6 +22,7 @@ import {
   Settings2,
 } from "lucide-react";
 import QrPortalPanel from "@/modules/intelligence/oracle/components/QrPortalPanel";
+
 import LensManager from "./LensManager";
 import { KNOWLEDGE_LENSES, getBlueprint, loadCustomLenses, type LensBlueprint } from "@/modules/intelligence/oracle/lib/knowledge-lenses";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -188,7 +189,7 @@ const ReaderToolbar: React.FC<ReaderToolbarProps> = ({
   const HistoryDropdown = () => historyOpen ? (
         <div
           ref={historyRef}
-          className="absolute right-0 top-full mt-1.5 z-50 rounded-xl overflow-hidden"
+          className="absolute right-0 top-full mt-1.5 z-50 rounded-xl overflow-hidden animate-fade-in"
           style={{
             width: "min(320px, 90vw)",
             background: immersive ? "rgba(10,14,18,0.92)" : "hsl(var(--background) / 0.95)",
@@ -238,15 +239,13 @@ const ReaderToolbar: React.FC<ReaderToolbarProps> = ({
             )}
           </div>
         </div>
-      </div>
-    </div>
   ) : null;
 
   // ── Compact mobile toolbar ──
   if (isMobile) {
     return (
       <div
-      className={`sticky top-0 z-40 flex items-center gap-1 px-2 backdrop-blur-2xl relative ${synthesizing ? "" : "border-b"}`}
+        className={`sticky top-0 z-40 flex items-center gap-1 px-2 backdrop-blur-2xl relative ${synthesizing ? "" : "border-b"}`}
         style={{
           background: immersive ? "rgba(255,255,255,0.06)" : "hsl(var(--background) / 0.82)",
           borderColor: immersive ? "rgba(255,255,255,0.04)" : "hsl(var(--border) / 0.05)",

@@ -9,6 +9,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import type { MediaData } from "@/modules/intelligence/oracle/lib/stream-knowledge";
 import AdaptiveContentContainer from "./AdaptiveContentContainer";
@@ -88,8 +89,11 @@ const ContextualArticleView: React.FC<ContextualArticleViewProps> = ({
 
       {/* ── Context Banner (hidden in reader mode) ── */}
       {!isReaderMode && relevantContext.length > 0 && !synthesizing && contentMarkdown.trim().length > 100 && (
-        <div
-      className="mb-5 px-4 py-3 rounded-lg border border-primary/10 bg-primary/[0.04]"
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+          className="mb-5 px-4 py-3 rounded-lg border border-primary/10 bg-primary/[0.04]"
           style={{ fontSize: 13 }}
         >
           <div className="flex items-center gap-2 mb-1.5">
@@ -112,7 +116,7 @@ const ContextualArticleView: React.FC<ContextualArticleViewProps> = ({
               </React.Fragment>
             ))}
           </p>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Article — routed through active lens renderer ── */}

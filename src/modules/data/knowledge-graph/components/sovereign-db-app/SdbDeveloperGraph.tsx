@@ -3,7 +3,7 @@
  * ═══════════════════════════════════════════════════════
  *
  * Interactive raw hypergraph with zoom/pan, type filtering,
- * context menus, modes, and property inspection.
+ * context menus, layout modes, and property inspection.
  *
  * @product SovereignDB
  */

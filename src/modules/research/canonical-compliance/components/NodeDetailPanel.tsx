@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, ChevronRight } from "lucide-react";
 import { ATOM_INDEX, type UorAtom, type AtomCategory, FIRMWARE_VERSION } from "../atoms";
 import { PROVENANCE_REGISTRY } from "../provenance-map";
@@ -42,8 +43,13 @@ export default function NodeDetailPanel({ node, findings, onClose, onNavigate }:
   if (!node) return null;
 
   return (
-          <div
+    <AnimatePresence>
+      <motion.div
         key="detail-panel"
+        initial={{ x: 300, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: 300, opacity: 0 }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
         className="w-[320px] min-w-[320px] h-full border-l border-white/[0.06] bg-[hsl(220_15%_5%)] overflow-y-auto"
       >
         {/* Header */}
@@ -64,7 +70,8 @@ export default function NodeDetailPanel({ node, findings, onClose, onNavigate }:
         {node.type === "atom" && <AtomDetail atom={node.atom} findings={findings} onNavigate={onNavigate} />}
         {node.type === "module" && <ModuleDetail module={node.module} description={node.description} findings={findings} onNavigate={onNavigate} />}
         {node.type === "export" && <ExportDetail module={node.module} exportName={node.exportName} finding={node.finding} onNavigate={onNavigate} />}
-      </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 

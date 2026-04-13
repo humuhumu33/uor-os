@@ -17,6 +17,7 @@ import {
   Clock, Save, RotateCcw, GitBranch, Trash2, Settings, ChevronRight,
   CheckCircle2, AlertCircle, Timer, Database, Layout, Diff,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ── Stub hooks for standalone rendering ─────────────────────────────────
 
@@ -239,7 +240,9 @@ export default function TimeMachinePage() {
       </div>
 
       {/* ── Right Panel: Detail / Settings / Compare ─────────────────── */}
-      <div className="flex-1 overflow-y-auto">{showSettings ? (
+      <div className="flex-1 overflow-y-auto">
+        <AnimatePresence mode="wait">
+          {showSettings ? (
             <SettingsPanel
               key="settings"
               config={tm.config}
@@ -264,10 +267,15 @@ export default function TimeMachinePage() {
             />
           ) : (
             <EmptyDetail key="empty" />
-          )}{/* Fork Dialog */}
+          )}
+        </AnimatePresence>
+
+        {/* Fork Dialog */}
         {showForkDialog && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               className="bg-card border border-border rounded-xl p-6 w-96 shadow-xl"
             >
               <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
@@ -297,7 +305,7 @@ export default function TimeMachinePage() {
                   Fork & Restore
                 </button>
               </div>
-            </div>
+            </motion.div>
           </div>
         )}
       </div>
@@ -393,7 +401,10 @@ function DetailPanel({
   const ts = new Date(cp.timestamp);
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
       className="p-6 space-y-6"
     >
       <div>
@@ -456,7 +467,7 @@ function DetailPanel({
           ID: <code className="font-mono text-[10px] bg-muted px-1.5 py-0.5 rounded">{cp.id}</code>
         </p>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -482,7 +493,10 @@ function SettingsPanel({
   onClose: () => void;
 }) {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
       className="p-6 space-y-6"
     >
       <div className="flex items-center justify-between">
@@ -550,7 +564,7 @@ function SettingsPanel({
           />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -558,7 +572,10 @@ function ComparePanel({ diff, onClose }: { diff: CheckpointDiff; onClose: () => 
   const mins = Math.round(diff.timeDelta / 60000);
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
       className="p-6 space-y-6"
     >
       <div className="flex items-center justify-between">
@@ -589,7 +606,7 @@ function ComparePanel({ diff, onClose }: { diff: CheckpointDiff; onClose: () => 
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -608,12 +625,14 @@ function DiffRow({ label, value, positive }: { label: string; value: string; pos
 
 function EmptyDetail() {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3"
     >
       <Clock className="w-12 h-12 opacity-20" />
       <p className="text-sm">Select a checkpoint to view details</p>
       <p className="text-xs opacity-60">Or create a new one to start tracking</p>
-    </div>
+    </motion.div>
   );
 }

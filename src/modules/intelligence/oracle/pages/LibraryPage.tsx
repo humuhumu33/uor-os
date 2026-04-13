@@ -3,6 +3,7 @@
  */
 
 import { useState, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Zap, Loader2, BookOpen, ArrowLeft, Library } from "lucide-react";
 
 import BookGrid from "@/modules/intelligence/oracle/components/BookGrid";
@@ -126,7 +127,9 @@ export default function LibraryPage() {
       <div className="min-h-screen" style={{ background: "hsl(220 15% 6%)" }}>
         {/* Header */}
         <section className="pt-6 pb-8 px-6 max-w-7xl mx-auto">
-          <div
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             className="flex flex-col md:flex-row md:items-end md:justify-between gap-6"
           >
             <div>
@@ -174,10 +177,12 @@ export default function LibraryPage() {
                 </button>
               </div>
             )}
-          </div>
+          </motion.div>
 
           {selectedIds.size > 0 && view === "browse" && (
-            <div
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
               className="mt-4 flex items-center gap-2"
             >
               <BookOpen className="w-4 h-4 text-primary/60" />
@@ -188,14 +193,19 @@ export default function LibraryPage() {
               >
                 Clear
               </button>
-            </div>
+            </motion.div>
           )}
         </section>
 
         {/* Main content */}
-        <section className="px-6 pb-24 max-w-7xl mx-auto">{view === "browse" && (
-              <div
+        <section className="px-6 pb-24 max-w-7xl mx-auto">
+          <AnimatePresence mode="wait">
+            {view === "browse" && (
+              <motion.div
                 key="browse"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
               >
                 <BookGrid
                   books={books}
@@ -203,12 +213,15 @@ export default function LibraryPage() {
                   onToggle={toggleBook}
                   onRead={openReader}
                 />
-              </div>
+              </motion.div>
             )}
 
             {view === "reader" && activeBook && (
-              <div
+              <motion.div
                 key="reader"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
               >
                 <BookReader
                   book={activeBook}
@@ -216,12 +229,15 @@ export default function LibraryPage() {
                   onBack={() => setView("browse")}
                   onSelectBook={openReader}
                 />
-              </div>
+              </motion.div>
             )}
 
             {view === "resonance" && (
-              <div
+              <motion.div
                 key="resonance"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
                 className="space-y-8"
               >
                 {invariants.length > 0 && (
@@ -253,8 +269,10 @@ export default function LibraryPage() {
                     <pre className="text-[11px] text-white/40 font-mono whitespace-pre-wrap">{streamedText}</pre>
                   </div>
                 )}
-              </div>
-            )}</section>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
       </div>
     </>
   );

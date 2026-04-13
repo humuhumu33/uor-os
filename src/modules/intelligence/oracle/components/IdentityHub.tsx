@@ -7,6 +7,7 @@
  */
 
 import { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check, ChevronRight, X, Search, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { project, PROJECTIONS } from "@/modules/identity/uns/core/hologram";
@@ -191,9 +192,14 @@ export default function IdentityHub({ receipt }: IdentityHubProps) {
       {/* ═══════════════════════════════════════════════════════════ */}
       {/* ═══ FULL-SCREEN FORMAT EXPLORER OVERLAY ═══ */}
       {/* ═══════════════════════════════════════════════════════════ */}
-              {overlayOpen && hologram && (
-          <div
-      className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col"
+      <AnimatePresence>
+        {overlayOpen && hologram && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col"
           >
             {/* ── Overlay Header ── */}
             <div className="shrink-0 border-b border-border/10">
@@ -274,8 +280,11 @@ export default function IdentityHub({ receipt }: IdentityHubProps) {
                   if (filtered.length === 0) return null;
 
                   return (
-                    <div
+                    <motion.div
                       key={cat.label}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
                     >
                       {/* Category header */}
                       <div className="flex items-center gap-3 mb-4">
@@ -299,7 +308,7 @@ export default function IdentityHub({ receipt }: IdentityHubProps) {
                           />
                         ))}
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
 
@@ -313,8 +322,9 @@ export default function IdentityHub({ receipt }: IdentityHubProps) {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
+      </AnimatePresence>
     </>
   );
 }

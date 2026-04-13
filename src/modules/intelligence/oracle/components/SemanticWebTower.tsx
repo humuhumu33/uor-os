@@ -7,6 +7,7 @@
  */
 
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
 interface SemanticWebTowerProps {
@@ -64,8 +65,11 @@ const SemanticWebTower: React.FC<SemanticWebTowerProps> = ({ layers, engine, cra
           {LAYER_ORDER.map((layer) => {
             const isActive = layers[layer.key] && layers[layer.key] !== "none";
             return (
-              <div
+              <motion.div
                 key={layer.key}
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: 1 }}
+                transition={{ delay: LAYER_ORDER.indexOf(layer) * 0.05, duration: 0.3 }}
                 style={{
                   width: 12,
                   height: 8,
@@ -86,16 +90,24 @@ const SemanticWebTower: React.FC<SemanticWebTowerProps> = ({ layers, engine, cra
         >
           {activeCount}/{LAYER_ORDER.length}
         </span>
-        <span
+        <motion.span
+          animate={{ rotate: expanded ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
           className="text-muted-foreground/30"
           style={{ fontSize: 10 }}
         >
           <ChevronDown size={12} />
-        </span>
+        </motion.span>
       </button>
 
-      {/* Expanded: stacked tower */}{expanded && (
-          <div
+      {/* Expanded: stacked tower */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
             style={{ overflow: "hidden" }}
           >
             <div
@@ -116,8 +128,11 @@ const SemanticWebTower: React.FC<SemanticWebTowerProps> = ({ layers, engine, cra
                 const widthPct = 100 - (i * 6);
 
                 return (
-                  <div
+                  <motion.div
                     key={layer.key}
+                    initial={{ opacity: 0, x: -12, scaleX: 0.7 }}
+                    animate={{ opacity: 1, x: 0, scaleX: 1 }}
+                    transition={{ delay: i * 0.04, duration: 0.3, ease: "easeOut" }}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -147,7 +162,10 @@ const SemanticWebTower: React.FC<SemanticWebTowerProps> = ({ layers, engine, cra
                     >
                       {/* Pulse glow on active */}
                       {isActive && (
-                        <div
+                        <motion.div
+                          initial={{ opacity: 0.6 }}
+                          animate={{ opacity: 0 }}
+                          transition={{ duration: 1.5, delay: i * 0.06 }}
                           style={{
                             position: "absolute",
                             inset: 0,
@@ -184,7 +202,7 @@ const SemanticWebTower: React.FC<SemanticWebTowerProps> = ({ layers, engine, cra
                         {value || "—"}
                       </span>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
 
@@ -215,8 +233,10 @@ const SemanticWebTower: React.FC<SemanticWebTowerProps> = ({ layers, engine, cra
                 </div>
               )}
             </div>
-          </div>
-        )}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 

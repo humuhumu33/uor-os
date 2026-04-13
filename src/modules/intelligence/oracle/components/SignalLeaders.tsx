@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ExternalLink, Users } from "lucide-react";
 
 interface Leader {
@@ -104,16 +105,23 @@ const SignalLeaders: React.FC<SignalLeadersProps> = ({ domain }) => {
         >
           Signal Leaders in {domainLabel}
         </span>
-        <span
-      className="text-muted-foreground/30"
+        <motion.span
+          animate={{ rotate: expanded ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="text-muted-foreground/30"
         >
           <ChevronDown size={12} />
-        </span>
+        </motion.span>
       </button>
 
-              {expanded && (
-          <div
-      style={{ overflow: "hidden" }}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{ overflow: "hidden" }}
           >
             <div
               style={{
@@ -165,8 +173,9 @@ const SignalLeaders: React.FC<SignalLeadersProps> = ({ domain }) => {
                 </a>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
+      </AnimatePresence>
     </div>
   );
 };

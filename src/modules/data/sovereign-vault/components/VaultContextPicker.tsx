@@ -3,6 +3,7 @@
  */
 
 import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Search, FileText, Check, Upload, Link2, Lock, Plus } from "lucide-react";
 import type { VaultHandle } from "../hooks/useVault";
 import type { VaultDocument } from "../lib/types";
@@ -71,10 +72,14 @@ export default function VaultContextPicker({
   const exitDir = anchor === "above" ? { y: 12 } : { y: -12 };
 
   return (
-    <>
+    <AnimatePresence>
       {open && (
-        <div
+        <motion.div
           ref={containerRef}
+          initial={{ opacity: 0, ...slideDir }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, ...exitDir }}
+          transition={{ type: "spring", damping: 26, stiffness: 340 }}
           className={`absolute z-[80] w-[320px] max-h-[50vh] rounded-2xl border border-white/[0.08] bg-[hsl(0_0%_8%/0.96)] backdrop-blur-xl shadow-[0_16px_64px_-12px_hsl(0_0%_0%/0.7)] flex flex-col overflow-hidden ${className}`}
         >
           {/* Header */}
@@ -172,8 +177,8 @@ export default function VaultContextPicker({
               </div>
             </>
           )}
-        </div>
+        </motion.div>
       )}
-    </>
+    </AnimatePresence>
   );
 }

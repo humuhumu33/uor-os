@@ -7,6 +7,7 @@
  */
 
 import { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
@@ -138,19 +139,27 @@ export default function AuthPromptModal({ open, onClose, context = "default" }: 
     "placeholder:text-[rgba(255,255,255,0.28)] " +
     "focus:border-[rgba(255,255,255,0.22)] focus:bg-[rgba(255,255,255,0.06)]";
 
-  if (!open) return null;
-
   return (
+    <AnimatePresence>
+      {open && (
         <>
           {/* Backdrop */}
-          <div
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[100]"
             style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(10px)" }}
             onClick={handleClose}
           />
 
           {/* Modal */}
-          <div
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 14 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 14 }}
+            transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
             className="fixed inset-0 z-[101] flex items-center justify-center px-4 pointer-events-none"
           >
             <div
@@ -198,8 +207,13 @@ export default function AuthPromptModal({ open, onClose, context = "default" }: 
                   {copy.sub}
                 </p>
 
-                {/* ── Feedback (post-signup confirmation) ── */}{feedback && (
-                    <div
+                {/* ── Feedback (post-signup confirmation) ── */}
+                <AnimatePresence>
+                  {feedback && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
                       className="w-full mb-5 overflow-hidden"
                     >
                       <div
@@ -212,8 +226,11 @@ export default function AuthPromptModal({ open, onClose, context = "default" }: 
                       >
                         {feedback}
                       </div>
-                    </div>
-                  )}{/* ── OAuth Buttons ── */}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* ── OAuth Buttons ── */}
                 <div className="w-full space-y-3">
                   {/* Google */}
                   <button
@@ -265,8 +282,14 @@ export default function AuthPromptModal({ open, onClose, context = "default" }: 
                     className={inputClass}
                   />
 
-                  {/* Password — slides in */}{step === "password" && (
-                      <div
+                  {/* Password — slides in */}
+                  <AnimatePresence>
+                    {step === "password" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                        animate={{ opacity: 1, height: "auto", marginTop: 12 }}
+                        exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                        transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                         className="overflow-hidden"
                       >
                         <input
@@ -280,8 +303,11 @@ export default function AuthPromptModal({ open, onClose, context = "default" }: 
                           autoComplete="current-password"
                           className={inputClass}
                         />
-                      </div>
-                    )}{/* CTA button */}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* CTA button */}
                   <button
                     type="submit"
                     disabled={submitting}
@@ -327,7 +353,9 @@ export default function AuthPromptModal({ open, onClose, context = "default" }: 
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
         </>
+      )}
+    </AnimatePresence>
   );
 }

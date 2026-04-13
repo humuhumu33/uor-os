@@ -15,6 +15,7 @@ import { getSearchHistory, type SearchHistoryEntry } from "@/modules/intelligenc
 import { loadProfile } from "@/modules/intelligence/oracle/lib/attention-tracker";
 import { adjacencyIndex } from "@/modules/data/knowledge-graph/lib/adjacency-index";
 import { ChevronLeft, Clock, Compass, TrendingUp } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   currentTopic?: string;
@@ -84,18 +85,23 @@ export default function KnowledgeSidebar({
 
   if (collapsed) {
     return (
-      <button
+      <motion.button
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
         onClick={onToggleCollapse}
         className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#141414] hover:bg-[#1c1c1e] border border-[#1c1c1e] transition-colors"
         title="Show Knowledge Sidebar"
       >
         <Compass className="w-3.5 h-3.5 text-[#52525b]" />
-      </button>
+      </motion.button>
     );
   }
 
   return (
-    <aside
+    <motion.aside
+      initial={{ opacity: 0, x: 12 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       className="flex flex-col gap-0 bg-[#0c0c0c]/90 backdrop-blur-xl border border-[#1c1c1e] rounded-xl overflow-hidden"
       style={{ width: 260, maxHeight: "calc(100vh - 160px)" }}
     >
@@ -219,7 +225,7 @@ export default function KnowledgeSidebar({
           </SidebarSection>
         )}
       </div>
-    </aside>
+    </motion.aside>
   );
 }
 
@@ -276,13 +282,19 @@ function SidebarSection({
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
-              {open && (
-          <div
-      className="overflow-hidden"
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
           >
             {children}
-          </div>
+          </motion.div>
         )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import ConceptMap, { type ConceptNode, type ConceptEdge } from "@/modules/data/knowledge-graph/components/ConceptMap";
 import StatBlock from "@/modules/platform/core/components/StatBlock";
 
@@ -126,9 +127,9 @@ export default function GraphQuickView({ open, onClose, centerLabel, centerAddre
   }, [onClose]);
 
   return (
-          <>
-          {open && (
-        <div
+    <AnimatePresence>
+      {open && (
+        <motion.div
           ref={overlayRef}
           className="absolute inset-0 z-[20] flex items-center justify-center"
           style={{
@@ -136,9 +137,13 @@ export default function GraphQuickView({ open, onClose, centerLabel, centerAddre
             backdropFilter: "blur(16px)",
             WebkitBackdropFilter: "blur(16px)",
           }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
           onClick={handleOverlayClick}
         >
-          <div
+          <motion.div
             className="relative"
             style={{
               background: "hsl(0 0% 4%)",
@@ -147,6 +152,10 @@ export default function GraphQuickView({ open, onClose, centerLabel, centerAddre
               maxWidth: 520,
               width: "90%",
             }}
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 pt-3 pb-1">
@@ -187,9 +196,9 @@ export default function GraphQuickView({ open, onClose, centerLabel, centerAddre
               <StatBlock value={stats.relations} label="Relations" />
               <StatBlock value={stats.chain} label="Connections" />
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
-    </>
+    </AnimatePresence>
   );
 }

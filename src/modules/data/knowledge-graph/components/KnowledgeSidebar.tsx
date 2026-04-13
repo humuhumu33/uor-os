@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Compass, TrendingUp, ChevronRight, Circle } from "lucide-react";
 
 // ── Trail storage ──────────────────────────────────────────────
@@ -100,13 +101,19 @@ function Section({
           className={`text-zinc-700 transition-transform duration-200 ${open ? "rotate-90" : ""}`}
         />
       </button>
-              {open && (
-          <div
-      className="overflow-hidden"
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
           >
             <div className="px-2 pb-2">{children}</div>
-          </div>
+          </motion.div>
         )}
+      </AnimatePresence>
     </div>
   );
 }

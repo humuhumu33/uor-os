@@ -5,6 +5,7 @@
  */
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { usePlatform } from "@/modules/platform/desktop/hooks/usePlatform";
 import { useDesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
 import {
@@ -140,13 +141,16 @@ export default function DownloadPage() {
 
   return (
     <div className="w-full h-full flex items-center justify-center overflow-hidden">
-      <div
+      <motion.div
         className="w-full max-w-[920px] flex gap-8 px-8"
+        initial="hidden"
+        animate="show"
+        variants={{ show: { transition: { staggerChildren: 0.06 } } }}
       >
         {/* ── LEFT: Download action ── */}
         <div className="flex-1 flex flex-col justify-center min-w-0">
           {/* Title */}
-          <div className="mb-8">
+          <motion.div variants={fadeUp} className="mb-8">
             <h1
               className="text-[32px] font-bold tracking-tight leading-tight mb-2"
               style={{ color: textPrimary }}
@@ -158,10 +162,11 @@ export default function DownloadPage() {
               <br />
               <span style={{ color: textMuted }}>No account needed. Your data never leaves.</span>
             </p>
-          </div>
+          </motion.div>
 
           {/* Primary download card */}
-          <div
+          <motion.div
+            variants={fadeUp}
             style={{
               borderRadius: radius,
               background: cardBg,
@@ -228,10 +233,10 @@ export default function DownloadPage() {
                 ))}
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Other platforms */}
-          <div className="mt-6">
+          <motion.div variants={fadeUp} className="mt-6">
             <p className="text-[11px] font-semibold uppercase tracking-[0.15em] mb-3" style={{ color: textMuted }}>
               Also available for
             </p>
@@ -255,16 +260,17 @@ export default function DownloadPage() {
                 </a>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Version */}
-          <p className="mt-5 text-[12px]" style={{ color: textMuted }}>
+          <motion.p variants={fadeUp} className="mt-5 text-[12px]" style={{ color: textMuted }}>
             v{VERSION} · Open source · Your data stays local
-          </p>
+          </motion.p>
         </div>
 
         {/* ── RIGHT: What's included ── */}
-        <div
+        <motion.div
+          variants={fadeUp}
           className="w-[320px] flex-shrink-0 flex flex-col justify-center"
         >
           <p
@@ -301,8 +307,8 @@ export default function DownloadPage() {
               </div>
             ))}
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

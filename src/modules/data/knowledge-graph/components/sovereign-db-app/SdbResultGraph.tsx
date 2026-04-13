@@ -3,7 +3,7 @@
  * ════════════════════════════════════════════════════
  *
  * Renders query results as an interactive node-link diagram
- * using d3-force for computation and canvas for rendering.
+ * using d3-force for layout computation and canvas for rendering.
  *
  * @product SovereignDB
  */

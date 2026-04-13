@@ -4,6 +4,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { FileUp, Type, Link2, Shield, Loader2, Fingerprint, Sparkles, ArrowRight, FolderOpen } from "lucide-react";
 import type { ContextManagerHandle } from "../hooks/useContextManager";
 import VaultContextPicker from "./VaultContextPicker";
@@ -85,9 +86,15 @@ export default function ContextMenu({ open, onOpenChange, ctx, anchor = "below",
         className="hidden"
         onChange={handleFileSelect}
         accept=".txt,.md,.json,.csv,.pdf,.docx,.html,.htm,.xml,.tsv"
-      />{open && (
-          <div
+      />
+      <AnimatePresence>
+        {open && (
+          <motion.div
             ref={containerRef}
+            initial={{ opacity: 0, scale: 0.95, ...slideDir }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, ...slideDir }}
+            transition={{ type: "spring", damping: 28, stiffness: 380 }}
             className={`absolute z-[80] w-[320px] rounded-2xl overflow-hidden ${className}`}
             style={{
               background: "linear-gradient(165deg, hsl(220 20% 10% / 0.97), hsl(220 15% 7% / 0.98))",
@@ -106,7 +113,10 @@ export default function ContextMenu({ open, onOpenChange, ctx, anchor = "below",
             />
 
             {subView === null && (
-              <div
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.05 }}
               >
                 {/* Header */}
                 <div className="px-5 pt-4 pb-2 flex items-center gap-2.5">
@@ -219,12 +229,15 @@ export default function ContextMenu({ open, onOpenChange, ctx, anchor = "below",
                     </div>
                   </div>
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* Sub-view: Paste Text */}
             {subView === "paste" && (
-              <div
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 350 }}
                 className="p-4 flex flex-col gap-3"
               >
                 <SubViewHeader title="Paste Text" onBack={() => setSubView(null)} />
@@ -261,12 +274,15 @@ export default function ContextMenu({ open, onOpenChange, ctx, anchor = "below",
                   Add to context
                   <ArrowRight className="w-3 h-3" />
                 </button>
-              </div>
+              </motion.div>
             )}
 
             {/* Sub-view: URL */}
             {subView === "url" && (
-              <div
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 350 }}
                 className="p-4 flex flex-col gap-3"
               >
                 <SubViewHeader title="Import URL" onBack={() => setSubView(null)} />
@@ -306,14 +322,17 @@ export default function ContextMenu({ open, onOpenChange, ctx, anchor = "below",
                   Fetch & add
                   <ArrowRight className="w-3 h-3" />
                 </button>
-              </div>
+              </motion.div>
             )}
 
             {/* Workspace/Folder creation is now handled by the Files app */}
 
             {/* Sub-view: Vault picker */}
             {subView === "vault" && ctx.vault.ready && (
-              <div
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 350 }}
                 className="flex flex-col max-h-[50vh]"
               >
                 <div className="px-4 pt-3.5 pb-1">
@@ -331,10 +350,12 @@ export default function ContextMenu({ open, onOpenChange, ctx, anchor = "below",
                   className="relative w-full shadow-none border-0 rounded-none bg-transparent"
                   inline
                 />
-              </div>
+              </motion.div>
             )}
-          </div>
-        )}</>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 

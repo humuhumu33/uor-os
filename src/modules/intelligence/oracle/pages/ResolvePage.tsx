@@ -13,6 +13,7 @@ import { extractSemantics, parseWikipediaUrl, fetchWikiSummary, extractWikiInfob
 import SearchConstellationBg from "@/modules/intelligence/oracle/components/SearchConstellationBg";
 import uorHexagon from "@/assets/uor-hexagon.png";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { Search, ArrowLeft, Copy, Check, RotateCcw, Plus, Sparkles, Send, X, ShieldCheck, Shield, Link2, CheckCircle2, Code2, BookOpen, Globe, GitFork, ChevronDown, ChevronRight, Menu, Maximize2, MoreHorizontal, MessageCircle } from "lucide-react";
 import {
   DropdownMenu,
@@ -221,7 +222,10 @@ function ProofReceipt({
 
   return (
     <div className="relative mt-3 w-full">
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 400, damping: 28 }}
         className="flex items-stretch gap-0"
       >
         {/* Chain connector column */}
@@ -233,9 +237,9 @@ function ProofReceipt({
               aria-label={isSelected ? "Deselect proof" : "Select proof for chain"}
             >
               {isSelected ? (
-                <div>
+                <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 20 }}>
                   <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                </div>
+                </motion.div>
               ) : (
                 <div className="w-2 h-2 rounded-full bg-primary/20 border border-primary/15 hover:bg-primary/40 transition-colors" />
               )}
@@ -263,15 +267,23 @@ function ProofReceipt({
             <span className="text-xs font-semibold tracking-[0.08em] text-foreground/60 group-hover:text-foreground/80 transition-colors uppercase">
               Proof Receipt
             </span>
-            <div
+            <motion.div
+              animate={{ rotate: expanded ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
               className="ml-auto shrink-0"
             >
               <ChevronDown className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground/50 transition-colors" />
-            </div>
+            </motion.div>
           </button>
 
-          {/* Expanded: full-width details panel */}{expanded && (
-              <div
+          {/* Expanded: full-width details panel */}
+          <AnimatePresence>
+            {expanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
                 className="overflow-hidden"
               >
                 <div className="px-4 pt-4 pb-4 space-y-3 border-x border-b border-border/15 rounded-b-xl bg-muted/5">
@@ -332,9 +344,11 @@ function ProofReceipt({
                     </button>
                   </div>
                 </div>
-              </div>
-            )}</div>
-      </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -355,7 +369,10 @@ function InlineSocialStats({ cid }: { cid: string }) {
   const { data } = useSocialData(cid);
   if (!data) return null;
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.06 }}
       className="px-4 sm:px-8 mt-3"
     >
       <div className="flex items-center gap-3 text-xs text-muted-foreground/45">
@@ -365,7 +382,7 @@ function InlineSocialStats({ cid }: { cid: string }) {
         <span className="text-muted-foreground/20">·</span>
         <span className="flex items-center gap-1"><GitFork className="w-3 h-3" />{data.forkCount} fork{data.forkCount !== 1 ? "s" : ""}</span>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -475,13 +492,21 @@ function CollapsibleSection({ title, icon, defaultOpen = false, children, classN
         <span className="text-xs font-semibold text-primary/60 uppercase tracking-[0.15em]">{title}</span>
         <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground/30 transition-transform ${open ? "rotate-90" : ""}`} />
         {extra && <div className="ml-auto" onClick={e => e.stopPropagation()}>{extra}</div>}
-      </button>{open && (
-          <div
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
             className="overflow-hidden mt-3"
           >
             {children}
-          </div>
-        )}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -504,13 +529,21 @@ function CollapsibleDiscussion({ cid }: { cid: string }) {
           {commentCount > 0 ? `Discussion · ${commentCount} comment${commentCount !== 1 ? "s" : ""}` : "Start a Discussion"}
         </span>
         <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground/30 transition-transform ${open ? "rotate-90" : ""}`} />
-      </button>{open && (
-          <div
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
             className="overflow-hidden"
           >
             <AddressDiscussion cid={cid} />
-          </div>
-        )}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -524,9 +557,15 @@ function ReaderFloatingBar({ onSearch, onOracleOpen }: { onSearch: (q: string) =
   }, [expanded]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[60] flex justify-center pb-[env(safe-area-inset-bottom,16px)] px-4 pointer-events-none">{expanded ? (
-          <div
+    <div className="fixed bottom-0 left-0 right-0 z-[60] flex justify-center pb-[env(safe-area-inset-bottom,16px)] px-4 pointer-events-none">
+      <AnimatePresence mode="wait">
+        {expanded ? (
+          <motion.div
             key="expanded"
+            initial={{ width: 200, opacity: 0.8 }}
+            animate={{ width: "100%", opacity: 1 }}
+            exit={{ width: 200, opacity: 0.8 }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
             className="pointer-events-auto rounded-full border border-white/[0.12] bg-black/70 backdrop-blur-xl shadow-[0_-4px_30px_-8px_rgba(0,0,0,0.6)] flex items-center gap-2 px-4 py-2"
           >
             <Search className="w-4 h-4 text-white/40 shrink-0" />
@@ -545,10 +584,13 @@ function ReaderFloatingBar({ onSearch, onOracleOpen }: { onSearch: (q: string) =
             <button onClick={() => { setExpanded(false); setValue(""); }} className="p-1 text-white/30 hover:text-white/60">
               <X className="w-4 h-4" />
             </button>
-          </div>
+          </motion.div>
         ) : (
-          <div
+          <motion.div
             key="collapsed"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
             className="pointer-events-auto flex items-center gap-1 rounded-full border border-white/[0.1] bg-black/50 backdrop-blur-xl shadow-lg"
           >
             <button
@@ -567,8 +609,10 @@ function ReaderFloatingBar({ onSearch, onOracleOpen }: { onSearch: (q: string) =
               <Sparkles className="w-3.5 h-3.5" />
               <span className="text-[13px] font-medium">Oracle</span>
             </button>
-          </div>
-        )}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -1753,9 +1797,15 @@ const SearchPage = () => {
 
       {/* ── SoundCloud Music — now lives in Footer as inline vinyl disc ── */}
 
-      {/* ── Infinite Improbability Drive Overlay ── */}{improbabilityActive && (
-          <div
+      {/* ── Infinite Improbability Drive Overlay ── */}
+      <AnimatePresence>
+        {improbabilityActive && (
+          <motion.div
             key="improbability-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: improbPhase === 4 ? 0 : 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: improbPhase === 4 ? 0.6 : 0.3, ease: [0.23, 1, 0.32, 1] }}
             className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background"
           >
             {/* Subtle radial glow — purely decorative on top of solid bg */}
@@ -1771,36 +1821,48 @@ const SearchPage = () => {
             {/* Dimensional shape visualization */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               {improbPhase === 1 && (
-                <svg width="200" height="200" viewBox="0 0 200 200" className="opacity-10">
-                  <line
+                <motion.svg width="200" height="200" viewBox="0 0 200 200" className="opacity-10">
+                  <motion.line
                     x1="30" y1="100" x2="170" y2="100"
                     stroke="hsl(var(--primary))"
                     strokeWidth="0.5"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
                   />
-                  <rect
+                  <motion.rect
                     x="50" y="50" width="100" height="100"
                     fill="none"
                     stroke="hsl(var(--primary))"
                     strokeWidth="0.3"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
                   />
-                </svg>
+                </motion.svg>
               )}
 
               {improbPhase === 2 && (
-                <div
+                <motion.div
                   className="opacity-8"
+                  initial={{ scale: 1, rotateY: 0 }}
+                  animate={{ scale: [1, 1.05, 0.4], rotateY: [0, 90, 270] }}
+                  transition={{ duration: 1.6, ease: [0.23, 1, 0.32, 1], times: [0, 0.5, 1] }}
                   style={{ perspective: "600px", transformStyle: "preserve-3d" }}
                 >
                   <div
                     className="w-20 h-20 border border-primary/20 rounded-sm"
                     style={{ transform: "rotateX(20deg) rotateY(40deg)" }}
                   />
-                </div>
+                </motion.div>
               )}
 
               {improbPhase === 3 && (
-                <div
+                <motion.div
                   className="rounded-full"
+                  initial={{ width: 6, height: 6, opacity: 0.2 }}
+                  animate={{ width: 400, height: 400, opacity: 0 }}
+                  transition={{ duration: 1, ease: [0.23, 1, 0.32, 1] }}
                   style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.1), transparent)" }}
                 />
               )}
@@ -1808,35 +1870,47 @@ const SearchPage = () => {
 
             {/* Phase 1 & 2: counter */}
             {(improbPhase === 1 || improbPhase === 2) && (
-              <div
+              <motion.div
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
                 className="flex flex-col items-center gap-5 z-10"
               >
                 <p className="text-base md:text-lg font-mono uppercase tracking-[0.25em] text-muted-foreground/40">
                   {improbPhase === 1 ? "Folding dimensions…" : "Traversing the address space…"}
                 </p>
-                <p
+                <motion.p
                   key={improbExponent}
+                  initial={{ opacity: 0.5 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.15 }}
                   className="font-mono text-4xl md:text-5xl font-bold text-primary/70"
                 >
                   {IMPROBABILITY_EXPONENTS[improbExponent] ?? "2^∞"}
-                </p>
+                </motion.p>
                 <p className="text-sm md:text-base font-mono text-muted-foreground/30 tracking-widest">IMPROBABILITY FACTOR</p>
-              </div>
+              </motion.div>
             )}
 
             {/* Phase 2: side effects */}
             {improbPhase === 2 && improbSideEffect && (
-              <p
+              <motion.p
                 key={improbSideEffect}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 0.35, y: 0 }}
+                transition={{ duration: 0.3 }}
                 className="mt-10 text-center text-lg md:text-xl italic text-muted-foreground/45 max-w-md px-6 z-10"
               >
                 {improbSideEffect}
-              </p>
+              </motion.p>
             )}
 
             {/* Phase 3: DON'T PANIC */}
             {improbPhase === 3 && (
-              <div
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 140, damping: 22 }}
                 className="flex flex-col items-center gap-3 z-10"
               >
                 <h2
@@ -1845,15 +1919,21 @@ const SearchPage = () => {
                 >
                   DON'T PANIC
                 </h2>
-                <p
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.35 }}
+                  transition={{ delay: 0.2 }}
                   className="text-base text-muted-foreground/35 font-mono"
                 >
                   Normality restoring…
-                </p>
-              </div>
+                </motion.p>
+              </motion.div>
             )}
-          </div>
-        )}{/* Progress bar removed — now integrated into ReaderToolbar border */}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Progress bar removed — now integrated into ReaderToolbar border */}
 
       {/* Main content wrapper */}
       <div className={`flex-1 flex flex-col overflow-hidden ${immersiveMode ? "relative z-10" : ""}`}>
@@ -1973,7 +2053,10 @@ const SearchPage = () => {
 
           {/* ══════════════ AI MODE — Oracle ══════════════ */}
           {!result && aiMode && (
-            <div
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
               className={`flex flex-col relative ${immersiveMode ? "text-white z-10" : ""}`}
               style={{ height: "100dvh" }}
             >
@@ -2078,7 +2161,10 @@ const SearchPage = () => {
 
                         {/* Render as rendered internet page */}
                         {msg.role === "assistant" && !aiStreaming && msg.content.length > 100 && (
-                          <button
+                          <motion.button
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
                             onClick={() => {
                               const userQuery = aiMessages.slice(0, i).reverse().find(m => m.role === "user")?.content || "Oracle Response";
                               renderOracleResponse(userQuery, msg.content);
@@ -2087,7 +2173,7 @@ const SearchPage = () => {
                           >
                             <Maximize2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                             Render as page
-                          </button>
+                          </motion.button>
                         )}
                       </div>
                     );
@@ -2105,8 +2191,14 @@ const SearchPage = () => {
                 )}
               </div>
 
-              {/* Floating chain selection bar */}{selectedProofIndices.size > 0 && (
-                  <div
+              {/* Floating chain selection bar */}
+              <AnimatePresence>
+                {selectedProofIndices.size > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 28 }}
                     className="shrink-0 mx-auto mb-2"
                   >
                     <div className="flex items-center gap-3 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md">
@@ -2140,8 +2232,11 @@ const SearchPage = () => {
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                  </div>
-                )}{/* AI input bar — styled to match search bar */}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* AI input bar — styled to match search bar */}
               <div className="shrink-0 pt-3" style={{ paddingBottom: "calc(1rem * 1.618 * 1.618)" }}>
                 <div className="relative group">
                   {/* Animated border glow — same as search bar */}
@@ -2174,10 +2269,12 @@ const SearchPage = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* ══════════════ RESULT STATE — SERP ══════════════ */}{result && (() => {
+          {/* ══════════════ RESULT STATE — SERP ══════════════ */}
+          <AnimatePresence>
+            {result && (() => {
               const src = result.source as Record<string, unknown> | null;
               const typeRaw = String(src?.["@type"] ?? "Unknown").replace(/^uor:/, "");
               const wikiThumb = (src?.["uor:wikidata"] as Record<string, unknown> | undefined)?.thumbnail as string | undefined;
@@ -2191,8 +2288,12 @@ const SearchPage = () => {
               if (showReader) {
                 const mobileImmersive = isMobile && immersiveMode;
                 return (
-                  <div
+                  <motion.div
                     key="reader-mode"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
                     className={`flex flex-col relative w-full ${immersiveMode ? "text-white" : ""} ${mobileImmersive ? "fixed inset-0 z-[55] overflow-y-auto" : ""}`}
                     style={{
                       minHeight: "100dvh",
@@ -2289,13 +2390,16 @@ const SearchPage = () => {
                       {/* Non-immersive: show a subtle Oracle FAB */}
                       {!immersiveMode && !mobileImmersive && (
                         <div className="fixed bottom-6 right-6 z-[60]">
-                          <button
+                          <motion.button
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.5, type: "spring", stiffness: 300, damping: 24 }}
                             onClick={() => setOracleOverlayOpen(true)}
                             className="w-12 h-12 rounded-full bg-primary/15 border border-primary/25 hover:bg-primary/25 hover:border-primary/40 flex items-center justify-center shadow-[0_4px_24px_-4px_hsl(var(--primary)/0.25)] transition-all group"
                             title="Ask Oracle about this content"
                           >
                             <Sparkles className="w-5 h-5 text-primary/80 group-hover:text-primary transition-colors" />
-                          </button>
+                          </motion.button>
                         </div>
                       )}
 
@@ -2321,14 +2425,18 @@ const SearchPage = () => {
                         immersive={immersiveMode}
                       />
                     </div>
-                  </div>
+                  </motion.div>
                 );
               }
 
               return (
               <>
               {showImmersiveBackdrop && <ImmersiveBackground />}
-              <div
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20, mass: 0.8 }}
                 className={`pb-24 relative z-10 ${immersiveMode ? "text-white" : ""}`}
                 style={{ paddingTop: "calc(100vh * 0.02)" }}
               >
@@ -2336,7 +2444,10 @@ const SearchPage = () => {
                 <ProfileCover cid={result.receipt.cid} contextImageUrl={wikiThumb} />
 
                 {/* ═══ PROFILE HEADER (overlaps cover) ═══ */}
-                <div
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.03 }}
                   className="relative flex flex-col sm:flex-row items-start gap-5 sm:gap-6 px-4 sm:px-8"
                   style={{ marginTop: "-3.25rem" }}
                 >
@@ -2489,18 +2600,21 @@ const SearchPage = () => {
                       )}
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* ═══ INLINE SOCIAL STATS ═══ */}
                 <InlineSocialStats cid={result.receipt.cid} />
 
                 {/* ═══ IDENTITY FORMATS (compact, expandable) ═══ */}
-                <div
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.08 }}
                   className="px-4 sm:px-8"
                   style={{ marginTop: "calc(1rem * 1.618)" }}
                 >
                   <IdentityHub receipt={result.receipt} />
-                </div>
+                </motion.div>
 
                 {/* ═══ CONTENT (Human view only) ═══ */}
                 <div
@@ -2508,7 +2622,7 @@ const SearchPage = () => {
                   style={{ marginTop: "calc(1rem * 1.618)" }}
                 >
                   {src?.["@type"] === "uor:ChainOfProofs" ? (
-                    <div className="space-y-5">
+                    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="space-y-5">
                       <div className="flex items-center gap-2.5">
                         <Link2 className="w-4 h-4 text-primary/70" />
                         <p className="text-xs font-semibold text-primary/60 uppercase tracking-[0.15em]">Chain of Proofs</p>
@@ -2538,10 +2652,10 @@ const SearchPage = () => {
                           </div>
                         )))}
                       </div>
-                    </div>
+                    </motion.div>
                   ) : (
                     /* Standard content — Human/Machine toggle */
-                    <div>
+                    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
                       <ContentSection
                         source={result.source}
                         synthesizing={result.synthesizing}
@@ -2555,7 +2669,7 @@ const SearchPage = () => {
                         onCopy={copy}
                         copied={copied}
                       />
-                    </div>
+                    </motion.div>
                   )}
 
                   {/* ▸ Provenance (collapsed) */}
@@ -2577,20 +2691,32 @@ const SearchPage = () => {
                   <CollapsibleDiscussion cid={result.receipt.cid} />
                 </div>
 
-              </div>
+              </motion.div>
               </>
               );
-            })()}</div>
+            })()}
+          </AnimatePresence>
+        </div>
       </div>
       </div>{/* end main content wrapper */}
 
-      {/* ══════════════ FORK MODAL ══════════════ */}{forkModalOpen && result && (
-          <div
+      {/* ══════════════ FORK MODAL ══════════════ */}
+      <AnimatePresence>
+        {forkModalOpen && result && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[100] flex items-center justify-center"
             onClick={(e) => { if (e.target === e.currentTarget) { setForkModalOpen(false); setForkNote(""); } }}
           >
             <div className="absolute inset-0 bg-[hsl(0_0%_4%/0.85)] backdrop-blur-md" />
-            <div
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 350, damping: 28 }}
               className="relative z-10 w-full border border-[hsl(0_0%_18%/0.6)] bg-[hsl(0_0%_7%/0.97)] backdrop-blur-xl rounded-2xl shadow-[0_24px_80px_-12px_hsl(0_0%_0%/0.8)]"
               style={{ maxWidth: "min(560px, 92vw)" }}
             >
@@ -2638,10 +2764,19 @@ const SearchPage = () => {
                   {forking ? "Forking…" : "Create Fork"}
                 </button>
               </div>
-            </div>
-          </div>
-        )}{/* ══════════════ ENCODE OVERLAY ══════════════ */}{encodeMode && (
-          <div
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ══════════════ ENCODE OVERLAY ══════════════ */}
+      <AnimatePresence>
+        {encodeMode && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
             className="fixed inset-0 z-[100] flex items-center justify-center"
             onClick={(e) => { if (e.target === e.currentTarget) { setEncodeMode(false); setEncodeText(""); } }}
           >
@@ -2649,7 +2784,11 @@ const SearchPage = () => {
             <div className="absolute inset-0 bg-[hsl(0_0%_4%/0.85)] backdrop-blur-md" />
 
             {/* Modal */}
-            <div
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 350, damping: 28 }}
               className="relative z-10 w-full border border-[hsl(0_0%_18%/0.6)] bg-[hsl(0_0%_7%/0.97)] backdrop-blur-xl rounded-2xl shadow-[0_24px_80px_-12px_hsl(0_0%_0%/0.8),inset_0_1px_0_0_hsl(0_0%_100%/0.04)]"
               style={{ maxWidth: "min(860px, 92vw)", maxHeight: "88vh" }}
             >
@@ -2736,9 +2875,11 @@ const SearchPage = () => {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-        )}<SovereignIdentityPanel open={identityPanelOpen} onClose={() => setIdentityPanelOpen(false)} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <SovereignIdentityPanel open={identityPanelOpen} onClose={() => setIdentityPanelOpen(false)} />
     </div>
   );
 };

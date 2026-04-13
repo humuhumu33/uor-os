@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Calculator, ChevronDown, ChevronRight, AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { queryWolfram, isComputableQuery, type WolframPod, type WolframResult } from "@/modules/intelligence/oracle/lib/wolfram-client";
 import { normalizeSource } from "../../lib/citation-parser";
@@ -29,7 +30,10 @@ function PodCard({ pod, index }: { pod: WolframPod; index: number }) {
   const isPrimary = pod.primary;
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, duration: 0.3 }}
       className={`
         border rounded-xl overflow-hidden transition-all duration-200
         ${isPrimary
@@ -56,9 +60,14 @@ function PodCard({ pod, index }: { pod: WolframPod; index: number }) {
         )}
       </button>
 
-              {expanded && (
-          <div
-      className="overflow-hidden"
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-3">
               {pod.subpods.map((sp, si) => (
@@ -97,9 +106,10 @@ function PodCard({ pod, index }: { pod: WolframPod; index: number }) {
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
-    </div>
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -160,14 +170,16 @@ export default function ComputeLensRenderer({
 
       {/* Loading state */}
       {loading && (
-        <div
-      className="flex items-center gap-3 py-8 justify-center"
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center gap-3 py-8 justify-center"
         >
           <Loader2 className="w-5 h-5 text-primary/60 animate-spin" />
           <span className="text-sm text-muted-foreground/60">
             Computing with Wolfram Alpha…
           </span>
-        </div>
+        </motion.div>
       )}
 
       {/* Error / no results */}

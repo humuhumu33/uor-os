@@ -20,6 +20,7 @@ import {
   Brain, TrendingUp, ToggleRight, Search, CheckCircle, Clock,
   AlertCircle,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import type { ComponentType } from "react";
 
 // ── Icon Resolver ─────────────────────────────────────────────────────────
@@ -56,9 +57,11 @@ function CategoryCard({ cat }: { cat: CncfCategoryDescriptor }) {
   const Icon = ICON_MAP[cat.iconKey] ?? Box;
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.35 }}
       className="group rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm p-5 hover:border-primary/30 transition-colors"
     >
       <div className="flex items-start justify-between mb-3">
@@ -113,7 +116,7 @@ function CategoryCard({ cat }: { cat: CncfCategoryDescriptor }) {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -169,8 +172,11 @@ export default function AppStorePage() {
         <section className="relative overflow-hidden border-b border-border/30">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
           <div className="relative max-w-7xl mx-auto px-6 py-20 md:py-28">
-            <div
-      className="max-w-3xl"
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="max-w-3xl"
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[12px] font-medium mb-6">
                 <Globe className="w-3.5 h-3.5" />
@@ -183,11 +189,14 @@ export default function AppStorePage() {
                 Every CNCF landscape category — implemented natively with content-addressed
                 isolation, algebraic verification, and unified knowledge graph integration.
               </p>
-            </div>
+            </motion.div>
 
             {/* Stats */}
-            <div
-      className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-10 max-w-2xl"
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-10 max-w-2xl"
             >
               {[
                 { label: "Categories", value: stats.total, color: "text-foreground" },
@@ -200,7 +209,7 @@ export default function AppStorePage() {
                   <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
                 </div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
 

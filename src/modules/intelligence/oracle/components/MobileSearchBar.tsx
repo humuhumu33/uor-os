@@ -5,6 +5,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { Send, Upload, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 import VoiceInput from "./VoiceInput";
 import LiveSearchToggle from "./LiveSearchToggle";
 import ContextPills from "@/modules/data/sovereign-vault/components/ContextPills";
@@ -59,13 +60,17 @@ export default function MobileSearchBar({ onSubmit, onEncode, onAiMode, loading 
         </div>
       )}
 
-      <div
-      className="relative rounded-2xl border border-white/[0.1] bg-[hsl(0_0%_10%/0.95)] backdrop-blur-xl shadow-[0_-4px_40px_-8px_hsl(0_0%_0%/0.6)]"
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        className="relative rounded-2xl border border-white/[0.1] bg-[hsl(0_0%_10%/0.95)] backdrop-blur-xl shadow-[0_-4px_40px_-8px_hsl(0_0%_0%/0.6)]"
       >
         <div className="flex items-center gap-1 px-2 py-1.5">
           {/* Open File Explorer */}
           <div className="relative shrink-0">
-            <button
+            <motion.button
+              whileTap={{ scale: 0.9 }}
               onClick={() => window.dispatchEvent(new CustomEvent("uor:open-app", { detail: "files" }))}
               className={`p-2.5 rounded-xl transition-colors ${
                 ctx.contextItems.length > 0
@@ -75,7 +80,7 @@ export default function MobileSearchBar({ onSubmit, onEncode, onAiMode, loading 
               aria-label="Open File Explorer"
             >
               <Upload className="w-5 h-5" />
-            </button>
+            </motion.button>
           </div>
 
           {/* Text input */}
@@ -125,7 +130,7 @@ export default function MobileSearchBar({ onSubmit, onEncode, onAiMode, loading 
             <Send className="w-[18px] h-[18px]" />
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

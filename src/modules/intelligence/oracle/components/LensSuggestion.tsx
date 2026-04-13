@@ -6,6 +6,7 @@
  */
 
 import React from "react";
+import { motion } from "framer-motion";
 import { Sparkles, X, Settings2 } from "lucide-react";
 import type { LensBlueprint } from "@/modules/intelligence/oracle/lib/knowledge-lenses";
 
@@ -29,7 +30,11 @@ const LensSuggestion: React.FC<LensSuggestionProps> = ({
   onInspect,
 }) => {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -4, scale: 0.98 }}
+      transition={{ type: "spring", damping: 25, stiffness: 300 }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -90,7 +95,7 @@ const LensSuggestion: React.FC<LensSuggestionProps> = ({
       >
         <X size={12} />
       </button>
-    </div>
+    </motion.div>
   );
 };
 

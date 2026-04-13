@@ -13,6 +13,7 @@
  * Default playlist: Ben Böhmer — Begin Again
  */
 import { useState, useRef, useCallback, useEffect } from "react";
+import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
 import { Music, X } from "lucide-react";
 import { useDesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
 
@@ -60,7 +61,8 @@ export default function VinylPlayer() {
   const widgetRef = useRef<SCWidget | null>(null);
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clickCountRef = useRef(0);
-    const { isLight } = useDesktopTheme();
+  const spinControls = useAnimationControls();
+  const { isLight } = useDesktopTheme();
 
   useEffect(() => {
     loadSCApi().then(() => {
@@ -143,8 +145,10 @@ export default function VinylPlayer() {
         title="SoundCloud Player"
       />
 
-      {/* Track title — to the LEFT of the disc */}{playing && trackTitle && !expanded && (
-          <span
+      {/* Track title — to the LEFT of the disc */}
+      <AnimatePresence>
+        {playing && trackTitle && !expanded && (
+          <motion.span
             className="truncate select-none"
             style={{
               fontSize: 10,
@@ -153,10 +157,17 @@ export default function VinylPlayer() {
               color: isLight ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.45)",
               fontFamily: "'DM Sans', -apple-system, sans-serif",
             }}
+            initial={{ opacity: 0, x: 4 }}
+            animate={{ opacity: 0.7, x: 0 }}
+            exit={{ opacity: 0, x: 4 }}
+            transition={{ duration: 0.4 }}
           >
             {trackTitle}
-          </span>
-        )}<button
+          </motion.span>
+        )}
+      </AnimatePresence>
+
+      <button
         onClick={handleClick}
         className="group relative flex items-center justify-center rounded-full focus:outline-none"
         style={{
@@ -174,8 +185,9 @@ export default function VinylPlayer() {
         aria-label="Music player"
       >
         {/* Spinning disc container */}
-        <div
+        <motion.div
           className="absolute inset-0 rounded-full overflow-hidden"
+          animate={spinControls}
           style={{
             boxShadow: playing
               ? "0 0 6px 1px hsl(0 0% 0% / 0.3), inset 0 0 3px hsl(0 0% 0% / 0.4)"
@@ -224,7 +236,7 @@ export default function VinylPlayer() {
               style={{ transform: "rotate(-45deg)", transformOrigin: "center" }}
             />
           </svg>
-        </div>
+        </motion.div>
 
         {/* Centre spindle */}
         <div
@@ -238,15 +250,19 @@ export default function VinylPlayer() {
 
         {/* Glow ring when playing */}
         {playing && (
-          <div
+          <motion.div
             className="absolute rounded-full pointer-events-none"
             style={{ inset: -2, border: "0.5px solid hsl(0 0% 100% / 0.1)", borderRadius: "50%" }}
+            animate={{ opacity: [0.3, 0.7, 0.3] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           />
         )}
       </button>
 
-      {/* Expanded mini-player panel — double-tap */}{expanded && (
-          <div
+      {/* Expanded mini-player panel — double-tap */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
             className="absolute rounded-2xl border shadow-2xl overflow-hidden backdrop-blur-sm"
             style={{
               bottom: "calc(100% + 12px)",
@@ -256,6 +272,10 @@ export default function VinylPlayer() {
               background: "hsl(0 0% 8% / 0.95)",
               borderColor: "hsl(0 0% 100% / 0.08)",
             }}
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+            transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
             onPointerDown={(e) => e.stopPropagation()}
           >
             {/* Artwork header */}
@@ -301,7 +321,9 @@ export default function VinylPlayer() {
               style={{ border: "none", display: "block" }}
               title="SoundCloud Controls"
             />
-          </div>
-        )}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
