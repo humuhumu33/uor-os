@@ -241,7 +241,7 @@ function DesktopShellInner() {
 
         <SnapOverlay zone={snapPreview} />
 
-        {wm.windows
+        {!desktopMode && wm.windows
           .filter(w => !w.minimized)
           .map(win => (
             <DesktopWindow
