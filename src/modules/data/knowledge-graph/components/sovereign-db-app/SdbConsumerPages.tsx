@@ -1106,10 +1106,10 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
           <nav className="flex-1 py-2 space-y-0.5 overflow-auto">
             {/* Home */}
             <button
-              onClick={() => setSelectedId(null)}
+              onClick={() => { setSelectedId(null); setActiveFolderId(null); }}
               title="Home"
               className={`flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium transition-colors ${
-                !selectedId
+                !selectedId && !activeFolderId
                   ? "bg-primary/10 text-primary border-r-2 border-primary"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               }`}
