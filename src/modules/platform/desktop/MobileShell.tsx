@@ -183,11 +183,6 @@ export default function MobileShell() {
       {/* ── Animated background layer ── */}<div
           key={theme}
           className="absolute inset-0"
-          custom={swipeDirection}
-          variants={swipeVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
           transition={swipeTransition}
         >
           {theme === "immersive" && <DesktopImmersiveWallpaper />}
@@ -202,11 +197,6 @@ export default function MobileShell() {
       {/* ── DayRingClock — animated with theme transition ── */}<div
           key={theme}
           className="absolute inset-x-0 top-0 bottom-0 flex flex-col items-center z-10 pointer-events-none gpu-promote"
-          custom={swipeDirection}
-          variants={swipeVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
           transition={swipeTransition}
         >
           <div className="flex-[0_0_18%]" />

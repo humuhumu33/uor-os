@@ -176,7 +176,6 @@ export default function VinylPlayer() {
         {/* Spinning disc container */}
         <div
           className="absolute inset-0 rounded-full overflow-hidden"
-          animate={spinControls}
           style={{
             boxShadow: playing
               ? "0 0 6px 1px hsl(0 0% 0% / 0.3), inset 0 0 3px hsl(0 0% 0% / 0.4)"

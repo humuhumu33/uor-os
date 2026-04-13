@@ -97,8 +97,7 @@ export default function ModuleChecklist({ animated = false, compact = false, onC
           return (
             <div
               key={mod.id}
-              className="flex items-center gap-3"
-              initial={animated ? { opacity: 0, x: -8 } : { opacity: 1 }}
+              className="flex items-center gap-3" : { opacity: 1 }}
             >
               {/* Status icon */}
               <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
@@ -107,8 +106,7 @@ export default function ModuleChecklist({ animated = false, compact = false, onC
                 ) : status === "verifying" ? (
                   <Loader2 size={14} className="animate-spin" style={{ color: "hsl(210 100% 72%)" }} />
                 ) : status === "verified" ? (
-                  <div
-                    initial={animated ? { scale: 0 } : { scale: 1 }}
+                  <div : { scale: 1 }}
                   >
                     <Check size={14} style={{ color: "hsl(150 70% 55%)" }} strokeWidth={3} />
                   </div>

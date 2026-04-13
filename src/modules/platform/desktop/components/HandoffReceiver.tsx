@@ -91,8 +91,7 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
       >
         <div className="flex flex-col items-center gap-8 max-w-md px-6">
           {/* Icon */}
-          <div
-            animate={phase === "done" ? { scale: [1, 1.15, 1] } : { rotate: 0 }}
+          <div : { rotate: 0 }}
           >
             {phase === "error" ? (
               <AlertCircle size={48} style={{ color: "hsl(0 70% 60%)" }} />
