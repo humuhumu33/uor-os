@@ -92,14 +92,14 @@ function ForceSlider({ label, value, onChange, min = 0, max = 100 }: {
   );
 }
 
-/* ── Collapsible section header ── */
+/* ── Collapsible section header (console-style) ── */
 function SectionHeader({ title, open, onToggle }: { title: string; open: boolean; onToggle: () => void }) {
   return (
     <button
       onClick={onToggle}
-      className="flex items-center gap-1.5 w-full py-2 text-[12px] font-semibold text-foreground/70 hover:text-foreground/90 transition-colors uppercase tracking-wider"
+      className="flex items-center gap-1.5 w-full px-4 py-2.5 text-[11px] font-medium text-muted-foreground/60 hover:text-muted-foreground transition-colors uppercase tracking-widest"
     >
-      {open ? <IconChevronDown size={13} stroke={2} /> : <IconChevronRight size={13} stroke={2} />}
+      {open ? <IconChevronDown size={12} stroke={2} /> : <IconChevronRight size={12} stroke={2} />}
       {title}
     </button>
   );
@@ -334,55 +334,59 @@ export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "", sid
   const graphSidebarContent = (
     <div className="flex flex-col h-full overflow-hidden">
       {!sidebarCollapsed && (
-        <div className="px-4 py-3 border-b border-border/10">
-          <span className="text-[11px] font-medium text-muted-foreground/50 uppercase tracking-widest">
+        <div className="px-4 py-3 border-b border-border/15">
+          <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">
             Graph View
           </span>
         </div>
       )}
-      <div className="flex-1 overflow-auto px-3 py-1">
-        {/* ── View Toggle ── */}
-        <div className="py-2 space-y-0.5">
-          <button
-            onClick={() => setShow2D(false)}
-            className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] transition-colors ${
-              !show2D ? "text-foreground/90 bg-foreground/[0.07]" : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-foreground/[0.03]"
-            }`}
-          >
-            <IconCube size={15} stroke={1.5} />
-            {!sidebarCollapsed && <span>3D View</span>}
-          </button>
-          <button
-            onClick={() => setShow2D(true)}
-            className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] transition-colors ${
-              show2D ? "text-foreground/90 bg-foreground/[0.07]" : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-foreground/[0.03]"
-            }`}
-          >
-            <IconLayoutGrid size={15} stroke={1.5} />
-            {!sidebarCollapsed && <span>2D View</span>}
-          </button>
-        </div>
+      <nav className="flex-1 overflow-auto py-2 space-y-0.5">
+        {/* ── View mode ── */}
+        <button
+          onClick={() => setShow2D(false)}
+          title="3D View"
+          className={`flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium transition-colors ${
+            !show2D
+              ? "bg-primary/10 text-primary border-r-2 border-primary"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          }`}
+        >
+          <IconCube size={18} stroke={1.5} className="shrink-0" />
+          {!sidebarCollapsed && <span className="truncate">3D View</span>}
+        </button>
+        <button
+          onClick={() => setShow2D(true)}
+          title="2D View"
+          className={`flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium transition-colors ${
+            show2D
+              ? "bg-primary/10 text-primary border-r-2 border-primary"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          }`}
+        >
+          <IconLayoutGrid size={18} stroke={1.5} className="shrink-0" />
+          {!sidebarCollapsed && <span className="truncate">2D View</span>}
+        </button>
 
-        <div className="border-t border-border/8 my-1" />
+        <div className="mx-3 my-1 border-t border-border/10" />
 
         {!sidebarCollapsed && (
           <>
-            {/* ── Filters Section (Obsidian-style) ── */}
+            {/* ── Filters ── */}
             <SectionHeader title="Filters" open={openSections.filters} onToggle={() => toggleSection("filters")} />
             {openSections.filters && (
-              <div className="pl-1 pb-2 space-y-0.5">
+              <div className="px-4 pb-2 space-y-0.5">
                 <Toggle label="Tags" value={showTags} onChange={setShowTags} />
                 <Toggle label="Orphans" value={showOrphans} onChange={setShowOrphans} />
                 <Toggle label="Atlas Layer" value={showAtlasLayer} onChange={setShowAtlasLayer} />
               </div>
             )}
 
-            <div className="border-t border-border/8 my-1" />
+            <div className="mx-3 my-1 border-t border-border/10" />
 
-            {/* ── Groups Section ── */}
+            {/* ── Groups ── */}
             <SectionHeader title="Groups" open={openSections.groups} onToggle={() => toggleSection("groups")} />
             {openSections.groups && (
-              <div className="pl-1 pb-2 space-y-0.5">
+              <div className="px-4 pb-2 space-y-0.5">
                 {mergedTypeStats.slice(0, 8).map(t => {
                   const on = filters.types.get(t.type) ?? true;
                   return (
@@ -409,12 +413,12 @@ export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "", sid
               </div>
             )}
 
-            <div className="border-t border-border/8 my-1" />
+            <div className="mx-3 my-1 border-t border-border/10" />
 
-            {/* ── Display Section ── */}
+            {/* ── Display ── */}
             <SectionHeader title="Display" open={openSections.display} onToggle={() => toggleSection("display")} />
             {openSections.display && (
-              <div className="pl-1 pb-2">
+              <div className="px-4 pb-2">
                 <ForceSlider label="Node size" value={nodeSize} onChange={setNodeSize} />
                 <Toggle label="Show labels" value={showLabels} onChange={setShowLabels} />
                 <Toggle label="Show arrows" value={showArrows} onChange={setShowArrows} />
@@ -422,76 +426,74 @@ export function SdbConsumerGraph({ db, onNavigateSection, globalSearch = "", sid
               </div>
             )}
 
-            <div className="border-t border-border/8 my-1" />
+            <div className="mx-3 my-1 border-t border-border/10" />
 
-            {/* ── Forces Section ── */}
+            {/* ── Forces ── */}
             <SectionHeader title="Forces" open={openSections.forces} onToggle={() => toggleSection("forces")} />
             {openSections.forces && (
-              <div className="pl-1 pb-2">
+              <div className="px-4 pb-2">
                 <ForceSlider label="Center force" value={centerForce} onChange={setCenterForce} />
                 <ForceSlider label="Repel force" value={repelForce} onChange={setRepelForce} />
                 <ForceSlider label="Link force" value={linkForce} onChange={setLinkForce} />
                 <ForceSlider label="Link distance" value={linkDistance} onChange={setLinkDistance} />
               </div>
             )}
+
+            <div className="mx-3 my-1 border-t border-border/10" />
+
+            {/* ── Layout ── */}
+            <div className="px-4 py-2">
+              <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Layout</span>
+              <div className="mt-2 flex items-center gap-0.5">
+                {LAYOUT_OPTIONS.map(l => {
+                  const Icon = l.icon;
+                  return (
+                    <button
+                      key={l.mode}
+                      onClick={() => setLayoutMode(l.mode)}
+                      title={l.label}
+                      className={`p-2 rounded-md transition-colors ${
+                        layoutMode === l.mode
+                          ? "text-primary bg-primary/10"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      }`}
+                    >
+                      <Icon size={14} stroke={1.5} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </>
         )}
 
-        <div className="border-t border-border/8 my-1" />
-
-        {/* ── Layout selector ── */}
-        {!sidebarCollapsed && (
-          <div className="py-2">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40 font-medium">Layout</span>
-            <div className="mt-1 flex items-center gap-0.5">
-              {LAYOUT_OPTIONS.map(l => {
-                const Icon = l.icon;
-                return (
-                  <button
-                    key={l.mode}
-                    onClick={() => setLayoutMode(l.mode)}
-                    title={l.label}
-                    className={`p-2 rounded-md transition-colors ${
-                      layoutMode === l.mode
-                        ? "text-foreground/90 bg-foreground/[0.07]"
-                        : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-foreground/[0.03]"
-                    }`}
-                  >
-                    <Icon size={14} stroke={1.5} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <div className="border-t border-border/8 my-1" />
+        <div className="mx-3 my-1 border-t border-border/10" />
 
         {/* ── Zoom controls ── */}
         <div className="py-1.5 space-y-0.5">
-          <button onClick={handleZoomIn} className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/[0.03] transition-colors">
-            <IconZoomIn size={15} stroke={1.5} />
-            {!sidebarCollapsed && <span>Zoom In</span>}
+          <button onClick={handleZoomIn} className="flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors">
+            <IconZoomIn size={18} stroke={1.5} className="shrink-0" />
+            {!sidebarCollapsed && <span className="truncate">Zoom In</span>}
           </button>
-          <button onClick={handleZoomOut} className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/[0.03] transition-colors">
-            <IconZoomOut size={15} stroke={1.5} />
-            {!sidebarCollapsed && <span>Zoom Out</span>}
+          <button onClick={handleZoomOut} className="flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors">
+            <IconZoomOut size={18} stroke={1.5} className="shrink-0" />
+            {!sidebarCollapsed && <span className="truncate">Zoom Out</span>}
           </button>
-          <button onClick={handleFitAll} className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-[13px] text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/[0.03] transition-colors">
-            <IconFocusCentered size={15} stroke={1.5} />
-            {!sidebarCollapsed && <span>Fit All</span>}
+          <button onClick={handleFitAll} className="flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors">
+            <IconFocusCentered size={18} stroke={1.5} className="shrink-0" />
+            {!sidebarCollapsed && <span className="truncate">Fit All</span>}
           </button>
         </div>
 
         {/* ── Stats ── */}
         {!sidebarCollapsed && (
-          <div className="py-2 border-t border-border/8 mt-1">
+          <div className="px-4 py-2 border-t border-border/10 mt-1">
             <div className="text-[11px] text-muted-foreground/30 space-y-0.5">
               <p>{mergedNodes.length} nodes · {mergedLinks.length} connections</p>
             </div>
           </div>
         )}
-      </div>
+      </nav>
     </div>
   );
 

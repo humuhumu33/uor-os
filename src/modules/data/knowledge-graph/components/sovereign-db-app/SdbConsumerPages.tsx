@@ -903,17 +903,17 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             if (isFolder) toggleExpand(item.id);
             setSelectedId(item.id);
           }}
-          className={`group flex items-center w-full py-[5px] text-os-body transition-colors rounded-md ${
+          className={`flex items-center gap-3 w-full py-2 text-os-body font-medium transition-colors ${
             isSelected
-              ? "bg-foreground/[0.07] text-foreground font-medium"
-              : "text-foreground/65 hover:bg-foreground/[0.04] hover:text-foreground"
+              ? "bg-primary/10 text-primary border-r-2 border-primary"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           }`}
-          style={{ paddingLeft: `${8 + depth * 16}px`, paddingRight: "6px" }}
+          style={{ paddingLeft: `${16 + depth * 14}px`, paddingRight: "8px" }}
         >
           {isFolder ? (
             <>
-              <IconFolder size={15} className={`shrink-0 mr-2 ${getFolderColor(item.id)}`} />
-              <span className="truncate flex-1 text-left text-[13px]">{item.name}</span>
+              <IconFolder size={16} className={`shrink-0 ${getFolderColor(item.id)}`} />
+              <span className="truncate flex-1 text-left">{item.name}</span>
               {hasChildren && (
                 <span className="w-4 h-4 flex items-center justify-center shrink-0 text-muted-foreground/40">
                   <IconChevronRight
@@ -925,10 +925,10 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             </>
           ) : (
             <>
-              <span className="w-4 h-4 flex items-center justify-center shrink-0 mr-2 text-[12px]">
+              <span className="w-[18px] h-[18px] flex items-center justify-center shrink-0 text-[13px]">
                 {icon}
               </span>
-              <span className="truncate flex-1 text-left text-[13px]">{item.name}</span>
+              <span className="truncate flex-1 text-left">{item.name}</span>
             </>
           )}
         </button>
@@ -1013,123 +1013,129 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       {/* ── Sidebar (portaled to unified sidebar container) ── */}
       {sidebarTarget && activeSection === "workspace" && createPortal(
         <div className="flex flex-col h-full overflow-hidden">
-          {/* ── Top row: Home + New + Search (Eden-style) ── */}
-          <div className={`px-3 pt-3 pb-1 flex items-center ${sidebarCollapsed ? "justify-center" : "gap-1"}`}>
-            <button
-              onClick={() => setSelectedId(null)}
-              title="Home"
-              className={`flex items-center gap-1.5 px-2.5 py-[6px] rounded-lg text-[13px] font-medium transition-colors ${
-                !selectedId ? "bg-foreground/[0.08] text-foreground" : "text-foreground/60 hover:bg-foreground/[0.04] hover:text-foreground"
-              }`}
-            >
-              <IconHome size={15} className="shrink-0" />
-              {!sidebarCollapsed && "Home"}
-            </button>
+          {/* ── Header ── */}
+          <div className={`px-4 py-3 border-b border-border/15 flex items-center ${sidebarCollapsed ? "justify-center" : "justify-between"}`}>
             {!sidebarCollapsed && (
-              <div className="flex items-center gap-0.5 ml-auto">
-                <button onClick={() => createNote()} className="p-1.5 rounded-md text-foreground/40 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="New page">
-                  <IconPlus size={14} />
+              <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Workspace</span>
+            )}
+            {!sidebarCollapsed && (
+              <div className="flex items-center gap-0.5">
+                <button onClick={() => createNote()} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="New page">
+                  <IconPlus size={12} />
                 </button>
-                <button onClick={() => setFinderOpen(true)} className="p-1.5 rounded-md text-foreground/40 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="Search (⌘K)">
-                  <IconSearch size={14} />
+                <button onClick={() => setFinderOpen(true)} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="Search (⌘K)">
+                  <IconSearch size={12} />
                 </button>
               </div>
             )}
           </div>
 
-          {/* Scrollable content */}
-          <div className="flex-1 min-h-0 overflow-auto px-3 py-1">
+          {/* ── Nav ── */}
+          <nav className="flex-1 py-2 space-y-0.5 overflow-auto">
+            {/* Home */}
+            <button
+              onClick={() => setSelectedId(null)}
+              title="Home"
+              className={`flex items-center gap-3 w-full px-4 py-2.5 text-os-body font-medium transition-colors ${
+                !selectedId
+                  ? "bg-primary/10 text-primary border-r-2 border-primary"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              }`}
+            >
+              <IconHome size={18} stroke={1.5} className="shrink-0" />
+              {!sidebarCollapsed && <span className="truncate">Home</span>}
+            </button>
+
+            <div className="mx-3 my-1 border-t border-border/10" />
+
             {!sidebarCollapsed && (
               <>
                 {/* ── Recents ── */}
                 {recentItems.length > 0 && (
-                  <div className="mb-1">
-                    <div className="px-1 pt-3 pb-1.5">
-                      <span className="text-[11px] font-medium text-foreground/35 uppercase tracking-wider">Recents</span>
+                  <>
+                    <div className="px-4 py-1.5">
+                      <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Recents</span>
                     </div>
-                    <nav className="space-y-px">
-                      {recentItems.map(item => (
-                        <button
-                          key={item.id}
-                          onClick={() => setSelectedId(item.id)}
-                          className={`flex items-center gap-2 w-full px-2 py-[5px] rounded-md text-[13px] transition-colors ${
-                            selectedId === item.id
-                              ? "bg-foreground/[0.07] text-foreground font-medium"
-                              : "text-foreground/60 hover:bg-foreground/[0.04] hover:text-foreground"
-                          }`}
-                        >
-                          <span className="w-4 h-4 flex items-center justify-center shrink-0 text-[12px]">
-                            {item.icon || PAGE_ICONS[item.type] || "📄"}
-                          </span>
-                          <span className="truncate">{item.name}</span>
-                        </button>
-                      ))}
-                    </nav>
-                  </div>
+                    {recentItems.map(item => (
+                      <button
+                        key={item.id}
+                        onClick={() => setSelectedId(item.id)}
+                        className={`flex items-center gap-3 w-full px-4 py-2 text-os-body font-medium transition-colors ${
+                          selectedId === item.id
+                            ? "bg-primary/10 text-primary border-r-2 border-primary"
+                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        }`}
+                      >
+                        <span className="w-[18px] h-[18px] flex items-center justify-center shrink-0 text-[13px]">
+                          {item.icon || PAGE_ICONS[item.type] || "📄"}
+                        </span>
+                        <span className="truncate">{item.name}</span>
+                      </button>
+                    ))}
+                    <div className="mx-3 my-1 border-t border-border/10" />
+                  </>
                 )}
 
                 {/* ── Pinned ── */}
                 {favoriteItems.length > 0 && (
-                  <div className="mb-1">
-                    <div className="flex items-center px-1 pt-3 pb-1.5">
-                      <span className="text-[11px] font-medium text-foreground/35 uppercase tracking-wider">Pinned</span>
-                      <IconChevronDown size={10} className="ml-1 text-foreground/25" />
+                  <>
+                    <div className="px-4 py-1.5">
+                      <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Pinned</span>
                     </div>
-                    <nav className="space-y-px">
-                      {favoriteItems.map(item => (
-                        <button
-                          key={item.id}
-                          onClick={() => setSelectedId(item.id)}
-                          className={`flex items-center gap-2 w-full px-2 py-[5px] rounded-md text-[13px] transition-colors ${
-                            selectedId === item.id
-                              ? "bg-foreground/[0.07] text-foreground font-medium"
-                              : "text-foreground/60 hover:bg-foreground/[0.04] hover:text-foreground"
-                          }`}
-                        >
-                          <span className="w-4 h-4 flex items-center justify-center shrink-0 text-[12px]">
-                            {item.icon || PAGE_ICONS[item.type] || "📄"}
-                          </span>
-                          <span className="truncate">{item.name}</span>
-                        </button>
-                      ))}
-                    </nav>
-                  </div>
+                    {favoriteItems.map(item => (
+                      <button
+                        key={item.id}
+                        onClick={() => setSelectedId(item.id)}
+                        className={`flex items-center gap-3 w-full px-4 py-2 text-os-body font-medium transition-colors ${
+                          selectedId === item.id
+                            ? "bg-primary/10 text-primary border-r-2 border-primary"
+                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        }`}
+                      >
+                        <span className="w-[18px] h-[18px] flex items-center justify-center shrink-0 text-[13px]">
+                          {item.icon || PAGE_ICONS[item.type] || "📄"}
+                        </span>
+                        <span className="truncate">{item.name}</span>
+                      </button>
+                    ))}
+                    <div className="mx-3 my-1 border-t border-border/10" />
+                  </>
                 )}
 
-                {/* ── Workspace (Eden-style folder tree) ── */}
-                <div className="mb-1">
-                  <div className="flex items-center justify-between px-1 pt-3 pb-1.5">
-                    <span className="text-[11px] font-medium text-foreground/35 uppercase tracking-wider">Workspace</span>
-                    <div className="flex items-center gap-0.5">
-                      <button onClick={() => createFolder()} className="p-1 rounded text-foreground/30 hover:text-foreground hover:bg-foreground/[0.05] transition-colors" title="New folder">
-                        <IconFolder size={11} />
-                      </button>
-                      <button onClick={() => createNote()} className="p-1 rounded text-foreground/30 hover:text-foreground hover:bg-foreground/[0.05] transition-colors" title="New page">
-                        <IconPlus size={11} />
-                      </button>
-                    </div>
+                {/* ── Folders & Files ── */}
+                <div className="flex items-center justify-between px-4 py-1.5">
+                  <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Files</span>
+                  <div className="flex items-center gap-0.5">
+                    <button onClick={() => createFolder()} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="New folder">
+                      <IconFolder size={11} />
+                    </button>
+                    <button onClick={() => createNote()} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="New page">
+                      <IconPlus size={11} />
+                    </button>
                   </div>
-                  {workspaces.length > 1 && (
-                    <div className="mb-1">
-                      {workspaces.map(ws => (
-                        <button
-                          key={ws.id}
-                          onClick={() => { setActiveWorkspaceId(ws.id); setSelectedId(null); }}
-                          className={`flex items-center gap-2 w-full px-2 py-[5px] rounded-md text-[13px] transition-colors ${
-                            activeWorkspaceId === ws.id ? "bg-foreground/[0.07] text-foreground font-medium" : "text-foreground/60 hover:bg-foreground/[0.04] hover:text-foreground"
-                          }`}
-                        >
-                          <span className="text-[12px]">{ws.icon || "🏠"}</span>
-                          <span className="truncate">{ws.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <nav className="space-y-px">
-                    {rootItems.filter(i => i.type === "folder").map(i => renderItem(i))}
-                    {rootItems.filter(i => i.type !== "folder").map(i => renderItem(i))}
-                  </nav>
                 </div>
+                {workspaces.length > 1 && (
+                  <div className="mb-1">
+                    {workspaces.map(ws => (
+                      <button
+                        key={ws.id}
+                        onClick={() => { setActiveWorkspaceId(ws.id); setSelectedId(null); }}
+                        className={`flex items-center gap-3 w-full px-4 py-2 text-os-body font-medium transition-colors ${
+                          activeWorkspaceId === ws.id ? "bg-primary/10 text-primary border-r-2 border-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        }`}
+                      >
+                        <span className="text-[13px]">{ws.icon || "🏠"}</span>
+                        <span className="truncate">{ws.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="space-y-px">
+                  {rootItems.filter(i => i.type === "folder").map(i => renderItem(i))}
+                  {rootItems.filter(i => i.type !== "folder").map(i => renderItem(i))}
+                </div>
+
+                <div className="mx-3 my-1 border-t border-border/10" />
 
                 {/* ── Tags ── */}
                 <SdbTagLibrary
@@ -1144,19 +1150,19 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
                 />
               </>
             )}
-          </div>
+          </nav>
 
-          {/* ── Bottom bar (Eden-style: upload, graph, settings) ── */}
+          {/* ── Bottom bar ── */}
           {!sidebarCollapsed && (
-            <div className="px-3 py-2 border-t border-foreground/[0.06] flex items-center gap-1">
-              <button onClick={() => uploadRef.current?.click()} className="p-1.5 rounded-md text-foreground/35 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="Upload">
-                <IconUpload size={14} />
+            <div className="px-4 py-2.5 border-t border-border/15 flex items-center gap-2">
+              <button onClick={() => uploadRef.current?.click()} className="p-1.5 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="Upload">
+                <IconUpload size={15} stroke={1.5} />
               </button>
-              <button onClick={() => onNavigateSection?.("graph")} className="p-1.5 rounded-md text-foreground/35 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="Graph view">
-                <IconGraph size={14} />
+              <button onClick={() => onNavigateSection?.("graph")} className="p-1.5 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="Graph view">
+                <IconGraph size={15} stroke={1.5} />
               </button>
-              <button className="p-1.5 rounded-md text-foreground/35 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="Settings">
-                <IconSettings size={14} />
+              <button className="p-1.5 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="Settings">
+                <IconSettings size={15} stroke={1.5} />
               </button>
             </div>
           )}
