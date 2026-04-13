@@ -339,7 +339,7 @@ export function SdbGraph3D({
     }
 
     return group;
-  }, [degreeMap, hovered, makeLabel, highlightSignClass]);
+  }, [degreeMap, hovered, makeLabel, highlightSignClass, highlightedNodeIds]);
 
   /* ── Mirror τ detection helper ───────────────────────────── */
 
