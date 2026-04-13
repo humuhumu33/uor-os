@@ -198,12 +198,6 @@ export function SdbHomeView({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
-        {/* ── Cinematic overlay ── */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="text-[28px] font-light tracking-[0.15em] text-white/[0.6] select-none">
-            MySpace
-          </span>
-        </div>
         <style>{`
           @keyframes sdb-gradient-drift {
             0%, 100% { background-position: 0% 50%; }
