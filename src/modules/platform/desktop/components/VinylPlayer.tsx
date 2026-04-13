@@ -138,10 +138,10 @@ export default function VinylPlayer() {
       <iframe
         ref={iframeRef}
         src={EMBED_AUDIO}
-        width="0"
-        height="0"
+        width="300"
+        height="150"
         allow="autoplay"
-        style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
+        style={{ position: "absolute", left: -9999, top: -9999, opacity: 0, pointerEvents: "none" }}
         title="SoundCloud Player"
       />
 
