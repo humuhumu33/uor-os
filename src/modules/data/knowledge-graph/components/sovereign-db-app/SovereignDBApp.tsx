@@ -113,23 +113,21 @@ const SovereignDBApp = () => {
   return (
     <div className="flex flex-col h-full w-full bg-background text-foreground overflow-hidden">
       {/* ── Unified Header ──────────────────── */}
-      <header className="flex items-center h-11 px-5 border-b border-border bg-card shrink-0">
-        <div className="flex items-center gap-2">
+      <header className="flex items-center h-11 px-5 border-b border-border/40 bg-card shrink-0">
+        <div className="flex items-center gap-2.5">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[14px] font-semibold tracking-tight">SovereignDB</span>
-          <span className="text-[12px] text-muted-foreground/50 font-mono ml-1">{db.name}</span>
+          <span className="text-[15px] font-semibold tracking-tight">SovereignDB</span>
         </div>
 
-        {/* Subtle section switcher — pushed to the right */}
-        <div className="ml-auto flex items-center gap-1 text-[13px]">
+        <div className="ml-auto flex items-center gap-0.5">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => handleSectionChange(tab.id)}
-              className={`px-3 py-1 rounded-md transition-all duration-200 ${
+              className={`px-3.5 py-1 rounded-md text-[14px] transition-all duration-200 ${
                 section === tab.id
                   ? "text-foreground font-medium bg-muted/50"
-                  : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/20"
+                  : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/20"
               }`}
             >
               {tab.label}

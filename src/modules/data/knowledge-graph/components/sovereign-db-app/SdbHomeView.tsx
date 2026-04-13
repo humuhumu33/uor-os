@@ -32,7 +32,6 @@ interface Props {
 type FilterType = "all" | "note" | "daily" | "folder" | "chat" | "photo" | "video" | "link" | "audio";
 type SortType = "recent" | "name" | "created";
 
-/* ── Type-specific colors ── */
 const TYPE_GRADIENTS: Record<string, string> = {
   note:   "from-emerald-500/25 to-emerald-600/10",
   daily:  "from-amber-400/25 to-amber-500/10",
@@ -114,52 +113,37 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
   return (
     <div className="flex-1 overflow-auto">
       {/* ── Hero Banner ── */}
-      <div className="relative w-full h-[160px] overflow-hidden">
-        {/* Layered CSS gradients simulating a nature landscape */}
+      <div className="relative w-full h-[140px] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/50 via-emerald-700/25 to-sky-800/40" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-        {/* Subtle dot pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
-            backgroundSize: "20px 20px",
-          }}
-        />
-        {/* Bottom fade into content */}
-        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
       </div>
 
-      <div className="max-w-[1000px] mx-auto px-10 -mt-8 relative z-10">
+      <div className="max-w-[960px] mx-auto px-10 -mt-6 relative z-10 pb-10">
         {/* ── Search bar ── */}
-        <div className="relative mb-8">
-          <IconSearch size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/40" />
+        <div className="relative mb-7">
+          <IconSearch size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search anything…"
-            className="w-full pl-13 pr-28 py-4 text-[16px] bg-card border border-border/40 rounded-2xl
-              text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20
+            className="w-full pl-12 pr-4 py-3.5 text-[15px] bg-card border border-border/30 rounded-2xl
+              text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/20
               focus:border-primary/30 transition-all shadow-sm"
           />
-          <button className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl
-            bg-muted/50 text-muted-foreground text-[13px] font-medium hover:bg-muted/80 transition-colors">
-            <IconAdjustments size={14} />
-            Filters
-          </button>
         </div>
 
         {/* ── Filter chips ── */}
-        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-1">
           {FILTERS.map(f => (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium border whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[14px] font-medium border whitespace-nowrap transition-all ${
                 filter === f.key
                   ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-card/80 text-muted-foreground border-border/30 hover:bg-muted/40 hover:text-foreground"
+                  : "bg-card/80 text-muted-foreground border-border/20 hover:bg-muted/40 hover:text-foreground"
               }`}
             >
               <span className={`w-2 h-2 rounded-full shrink-0 ${filter === f.key ? "bg-primary-foreground/80" : f.dot}`} />
@@ -168,10 +152,10 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
           ))}
         </div>
 
-        {/* ── Workspace header ── */}
-        <div className="flex items-center justify-between mb-6">
+        {/* ── Section header ── */}
+        <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <h2 className="text-[18px] font-semibold text-foreground">Workspace</h2>
+            <h2 className="text-[17px] font-semibold text-foreground tracking-tight">Workspace</h2>
             <button
               onClick={onCreateNote}
               className="w-7 h-7 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 flex items-center justify-center transition-colors"
@@ -180,24 +164,23 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
             </button>
           </div>
           <div className="flex items-center gap-2">
-            {/* Sort dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowSort(s => !s)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] text-muted-foreground hover:bg-muted/40 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[14px] text-muted-foreground hover:bg-muted/40 transition-colors"
               >
-                <IconSortDescending size={14} />
+                <IconSortDescending size={15} />
                 {sort === "recent" ? "Last opened" : sort === "name" ? "Name" : "Created"}
               </button>
               {showSort && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowSort(false)} />
-                  <div className="absolute right-0 top-full mt-1 z-20 bg-card border border-border/50 rounded-xl shadow-lg py-1.5 min-w-[150px]">
+                  <div className="absolute right-0 top-full mt-1 z-20 bg-card border border-border/40 rounded-xl shadow-lg py-1.5 min-w-[150px]">
                     {(["recent", "name", "created"] as SortType[]).map(s => (
                       <button
                         key={s}
                         onClick={() => { setSort(s); setShowSort(false); }}
-                        className={`w-full px-4 py-2 text-left text-[13px] hover:bg-muted/40 transition-colors rounded-md ${
+                        className={`w-full px-4 py-2 text-left text-[14px] hover:bg-muted/40 transition-colors ${
                           sort === s ? "text-primary font-medium" : "text-foreground/70"
                         }`}
                       >
@@ -208,19 +191,18 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
                 </>
               )}
             </div>
-            {/* View toggle */}
-            <div className="flex items-center border border-border/30 rounded-xl overflow-hidden">
+            <div className="flex items-center border border-border/20 rounded-xl overflow-hidden">
               <button
                 onClick={() => setView("grid")}
-                className={`p-2 transition-colors ${view === "grid" ? "bg-muted/60 text-foreground" : "text-muted-foreground/40 hover:text-foreground"}`}
+                className={`p-2 transition-colors ${view === "grid" ? "bg-muted/60 text-foreground" : "text-muted-foreground/30 hover:text-foreground"}`}
               >
-                <IconLayoutGrid size={15} />
+                <IconLayoutGrid size={16} />
               </button>
               <button
                 onClick={() => setView("list")}
-                className={`p-2 transition-colors ${view === "list" ? "bg-muted/60 text-foreground" : "text-muted-foreground/40 hover:text-foreground"}`}
+                className={`p-2 transition-colors ${view === "list" ? "bg-muted/60 text-foreground" : "text-muted-foreground/30 hover:text-foreground"}`}
               >
-                <IconList size={15} />
+                <IconList size={16} />
               </button>
             </div>
           </div>
@@ -229,23 +211,23 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
         {/* ── Content ── */}
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24">
-            <div className="w-20 h-20 rounded-3xl bg-muted/20 flex items-center justify-center mb-5">
-              <IconFile size={32} className="text-muted-foreground/20" />
+            <div className="w-20 h-20 rounded-3xl bg-muted/15 flex items-center justify-center mb-5">
+              <IconFile size={32} className="text-muted-foreground/15" />
             </div>
-            <p className="text-[16px] text-muted-foreground/50 mb-5">
+            <p className="text-[15px] text-muted-foreground/40 mb-5">
               {search ? "No results found" : "Create your first page"}
             </p>
             {!search && (
               <button
                 onClick={onCreateNote}
-                className="px-6 py-3 rounded-2xl bg-primary text-primary-foreground text-[14px] font-medium hover:bg-primary/90 transition-colors shadow-sm"
+                className="px-6 py-3 rounded-2xl bg-primary text-primary-foreground text-[15px] font-medium hover:bg-primary/90 transition-colors shadow-sm"
               >
                 New Page
               </button>
             )}
           </div>
         ) : view === "grid" ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 pb-10">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {filtered.map(item => {
               const gradient = TYPE_GRADIENTS[item.type] || TYPE_GRADIENTS.note;
               const dot = TYPE_DOTS[item.type] || TYPE_DOTS.note;
@@ -254,35 +236,25 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
                 <button
                   key={item.id}
                   onClick={() => onSelect(item.id)}
-                  className="group text-left rounded-2xl border border-border/20 bg-card overflow-hidden
-                    hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 hover:border-border/40 transition-all duration-250"
+                  className="group text-left rounded-2xl border border-border/15 bg-card overflow-hidden
+                    hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 hover:border-border/30 transition-all duration-250"
                 >
-                  {/* Thumbnail preview */}
-                  <div className={`h-[160px] bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
-                    <Icon size={36} className="text-foreground/8" />
-                    {/* Subtle inner glow */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-card/30 to-transparent" />
+                  <div className={`h-[140px] bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
+                    <Icon size={32} className="text-foreground/6" />
                   </div>
-                  {/* Info row */}
                   <div className="px-4 py-3.5">
-                    <div className="flex items-center gap-2.5 mb-1.5">
-                      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dot}`} />
-                      <span className="text-[14px] font-medium text-foreground truncate flex-1">{item.name}</span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+                      <span className="text-[14px] font-medium text-foreground truncate">{item.name}</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[12px] text-muted-foreground/40 font-mono">{relativeTime(item.updatedAt)}</span>
-                      {item.type === "folder" && (
-                        <span className="text-[11px] text-muted-foreground/30">folder</span>
-                      )}
-                    </div>
+                    <span className="text-[13px] text-muted-foreground/35 pl-4">{relativeTime(item.updatedAt)}</span>
                   </div>
                 </button>
               );
             })}
           </div>
         ) : (
-          /* List view */
-          <div className="space-y-0.5 pb-10">
+          <div className="space-y-0.5">
             {filtered.map(item => {
               const dot = TYPE_DOTS[item.type] || TYPE_DOTS.note;
               const Icon = TYPE_ICON[item.type] || IconFile;
@@ -292,12 +264,12 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
                   onClick={() => onSelect(item.id)}
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-xl hover:bg-muted/30 transition-colors group"
                 >
-                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dot}`} />
-                  <Icon size={17} className="text-muted-foreground/40 shrink-0" />
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+                  <Icon size={16} className="text-muted-foreground/30 shrink-0" />
                   <span className="text-[14px] text-foreground/80 truncate flex-1 text-left group-hover:text-foreground transition-colors">
                     {item.name}
                   </span>
-                  <span className="text-[12px] text-muted-foreground/30 font-mono shrink-0">
+                  <span className="text-[13px] text-muted-foreground/30 shrink-0">
                     {relativeTime(item.updatedAt)}
                   </span>
                 </button>

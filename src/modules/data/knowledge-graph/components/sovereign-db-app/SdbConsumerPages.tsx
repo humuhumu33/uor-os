@@ -1,17 +1,14 @@
 /**
  * SdbConsumerPages — Eden-inspired workspace with page tree, block editor,
  * backlinks, and Cmd+K quick finder.
- * ══════════════════════════════════════════════════════════════════
- *
- * @product SovereignDB
  */
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   IconFolder, IconFile, IconPlus, IconChevronRight, IconChevronDown, IconTrash,
-  IconGraph, IconSun, IconLayoutBoard, IconTerminal2, IconSearch,
-  IconStar, IconStarFilled, IconDots, IconArrowLeft, IconHome,
-  IconSettings, IconClock,
+  IconGraph, IconSun, IconLayoutBoard, IconSearch,
+  IconStar, IconStarFilled, IconDots,
+  IconHome, IconSettings, IconClock,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
@@ -345,7 +342,6 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     [items, favorites]
   );
 
-  // Recent items (last 5 opened)
   const recentItems = useMemo(() =>
     recentIds.slice(0, 5).map(id => items.find(i => i.id === id)).filter(Boolean) as TreeItem[],
     [recentIds, items]
@@ -365,39 +361,39 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
             if (isFolder) toggleExpand(item.id);
             setSelectedId(item.id);
           }}
-          className={`group flex items-center gap-1.5 w-full py-[6px] text-[13px] transition-colors rounded-lg ${
+          className={`group flex items-center gap-2 w-full py-[7px] text-[14px] transition-colors rounded-lg ${
             isSelected
               ? "bg-primary/10 text-foreground"
               : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
           }`}
-          style={{ paddingLeft: `${10 + depth * 16}px`, paddingRight: "8px" }}
+          style={{ paddingLeft: `${12 + depth * 16}px`, paddingRight: "10px" }}
         >
           {isFolder ? (
-            <span className="w-5 h-5 flex items-center justify-center shrink-0">
+            <span className="w-4 h-4 flex items-center justify-center shrink-0">
               {isExpanded
-                ? <IconChevronDown size={13} className="text-muted-foreground/50" />
-                : <IconChevronRight size={13} className="text-muted-foreground/50" />
+                ? <IconChevronDown size={13} className="text-muted-foreground/40" />
+                : <IconChevronRight size={13} className="text-muted-foreground/40" />
               }
             </span>
           ) : (
-            <span className="w-5 h-5 flex items-center justify-center shrink-0 text-[12px]">
+            <span className="w-4 h-4 flex items-center justify-center shrink-0 text-[12px]">
               {icon}
             </span>
           )}
           <span className="truncate flex-1 text-left">{item.name}</span>
-          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
             <button
               onClick={e => { e.stopPropagation(); deleteItem(item); }}
-              className="p-0.5 rounded hover:bg-muted/60 text-muted-foreground/40 hover:text-destructive transition-colors"
+              className="p-1 rounded hover:bg-muted/60 text-muted-foreground/30 hover:text-destructive transition-colors"
             >
-              <IconTrash size={12} />
+              <IconTrash size={13} />
             </button>
             {isFolder && (
               <button
                 onClick={e => { e.stopPropagation(); createNote(item.id); }}
-                className="p-0.5 rounded hover:bg-muted/60 text-muted-foreground/40 hover:text-foreground transition-colors"
+                className="p-1 rounded hover:bg-muted/60 text-muted-foreground/30 hover:text-foreground transition-colors"
               >
-                <IconPlus size={12} />
+                <IconPlus size={13} />
               </button>
             )}
           </div>
@@ -424,64 +420,60 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
       />
 
       {/* ── Sidebar ───────────────────────── */}
-      <aside className="w-[240px] shrink-0 border-r border-border/30 bg-muted/10 flex flex-col overflow-hidden">
-        {/* Header with logo + New button */}
-        <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-border/20">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-[11px] font-bold text-white">
-            S
-          </div>
-          <span className="text-[14px] font-semibold text-foreground truncate flex-1">SovereignDB</span>
+      <aside className="w-[220px] shrink-0 border-r border-border/20 bg-muted/8 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border/15">
+          <span className="text-[14px] font-semibold text-foreground truncate flex-1">Workspace</span>
           <button
             onClick={() => createNote()}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 text-[12px] font-medium transition-colors"
-            title="New"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/15 text-[13px] font-medium transition-colors"
           >
             <IconPlus size={13} />
-            <span>New</span>
+            New
           </button>
         </div>
 
         {/* Quick actions */}
-        <div className="px-3 py-2.5 space-y-0.5">
+        <div className="px-3 py-2 space-y-0.5">
           <button
             onClick={() => setSelectedId(null)}
-            className={`flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-lg text-[13px] transition-colors ${
+            className={`flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-lg text-[14px] transition-colors ${
               !selectedId ? "bg-primary/10 text-foreground font-medium" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
             }`}
           >
             <IconHome size={16} className="shrink-0" />
-            <span>Home</span>
+            Home
           </button>
           <button
             onClick={() => setFinderOpen(true)}
-            className="flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-lg text-[13px] text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
+            className="flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded-lg text-[14px] text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors"
           >
             <IconSearch size={16} className="shrink-0" />
             <span className="flex-1 text-left">Search</span>
-            <span className="text-[10px] text-muted-foreground/30 font-mono bg-muted/40 px-1.5 py-0.5 rounded">⌘K</span>
+            <span className="text-[11px] text-muted-foreground/25 font-mono">⌘K</span>
           </button>
         </div>
 
-        <div className="mx-3 border-t border-border/15" />
+        <div className="mx-3 border-t border-border/10" />
 
-        {/* Scrollable content area */}
+        {/* Scrollable sections */}
         <div className="flex-1 min-h-0 overflow-auto px-3 py-2">
           {/* Recents */}
           {recentItems.length > 0 && (
-            <div className="mb-4">
-              <div className="flex items-center gap-1.5 px-2.5 pb-2 pt-1">
-                <IconClock size={12} className="text-muted-foreground/40" />
-                <span className="text-[11px] font-semibold text-muted-foreground/40 uppercase tracking-wider">Recents</span>
+            <div className="mb-3">
+              <div className="flex items-center gap-1.5 px-2.5 pb-1.5 pt-1">
+                <IconClock size={12} className="text-muted-foreground/30" />
+                <span className="text-[12px] font-medium text-muted-foreground/35 uppercase tracking-wider">Recents</span>
               </div>
               {recentItems.map(item => (
                 <button
                   key={item.id}
                   onClick={() => setSelectedId(item.id)}
-                  className={`flex items-center gap-2 w-full px-2.5 py-[6px] rounded-lg text-[13px] transition-colors ${
+                  className={`flex items-center gap-2 w-full px-2.5 py-[6px] rounded-lg text-[14px] transition-colors ${
                     selectedId === item.id ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
                   }`}
                 >
-                  <span className="w-4 h-4 flex items-center justify-center text-[11px] shrink-0">
+                  <span className="w-4 flex items-center justify-center text-[12px] shrink-0">
                     {item.icon || PAGE_ICONS[item.type] || "📄"}
                   </span>
                   <span className="truncate">{item.name}</span>
@@ -492,20 +484,20 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
 
           {/* Pinned */}
           {favoriteItems.length > 0 && (
-            <div className="mb-4">
-              <div className="flex items-center gap-1.5 px-2.5 pb-2 pt-1">
-                <IconStar size={12} className="text-muted-foreground/40" />
-                <span className="text-[11px] font-semibold text-muted-foreground/40 uppercase tracking-wider">Pinned</span>
+            <div className="mb-3">
+              <div className="flex items-center gap-1.5 px-2.5 pb-1.5 pt-1">
+                <IconStar size={12} className="text-muted-foreground/30" />
+                <span className="text-[12px] font-medium text-muted-foreground/35 uppercase tracking-wider">Pinned</span>
               </div>
               {favoriteItems.map(item => (
                 <button
                   key={item.id}
                   onClick={() => setSelectedId(item.id)}
-                  className={`flex items-center gap-2 w-full px-2.5 py-[6px] rounded-lg text-[13px] transition-colors ${
+                  className={`flex items-center gap-2 w-full px-2.5 py-[6px] rounded-lg text-[14px] transition-colors ${
                     selectedId === item.id ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
                   }`}
                 >
-                  <span className="w-4 h-4 flex items-center justify-center text-[11px] shrink-0">
+                  <span className="w-4 flex items-center justify-center text-[12px] shrink-0">
                     {item.icon || PAGE_ICONS[item.type] || "📄"}
                   </span>
                   <span className="truncate">{item.name}</span>
@@ -515,21 +507,20 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
           )}
 
           {/* Daily Notes */}
-          <div className="mb-4">
+          <div className="mb-3">
             <SdbDailyNoteSection db={db} onSelectDaily={navigateTo} selectedId={selectedId} />
           </div>
 
           {/* Workspace tree */}
           <div>
-            <div className="flex items-center justify-between px-2.5 pb-2 pt-1">
+            <div className="flex items-center justify-between px-2.5 pb-1.5 pt-1">
               <div className="flex items-center gap-1.5">
-                <IconFolder size={12} className="text-muted-foreground/40" />
-                <span className="text-[11px] font-semibold text-muted-foreground/40 uppercase tracking-wider">Workspace</span>
+                <IconFolder size={12} className="text-muted-foreground/30" />
+                <span className="text-[12px] font-medium text-muted-foreground/35 uppercase tracking-wider">Pages</span>
               </div>
               <button
                 onClick={createFolder}
-                className="p-0.5 rounded text-muted-foreground/30 hover:text-foreground hover:bg-muted/40 transition-colors"
-                title="New folder"
+                className="p-0.5 rounded text-muted-foreground/20 hover:text-foreground hover:bg-muted/40 transition-colors"
               >
                 <IconPlus size={12} />
               </button>
@@ -537,10 +528,10 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
             <nav>
               {rootItems.length === 0 ? (
                 <div className="px-2.5 py-6 text-center">
-                  <p className="text-[12px] text-muted-foreground/30 mb-2">No pages yet</p>
+                  <p className="text-[13px] text-muted-foreground/25 mb-2">No pages yet</p>
                   <button
                     onClick={() => createNote()}
-                    className="text-[12px] text-primary/60 hover:text-primary transition-colors"
+                    className="text-[13px] text-primary/50 hover:text-primary transition-colors"
                   >
                     Create a page
                   </button>
@@ -552,15 +543,15 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
           </div>
         </div>
 
-        {/* ── Bottom area ── */}
-        <div className="mt-auto border-t border-border/15 px-3 py-2 space-y-0.5">
-          <button className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-[13px] text-muted-foreground/50 hover:bg-muted/30 hover:text-foreground transition-colors">
+        {/* Bottom */}
+        <div className="mt-auto border-t border-border/10 px-3 py-2 space-y-0.5">
+          <button className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-[14px] text-muted-foreground/40 hover:bg-muted/30 hover:text-foreground transition-colors">
             <IconTrash size={15} className="shrink-0" />
-            <span>Trash</span>
+            Trash
           </button>
-          <button className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-[13px] text-muted-foreground/50 hover:bg-muted/30 hover:text-foreground transition-colors">
+          <button className="flex items-center gap-2.5 w-full px-2.5 py-[6px] rounded-lg text-[14px] text-muted-foreground/40 hover:bg-muted/30 hover:text-foreground transition-colors">
             <IconSettings size={15} className="shrink-0" />
-            <span>Settings</span>
+            Settings
           </button>
         </div>
       </aside>
@@ -584,17 +575,17 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
           />
         ) : (
           <>
-            {/* ── Page top bar ── */}
-            <div className="flex items-center justify-between h-11 px-4 shrink-0 border-b border-border/20">
-              <div className="flex items-center gap-1 text-[13px] text-muted-foreground/60 min-w-0">
+            {/* Page top bar */}
+            <div className="flex items-center justify-between h-11 px-4 shrink-0 border-b border-border/15">
+              <div className="flex items-center gap-1 text-[14px] text-muted-foreground/50 min-w-0">
                 {breadcrumbs.map((crumb, i) => (
                   <span key={crumb.id} className="flex items-center gap-1 min-w-0">
-                    {i > 0 && <IconChevronRight size={12} className="text-muted-foreground/30 shrink-0" />}
+                    {i > 0 && <IconChevronRight size={12} className="text-muted-foreground/20 shrink-0" />}
                     <button
                       onClick={() => setSelectedId(crumb.id)}
                       className="flex items-center gap-1 hover:text-foreground transition-colors truncate"
                     >
-                      <span className="text-[12px]">{crumb.icon}</span>
+                      <span className="text-[13px]">{crumb.icon}</span>
                       <span className="truncate">{crumb.name}</span>
                     </button>
                   </span>
@@ -603,8 +594,8 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => toggleFavorite(selected.id)}
-                  className="p-1.5 rounded hover:bg-muted/40 text-muted-foreground/40 hover:text-foreground transition-colors"
-                  title={favorites.has(selected.id) ? "Remove from pinned" : "Pin"}
+                  className="p-1.5 rounded hover:bg-muted/40 text-muted-foreground/30 hover:text-foreground transition-colors"
+                  title={favorites.has(selected.id) ? "Unpin" : "Pin"}
                 >
                   {favorites.has(selected.id)
                     ? <IconStarFilled size={15} className="text-amber-400" />
@@ -613,15 +604,14 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                 </button>
                 <button
                   onClick={() => setShowProperties(p => !p)}
-                  className="p-1.5 rounded hover:bg-muted/40 text-muted-foreground/40 hover:text-foreground transition-colors"
-                  title="Page options"
+                  className="p-1.5 rounded hover:bg-muted/40 text-muted-foreground/30 hover:text-foreground transition-colors"
                 >
                   <IconDots size={15} />
                 </button>
               </div>
             </div>
 
-            {/* ── Page content ── */}
+            {/* Page content */}
             <div className="flex-1 overflow-auto">
               <div className="max-w-[720px] mx-auto px-16 py-12">
                 <div className="mb-2">
@@ -635,7 +625,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                   onChange={e => setNoteTitle(e.target.value)}
                   onBlur={saveNote}
                   placeholder="Untitled"
-                  className="w-full text-[40px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/20 mb-1 leading-tight tracking-tight"
+                  className="w-full text-[36px] font-bold text-foreground bg-transparent border-none outline-none placeholder:text-muted-foreground/15 mb-1 leading-tight tracking-tight"
                 />
 
                 {showProperties && (
@@ -679,7 +669,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
                   }}
                 />
 
-                <div className="mt-8 pt-4 border-t border-border/20 flex items-center gap-3 text-[12px] text-muted-foreground/40 font-mono">
+                <div className="mt-8 pt-4 border-t border-border/15 flex items-center gap-3 text-[13px] text-muted-foreground/30">
                   <span>{blocks.length} blocks</span>
                   <span>·</span>
                   <span>{selected.edge.properties.updatedAt
