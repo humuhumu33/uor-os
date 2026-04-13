@@ -244,7 +244,16 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
     // Auto-select first workspace if none active
     if (!activeWorkspaceId) {
       const first = all.find(i => i.type === "workspace");
-      if (first) setActiveWorkspaceId(first.id);
+      if (first) {
+        setActiveWorkspaceId(first.id);
+        // Auto-expand seeded folders so nesting is visible
+        const folderIds = all.filter(i => i.type === "folder").map(i => i.id);
+        setExpanded(prev => {
+          const next = new Set(prev);
+          folderIds.forEach(id => next.add(id));
+          return next;
+        });
+      }
     }
   }, [db, activeWorkspaceId]);
 
