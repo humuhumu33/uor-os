@@ -84,6 +84,82 @@
   to   { opacity: 1; }
 }
 
+/* ── Slide left (sidebar menu) ──────────────────────────────── */
+@keyframes sov-slide-left-in {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes sov-slide-left-out {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
+}
+
+.sov-slide-left-in {
+  animation: sov-slide-left-in 0.2s ease-out both;
+}
+
+.sov-slide-left-out {
+  animation: sov-slide-left-out 0.2s ease-in both;
+}
+
+/* ── Slide down (height expand) ────────────────────────────── */
+@keyframes sov-expand-in {
+  from { opacity: 0; max-height: 0; }
+  to   { opacity: 1; max-height: 500px; }
+}
+
+@keyframes sov-expand-out {
+  from { opacity: 1; max-height: 500px; }
+  to   { opacity: 0; max-height: 0; }
+}
+
+.sov-expand-in {
+  animation: sov-expand-in 0.15s ease-out both;
+  overflow: hidden;
+}
+
+.sov-expand-out {
+  animation: sov-expand-out 0.12s ease-in both;
+  overflow: hidden;
+}
+
+/* ── Stagger children ──────────────────────────────────────── */
+.sov-stagger-item {
+  animation: sov-fade-in 0.15s ease-out both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+/* ── Spin (continuous rotation for vinyl, etc.) ────────────── */
+@keyframes sov-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.sov-spin {
+  animation: sov-spin 3s linear infinite;
+}
+
+/* ── Pulse opacity (playing indicator) ─────────────────────── */
+@keyframes sov-pulse-opacity {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+.sov-pulse-opacity {
+  animation: sov-pulse-opacity 1.2s ease-in-out infinite;
+}
+
+/* ── Glow pulse ────────────────────────────────────────────── */
+@keyframes sov-glow-pulse {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 0.6; }
+}
+
+.sov-glow-pulse {
+  animation: sov-glow-pulse 2s ease-in-out infinite;
+}
+
 /* ── Reduced motion ─────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .sov-fade-in,
@@ -91,7 +167,15 @@
   .sov-scale-in,
   .sov-scale-out,
   .sov-slide-up,
+  .sov-slide-left-in,
+  .sov-slide-left-out,
+  .sov-expand-in,
+  .sov-expand-out,
+  .sov-stagger-item,
+  .sov-spin,
   .sov-pulse-ring,
+  .sov-pulse-opacity,
+  .sov-glow-pulse,
   .sov-coherence-pulse,
   .sov-overlay-enter {
     animation: none !important;

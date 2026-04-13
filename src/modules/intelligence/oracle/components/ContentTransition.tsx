@@ -3,27 +3,36 @@
  * when transitioning from seed (Wikipedia extract) to AI-streamed content.
  */
 
-import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
 
 interface Props {
-  /** Unique key that changes when content source switches (seed → stream) */
   contentKey: string;
   children: React.ReactNode;
 }
 
-const ContentTransition: React.FC<Props> = ({ contentKey, children }) => (
-  <AnimatePresence mode="wait">
-    <motion.div
-      key={contentKey}
-      initial={{ opacity: 0.4 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-    >
+const ContentTransition: React.FC<Props> = ({ contentKey, children }) => {
+  const [currentKey, setCurrentKey] = useState(contentKey);
+  const [animClass, setAnimClass] = useState("sov-fade-in");
+
+  const prevKey = useRef(contentKey);
+
+  useEffect(() => {
+    if (contentKey !== prevKey.current) {
+      setAnimClass("sov-fade-out");
+      const t = setTimeout(() => {
+        setCurrentKey(contentKey);
+        setAnimClass("sov-fade-in");
+      }, 120);
+      prevKey.current = contentKey;
+      return () => clearTimeout(t);
+    }
+  }, [contentKey]);
+
+  return (
+    <div key={currentKey} className={animClass}>
       {children}
-    </motion.div>
-  </AnimatePresence>
-);
+    </div>
+  );
+};
 
 export default ContentTransition;

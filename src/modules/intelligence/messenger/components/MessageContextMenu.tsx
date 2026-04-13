@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from "framer-motion";
 import { Reply, Copy, Pencil, Trash2, Pin, Smile } from "lucide-react";
 import type { DecryptedMessage } from "../lib/types";
 
@@ -32,41 +31,31 @@ export default function MessageContextMenu({
   ];
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.1 }}
-        className="fixed inset-0 z-[100]"
-        onClick={onClose}
+    <div
+      className="fixed inset-0 z-[100] sov-overlay-enter"
+      onClick={onClose}
+    >
+      <div
+        className="absolute bg-slate-900/95 backdrop-blur-xl border border-white/[0.1] rounded-xl shadow-2xl py-1 min-w-[160px] overflow-hidden sov-scale-in"
+        style={{ left: Math.min(position.x, window.innerWidth - 200), top: Math.min(position.y, window.innerHeight - 250) }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.92 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.92 }}
-          transition={{ duration: 0.1 }}
-          className="absolute bg-slate-900/95 backdrop-blur-xl border border-white/[0.1] rounded-xl shadow-2xl py-1 min-w-[160px] overflow-hidden"
-          style={{ left: Math.min(position.x, window.innerWidth - 200), top: Math.min(position.y, window.innerHeight - 250) }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {items.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.label}
-                onClick={() => { item.action(); onClose(); }}
-                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] transition-all duration-75 select-none active:scale-[0.97] ${
-                  (item as any).danger ? "text-red-400/80 hover:bg-red-500/10 active:bg-red-500/15" : "text-white/70 hover:bg-white/[0.06] active:bg-white/[0.1]"
-                }`}
-              >
-                <Icon size={15} />
-                {item.label}
-              </button>
-            );
-          })}
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.label}
+              onClick={() => { item.action(); onClose(); }}
+              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] transition-all duration-75 select-none active:scale-[0.97] ${
+                (item as any).danger ? "text-red-400/80 hover:bg-red-500/10 active:bg-red-500/15" : "text-white/70 hover:bg-white/[0.06] active:bg-white/[0.1]"
+              }`}
+            >
+              <Icon size={15} />
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
