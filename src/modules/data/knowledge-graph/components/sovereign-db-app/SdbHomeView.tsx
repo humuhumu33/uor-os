@@ -1,19 +1,16 @@
 /**
- * SdbHomeView — Eden-inspired workspace home with hero banner,
- * search bar, tag-aware filter chips, and beautiful preview cards.
+ * SdbHomeView — Workspace home with filter chips and preview cards.
  */
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState } from "react";
 import {
-  IconSearch, IconPlus, IconFile, IconCalendarEvent,
+  IconPlus, IconFile, IconCalendarEvent,
   IconFolder, IconLayoutGrid, IconList, IconSortDescending,
-  IconAdjustments, IconMessage, IconPhoto, IconVideo,
+  IconMessage, IconPhoto, IconVideo,
   IconLink, IconMusic, IconFileText, IconX,
-  IconLayout, IconGraph, IconTerminal2,
 } from "@tabler/icons-react";
 import type { Hyperedge } from "../../hypergraph";
 import { SdbTagChip, getTagColor, DEFAULT_TYPE_COLORS } from "./SdbTagChip";
-import type { AppSection } from "./SovereignDBApp";
 
 interface NoteItem {
   id: string;
