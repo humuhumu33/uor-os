@@ -386,6 +386,15 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   }, []);
 
   // ── Upload handler ──
+  const readFileAsDataUrl = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }, []);
+
   const handleUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     for (const file of Array.from(files)) {
@@ -399,6 +408,13 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
       let content = "";
       if (file.type.startsWith("text/") || file.name.endsWith(".md") || file.name.endsWith(".txt")) {
         content = await file.text();
+      }
+
+      // Read media files as data URLs for preview
+      let fileDataUrl = "";
+      const isMedia = file.type.startsWith("image/") || file.type.startsWith("audio/") || file.type.startsWith("video/");
+      if (isMedia && file.size < 10 * 1024 * 1024) { // max 10MB for inline storage
+        fileDataUrl = await readFileAsDataUrl(file);
       }
 
       const fileName = file.name.replace(/\.[^.]+$/, "") || "Untitled";
@@ -415,12 +431,13 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
         fileName: file.name,
         fileSize: file.size,
         fileMime: file.type,
+        fileDataUrl,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
     }
     await reload();
-  }, [db, reload]);
+  }, [db, reload, readFileAsDataUrl]);
 
   // ── Tag system computations ──
   const tagEdges = useMemo(() =>
