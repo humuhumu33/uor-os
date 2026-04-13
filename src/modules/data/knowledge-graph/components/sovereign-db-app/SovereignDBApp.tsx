@@ -117,13 +117,13 @@ const SovereignDBApp = () => {
       <header className="flex items-center h-11 px-5 border-b border-border/40 bg-card shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[15px] font-semibold tracking-tight">MySpace</span>
+          <span className="text-os-body font-semibold tracking-tight">MySpace</span>
         </div>
 
         <div className="flex items-center ml-6">
           <span
             key={section}
-            className="text-[13px] italic tracking-wide text-muted-foreground/50 animate-[sdb-tagline-fade_0.5s_ease-out]"
+            className="text-os-body italic tracking-wide text-muted-foreground animate-[sdb-tagline-fade_0.5s_ease-out]"
           >
             {MYSPACE_SECTION_TAGLINES[section] || "Own your data."}
           </span>
@@ -140,10 +140,10 @@ const SovereignDBApp = () => {
             <button
               key={tab.id}
               onClick={() => handleSectionChange(tab.id)}
-              className={`relative px-3.5 py-1.5 text-[14px] transition-all duration-200 ${
+              className={`relative px-3.5 py-1.5 text-os-body transition-all duration-200 ${
                 section === tab.id
                   ? "text-foreground font-medium"
-                  : "text-muted-foreground/50 hover:text-muted-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {tab.label}
