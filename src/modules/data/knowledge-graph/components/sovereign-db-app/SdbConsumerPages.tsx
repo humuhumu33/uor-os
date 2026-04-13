@@ -1322,6 +1322,11 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
             globalSearch={globalSearch}
             activeFolderId={activeFolderId}
             onNavigateFolder={(fid) => { setActiveFolderId(fid); setSelectedId(null); }}
+            onMoveItem={async (itemId, targetFolderId) => {
+              const item = items.find(i => i.id === itemId);
+              if (!item || item.id === targetFolderId) return;
+              await dnd.moveItem({ id: item.id, type: item.type, parentId: item.parentId, edge: item.edge }, targetFolderId);
+            }}
           />
         ) : (
           <>
