@@ -41,6 +41,8 @@ interface Props {
   /** When set, show contents of this folder instead of everything */
   activeFolderId?: string | null;
   onNavigateFolder?: (folderId: string | null) => void;
+  /** Move an item into a folder */
+  onMoveItem?: (itemId: string, targetFolderId: string) => void;
 }
 
 type FilterType = "all" | "note" | "daily" | "folder" | "chat" | "photo" | "video" | "link" | "audio";
