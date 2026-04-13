@@ -22,6 +22,7 @@ import { SdbLocalGraph } from "./SdbLocalGraph";
 import { SdbNoteProperties } from "./SdbNoteProperties";
 import { SdbOutline } from "./SdbOutline";
 import { SdbHomeView } from "./SdbHomeView";
+import { SdbTagLibrary } from "./SdbTagLibrary";
 
 import type { AppSection } from "./SovereignDBApp";
 
@@ -49,6 +50,13 @@ const PAGE_ICONS: Record<string, string> = {
   folder: "📁",
 };
 
+function loadTagColors(): Record<string, string> {
+  try {
+    const v = localStorage.getItem("sdb-tag-colors");
+    return v ? JSON.parse(v) : {};
+  } catch { return {}; }
+}
+
 export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   const [items, setItems] = useState<TreeItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -65,6 +73,10 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
 
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [noteTitle, setNoteTitle] = useState("");
+
+  // Tag system state
+  const [activeTags, setActiveTags] = useState<Set<string>>(new Set());
+  const [tagColors, setTagColors] = useState<Record<string, string>>(loadTagColors);
 
   const { dailyNotes, reloadDaily } = useDailyNotes(db);
 
@@ -297,6 +309,84 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     });
   }, []);
 
+  // ── Tag system computations ──
+  const tagEdges = useMemo(() =>
+    allEdges.filter(e => e.label === "workspace:tag"),
+    [allEdges]
+  );
+
+  const itemTagsMap = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const edge of tagEdges) {
+      const itemId = edge.nodes[0];
+      const tag = String(edge.properties.tag || "").toLowerCase();
+      if (tag) {
+        if (!map[itemId]) map[itemId] = [];
+        map[itemId].push(tag);
+      }
+    }
+    return map;
+  }, [tagEdges]);
+
+  const userTags = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const tags of Object.values(itemTagsMap)) {
+      for (const t of tags) {
+        counts[t] = (counts[t] || 0) + 1;
+      }
+    }
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [itemTagsMap]);
+
+  const typeCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const item of items) {
+      c[item.type] = (c[item.type] || 0) + 1;
+    }
+    return c;
+  }, [items]);
+
+  const smartCounts = useMemo(() => {
+    const now = Date.now();
+    const dayMs = 86_400_000;
+    const weekMs = 7 * dayMs;
+    let today = 0, thisWeek = 0, recent = 0, untagged = 0;
+    for (const item of items) {
+      const ts = Number(item.edge.properties.updatedAt || item.edge.properties.createdAt || 0);
+      if (now - ts < dayMs) today++;
+      if (now - ts < weekMs) thisWeek++;
+      if (now - ts < 30 * dayMs) recent++;
+      if (!itemTagsMap[item.id] || itemTagsMap[item.id].length === 0) untagged++;
+    }
+    return { today, thisWeek, recent, untagged };
+  }, [items, itemTagsMap]);
+
+  const toggleTag = useCallback((tag: string) => {
+    setActiveTags(prev => {
+      const next = new Set(prev);
+      next.has(tag) ? next.delete(tag) : next.add(tag);
+      return next;
+    });
+  }, []);
+
+  const handleSetTagColor = useCallback((tag: string, color: string) => {
+    setTagColors(prev => {
+      const next = { ...prev, [tag]: color };
+      localStorage.setItem("sdb-tag-colors", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const handleCreateTag = useCallback(async (name: string) => {
+    // Create a tag-meta edge so the tag persists even without items
+    await db.addEdge([`tag:${name}`, "tag-meta"], "workspace:tag-meta", {
+      tag: name,
+      createdAt: Date.now(),
+    });
+  }, [db]);
+
   const breadcrumbs = useMemo(() => {
     if (!selected) return [];
     const path: { id: string; name: string; icon: string }[] = [];
@@ -506,6 +596,18 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
             </div>
           )}
 
+          {/* ── Tag Library ── */}
+          <SdbTagLibrary
+            userTags={userTags}
+            typeCounts={typeCounts}
+            smartCounts={smartCounts}
+            activeTags={activeTags}
+            onToggleTag={toggleTag}
+            tagColors={tagColors}
+            onSetTagColor={handleSetTagColor}
+            onCreateTag={handleCreateTag}
+          />
+
           {/* Daily Notes */}
           <div className="mb-3">
             <SdbDailyNoteSection db={db} onSelectDaily={navigateTo} selectedId={selectedId} />
@@ -572,6 +674,10 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
             onCreateNote={() => createNote()}
             onCreateDaily={reloadDaily}
             onSwitchGraph={() => onNavigateSection?.("graph")}
+            activeTags={activeTags}
+            onToggleTag={toggleTag}
+            tagColors={tagColors}
+            itemTagsMap={itemTagsMap}
           />
         ) : (
           <>

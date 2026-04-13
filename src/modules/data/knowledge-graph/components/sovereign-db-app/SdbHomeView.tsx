@@ -1,6 +1,6 @@
 /**
  * SdbHomeView — Eden-inspired workspace home with hero banner,
- * search bar, filter chips, and beautiful preview cards.
+ * search bar, tag-aware filter chips, and beautiful preview cards.
  */
 
 import { useMemo, useState, useRef } from "react";
@@ -8,9 +8,10 @@ import {
   IconSearch, IconPlus, IconFile, IconCalendarEvent,
   IconFolder, IconLayoutGrid, IconList, IconSortDescending,
   IconAdjustments, IconMessage, IconPhoto, IconVideo,
-  IconLink, IconMusic, IconFileText,
+  IconLink, IconMusic, IconFileText, IconX,
 } from "@tabler/icons-react";
 import type { Hyperedge } from "../../hypergraph";
+import { SdbTagChip, getTagColor, DEFAULT_TYPE_COLORS } from "./SdbTagChip";
 
 interface NoteItem {
   id: string;
@@ -27,6 +28,10 @@ interface Props {
   onCreateNote: () => void;
   onCreateDaily: () => void;
   onSwitchGraph: () => void;
+  activeTags: Set<string>;
+  onToggleTag: (tag: string) => void;
+  tagColors: Record<string, string>;
+  itemTagsMap: Record<string, string[]>;
 }
 
 type FilterType = "all" | "note" | "daily" | "folder" | "chat" | "photo" | "video" | "link" | "audio";
@@ -105,7 +110,10 @@ function pickBanner(): string {
   return BANNER_PHOTOS[idx];
 }
 
-export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote, onCreateDaily, onSwitchGraph }: Props) {
+export function SdbHomeView({
+  items, allEdges, recentIds, onSelect, onCreateNote, onCreateDaily, onSwitchGraph,
+  activeTags, onToggleTag, tagColors, itemTagsMap,
+}: Props) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("recent");
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -115,25 +123,56 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
   const bannerRef = useRef<HTMLImageElement>(null);
   const [bannerUrl] = useState(() => pickBanner());
 
+  // Smart tag helpers
+  const isSmartMatch = (item: NoteItem, tag: string): boolean => {
+    const now = Date.now();
+    const dayMs = 86_400_000;
+    const ts = item.updatedAt;
+    if (tag === "today") return now - ts < dayMs;
+    if (tag === "this-week") return now - ts < 7 * dayMs;
+    if (tag === "recent") return now - ts < 30 * dayMs;
+    if (tag === "untagged") return !itemTagsMap[item.id] || itemTagsMap[item.id].length === 0;
+    return false;
+  };
+
+  const smartTags = new Set(["today", "this-week", "recent", "untagged"]);
+  const typeTagKeys = new Set(Object.keys(DEFAULT_TYPE_COLORS));
+
   const filtered = useMemo(() => {
     let list = items;
+
+    // Type filter from chips
     if (filter !== "all") list = list.filter(i => i.type === filter);
+
+    // Text search
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(i => i.name.toLowerCase().includes(q));
     }
+
+    // Active tag filters (intersection)
+    if (activeTags.size > 0) {
+      list = list.filter(item => {
+        return [...activeTags].every(tag => {
+          if (smartTags.has(tag)) return isSmartMatch(item, tag);
+          if (typeTagKeys.has(tag)) return item.type === tag;
+          // Custom tag
+          return itemTagsMap[item.id]?.includes(tag);
+        });
+      });
+    }
+
     const sorted = [...list];
     if (sort === "recent") sorted.sort((a, b) => b.updatedAt - a.updatedAt);
     else if (sort === "name") sorted.sort((a, b) => a.name.localeCompare(b.name));
     else sorted.sort((a, b) => a.updatedAt - b.updatedAt);
     return sorted;
-  }, [items, filter, sort, search]);
+  }, [items, filter, sort, search, activeTags, itemTagsMap]);
 
   return (
     <div className="flex-1 overflow-auto">
       {/* ── Hero Banner ── */}
       <div className="relative w-full h-[140px] overflow-hidden">
-        {/* Unsplash background photo — rotates per visit */}
         <img
           ref={bannerRef}
           src={bannerUrl}
@@ -143,7 +182,6 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
           onLoad={() => setBannerLoaded(true)}
           draggable={false}
         />
-        {/* Animated gradient overlay */}
         <div
           className="absolute inset-0"
           style={{
@@ -152,7 +190,6 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
             animation: "sdb-gradient-drift 12s ease-in-out infinite",
           }}
         />
-        {/* Bottom fade */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
         <style>{`
@@ -180,8 +217,8 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
           />
         </div>
 
-        {/* ── Filter chips ── */}
-        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-1">
+        {/* ── Filter chips + active tags ── */}
+        <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1">
           {FILTERS.map(f => (
             <button
               key={f.key}
@@ -197,6 +234,31 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
             </button>
           ))}
         </div>
+
+        {/* Active tag pills */}
+        {activeTags.size > 0 && (
+          <div className="flex items-center gap-2 mb-6 flex-wrap">
+            <span className="text-[12px] text-muted-foreground/30">Filtering by:</span>
+            {[...activeTags].map(tag => (
+              <SdbTagChip
+                key={tag}
+                label={tag}
+                color={getTagColor(tag, tagColors)}
+                active
+                onRemove={() => onToggleTag(tag)}
+                size="md"
+              />
+            ))}
+            <button
+              onClick={() => [...activeTags].forEach(t => onToggleTag(t))}
+              className="text-[12px] text-muted-foreground/30 hover:text-foreground flex items-center gap-1 transition-colors"
+            >
+              <IconX size={12} /> Clear
+            </button>
+          </div>
+        )}
+
+        {activeTags.size === 0 && <div className="mb-6" />}
 
         {/* ── Section header ── */}
         <div className="flex items-center justify-between mb-5">
@@ -261,9 +323,9 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
               <IconFile size={32} className="text-muted-foreground/15" />
             </div>
             <p className="text-[15px] text-muted-foreground/40 mb-5">
-              {search ? "No results found" : "Create your first page"}
+              {search || activeTags.size > 0 ? "No results found" : "Create your first page"}
             </p>
-            {!search && (
+            {!search && activeTags.size === 0 && (
               <button
                 onClick={onCreateNote}
                 className="px-6 py-3 rounded-2xl bg-primary text-primary-foreground text-[15px] font-medium hover:bg-primary/90 transition-colors shadow-sm"
@@ -278,6 +340,7 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
               const gradient = TYPE_GRADIENTS[item.type] || TYPE_GRADIENTS.note;
               const dot = TYPE_DOTS[item.type] || TYPE_DOTS.note;
               const Icon = TYPE_ICON[item.type] || IconFile;
+              const tags = itemTagsMap[item.id] || [];
               return (
                 <button
                   key={item.id}
@@ -293,6 +356,21 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
                       <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
                       <span className="text-[14px] font-medium text-foreground truncate">{item.name}</span>
                     </div>
+                    {/* Tag chips */}
+                    {tags.length > 0 && (
+                      <div className="flex items-center gap-1 flex-wrap mt-1.5 mb-1 pl-4">
+                        {tags.slice(0, 3).map(tag => (
+                          <SdbTagChip
+                            key={tag}
+                            label={`#${tag}`}
+                            color={getTagColor(tag, tagColors)}
+                          />
+                        ))}
+                        {tags.length > 3 && (
+                          <span className="text-[10px] text-muted-foreground/30">+{tags.length - 3}</span>
+                        )}
+                      </div>
+                    )}
                     <span className="text-[13px] text-muted-foreground/35 pl-4">{relativeTime(item.updatedAt)}</span>
                   </div>
                 </button>
@@ -304,6 +382,7 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
             {filtered.map(item => {
               const dot = TYPE_DOTS[item.type] || TYPE_DOTS.note;
               const Icon = TYPE_ICON[item.type] || IconFile;
+              const tags = itemTagsMap[item.id] || [];
               return (
                 <button
                   key={item.id}
@@ -315,6 +394,20 @@ export function SdbHomeView({ items, allEdges, recentIds, onSelect, onCreateNote
                   <span className="text-[14px] text-foreground/80 truncate flex-1 text-left group-hover:text-foreground transition-colors">
                     {item.name}
                   </span>
+                  {tags.length > 0 && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      {tags.slice(0, 2).map(tag => (
+                        <SdbTagChip
+                          key={tag}
+                          label={`#${tag}`}
+                          color={getTagColor(tag, tagColors)}
+                        />
+                      ))}
+                      {tags.length > 2 && (
+                        <span className="text-[10px] text-muted-foreground/30">+{tags.length - 2}</span>
+                      )}
+                    </div>
+                  )}
                   <span className="text-[13px] text-muted-foreground/30 shrink-0">
                     {relativeTime(item.updatedAt)}
                   </span>
