@@ -29,9 +29,18 @@ const PHASE_GRADIENTS: Record<SolarPhase, string> = {
   night:          "linear-gradient(180deg, #0a0a1a 0%, #0d1117 40%, #141428 100%)",
 };
 
+/** Check if an image URL is already in the browser cache */
+function isImageCached(url: string): boolean {
+  if (typeof document === "undefined") return false;
+  const img = new Image();
+  img.src = url;
+  return img.complete && img.naturalWidth > 0;
+}
+
 export default function DesktopImmersiveWallpaper() {
-  const [photoUrl, setPhotoUrl] = useState(() => getPhasePhoto());
-  const [imgLoaded, setImgLoaded] = useState(false);
+  const initialUrl = getPhasePhoto();
+  const [photoUrl, setPhotoUrl] = useState(() => initialUrl);
+  const [imgLoaded, setImgLoaded] = useState(() => isImageCached(initialUrl));
   const [networkFailed, setNetworkFailed] = useState(false);
   const phaseRef = useRef<SolarPhase>(getCurrentPhase());
   const retryCountRef = useRef(0);
