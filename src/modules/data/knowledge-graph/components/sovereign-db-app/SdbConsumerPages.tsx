@@ -578,7 +578,7 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
     { id: "graph", label: "Switch to Graph View", icon: <IconGraph size={15} />, action: () => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "graph" })) },
     { id: "canvas", label: "Open Canvas", icon: <IconLayoutBoard size={15} />, action: () => window.dispatchEvent(new CustomEvent("sdb:set-view", { detail: "canvas" })) },
     { id: "daily", label: "Create Daily Note", icon: <IconSun size={15} />, action: () => reloadDaily() },
-    { id: "folder", label: "New Folder", icon: <IconFolder size={15} />, action: createFolder },
+    { id: "folder", label: "New Folder", icon: <IconFolder size={15} />, action: () => createFolder() },
     { id: "note", label: "New Note", icon: <IconPlus size={15} />, action: () => createNote() },
   ], [createFolder, createNote, reloadDaily]);
 
