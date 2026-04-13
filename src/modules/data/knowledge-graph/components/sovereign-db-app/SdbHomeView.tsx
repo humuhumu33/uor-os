@@ -20,6 +20,8 @@ interface NoteItem {
   name: string;
   type: "note" | "daily" | "folder" | "chat" | "photo" | "video" | "link" | "audio";
   updatedAt: number;
+  fileDataUrl?: string;
+  fileMime?: string;
 }
 
 interface Props {
@@ -386,9 +388,28 @@ export function SdbHomeView({
                   className="group text-left rounded-2xl border border-border/15 bg-card overflow-hidden
                     hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 hover:border-border/30 transition-all duration-250"
                 >
-                  <div className={`h-[120px] bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
-                    <Icon size={32} className="text-foreground/20" />
-                  </div>
+                  {item.fileDataUrl && item.fileMime?.startsWith("image/") ? (
+                    <div className="h-[120px] relative overflow-hidden">
+                      <img
+                        src={item.fileDataUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
+                  ) : item.fileDataUrl && item.fileMime?.startsWith("video/") ? (
+                    <div className="h-[120px] relative overflow-hidden bg-black/50 flex items-center justify-center">
+                      <video src={item.fileDataUrl} className="w-full h-full object-cover" muted />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-background/60 backdrop-blur flex items-center justify-center">
+                          <IconFile size={18} className="text-foreground/70" />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={`h-[120px] bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
+                      <Icon size={32} className="text-foreground/20" />
+                    </div>
+                  )}
                   <div className="px-4 py-3.5">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
