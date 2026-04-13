@@ -882,6 +882,18 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
               )}
             </nav>
           </div>
+
+          {/* ── 4. Tags (collapsible) ── */}
+          <SdbTagLibrary
+            userTags={userTags}
+            typeCounts={{}}
+            smartCounts={{ today: 0, thisWeek: 0, recent: 0, untagged: 0 }}
+            activeTags={activeTags}
+            onToggleTag={toggleTag}
+            tagColors={tagColors}
+            onSetTagColor={handleSetTagColor}
+            onCreateTag={handleCreateTag}
+          />
         </div>
       </aside>
 
