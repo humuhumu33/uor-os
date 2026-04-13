@@ -157,6 +157,14 @@ export function SdbConsumerPages({ db, onNavigateSection }: Props) {
   useEffect(() => {
     if (selected && (selected.type === "note" || selected.type === "daily")) {
       setNoteTitle(selected.name);
+      setNoteIcon(String(selected.edge.properties.icon || selected.icon || ""));
+      setNoteCover(selected.edge.properties.coverUrl ? String(selected.edge.properties.coverUrl) : null);
+      // Load comments
+      try {
+        const stored = selected.edge.properties.comments;
+        setNoteComments(stored ? JSON.parse(String(stored)) : []);
+      } catch { setNoteComments([]); }
+
       const storedBlocks = selected.edge.properties.blocks;
       if (storedBlocks) {
         try {
