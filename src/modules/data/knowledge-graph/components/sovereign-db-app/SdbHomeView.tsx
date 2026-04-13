@@ -461,7 +461,7 @@ export function SdbHomeView({
                     </div>
                   )}
                   <span className="text-[11px] text-muted-foreground/40 shrink-0 tabular-nums">{relativeTime(item.updatedAt)}</span>
-                </button>
+                </div>
               );
             })}
           </div>
