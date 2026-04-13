@@ -106,6 +106,7 @@ function DesktopShellInner() {
   const [snapPreview, setSnapPreview] = useState<SnapZone | null>(null);
   const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
   const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
+  const [desktopMode, setDesktopMode] = useState(false);
 
   // Voice-to-voice (replaces raw useGlobalDictation)
   const [voiceState, voiceActions] = useVoiceToVoice();
@@ -116,15 +117,14 @@ function DesktopShellInner() {
   }, [wm]);
 
   const handleOpenApp = useCallback((appId: string) => {
+    setDesktopMode(false);
     const app = getApp(appId);
     if (app) wm.openApp(appId, app.label, app.defaultSize, { maximized: true });
   }, [wm]);
 
   const handleHideAll = useCallback(() => {
-    wm.windows.forEach(w => {
-      if (!w.minimized) wm.minimizeWindow(w.id);
-    });
-  }, [wm]);
+    setDesktopMode(prev => !prev);
+  }, []);
 
   const handleCloseWindow = useCallback(() => {
     if (wm.activeWindowId) wm.closeWindow(wm.activeWindowId);
@@ -222,7 +222,7 @@ function DesktopShellInner() {
         <TabBar
           activeWindowId={wm.activeWindowId}
           windows={wm.windows}
-          onFocusWindow={wm.focusWindow}
+          onFocusWindow={(id: string) => { setDesktopMode(false); wm.focusWindow(id); }}
           onCloseWindow={wm.closeWindow}
           onMinimizeWindow={wm.minimizeWindow}
           onSpotlight={() => setSpotlightOpen(true)}
@@ -242,7 +242,7 @@ function DesktopShellInner() {
 
         <SnapOverlay zone={snapPreview} />
 
-        {wm.windows
+        {!desktopMode && wm.windows
           .filter(w => !w.minimized)
           .map(win => (
             <DesktopWindow
