@@ -17,3 +17,13 @@ export {
   executeTape,
   executeHoloTape,
 } from "./kv-executor";
+
+export { KVCache, type KVCacheConfig } from "./kv-cache";
+
+export {
+  compileTransformer,
+  generateToken,
+  inferenceLoop,
+  type GenerateTokenResult,
+  type InferenceOptions,
+} from "./transformer-compiler";
