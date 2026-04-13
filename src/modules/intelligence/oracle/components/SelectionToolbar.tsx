@@ -106,8 +106,8 @@ const SelectionToolbar = ({ containerRef, onAction }: SelectionToolbarProps) => 
     dismiss();
   };
 
+  if (!visible) return null;
   return createPortal(
-          {visible && (
         <TooltipProvider delayDuration={200}>
           <div
             ref={toolbarRef}
