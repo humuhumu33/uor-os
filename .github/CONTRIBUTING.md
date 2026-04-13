@@ -13,11 +13,9 @@ Thank you for your interest in contributing. This guide covers everything you ne
 ```bash
 git clone https://github.com/nicholasgriffintn/uor-os.git
 cd uor-os
-npm install
-npm run dev
+npm install    # peer deps resolved automatically via .npmrc
+npm run dev    # opens at http://localhost:8080
 ```
-
-The app opens at `http://localhost:8080`.
 
 ### Environment Variables
 

@@ -15,11 +15,9 @@ Every object in the system — files, messages, identities, computation results 
 ## Getting Started
 
 ```bash
-npm install
-npm run dev
+npm install    # peer deps resolved automatically via .npmrc
+npm run dev    # opens at http://localhost:8080
 ```
-
-Open `http://localhost:8080` to load the desktop shell.
 
 For a native desktop build (requires the [Rust toolchain](https://rustup.rs)):
 
