@@ -62,7 +62,7 @@ export function SdbHyperPulse({ db, onSelectMode }: Props) {
     const cy = h / 2;
     const startTime = performance.now();
 
-    // Build node positions in radial layout
+    // Build node positions in radial
     const displayNodes = isEmpty
       ? [{ id: "origin", x: cx, y: cy, r: 8 }]
       : Array.from(nodeSet).slice(0, 60).map((id, i, arr) => {

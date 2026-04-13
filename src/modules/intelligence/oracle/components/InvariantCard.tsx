@@ -23,9 +23,6 @@ export default function InvariantCard({ invariant, index }: Props) {
           <div className="shrink-0 flex items-center gap-1.5">
             <div className="h-1.5 w-16 rounded-full bg-white/10 overflow-hidden">
               <div
-                initial={{ width: 0 }}
-                animate={{ width: `${resonancePct}%` }}
-                transition={{ delay: index * 0.12 + 0.3, duration: 0.8 }}
                 className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60"
               />
             </div>

@@ -85,8 +85,6 @@ export default function KnowledgeSidebar({
   if (collapsed) {
     return (
       <button
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
         onClick={onToggleCollapse}
         className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#141414] hover:bg-[#1c1c1e] border border-[#1c1c1e] transition-colors"
         title="Show Knowledge Sidebar"
@@ -98,9 +96,6 @@ export default function KnowledgeSidebar({
 
   return (
     <aside
-      initial={{ opacity: 0, x: 12 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
       className="flex flex-col gap-0 bg-[#0c0c0c]/90 backdrop-blur-xl border border-[#1c1c1e] rounded-xl overflow-hidden"
       style={{ width: 260, maxHeight: "calc(100vh - 160px)" }}
     >

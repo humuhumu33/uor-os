@@ -122,10 +122,6 @@ export default function ImmersiveQuote() {
     <div className="max-w-[620px] w-full text-center min-h-[3rem]">
               <div
           key={index}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.8 }}
           className="flex flex-col items-center gap-1.5"
         >
           <p

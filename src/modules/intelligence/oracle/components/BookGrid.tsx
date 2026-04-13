@@ -96,7 +96,6 @@ export default function BookGrid({ books, selectedIds, onToggle, onRead }: Props
             {featured.map((book) => (
               <div
                 key={book.id}
-                whileHover={{ y: -4 }}
                 onClick={() => onRead(book.id)}
                 className="relative group cursor-pointer rounded-xl overflow-hidden h-52 bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 hover:border-primary/30 transition-colors"
               >

@@ -44,10 +44,6 @@ export default function NodeDetailPanel({ node, findings, onClose, onNavigate }:
   return (
           <div
         key="detail-panel"
-        initial={{ x: 300, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        exit={{ x: 300, opacity: 0 }}
-        transition={{ type: "spring", damping: 30, stiffness: 300 }}
         className="w-[320px] min-w-[320px] h-full border-l border-white/[0.06] bg-[hsl(220_15%_5%)] overflow-y-auto"
       >
         {/* Header */}

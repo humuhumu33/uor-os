@@ -189,10 +189,6 @@ const ReaderToolbar: React.FC<ReaderToolbarProps> = ({
           {historyOpen && (
         <div
           ref={historyRef}
-          initial={{ opacity: 0, y: -6, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -6, scale: 0.97 }}
-          transition={{ duration: 0.15 }}
           className="absolute right-0 top-full mt-1.5 z-50 rounded-xl overflow-hidden"
           style={{
             width: "min(320px, 90vw)",

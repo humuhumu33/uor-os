@@ -57,10 +57,6 @@ export default function ImmersiveBackground({ scrollProgress = 0 }: ImmersiveBac
           key={key}
           src={photoUrl}
           alt=""
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 2.5, ease: "easeInOut" }}
           className="absolute inset-0 w-full h-full object-cover scale-110"
           style={{
             filter: `blur(${blurAmount}px)`,

@@ -170,9 +170,6 @@ export default function QuickCapture({ open, onClose }: Props) {
               {captured ? (
                 <div className="flex items-center justify-center gap-2 py-5">
                   <div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", damping: 12 }}
                   >
                     <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M20 6L9 17l-5-5" />

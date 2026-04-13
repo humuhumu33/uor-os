@@ -111,10 +111,6 @@ const SelectionToolbar = ({ containerRef, onAction }: SelectionToolbarProps) => 
         <TooltipProvider delayDuration={200}>
           <div
             ref={toolbarRef}
-            initial={{ opacity: 0, y: 6, scale: 0.92 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.95 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
             className="fixed z-[9999] flex items-center gap-0.5 rounded-full border border-border/40 bg-card/95 backdrop-blur-xl shadow-lg shadow-black/20 px-1.5 py-1"
             style={{
               left: pos.x,

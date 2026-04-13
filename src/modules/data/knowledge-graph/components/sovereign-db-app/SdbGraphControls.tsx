@@ -1,5 +1,5 @@
 /**
- * SdbGraphControls — Filter panel, layout selector, zoom buttons.
+ * SdbGraphControls — Filter panel, selector, zoom buttons.
  * ═══════════════════════════════════════════════════════════════
  * @product SovereignDB
  */
@@ -132,7 +132,7 @@ export function SdbGraphControls({
         )}
       </div>
 
-      {/* Bottom-left: layout + zoom controls */}
+      {/* Bottom-left: + zoom controls */}
       <div className="absolute bottom-4 left-4 flex items-center gap-1 bg-card/90 backdrop-blur-sm rounded-lg border border-border p-1">
         {LAYOUTS.map(l => (
           <button

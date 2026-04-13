@@ -149,7 +149,7 @@ function useLayout(graph: ReturnType<typeof useGraphData>["graph"], loading: boo
         },
       });
     } catch (e) {
-      console.warn("ForceAtlas2 layout failed:", e);
+      console.warn("ForceAtlas2 failed:", e);
     }
   }, [graph, loading]);
 }

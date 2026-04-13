@@ -57,10 +57,8 @@ function CategoryCard({ cat }: { cat: CncfCategoryDescriptor }) {
 
   return (
     <div
-      initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.35 }}
       className="group rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm p-5 hover:border-primary/30 transition-colors"
     >
       <div className="flex items-start justify-between mb-3">

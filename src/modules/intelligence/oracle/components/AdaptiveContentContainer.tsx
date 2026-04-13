@@ -7,7 +7,7 @@
  * with precise, window-aware measurements.
  *
  * Children use `useContainerWidth()` to read the current width and
- * derive fluid maxWidth, font scaling, and layout decisions.
+ * derive fluid maxWidth, font scaling, and decisions.
  */
 
 import React, { createContext, useContext, useRef, useState, useEffect, useCallback } from "react";

@@ -62,10 +62,6 @@ export default function ConnectivityPopover({ open, onClose, isLight }: Props) {
           {open && (
         <div
           ref={ref}
-          initial={{ opacity: 0, y: -4, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -4, scale: 0.97 }}
-          transition={{ duration: 0.15 }}
           className={`absolute top-8 right-0 z-[300] w-64 rounded-xl ${bg} ${border} border shadow-xl backdrop-blur-2xl overflow-hidden`}
         >
           {/* Header */}

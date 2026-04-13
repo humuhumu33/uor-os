@@ -269,7 +269,7 @@ function MultiplicationView({ tower, selectedLevel, setSelectedLevel }: {
 function FanoView() {
   const fano = fanoPlane();
 
-  // SVG layout for Fano plane. 7 points arranged in a triangle + inscribed circle
+  // SVG for Fano plane. 7 points arranged in a triangle + inscribed circle
   const cx = 150, cy = 140, r = 100;
   const pts = [
     { x: cx, y: cy - r },             // e₁ top

@@ -82,10 +82,6 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
   return (
           <div
         key="handoff-overlay"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.4 }}
         className="fixed inset-0 z-[9999] flex items-center justify-center"
         style={{
           background: "hsl(220 15% 6% / 0.95)",
@@ -97,7 +93,6 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
           {/* Icon */}
           <div
             animate={phase === "done" ? { scale: [1, 1.15, 1] } : { rotate: 0 }}
-            transition={{ duration: 0.5 }}
           >
             {phase === "error" ? (
               <AlertCircle size={48} style={{ color: "hsl(0 70% 60%)" }} />
@@ -129,9 +124,6 @@ export default function HandoffReceiver({ onHandoffComplete }: Props) {
                   <div
                     key={key}
                     className="flex items-center gap-3"
-                    initial={{ opacity: 0.3 }}
-                    animate={{ opacity: isDone || isCurrent ? 1 : 0.3 }}
-                    transition={{ duration: 0.3 }}
                   >
                     <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
                       {isDone ? (

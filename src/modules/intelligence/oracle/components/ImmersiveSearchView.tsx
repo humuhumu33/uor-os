@@ -251,7 +251,6 @@ export default function ImmersiveSearchView({ onSearch, onExit, onEncode, onAiMo
               {/* + button (context menu trigger) */}
               <div className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10">
                 <button
-                  whileTap={{ scale: 0.9 }}
                   onClick={() => onOpenApp?.("files")}
                   className="w-9 h-9 rounded-full flex items-center justify-center transition-all"
                   style={{

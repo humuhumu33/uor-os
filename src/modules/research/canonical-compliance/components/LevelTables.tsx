@@ -66,9 +66,6 @@ export function SystemTable({ report, onLayerClick }: SystemTableProps) {
       {layerStats.map((s, i) => (
         <div
           key={s.layer.id}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.05 }}
           onClick={() => onLayerClick(s.layer)}
           className="grid grid-cols-[2fr_80px_80px_120px_80px] gap-2 px-4 py-3 border-b border-white/[0.03] hover:bg-white/[0.025] cursor-pointer transition-colors"
         >
@@ -115,9 +112,6 @@ export function ModuleTable({ report, filterModules, onModuleClick }: ModuleTabl
       {modules.map((m, i) => (
         <div
           key={m.module}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.03 }}
           onClick={() => onModuleClick(m.module)}
           className="grid grid-cols-[2fr_80px_120px_80px] gap-2 px-4 py-2.5 border-b border-white/[0.03] hover:bg-white/[0.025] cursor-pointer transition-colors"
         >
@@ -160,9 +154,6 @@ export function PipelineTable({ report, filterModule, onPipelineClick }: Pipelin
         {findings.map((f, i) => (
           <div
             key={`${f.module}-${f.export}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: i * 0.008 }}
             onClick={() => onPipelineClick(f)}
             className={`grid ${filterModule ? "grid-cols-[1fr_80px_2fr_1fr]" : "grid-cols-[1fr_1fr_80px_2fr]"} gap-2 px-4 py-2 border-b border-white/[0.03] hover:bg-white/[0.025] cursor-pointer transition-colors`}
           >

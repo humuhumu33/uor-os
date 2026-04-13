@@ -35,8 +35,6 @@ function ScoreRing({ score }: { score: number }) {
       <circle
         cx={44} cy={44} r={r} fill="none" stroke={color} strokeWidth={3}
         strokeDasharray={c} strokeDashoffset={c} strokeLinecap="round"
-        animate={{ strokeDashoffset: offset }}
-        transition={{ duration: 1.2, ease: "easeOut" }}
         transform="rotate(-90 44 44)"
       />
       <text x={44} y={41} textAnchor="middle" fill="hsl(0 0% 90%)" fontSize={20} fontWeight="bold">{score}</text>

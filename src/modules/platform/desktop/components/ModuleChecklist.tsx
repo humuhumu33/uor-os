@@ -30,7 +30,7 @@ type ModuleStatus = "pending" | "verifying" | "verified";
 interface Props {
   /** If true, animate modules verifying one-by-one (for first-boot) */
   animated?: boolean;
-  /** Compact layout for inline use */
+  /** Compact for inline use */
   compact?: boolean;
   /** Callback when all included modules are verified */
   onComplete?: () => void;
@@ -99,8 +99,6 @@ export default function ModuleChecklist({ animated = false, compact = false, onC
               key={mod.id}
               className="flex items-center gap-3"
               initial={animated ? { opacity: 0, x: -8 } : { opacity: 1 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: animated ? i * 0.08 : 0, duration: 0.3 }}
             >
               {/* Status icon */}
               <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
@@ -111,8 +109,6 @@ export default function ModuleChecklist({ animated = false, compact = false, onC
                 ) : status === "verified" ? (
                   <div
                     initial={animated ? { scale: 0 } : { scale: 1 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
                   >
                     <Check size={14} style={{ color: "hsl(150 70% 55%)" }} strokeWidth={3} />
                   </div>

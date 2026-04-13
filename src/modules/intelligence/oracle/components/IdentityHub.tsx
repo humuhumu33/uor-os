@@ -276,9 +276,6 @@ export default function IdentityHub({ receipt }: IdentityHubProps) {
                   return (
                     <div
                       key={cat.label}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
                     >
                       {/* Category header */}
                       <div className="flex items-center gap-3 mb-4">

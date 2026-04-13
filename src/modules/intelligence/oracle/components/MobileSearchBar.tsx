@@ -66,7 +66,6 @@ export default function MobileSearchBar({ onSubmit, onEncode, onAiMode, loading 
           {/* Open File Explorer */}
           <div className="relative shrink-0">
             <button
-              whileTap={{ scale: 0.9 }}
               onClick={() => window.dispatchEvent(new CustomEvent("uor:open-app", { detail: "files" }))}
               className={`p-2.5 rounded-xl transition-colors ${
                 ctx.contextItems.length > 0

@@ -72,7 +72,7 @@ export const ImageGallery: React.FC<{
   layout?: "grid" | "hero" | "figure" | "playful";
   maxImages?: number;
   className?: string;
-}> = ({ images, layout = "grid", maxImages = 6, className = "" }) => {
+}> = ({ images, = "grid", maxImages = 6, className = "" }) => {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const visible = images.slice(0, maxImages);
 

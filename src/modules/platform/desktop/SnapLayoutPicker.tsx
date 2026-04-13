@@ -11,7 +11,7 @@ import { LayoutGrid } from "lucide-react";
 
 interface LayoutPreset {
   label: string;
-  /** Number of windows this layout needs */
+  /** Number of windows this needs */
   count: number;
   /** Grid dimensions for rendering the preview */
   previewCols: number;

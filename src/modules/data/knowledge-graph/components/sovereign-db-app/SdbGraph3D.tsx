@@ -3,7 +3,7 @@
  * ══════════════════════════════════════════════════════════════════════════
  * Full 3D space: orbit, zoom, fly through. Nodes form geometric clusters.
  * Atlas torus nodes pulse with emissive glow.
- * WebGPU acceleration when available: GPU force layout + bloom post-processing.
+ * WebGPU acceleration when available: GPU force + bloom post-processing.
  * @product SovereignDB
  */
 
@@ -151,7 +151,7 @@ export function SdbGraph3D({
     return () => clearTimeout(t);
   }, []);
 
-  // ── GPU force layout integration ──────────────────────────
+  // ── GPU force integration ──────────────────────────
   useEffect(() => {
     if (!gpuAvailable) return;
 
@@ -212,7 +212,7 @@ export function SdbGraph3D({
       }
     };
 
-    // Start GPU ticks after initial CPU layout settles
+    // Start GPU ticks after initial CPU settles
     const delay = setTimeout(runGpuTicks, 3000);
     return () => {
       running = false;

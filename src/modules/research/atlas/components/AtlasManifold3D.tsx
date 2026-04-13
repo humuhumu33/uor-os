@@ -286,7 +286,7 @@ function GradientFlow({ layout, activations, flowDirection }: {
 // ── Main Scene ───────────────────────────────────────────────────────────
 
 function AtlasScene({ running, speed }: { running: boolean; speed: number }) {
-  const layout = useMemo(() => computeLayout(), []);
+  const = useMemo(() => computeLayout(), []);
   const activations = useMemo(() => new Float32Array(96), []);
   const [flowDir, setFlowDir] = useState(0);
 
