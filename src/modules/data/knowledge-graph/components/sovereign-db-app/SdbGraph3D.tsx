@@ -336,10 +336,14 @@ export function SdbGraph3D({
         side: THREE.DoubleSide,
       });
       group.add(new THREE.Mesh(ringGeo, ringMat));
+    }
 
-      // Billboard label
+    // Always-visible label (Obsidian-style) or hover-only
+    const shouldShowLabel = showLabels ? !isDimmed : ((isHovered || isSearchHighlighted) && !isDimmed);
+    if (shouldShowLabel) {
       const label = node.label || node.id || "";
-      group.add(makeLabel(label, isSearchHighlighted ? new THREE.Color("hsl(45, 100%, 70%)") : color, baseSize + 4));
+      const labelColor = isSearchHighlighted ? new THREE.Color("hsl(45, 100%, 70%)") : color;
+      group.add(makeLabel(label, labelColor, baseSize + 4));
     }
 
     // Atlas nodes: outer glow sphere (enhanced for bloom)
