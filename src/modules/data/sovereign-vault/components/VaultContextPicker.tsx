@@ -72,7 +72,8 @@ export default function VaultContextPicker({
   const exitDir = anchor === "above" ? { y: 12 } : { y: -12 };
 
   return (
-          {open && (
+    <>
+      {open && (
         <div
           ref={containerRef}
           className={`absolute z-[80] w-[320px] max-h-[50vh] rounded-2xl border border-white/[0.08] bg-[hsl(0_0%_8%/0.96)] backdrop-blur-xl shadow-[0_16px_64px_-12px_hsl(0_0%_0%/0.7)] flex flex-col overflow-hidden ${className}`}
