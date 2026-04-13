@@ -71,10 +71,10 @@ export function SdbAtlasInspector({ db }: Props) {
 
     // Check for .holo compute nodes stored as hyperedges
     for (const edge of allEdges) {
-      const props = edge.props as Record<string, unknown> | undefined;
-      if (!props) continue;
+      const props = edge.properties;
 
-      const atlasVertex = typeof props.atlasVertex === "number" ? props.atlasVertex : null;
+      const atlasVertex = typeof props.atlasVertex === "number" ? props.atlasVertex
+        : (typeof edge.atlasVertex === "number" ? edge.atlasVertex : null);
       let sc = -1;
       let degree = 0;
       let mirror = -1;
@@ -252,7 +252,7 @@ export function SdbAtlasInspector({ db }: Props) {
                   className={`flex flex-col items-center gap-1 rounded-lg p-1.5 transition-all ${
                     isSelected ? "ring-1 ring-offset-1 ring-offset-background" : "hover:bg-muted/30"
                   }`}
-                  style={isSelected ? { ringColor: SC_COLORS[sc], backgroundColor: SC_BG[sc] } : undefined}
+                  style={isSelected ? { outlineColor: SC_COLORS[sc], backgroundColor: SC_BG[sc], outline: `1px solid ${SC_COLORS[sc]}`, outlineOffset: '1px' } : undefined}
                 >
                   <div className="w-full h-12 rounded-sm overflow-hidden bg-muted/30 flex flex-col justify-end">
                     <div
