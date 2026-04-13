@@ -4,6 +4,7 @@ import type { SovereignDB } from "../../sovereign-db";
 import { providerRegistry } from "../../persistence/provider-registry";
 import { partitionRouter } from "../../persistence/partition-router";
 import type { AppSection } from "./SovereignDBApp";
+import { UorSignature } from "@/modules/platform/core/components/UorSignature";
 
 interface Props {
   db: SovereignDB | null;
@@ -79,6 +80,8 @@ export function SdbStatusBar({ db, startTime, section = "workspace" }: Props) {
           </span>
         </>
       )}
+      {!db && <span className="ml-auto" />}
+      <UorSignature className={db ? "" : "ml-auto"} />
     </footer>
   );
 }
