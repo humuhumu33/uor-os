@@ -9,6 +9,7 @@ import {
   IconGraph, IconSun, IconLayoutBoard, IconSearch,
   IconStar, IconStarFilled, IconDots,
   IconHome, IconSettings, IconClock, IconUpload,
+  IconPhoto, IconMoodSmile, IconMessage,
 } from "@tabler/icons-react";
 import type { SovereignDB } from "../../sovereign-db";
 import type { Hyperedge } from "../../hypergraph";
@@ -23,6 +24,9 @@ import { SdbNoteProperties } from "./SdbNoteProperties";
 import { SdbOutline } from "./SdbOutline";
 import { SdbHomeView } from "./SdbHomeView";
 import { SdbTagLibrary } from "./SdbTagLibrary";
+import { SdbNoteCover, SdbCoverGallery } from "./SdbNoteCover";
+import { SdbIconPicker } from "./SdbIconPicker";
+import { SdbNoteComments, type NoteComment } from "./SdbNoteComments";
 
 import type { AppSection } from "./SovereignDBApp";
 
