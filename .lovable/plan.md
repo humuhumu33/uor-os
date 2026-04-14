@@ -1,81 +1,80 @@
 
 
-## Redesign MySpace Sidebar: Workspace-First Hierarchy
+## Enrich MySpace Seed Content — Eden-like First Impression
 
 ### What's changing
 
-The left sidebar in MySpace currently shows a flat structure: Home, Recents, Pinned, Folders, Tags. It will be reorganized into a cleaner **workspace-first hierarchy** inspired by the Eden reference, with pre-populated demo content that showcases the full organizational power immediately.
+The existing seed data has good structure (4 top-level folders, nested subfolders, ~15 notes) but feels technical and homogeneous. We'll expand it to match the Eden screenshot's visual richness: more top-level folders, image files, varied content types, and cover images on more items so the grid view feels alive and populated.
 
-### Current vs New Sidebar Structure
+### New seed content (additions to existing)
+
+**New top-level folders** (matching Eden's sidebar density):
+
+| Folder | Icon | Cover |
+|--------|------|-------|
+| Sovereign Identity | 🛡️ | cover-1.jpg |
+| Networking | 🌐 | cover-2.jpg |
+| Prompts & Templates | ✨ | cover-3.jpg |
+| Research | 🔬 | cover-4.jpg |
+| Resources | 📦 | cover-5.jpg |
+| Meeting Notes | 📝 | cover-6.jpg |
+
+**New nested folders** (to show depth in sidebar):
+- Resources > Design Assets
+- Resources > Documentation
+- Research > Papers
+
+**New notes with covers** (so the grid has rich visual cards):
+- "Own Your Intelligence" manifesto (in System, cover-7.jpg)
+- "Sovereign Data Principles" (in Sovereign Identity, cover-8.jpg)
+- "Content-Addressed Storage" (in Resources > Documentation, cover-9.jpg)
+- "Mesh Networking Overview" (in Networking, cover-0.jpg)
+- "Daily Prompt Template" (in Prompts & Templates)
+- "Research: Zero-Knowledge Proofs" (in Research > Papers)
+- "Design System Guidelines" (in Resources > Design Assets)
+- "Weekly Standup Template" (in Meeting Notes)
+- "Sovereign OS Roadmap" (in Projects, cover-os.jpg)
+
+**Image/file items**: 2-3 notes with `fileType: "photo"` and `fileDataUrl` pointing to existing cover images, simulating uploaded photos in the workspace.
+
+### Sidebar result
 
 ```text
-CURRENT                          NEW
-─────────                        ─────
-UOR OS (header)                  UOR OS (header) + [+ New] [🔍]
-Home                             🏠 Home
-───                              ───
-Recents                          Recents (collapsed section)
-  ...                              Recent Note 1
-Pinned                             Recent Note 2
-  ...                            ───
-Folders (flat)                   Pinned ˅ (collapsible)
-  System                           Meeting Notes Template
-  Atlas Engine                     brane-logo.png
-  Knowledge Base                 ───
-  Projects                       Workspace (section header)
-Tags                               📁 Admin  >
-  ...                               📁 Newsletters  >
-Bottom: Upload | Graph | Settings    📁 Content  >
-                                     📁 Brand Deals  >
-                                     📁 Prompts  >
-                                     📁 Research  >
-                                     📁 Resources  ˅
-                                       📁 Nested folder  ˅
-                                         📁 Another folder  >
-                                     📁 Products  >
-                                     📁 Meeting Notes  >
-                                 ───
-                                 Tags ˅ (collapsible)
-                                   ...
-                                 ───
-                                 Bottom: 🗑 Upload Settings
+🖥️ UOR OS
+  ⚙️ System  ˅
+    🔧 Kernel  >
+    🔐 Identity  >
+    🌍 Networking  >
+  🌐 Atlas Engine  >
+  📚 Knowledge Base  >
+  🛡️ Sovereign Identity  >
+  🌐 Networking  >
+  ✨ Prompts & Templates  >
+  🔬 Research  ˅
+    📄 Papers  >
+  📦 Resources  ˅
+    🎨 Design Assets  >
+    📖 Documentation  >
+  📝 Meeting Notes  >
+  🎯 Projects  >
 ```
-
-### Key improvements
-
-1. **Collapsible section headers** — Recents, Pinned, Workspace, Tags sections can be toggled open/closed (like Eden's sidebar)
-2. **Workspace switcher in header** — When multiple workspaces exist, show a dropdown next to the workspace name to switch between them
-3. **Folder chevrons show child count** — Right-side chevrons indicate folders have contents, clicking expands inline
-4. **Colored folder icons** — Already present, but ensure consistent Eden-like coloring per folder
-5. **Better visual hierarchy** — Section labels slightly larger, folder items indented properly with nesting lines
-
-### Demo content updates
-
-The existing seed data is already rich (System, Atlas Engine, Knowledge Base, Projects with nested folders and notes). No changes needed to the seed data — it already demonstrates the hierarchy well.
 
 ### Technical details
 
-**File: `src/modules/data/knowledge-graph/components/sovereign-db-app/SdbConsumerPages.tsx`**
+**File: `SdbConsumerPages.tsx`** — lines 189-504 (seed block)
 
-The sidebar is rendered via `createPortal` at lines 1257-1416. Changes:
+- Add ~6 new top-level `workspace:folder` entries after line 208
+- Add ~3 new nested folders after line 243
+- Add ~9 new `workspace:note` entries after line 465 (before tags section)
+- Add corresponding tag pairs and cross-links
+- Use existing `cover-0.jpg` through `cover-9.jpg` assets (already in `src/assets/covers/`) — import them at the top alongside the existing cover imports
+- Add 2-3 photo-type notes that reference cover images as `fileDataUrl` with `fileMime: "image/jpeg"` so they appear as photo cards in the grid
 
-- **Collapsible sections**: Wrap Recents, Pinned, Folders, and Tags sections in collapsible containers with a toggle chevron on the section header. Store collapsed state in `localStorage` keyed `sdb-sidebar-sections`.
-
-- **Workspace section header**: Change the "Folders" label (line 1352) to "Workspace" to match Eden's naming. When only one workspace exists (the common case), show its name directly. When multiple exist, add a small dropdown chevron.
-
-- **Section header styling**: Make section headers (`Recents`, `Pinned`, `Workspace`, `Tags`) interactive buttons with a chevron that rotates on collapse. Style: `text-[11px] font-medium uppercase tracking-widest` with a hover state.
-
-- **Folder click behavior**: Currently clicking a folder in the sidebar sets `activeFolderId` AND expands it. Keep this behavior — it matches Eden where clicking a folder navigates into it.
-
-- **Auto-expand on first load**: The existing code at line 531-538 already auto-expands all folders on first load. This is good for demo purposes.
-
-**No new files needed** — all changes are within the existing sidebar portal section of `SdbConsumerPages.tsx`.
+**No new files or assets needed** — all 16 cover images already exist.
 
 ### What stays the same
-- Home button at the top
-- Bottom bar (Upload, Graph, Settings)
-- Context menu (right-click rename, pin, delete)
-- Drag-and-drop reordering
-- Tag library section
-- All existing functionality
+- Existing seed content (System, Atlas Engine, Knowledge Base, Projects) untouched
+- All existing cross-links and tags preserved
+- The `hasDemoContent` check (line 183) still gates seeding
+- Home view grid rendering logic unchanged
 
