@@ -19,6 +19,7 @@ import { getApp, DESKTOP_APPS } from "@/modules/platform/desktop/lib/desktop-app
 import { OS_TAXONOMY, type OsCategory } from "@/modules/platform/desktop/lib/os-taxonomy";
 import { useDesktopTheme, type DesktopTheme } from "@/modules/platform/desktop/hooks/useDesktopTheme";
 import { smartTruncate, FONTS } from "@/modules/intelligence/oracle/lib/pretext-layout";
+import { APP_TAGLINES, DEFAULT_TAGLINE } from "@/modules/platform/core/lib/app-taglines";
 import { SPACE, TIMING } from "@/modules/platform/desktop/lib/golden-ratio";
 import EngineStatusIndicator from "@/modules/platform/boot/EngineStatusIndicator";
 import {
@@ -332,26 +333,17 @@ export default function TabBar({
       </button>
 
 
-      {/* Center wordmark — sovereign masthead */}
-      <div className="absolute left-1/2 top-0 h-full -translate-x-1/2 flex items-center z-[1] gap-3 select-none pointer-events-none [&_a]:pointer-events-auto">
+      {/* Center wordmark — dynamic "Own your ___" tagline */}
+      <div className="absolute left-1/2 top-0 h-full -translate-x-1/2 flex items-center z-[1] select-none pointer-events-none">
         <span
-          className="text-[13px] font-semibold tracking-[0.28em] uppercase text-foreground/90"
+          className="text-[13px] font-semibold tracking-[0.28em] uppercase text-foreground/90 transition-opacity duration-300"
           style={{ textShadow: isLight ? "none" : "0 0 20px rgba(255,255,255,0.06)" }}
         >
-          YOUR SOVEREIGN OS
-        </span>
-        <div className="w-px h-3 bg-foreground/20" />
-        <span className="text-[10.5px] font-medium tracking-[0.28em] uppercase text-foreground/50">
-          POWERED BY{" "}
-          <a
-            href="https://uor.foundation/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-foreground/50 hover:text-foreground/75 transition-colors duration-200 cursor-pointer"
-            style={{ textDecoration: "none" }}
-          >
-            UOR
-          </a>
+          {(() => {
+            const activeWin = windows.find(w => w.id === activeWindowId);
+            const tagline = activeWin ? APP_TAGLINES[activeWin.appId] : undefined;
+            return (tagline || DEFAULT_TAGLINE).toUpperCase();
+          })()}
         </span>
       </div>
 

@@ -2,6 +2,8 @@
  * "Own Your ___" — Contextual taglines for every app in the Sovereign OS ecosystem.
  */
 
+export const DEFAULT_TAGLINE = "Own your future.";
+
 export const APP_TAGLINES: Record<string, string> = {
   "myspace":           "Own your space.",
   "oracle":          "Own your intelligence.",
@@ -12,6 +14,10 @@ export const APP_TAGLINES: Record<string, string> = {
   "app-hub":         "Own your platform.",
   "system-monitor":  "Own your infrastructure.",
   "wallet":          "Own your money.",
+  "browser":         "Own your attention.",
+  "network":         "Own your network.",
+  "notes":           "Own your mind.",
+  "files":           "Own your data.",
 };
 
 /** Per-section taglines within MySpace */
