@@ -102,6 +102,21 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [recentIds, setRecentIds] = useState<string[]>([]);
+
+  // Collapsible sidebar sections
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
+    try {
+      const v = localStorage.getItem("sdb-sidebar-sections");
+      return v ? JSON.parse(v) : {};
+    } catch { return {}; }
+  });
+  const toggleSection = useCallback((section: string) => {
+    setCollapsedSections(prev => {
+      const next = { ...prev, [section]: !prev[section] };
+      localStorage.setItem("sdb-sidebar-sections", JSON.stringify(next));
+      return next;
+    });
+  }, []);
   const [finderOpen, setFinderOpen] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     try {
