@@ -507,6 +507,288 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
         createdAt: now - d * 1, updatedAt: now, sortOrder: 0,
       });
 
+
+      // ── Sovereign Identity > Sovereign Data Principles ──
+      await db.addEdge(["folder:sovereign-identity", "note:data-principles"], "workspace:note", {
+        title: "Sovereign Data Principles", icon: "🛡️", coverUrl: cover8,
+        blocks: b([
+          "Core principles of sovereign data ownership:",
+          "",
+          "1. Your data belongs to you — always.",
+          "2. No third party should have access without explicit consent.",
+          "3. Data should be portable — export everything, anytime.",
+          "4. Content-addressed storage ensures integrity and provenance.",
+          "5. Encryption by default. Decryption only by the owner.",
+          "",
+          "These principles guide every design decision in Sovereign OS.",
+        ]),
+        tags: JSON.stringify(["sovereignty", "principles"]),
+        createdAt: now - d * 6, updatedAt: now - d * 1, sortOrder: 0,
+      });
+
+      // ── Sovereign Identity > DID Methods ──
+      await db.addEdge(["folder:sovereign-identity", "note:did-methods"], "workspace:note", {
+        title: "DID Methods & Verifiable Credentials", icon: "🪪",
+        blocks: b([
+          "Decentralized Identifiers (DIDs) provide self-sovereign identity.",
+          "",
+          "Supported methods: did:key, did:web, did:uor",
+          "Verifiable Credentials: W3C VC Data Model 2.0",
+          "",
+          "The UOR DID method uses content-addressed resolution — the DID itself is the hash of the public key.",
+        ]),
+        tags: JSON.stringify(["identity", "did", "credentials"]),
+        createdAt: now - d * 4, updatedAt: now - d * 2, sortOrder: 1,
+      });
+
+      // ── Sovereign Identity > Mesh Networking Overview ──
+      await db.addEdge(["folder:sovereign-identity", "note:mesh-overview"], "workspace:note", {
+        title: "Mesh Networking Overview", icon: "🌐", coverUrl: cover0,
+        blocks: b([
+          "Sovereign OS uses a mesh networking topology for peer-to-peer communication.",
+          "",
+          "Each node in the mesh is identified by its UOR address.",
+          "Routing uses a modified Kademlia DHT optimized for content-addressed lookups.",
+          "",
+          "Benefits: no single point of failure, censorship resistant, low latency for nearby peers.",
+        ]),
+        tags: JSON.stringify(["networking", "mesh", "p2p"]),
+        createdAt: now - d * 3, updatedAt: now - d * 1, sortOrder: 2,
+      });
+
+      // ── Prompts & Templates > Daily Prompt ──
+      await db.addEdge(["folder:prompts-templates", "note:daily-prompt"], "workspace:note", {
+        title: "Daily Prompt Template", icon: "☀️",
+        blocks: b([
+          "# Daily Reflection — {{date}}",
+          "",
+          "**What am I working on today?**",
+          "",
+          "",
+          "**What did I learn yesterday?**",
+          "",
+          "",
+          "**Blockers or questions:**",
+          "",
+          "",
+          "**Energy level (1-10):** ",
+        ]),
+        tags: JSON.stringify(["template", "daily"]),
+        createdAt: now - d * 7, updatedAt: now - d * 1, sortOrder: 0,
+      });
+
+      // ── Prompts & Templates > Meeting Template ──
+      await db.addEdge(["folder:prompts-templates", "note:meeting-template"], "workspace:note", {
+        title: "Meeting Notes Template", icon: "📋",
+        blocks: b([
+          "# Meeting: {{title}}",
+          "**Date:** {{date}}  |  **Attendees:** ",
+          "",
+          "## Agenda",
+          "1. ",
+          "",
+          "## Notes",
+          "",
+          "",
+          "## Action Items",
+          "- [ ] ",
+        ]),
+        tags: JSON.stringify(["template", "meetings"]),
+        createdAt: now - d * 6, updatedAt: now - d * 2, sortOrder: 1,
+      });
+
+      // ── Research > Papers > Zero-Knowledge Proofs ──
+      await db.addEdge(["folder:papers", "note:zkp-research"], "workspace:note", {
+        title: "Zero-Knowledge Proofs in Sovereign Systems", icon: "🔬", coverUrl: cover4,
+        blocks: b([
+          "Zero-knowledge proofs allow one party to prove knowledge of a value without revealing it.",
+          "",
+          "Applications in Sovereign OS:",
+          "  • Prove identity without revealing personal data",
+          "  • Verify data integrity without exposing content",
+          "  • Selective disclosure in verifiable credentials",
+          "",
+          "Key protocols: zk-SNARKs, zk-STARKs, Bulletproofs",
+        ]),
+        tags: JSON.stringify(["research", "cryptography", "zkp"]),
+        createdAt: now - d * 8, updatedAt: now - d * 2, sortOrder: 0,
+      });
+
+      // ── Research > Papers > HDC Literature Review ──
+      await db.addEdge(["folder:papers", "note:hdc-literature"], "workspace:note", {
+        title: "HDC Literature Review", icon: "📚",
+        blocks: b([
+          "Hyperdimensional Computing (HDC) references:",
+          "",
+          "• Kanerva, P. (2009) — Hyperdimensional Computing: An Introduction",
+          "• Rahimi et al. (2019) — A Robust and Energy-Efficient Classifier Using Brain-Inspired HDC",
+          "• Ge & Parhi (2020) — Classification using HDC: A Review",
+          "",
+          "Key insight: HDC is naturally compatible with content-addressed storage.",
+        ]),
+        tags: JSON.stringify(["research", "hdc", "literature"]),
+        createdAt: now - d * 10, updatedAt: now - d * 3, sortOrder: 1,
+      });
+
+      // ── Resources > Design Assets > Design System Guidelines ──
+      await db.addEdge(["folder:design-assets", "note:design-system"], "workspace:note", {
+        title: "Design System Guidelines", icon: "🎨", coverUrl: cover9,
+        blocks: b([
+          "Sovereign OS Design System",
+          "",
+          "Colors: Dark theme primary. HSL-based semantic tokens.",
+          "Typography: DM Sans for body, Playfair Display for headings.",
+          "Spacing: 4px grid system (0.25rem increments).",
+          "Components: Built on Radix UI + Tailwind CSS.",
+          "",
+          "Icons: Tabler Icons (stroke-width: 1.5)",
+          "Animations: Framer Motion, subtle and purposeful.",
+        ]),
+        tags: JSON.stringify(["design", "system", "guidelines"]),
+        createdAt: now - d * 5, updatedAt: now - d * 1, sortOrder: 0,
+      });
+
+      // ── Resources > Design Assets > Brand Photo ──
+      await db.addEdge(["folder:design-assets", "note:brand-photo-1"], "workspace:note", {
+        title: "Sovereign OS — Hero Image", icon: "🖼️", coverUrl: cover7,
+        fileType: "photo", fileDataUrl: cover7, fileMime: "image/jpeg",
+        blocks: b(["Hero image for Sovereign OS branding."]),
+        tags: JSON.stringify(["design", "photo"]),
+        createdAt: now - d * 2, updatedAt: now - d * 1, sortOrder: 1,
+      });
+
+      // ── Resources > Documentation > Content-Addressed Storage ──
+      await db.addEdge(["folder:documentation", "note:cas-docs"], "workspace:note", {
+        title: "Content-Addressed Storage", icon: "📦", coverUrl: cover9,
+        blocks: b([
+          "Content-addressed storage (CAS) uses the hash of content as its address.",
+          "",
+          "Benefits:",
+          "  • Deduplication — identical content shares one address",
+          "  • Integrity — tampering changes the address",
+          "  • Cacheability — immutable by definition",
+          "",
+          "UOR OS uses SHA-256 for content addressing, with CIDv1 for IPFS compatibility.",
+        ]),
+        tags: JSON.stringify(["storage", "cas", "architecture"]),
+        createdAt: now - d * 6, updatedAt: now - d * 2, sortOrder: 0,
+      });
+
+      // ── Resources > Documentation > API Reference ──
+      await db.addEdge(["folder:documentation", "note:api-reference"], "workspace:note", {
+        title: "SovereignDB API Reference", icon: "📘",
+        blocks: b([
+          "SovereignDB Public API",
+          "",
+          "  db.addEdge(nodes, label, properties) — Create a hyperedge",
+          "  db.byLabel(label) — Query edges by label",
+          "  db.delete(edgeId) — Remove an edge",
+          "  db.update(edgeId, properties) — Update edge properties",
+          "",
+          "All operations are ACID-compliant within IndexedDB transactions.",
+        ]),
+        tags: JSON.stringify(["api", "reference", "database"]),
+        createdAt: now - d * 4, updatedAt: now - d * 1, sortOrder: 1,
+      });
+
+      // ── Meeting Notes > Weekly Standup ──
+      await db.addEdge(["folder:meeting-notes", "note:weekly-standup"], "workspace:note", {
+        title: "Weekly Standup — Apr 7", icon: "📝", coverUrl: cover2,
+        blocks: b([
+          "# Weekly Standup — April 7, 2026",
+          "",
+          "**Attendees:** Core Team",
+          "",
+          "## Updates",
+          "• Hypergraph query builder — v2 shipped ✅",
+          "• Atlas Engine — triality symmetry verified",
+          "• Identity — DID:key resolver integrated",
+          "",
+          "## Next Week",
+          "• Begin mesh networking prototype",
+          "• Finalize design system tokens",
+        ]),
+        tags: JSON.stringify(["meetings", "standup"]),
+        createdAt: now - d * 7, updatedAt: now - d * 7, sortOrder: 0,
+      });
+
+      // ── Meeting Notes > Design Review ──
+      await db.addEdge(["folder:meeting-notes", "note:design-review"], "workspace:note", {
+        title: "Design Review — Apr 10", icon: "🎨",
+        blocks: b([
+          "# Design Review — April 10, 2026",
+          "",
+          "Reviewed: MySpace sidebar redesign, cover image system, block editor refinements.",
+          "",
+          "Decisions:",
+          "• Adopt Eden-style collapsible sections ✅",
+          "• Add workspace switcher for multi-workspace support",
+          "• Photo cards in grid view — approved",
+        ]),
+        tags: JSON.stringify(["meetings", "design"]),
+        createdAt: now - d * 4, updatedAt: now - d * 4, sortOrder: 1,
+      });
+
+      // ── Projects > Sovereign OS Roadmap ──
+      await db.addEdge(["folder:projects", "note:os-roadmap"], "workspace:note", {
+        title: "Sovereign OS Roadmap", icon: "🗺️", coverUrl: coverOs,
+        blocks: b([
+          "# Sovereign OS — 2026 Roadmap",
+          "",
+          "## Q1 ✅",
+          "• Hypergraph database (SovereignDB)",
+          "• Atlas Engine (96-vertex E₈ substrate)",
+          "• Knowledge Graph with SPARQL",
+          "",
+          "## Q2 — In Progress",
+          "• MySpace workspace redesign",
+          "• Mesh networking prototype",
+          "• Verifiable Credentials integration",
+          "",
+          "## Q3 — Planned",
+          "• Plugin system & app store",
+          "• Collaborative editing (CRDT-based)",
+          "• Mobile-first responsive UI",
+        ]),
+        tags: JSON.stringify(["projects", "roadmap"]),
+        createdAt: now - d * 14, updatedAt: now, sortOrder: 1,
+      });
+
+      // ── System > Own Your Intelligence ──
+      await db.addEdge(["folder:system", "note:own-intelligence"], "workspace:note", {
+        title: "Own Your Intelligence", icon: "🧠", coverUrl: cover7,
+        blocks: b([
+          "A manifesto for sovereign computing.",
+          "",
+          "Your data is your intelligence. It should never be held hostage by platforms.",
+          "",
+          "Sovereign OS is built on three pillars:",
+          "  1. Local-first — your data lives on your device",
+          "  2. Content-addressed — tamper-proof by design",
+          "  3. Interoperable — open standards, no lock-in",
+          "",
+          "The future of computing is sovereign. Own your intelligence.",
+        ]),
+        tags: JSON.stringify(["manifesto", "sovereignty"]),
+        createdAt: now - d * 12, updatedAt: now - d * 1, sortOrder: 1,
+      });
+
+      // ── Photo items in workspace root ──
+      await db.addEdge([wsId, "note:photo-landscape"], "workspace:note", {
+        title: "Landscape — Sovereign Horizons", icon: "🖼️", coverUrl: cover3,
+        fileType: "photo", fileDataUrl: cover3, fileMime: "image/jpeg",
+        blocks: b(["A vast landscape representing the boundless potential of sovereign computing."]),
+        tags: JSON.stringify(["photo", "inspiration"]),
+        createdAt: now - d * 1, updatedAt: now - d * 1, sortOrder: 10,
+      });
+      await db.addEdge([wsId, "note:photo-abstract"], "workspace:note", {
+        title: "Abstract — Neural Pathways", icon: "🖼️", coverUrl: cover5,
+        fileType: "photo", fileDataUrl: cover5, fileMime: "image/jpeg",
+        blocks: b(["Abstract visualization of knowledge graph neural pathways."]),
+        tags: JSON.stringify(["photo", "inspiration"]),
+        createdAt: now - d * 1, updatedAt: now - d * 1, sortOrder: 11,
+      });
+
       // ═══════════════════════════════════════════════════════
       // TAGS & CROSS-LINKS
       // ═══════════════════════════════════════════════════════
@@ -524,6 +806,23 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
         ["note:ref-wikipedia", "reference"], ["note:ref-ipfs", "reference"],
         ["note:ref-jsonld", "reference"], ["note:ref-jsonld", "linked-data"],
         ["note:project-ideas", "projects"], ["note:project-ideas", "ideas"],
+        // New entries
+        ["note:data-principles", "sovereignty"], ["note:data-principles", "principles"],
+        ["note:did-methods", "identity"], ["note:did-methods", "did"],
+        ["note:mesh-overview", "networking"], ["note:mesh-overview", "mesh"],
+        ["note:daily-prompt", "template"], ["note:daily-prompt", "daily"],
+        ["note:meeting-template", "template"], ["note:meeting-template", "meetings"],
+        ["note:zkp-research", "research"], ["note:zkp-research", "cryptography"],
+        ["note:hdc-literature", "research"], ["note:hdc-literature", "hdc"],
+        ["note:design-system", "design"], ["note:design-system", "guidelines"],
+        ["note:brand-photo-1", "design"], ["note:brand-photo-1", "photo"],
+        ["note:cas-docs", "storage"], ["note:cas-docs", "architecture"],
+        ["note:api-reference", "api"], ["note:api-reference", "database"],
+        ["note:weekly-standup", "meetings"], ["note:weekly-standup", "standup"],
+        ["note:design-review", "meetings"], ["note:design-review", "design"],
+        ["note:os-roadmap", "projects"], ["note:os-roadmap", "roadmap"],
+        ["note:own-intelligence", "manifesto"], ["note:own-intelligence", "sovereignty"],
+        ["note:photo-landscape", "photo"], ["note:photo-abstract", "photo"],
       ];
       for (const [noteId, tag] of tagPairs) {
         await db.addEdge([noteId, `tag:${tag}`], "workspace:tag", { tag });
@@ -538,6 +837,16 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       await db.addEdge(["note:hypergraph-arch", "note:sovereign-db"], "workspace:link", { relation: "implements" });
       await db.addEdge(["note:uns-identity", "note:mesh-network"], "workspace:link", { relation: "enables" });
       await db.addEdge(["note:graph-guide", "note:quick-start"], "workspace:link", { relation: "related" });
+      // New cross-links
+      await db.addEdge(["note:data-principles", "note:own-intelligence"], "workspace:link", { relation: "extends" });
+      await db.addEdge(["note:data-principles", "note:cas-docs"], "workspace:link", { relation: "references" });
+      await db.addEdge(["note:did-methods", "note:uns-identity"], "workspace:link", { relation: "implements" });
+      await db.addEdge(["note:zkp-research", "note:data-principles"], "workspace:link", { relation: "supports" });
+      await db.addEdge(["note:zkp-research", "note:did-methods"], "workspace:link", { relation: "enables" });
+      await db.addEdge(["note:mesh-overview", "note:mesh-network"], "workspace:link", { relation: "extends" });
+      await db.addEdge(["note:design-system", "note:design-review"], "workspace:link", { relation: "referenced-in" });
+      await db.addEdge(["note:os-roadmap", "note:project-ideas"], "workspace:link", { relation: "plans" });
+      await db.addEdge(["note:api-reference", "note:sovereign-db"], "workspace:link", { relation: "documents" });
 
       // Re-fetch after seeding
       const seededFolders = await db.byLabel("workspace:folder");
