@@ -102,6 +102,21 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [recentIds, setRecentIds] = useState<string[]>([]);
+
+  // Collapsible sidebar sections
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
+    try {
+      const v = localStorage.getItem("sdb-sidebar-sections");
+      return v ? JSON.parse(v) : {};
+    } catch { return {}; }
+  });
+  const toggleSection = useCallback((section: string) => {
+    setCollapsedSections(prev => {
+      const next = { ...prev, [section]: !prev[section] };
+      localStorage.setItem("sdb-sidebar-sections", JSON.stringify(next));
+      return next;
+    });
+  }, []);
   const [finderOpen, setFinderOpen] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     try {
@@ -1298,25 +1313,36 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
                 {/* ── Recents ── */}
                 {recentItems.length > 0 && (
                   <>
-                    <div className="px-4 py-1.5">
+                    <button
+                      onClick={() => toggleSection("recents")}
+                      className="flex items-center justify-between w-full px-4 py-1.5 group"
+                    >
                       <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Recents</span>
-                    </div>
-                    {recentItems.map(item => (
-                      <button
-                        key={item.id}
-                        onClick={() => setSelectedId(item.id)}
-                        className={`flex items-center gap-3 w-full px-4 py-2 text-os-body font-medium transition-colors ${
-                          selectedId === item.id
-                            ? "bg-primary/10 text-primary border-r-2 border-primary"
-                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                        }`}
-                      >
-                        <span className="w-[18px] h-[18px] flex items-center justify-center shrink-0 text-[13px]">
-                          {item.icon || PAGE_ICONS[item.type] || "📄"}
-                        </span>
-                        <span className="truncate">{item.name}</span>
-                      </button>
-                    ))}
+                      <IconChevronRight
+                        size={11}
+                        className={`text-muted-foreground/40 transition-transform duration-150 ${!collapsedSections.recents ? "rotate-90" : ""}`}
+                      />
+                    </button>
+                    {!collapsedSections.recents && (
+                      <>
+                        {recentItems.map(item => (
+                          <button
+                            key={item.id}
+                            onClick={() => setSelectedId(item.id)}
+                            className={`flex items-center gap-3 w-full px-4 py-2 text-os-body font-medium transition-colors ${
+                              selectedId === item.id
+                                ? "bg-primary/10 text-primary border-r-2 border-primary"
+                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                            }`}
+                          >
+                            <span className="w-[18px] h-[18px] flex items-center justify-center shrink-0 text-[13px]">
+                              {item.icon || PAGE_ICONS[item.type] || "📄"}
+                            </span>
+                            <span className="truncate">{item.name}</span>
+                          </button>
+                        ))}
+                      </>
+                    )}
                     <div className="mx-3 my-1 border-t border-border/10" />
                   </>
                 )}
@@ -1324,32 +1350,52 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
                 {/* ── Pinned ── */}
                 {favoriteItems.length > 0 && (
                   <>
-                    <div className="px-4 py-1.5">
+                    <button
+                      onClick={() => toggleSection("pinned")}
+                      className="flex items-center justify-between w-full px-4 py-1.5 group"
+                    >
                       <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Pinned</span>
-                    </div>
-                    {favoriteItems.map(item => (
-                      <button
-                        key={item.id}
-                        onClick={() => setSelectedId(item.id)}
-                        className={`flex items-center gap-3 w-full px-4 py-2 text-os-body font-medium transition-colors ${
-                          selectedId === item.id
-                            ? "bg-primary/10 text-primary border-r-2 border-primary"
-                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                        }`}
-                      >
-                        <span className="w-[18px] h-[18px] flex items-center justify-center shrink-0 text-[13px]">
-                          {item.icon || PAGE_ICONS[item.type] || "📄"}
-                        </span>
-                        <span className="truncate">{item.name}</span>
-                      </button>
-                    ))}
+                      <IconChevronRight
+                        size={11}
+                        className={`text-muted-foreground/40 transition-transform duration-150 ${!collapsedSections.pinned ? "rotate-90" : ""}`}
+                      />
+                    </button>
+                    {!collapsedSections.pinned && (
+                      <>
+                        {favoriteItems.map(item => (
+                          <button
+                            key={item.id}
+                            onClick={() => setSelectedId(item.id)}
+                            className={`flex items-center gap-3 w-full px-4 py-2 text-os-body font-medium transition-colors ${
+                              selectedId === item.id
+                                ? "bg-primary/10 text-primary border-r-2 border-primary"
+                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                            }`}
+                          >
+                            <span className="w-[18px] h-[18px] flex items-center justify-center shrink-0 text-[13px]">
+                              {item.icon || PAGE_ICONS[item.type] || "📄"}
+                            </span>
+                            <span className="truncate">{item.name}</span>
+                          </button>
+                        ))}
+                      </>
+                    )}
                     <div className="mx-3 my-1 border-t border-border/10" />
                   </>
                 )}
 
-                {/* ── Folders & Files ── */}
+                {/* ── Workspace ── */}
                 <div className="flex items-center justify-between px-4 py-1.5">
-                  <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Folders</span>
+                  <button
+                    onClick={() => toggleSection("workspace")}
+                    className="flex items-center gap-1.5"
+                  >
+                    <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Workspace</span>
+                    <IconChevronRight
+                      size={11}
+                      className={`text-muted-foreground/40 transition-transform duration-150 ${!collapsedSections.workspace ? "rotate-90" : ""}`}
+                    />
+                  </button>
                   <div className="flex items-center gap-0.5">
                     <button onClick={() => createFolder()} className="p-1 rounded text-muted-foreground/50 hover:text-foreground hover:bg-muted/30 transition-colors" title="New folder">
                       <IconFolder size={11} />
@@ -1359,40 +1405,56 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
                     </button>
                   </div>
                 </div>
-                {workspaces.length > 1 && (
-                  <div className="mb-1">
-                    {workspaces.map(ws => (
-                      <button
-                        key={ws.id}
-                        onClick={() => { setActiveWorkspaceId(ws.id); setSelectedId(null); }}
-                        className={`flex items-center gap-3 w-full px-4 py-2 text-os-body font-medium transition-colors ${
-                          activeWorkspaceId === ws.id ? "bg-primary/10 text-primary border-r-2 border-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                        }`}
-                      >
-                        <span className="text-[13px]">{ws.icon || "🏠"}</span>
-                        <span className="truncate">{ws.name}</span>
-                      </button>
-                    ))}
-                  </div>
+                {!collapsedSections.workspace && (
+                  <>
+                    {workspaces.length > 1 && (
+                      <div className="mb-1">
+                        {workspaces.map(ws => (
+                          <button
+                            key={ws.id}
+                            onClick={() => { setActiveWorkspaceId(ws.id); setSelectedId(null); }}
+                            className={`flex items-center gap-3 w-full px-4 py-2 text-os-body font-medium transition-colors ${
+                              activeWorkspaceId === ws.id ? "bg-primary/10 text-primary border-r-2 border-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                            }`}
+                          >
+                            <span className="text-[13px]">{ws.icon || "🏠"}</span>
+                            <span className="truncate">{ws.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="space-y-px">
+                      {rootItems.filter(i => i.type === "folder").map(i => renderItem(i, 0, rootItems))}
+                      {rootItems.filter(i => i.type !== "folder").map(i => renderItem(i, 0, rootItems))}
+                    </div>
+                  </>
                 )}
-                <div className="space-y-px">
-                  {rootItems.filter(i => i.type === "folder").map(i => renderItem(i, 0, rootItems))}
-                  {rootItems.filter(i => i.type !== "folder").map(i => renderItem(i, 0, rootItems))}
-                </div>
 
                 <div className="mx-3 my-1 border-t border-border/10" />
 
                 {/* ── Tags ── */}
-                <SdbTagLibrary
-                  userTags={userTags}
-                  typeCounts={{}}
-                  smartCounts={{ today: 0, thisWeek: 0, recent: 0, untagged: 0 }}
-                  activeTags={activeTags}
-                  onToggleTag={toggleTag}
-                  tagColors={tagColors}
-                  onSetTagColor={handleSetTagColor}
-                  onCreateTag={handleCreateTag}
-                />
+                <button
+                  onClick={() => toggleSection("tags")}
+                  className="flex items-center justify-between w-full px-4 py-1.5 group"
+                >
+                  <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">Tags</span>
+                  <IconChevronRight
+                    size={11}
+                    className={`text-muted-foreground/40 transition-transform duration-150 ${!collapsedSections.tags ? "rotate-90" : ""}`}
+                  />
+                </button>
+                {!collapsedSections.tags && (
+                  <SdbTagLibrary
+                    userTags={userTags}
+                    typeCounts={{}}
+                    smartCounts={{ today: 0, thisWeek: 0, recent: 0, untagged: 0 }}
+                    activeTags={activeTags}
+                    onToggleTag={toggleTag}
+                    tagColors={tagColors}
+                    onSetTagColor={handleSetTagColor}
+                    onCreateTag={handleCreateTag}
+                  />
+                )}
               </>
             )}
           </nav>
