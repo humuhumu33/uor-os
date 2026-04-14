@@ -55,7 +55,7 @@ export default function DesktopThemeDots({ windows = [] }: Props) {
 
   return (
     <div
-      className="fixed bottom-6 inset-x-0 z-[195] flex flex-col items-center pointer-events-none gap-2"
+      className="fixed bottom-8 inset-x-0 z-[195] flex flex-col items-center pointer-events-none gap-2"
       style={{
         opacity: hasVisibleWindows ? 0 : 1,
         transition: "opacity 400ms ease-out",
