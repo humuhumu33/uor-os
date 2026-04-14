@@ -1,34 +1,39 @@
 
 
-## Fix: SoundCloud "refused to connect"
+## Update Top Branding: Dynamic "Own Your ___" Tagline
 
-### Root Cause
+### What changes
 
-The `Content-Security-Policy` meta tag in `index.html` (line 8) is the most likely culprit. While `frame-src` includes `https://w.soundcloud.com`, the SoundCloud widget player loads sub-resources and nested frames from additional domains (`*.sndcdn.com`, `api-v2.soundcloud.com`, consent frames, etc.) that may conflict with the restrictive `default-src 'self'` fallback. Additionally, SoundCloud may inspect the `Referer` header or `frame-ancestors` context and reject embedding from certain origins.
+The center wordmark in the TabBar (lines 335–356) currently shows:
+```
+YOUR SOVEREIGN OS  |  POWERED BY UOR
+```
 
-On the published site (`uor-os.lovable.app`), the hosting platform may layer additional CSP headers on top, creating a double restriction.
+It will be replaced with a **dynamic, contextual tagline** that reflects the active app, using the existing `APP_TAGLINES` map. When no app is open (home screen), it shows a default tagline like **"Own your future."**
 
-### Plan
+The "POWERED BY UOR" text will be removed entirely since UOR branding is already in the footer.
 
-**1. Relax the CSP meta tag** (`index.html`)
+### Behavior
 
-- Widen `frame-src` from `https://w.soundcloud.com` to `https:` — allowing any HTTPS iframe (SoundCloud's widget loads nested frames from varying subdomains)
-- Add `child-src https: blob:` as an explicit directive (some browsers fall back to `child-src` for iframes)
-- This is safe because iframe content runs in its own origin sandbox regardless of parent CSP
+| State | Displayed text |
+|-------|---------------|
+| Home screen (no active window) | `OWN YOUR FUTURE.` |
+| Oracle open | `OWN YOUR INTELLIGENCE.` |
+| Messenger open | `OWN YOUR CONVERSATIONS.` |
+| Vault open | `OWN YOUR IDENTITY.` |
+| Any other app | Falls back to `OWN YOUR FUTURE.` |
 
-**2. Add iframe error detection and retry** (`VinylPlayer.tsx`)
+The tagline transitions smoothly when switching between apps.
 
-- Attach an `onError` handler to both iframes
-- If the iframe fails, show a small "Unable to load" message with a retry button instead of a broken embed
-- Add `referrerPolicy="no-referrer"` to both iframes to prevent SoundCloud from rejecting based on the referring origin
+### Technical details
 
-**3. Align SoundCloudFab with VinylPlayer fixes** (`SoundCloudFab.tsx`)
+**File: `src/modules/platform/desktop/TabBar.tsx`**
+- Import `APP_TAGLINES` from `@/modules/platform/core/lib/app-taglines.ts`
+- Derive the active app's `appId` from `activeWindowId` → find matching window → get `appId`
+- Look up `APP_TAGLINES[appId]` or fall back to `"Own your future."`
+- Replace lines 335–356 (the center wordmark block) with a single `<span>` showing the tagline in uppercase, same font styling
 
-- Apply the same `referrerPolicy="no-referrer"` and error handling to the SoundCloudFab component used in Footer, ResolvePage, and ImmersiveSearchView
-
-### Files to modify
-
-- `index.html` — relax CSP `frame-src` and add `child-src`
-- `src/modules/platform/desktop/components/VinylPlayer.tsx` — add `referrerPolicy`, error handling
-- `src/modules/intelligence/oracle/components/SoundCloudFab.tsx` — same iframe fixes
+**File: `src/modules/platform/core/lib/app-taglines.ts`**
+- Add a `DEFAULT_TAGLINE = "Own your future."` export
+- Add missing app entries from the uploaded images: `"Own your data."`, `"Own your network."`, `"Own your attention."`, `"Own your mind."`
 
