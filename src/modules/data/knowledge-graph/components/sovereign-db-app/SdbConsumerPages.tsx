@@ -41,6 +41,16 @@ import coverResources from "@/assets/covers/cover-resources.jpg";
 import coverGraph from "@/assets/covers/cover-graph.jpg";
 import coverWelcome from "@/assets/covers/cover-welcome.jpg";
 import coverProjects from "@/assets/covers/cover-projects.jpg";
+import cover0 from "@/assets/covers/cover-0.jpg";
+import cover1 from "@/assets/covers/cover-1.jpg";
+import cover2 from "@/assets/covers/cover-2.jpg";
+import cover3 from "@/assets/covers/cover-3.jpg";
+import cover4 from "@/assets/covers/cover-4.jpg";
+import cover5 from "@/assets/covers/cover-5.jpg";
+import cover6 from "@/assets/covers/cover-6.jpg";
+import cover7 from "@/assets/covers/cover-7.jpg";
+import cover8 from "@/assets/covers/cover-8.jpg";
+import cover9 from "@/assets/covers/cover-9.jpg";
 
 import type { AppSection } from "./SovereignDBApp";
 
