@@ -1,39 +1,81 @@
 
 
-## Update Top Branding: Dynamic "Own Your ___" Tagline
+## Redesign MySpace Sidebar: Workspace-First Hierarchy
 
-### What changes
+### What's changing
 
-The center wordmark in the TabBar (lines 335–356) currently shows:
+The left sidebar in MySpace currently shows a flat structure: Home, Recents, Pinned, Folders, Tags. It will be reorganized into a cleaner **workspace-first hierarchy** inspired by the Eden reference, with pre-populated demo content that showcases the full organizational power immediately.
+
+### Current vs New Sidebar Structure
+
+```text
+CURRENT                          NEW
+─────────                        ─────
+UOR OS (header)                  UOR OS (header) + [+ New] [🔍]
+Home                             🏠 Home
+───                              ───
+Recents                          Recents (collapsed section)
+  ...                              Recent Note 1
+Pinned                             Recent Note 2
+  ...                            ───
+Folders (flat)                   Pinned ˅ (collapsible)
+  System                           Meeting Notes Template
+  Atlas Engine                     brane-logo.png
+  Knowledge Base                 ───
+  Projects                       Workspace (section header)
+Tags                               📁 Admin  >
+  ...                               📁 Newsletters  >
+Bottom: Upload | Graph | Settings    📁 Content  >
+                                     📁 Brand Deals  >
+                                     📁 Prompts  >
+                                     📁 Research  >
+                                     📁 Resources  ˅
+                                       📁 Nested folder  ˅
+                                         📁 Another folder  >
+                                     📁 Products  >
+                                     📁 Meeting Notes  >
+                                 ───
+                                 Tags ˅ (collapsible)
+                                   ...
+                                 ───
+                                 Bottom: 🗑 Upload Settings
 ```
-YOUR SOVEREIGN OS  |  POWERED BY UOR
-```
 
-It will be replaced with a **dynamic, contextual tagline** that reflects the active app, using the existing `APP_TAGLINES` map. When no app is open (home screen), it shows a default tagline like **"Own your future."**
+### Key improvements
 
-The "POWERED BY UOR" text will be removed entirely since UOR branding is already in the footer.
+1. **Collapsible section headers** — Recents, Pinned, Workspace, Tags sections can be toggled open/closed (like Eden's sidebar)
+2. **Workspace switcher in header** — When multiple workspaces exist, show a dropdown next to the workspace name to switch between them
+3. **Folder chevrons show child count** — Right-side chevrons indicate folders have contents, clicking expands inline
+4. **Colored folder icons** — Already present, but ensure consistent Eden-like coloring per folder
+5. **Better visual hierarchy** — Section labels slightly larger, folder items indented properly with nesting lines
 
-### Behavior
+### Demo content updates
 
-| State | Displayed text |
-|-------|---------------|
-| Home screen (no active window) | `OWN YOUR FUTURE.` |
-| Oracle open | `OWN YOUR INTELLIGENCE.` |
-| Messenger open | `OWN YOUR CONVERSATIONS.` |
-| Vault open | `OWN YOUR IDENTITY.` |
-| Any other app | Falls back to `OWN YOUR FUTURE.` |
-
-The tagline transitions smoothly when switching between apps.
+The existing seed data is already rich (System, Atlas Engine, Knowledge Base, Projects with nested folders and notes). No changes needed to the seed data — it already demonstrates the hierarchy well.
 
 ### Technical details
 
-**File: `src/modules/platform/desktop/TabBar.tsx`**
-- Import `APP_TAGLINES` from `@/modules/platform/core/lib/app-taglines.ts`
-- Derive the active app's `appId` from `activeWindowId` → find matching window → get `appId`
-- Look up `APP_TAGLINES[appId]` or fall back to `"Own your future."`
-- Replace lines 335–356 (the center wordmark block) with a single `<span>` showing the tagline in uppercase, same font styling
+**File: `src/modules/data/knowledge-graph/components/sovereign-db-app/SdbConsumerPages.tsx`**
 
-**File: `src/modules/platform/core/lib/app-taglines.ts`**
-- Add a `DEFAULT_TAGLINE = "Own your future."` export
-- Add missing app entries from the uploaded images: `"Own your data."`, `"Own your network."`, `"Own your attention."`, `"Own your mind."`
+The sidebar is rendered via `createPortal` at lines 1257-1416. Changes:
+
+- **Collapsible sections**: Wrap Recents, Pinned, Folders, and Tags sections in collapsible containers with a toggle chevron on the section header. Store collapsed state in `localStorage` keyed `sdb-sidebar-sections`.
+
+- **Workspace section header**: Change the "Folders" label (line 1352) to "Workspace" to match Eden's naming. When only one workspace exists (the common case), show its name directly. When multiple exist, add a small dropdown chevron.
+
+- **Section header styling**: Make section headers (`Recents`, `Pinned`, `Workspace`, `Tags`) interactive buttons with a chevron that rotates on collapse. Style: `text-[11px] font-medium uppercase tracking-widest` with a hover state.
+
+- **Folder click behavior**: Currently clicking a folder in the sidebar sets `activeFolderId` AND expands it. Keep this behavior — it matches Eden where clicking a folder navigates into it.
+
+- **Auto-expand on first load**: The existing code at line 531-538 already auto-expands all folders on first load. This is good for demo purposes.
+
+**No new files needed** — all changes are within the existing sidebar portal section of `SdbConsumerPages.tsx`.
+
+### What stays the same
+- Home button at the top
+- Bottom bar (Upload, Graph, Settings)
+- Context menu (right-click rename, pin, delete)
+- Drag-and-drop reordering
+- Tag library section
+- All existing functionality
 
