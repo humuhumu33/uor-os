@@ -272,6 +272,19 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
         name: "Guides", icon: "📖", createdAt: now, sortOrder: 1,
       });
 
+      // 📁 Research > Papers
+      await db.addEdge(["folder:research", "folder:papers"], "workspace:folder", {
+        name: "Papers", icon: "📄", createdAt: now, sortOrder: 0,
+      });
+      // 📁 Resources > Design Assets
+      await db.addEdge(["folder:resources", "folder:design-assets"], "workspace:folder", {
+        name: "Design Assets", icon: "🎨", createdAt: now, sortOrder: 0,
+      });
+      // 📁 Resources > Documentation
+      await db.addEdge(["folder:resources", "folder:documentation"], "workspace:folder", {
+        name: "Documentation", icon: "📖", createdAt: now, sortOrder: 1,
+      });
+
       // ═══════════════════════════════════════════════════════
       // FILES (notes inside folders)
       // ═══════════════════════════════════════════════════════
