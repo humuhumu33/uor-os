@@ -2,7 +2,7 @@
  * "Own Your ___" — Contextual taglines for every app in the Sovereign OS ecosystem.
  */
 
-export const DEFAULT_TAGLINE = "Own your future.";
+export const DEFAULT_TAGLINE = "Own Your Future";
 
 export const APP_TAGLINES: Record<string, string> = {
   "myspace":           "Own your space.",
