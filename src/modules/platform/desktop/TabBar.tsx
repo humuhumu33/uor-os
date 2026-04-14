@@ -339,7 +339,7 @@ export default function TabBar({
           className="text-[13px] font-semibold tracking-[0.28em] uppercase text-foreground/90"
           style={{ textShadow: isLight ? "none" : "0 0 20px rgba(255,255,255,0.06)" }}
         >
-          YOUR SOVEREIGN OS
+          SOVEREIGN OS
         </span>
         <div className="w-px h-3 bg-foreground/20" />
         <span className="text-[10.5px] font-medium tracking-[0.28em] uppercase text-foreground/50 transition-opacity duration-300">
