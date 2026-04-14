@@ -333,12 +333,16 @@ export default function TabBar({
       </button>
 
 
-      {/* Center wordmark — dynamic "Own your ___" tagline */}
-      <div className="absolute left-1/2 top-0 h-full -translate-x-1/2 flex items-center z-[1] select-none pointer-events-none">
+      {/* Center wordmark — "YOUR SOVEREIGN OS | OWN YOUR ___" */}
+      <div className="absolute left-1/2 top-0 h-full -translate-x-1/2 flex items-center z-[1] gap-3 select-none pointer-events-none">
         <span
-          className="text-[13px] font-semibold tracking-[0.28em] uppercase text-foreground/90 transition-opacity duration-300"
+          className="text-[13px] font-semibold tracking-[0.28em] uppercase text-foreground/90"
           style={{ textShadow: isLight ? "none" : "0 0 20px rgba(255,255,255,0.06)" }}
         >
+          YOUR SOVEREIGN OS
+        </span>
+        <div className="w-px h-3 bg-foreground/20" />
+        <span className="text-[10.5px] font-medium tracking-[0.28em] uppercase text-foreground/50 transition-opacity duration-300">
           {(() => {
             const activeWin = windows.find(w => w.id === activeWindowId);
             const tagline = activeWin ? APP_TAGLINES[activeWin.appId] : undefined;
