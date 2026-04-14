@@ -212,6 +212,26 @@ export function SdbConsumerPages({ db, onNavigateSection, activeSection, globalS
       await db.addEdge([wsId, "folder:knowledge-base"], "workspace:folder", {
         name: "Knowledge Base", icon: "📚", coverUrl: coverResources, createdAt: now, sortOrder: 2,
       });
+      // 📁 Sovereign Identity
+      await db.addEdge([wsId, "folder:sovereign-identity"], "workspace:folder", {
+        name: "Sovereign Identity", icon: "🛡️", coverUrl: cover1, createdAt: now, sortOrder: 4,
+      });
+      // 📁 Prompts & Templates
+      await db.addEdge([wsId, "folder:prompts-templates"], "workspace:folder", {
+        name: "Prompts & Templates", icon: "✨", coverUrl: cover3, createdAt: now, sortOrder: 5,
+      });
+      // 📁 Research
+      await db.addEdge([wsId, "folder:research"], "workspace:folder", {
+        name: "Research", icon: "🔬", coverUrl: cover4, createdAt: now, sortOrder: 6,
+      });
+      // 📁 Resources
+      await db.addEdge([wsId, "folder:resources"], "workspace:folder", {
+        name: "Resources", icon: "📦", coverUrl: cover5, createdAt: now, sortOrder: 7,
+      });
+      // 📁 Meeting Notes
+      await db.addEdge([wsId, "folder:meeting-notes"], "workspace:folder", {
+        name: "Meeting Notes", icon: "📝", coverUrl: cover6, createdAt: now, sortOrder: 8,
+      });
       // 📁 Projects
       await db.addEdge([wsId, "folder:projects"], "workspace:folder", {
         name: "Projects", icon: "🎯", coverUrl: coverProjects, createdAt: now, sortOrder: 3,
